@@ -599,6 +599,133 @@ function renderCards(){
   app().innerHTML=h;
 }
 
+/* ===================== biçimbilim · morphology ===================== */
+/* Turkish is regular enough to generate and irregular enough to get
+   wrong. This builds forms from a stem plus the flags in LEX; anything
+   it cannot derive is listed in that entry's irr. validate.js holds a
+   golden set of hand-checked forms, because a drill that teaches wrong
+   Turkish is worse than no drill at all. */
+const VOW="aeıioöuü", BACK="aıou", VOICELESS="fstkçşhp";
+const SOFTEN={"p":"b","ç":"c","t":"d","k":"ğ"};
+
+function lastVowel(w){for(let i=w.length-1;i>=0;i--)if(VOW.indexOf(w[i])>-1)return w[i];return "a";}
+function A(w){return BACK.indexOf(lastVowel(w))>-1?"a":"e";}               /* two-way  */
+function I(w){const v=lastVowel(w);                                        /* four-way */
+  return v==="a"||v==="ı"?"ı":v==="e"||v==="i"?"i":v==="o"||v==="u"?"u":"ü";}
+function endsVowel(w){return VOW.indexOf(w[w.length-1])>-1;}
+function D(w){return VOICELESS.indexOf(w[w.length-1])>-1?"t":"d";}         /* fıstıkçı şahap */
+function syllables(w){let n=0;for(const c of w)if(VOW.indexOf(c)>-1)n++;return n;}
+
+/* p ç t k soften before a vowel, but only for the words that do it —
+   kitap → kitabı, yet top → topu. After n, k goes to g: renk → rengi. */
+function soften(s,e){
+  if(!e||!e.soft)return s;
+  const last=s[s.length-1];
+  if(last==="k"&&s[s.length-2]==="n")return s.slice(0,-1)+"g";
+  return SOFTEN[last]?s.slice(0,-1)+SOFTEN[last]:s;
+}
+/* şehir → şehr, burun → burn: the last vowel falls out before a vowel. */
+function dropVowel(s,e){
+  if(!e||!e.drop)return s;
+  for(let i=s.length-1;i>=0;i--)if(VOW.indexOf(s[i])>-1)return s.slice(0,i)+s.slice(i+1);
+  return s;
+}
+function stemFor(e){return soften(dropVowel(e.t,e),e);}                    /* before a vowel */
+/* Loanwords that break harmony: kalp has a back vowel but takes front
+   endings — kalbi, kalbe, kalpte. front:1 forces e/i, front:"ü" forces
+   e/ü (usul → usulü). There is no rule for these; they are listed. */
+function eA(e){return e&&e.front?"e":A(e.t);}
+function eI(e){return e&&e.front?(e.front==="ü"?"ü":"i"):I(e.t);}
+function irr(e,k){return e&&e.irr&&e.irr[k];}
+
+/* --- noun endings ------------------------------------------------- */
+function nPlur(e){const s=e.t;return s+"l"+eA(e)+"r";}
+function nAcc(e){return irr(e,"acc")||(endsVowel(e.t)?e.t+"y"+eI(e):stemFor(e)+eI(e));}
+function nDat(e){return irr(e,"dat")||(endsVowel(e.t)?e.t+"y"+eA(e):stemFor(e)+eA(e));}
+function nLoc(e){const s=e.t;return irr(e,"loc")||s+D(s)+eA(e);}           /* no softening */
+function nAbl(e){const s=e.t;return irr(e,"abl")||s+D(s)+eA(e)+"n";}
+function nGen(e){return irr(e,"gen")||(endsVowel(e.t)?e.t+"n"+eI(e)+"n":stemFor(e)+eI(e)+"n");}
+function nP1(e){return irr(e,"p1")||(endsVowel(e.t)?e.t+"m":stemFor(e)+eI(e)+"m");}
+function nP3(e){return irr(e,"p3")||(endsVowel(e.t)?e.t+"s"+eI(e):stemFor(e)+eI(e));}
+
+/* --- persons ------------------------------------------------------- */
+/* Vowel-initial endings soften a final k: gelecek → geleceğim. */
+function glue(w,end){
+  if(end&&VOW.indexOf(end[0])>-1&&w[w.length-1]==="k")w=w.slice(0,-1)+"ğ";
+  return w+end;
+}
+/* after -yor, -AcAk and the aorist */
+function pers1(w,p){
+  if(p===0)return glue(w,I(w)+"m");
+  if(p===1)return glue(w,"s"+I(w)+"n");
+  if(p===2)return w;
+  if(p===3)return glue(w,I(w)+"z");
+  if(p===4)return glue(w,"s"+I(w)+"n"+I(w)+"z");
+  return glue(w,"l"+A(w)+"r");
+}
+/* after -DI */
+function pers2(w,p){
+  if(p===0)return w+"m";
+  if(p===1)return w+"n";
+  if(p===2)return w;
+  if(p===3)return w+"k";
+  if(p===4)return w+"n"+I(w)+"z";
+  return w+"l"+A(w)+"r";
+}
+
+/* --- verb forms ----------------------------------------------------- */
+function vStem(e){return e.t.replace(/(mak|mek)$/,"");}
+/* -(I)yor: a stem-final vowel falls out, and the ending harmonises to
+   what is left — bekle → bekliyor, oku → okuyor, git → gidiyor. */
+function vProg(e,p,neg){
+  let st=vStem(e);
+  if(neg){ st=st+"m"+A(st); st=st.slice(0,-1); }
+  else if(irr(e,"prog")) return pers1(e.irr.prog+"yor",p);   /* yi → yiyor */
+  else if(endsVowel(st)) st=st.slice(0,-1);
+  else st=soften(st,e);
+  return pers1(st+I(st)+"yor",p);
+}
+function vPast(e,p,neg){
+  let st=vStem(e);
+  if(neg)st=st+"m"+A(st);
+  const base=neg?st+"d"+I(st):st+D(st)+I(st);
+  return pers2(base,p);
+}
+function vFut(e,p,neg){
+  if(!neg&&irr(e,"fut"))return pers1(e.irr.fut,p);
+  let st=vStem(e);
+  if(neg)st=st+"m"+A(st);
+  const link=endsVowel(st)||neg?"y":"";
+  if(!neg&&!endsVowel(st))st=soften(st,e);
+  return pers1(st+link+A(st)+"c"+A(st)+"k",p);
+}
+/* Aorist: -Ir on polysyllables and on the thirteen irregular
+   monosyllables, -Ar on the rest, bare -r after a vowel. Its negative
+   is the odd one out: gelmem, gelmezsin. */
+function vAor(e,p,neg){
+  const raw=vStem(e);
+  if(neg){
+    const st=raw+"m"+A(raw);
+    if(p===0)return st+"m";
+    if(p===3)return st+"y"+I(st)+"z";                        /* gelmeyiz */
+    return pers1(st+"z",p);
+  }
+  let st=endsVowel(raw)?raw:soften(raw,e);
+  let end;
+  if(endsVowel(raw))end="r";
+  else if(syllables(raw)>1||e.aor)end=I(raw)+"r";
+  else end=A(raw)+"r";
+  return pers1(st+end,p);
+}
+const PERSONS=[["ben","I"],["sen","you"],["o","he/she"],["biz","we"],["siz","you (pl)"],["onlar","they"]];
+const TENSES=[
+ {k:"prog",tr:"şimdiki zaman",en:"present",f:vProg},
+ {k:"past",tr:"görülen geçmiş",en:"past",f:vPast},
+ {k:"fut", tr:"gelecek zaman",en:"future",f:vFut},
+ {k:"aor", tr:"geniş zaman",en:"habitual",f:vAor}
+];
+function conj(e,tense,p,neg){const t=TENSES.find(x=>x.k===tense);return t?t.f(e,p,neg):"";}
+
 /* ===================== üretim · production ===================== */
 /* Pimsleur's one move: the sentence has to leave your mouth before the
    model is heard. English prompt, a silent gap, then the Turkish and the

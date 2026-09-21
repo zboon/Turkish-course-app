@@ -24,6 +24,7 @@ const PARTS = [
   "src/data/_close.js",
   "src/data/placement.js",
   "src/data/chunks.js",
+  "src/data/lex.js",
   "src/app.js",
   "src/shell.foot.html"
 ];
