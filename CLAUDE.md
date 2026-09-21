@@ -7,12 +7,19 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity: 60 units, answer keys, order tiles
-node test/sim.js        # headless render of all 321 screens + quiz/voice/SRS/üretim paths
+node test/validate.js   # data integrity + 266 hand-checked Turkish forms
+node test/sim.js        # headless render of all 322 screens + quiz/voice/SRS/üretim paths
+node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
-Run all three before every commit. `build.sh` already runs the parse check; the
-other two take a second each. They exist because the data files are fragments of
+Run all four before every commit; they take a second each. `build.sh` already
+runs the parse check.
+
+`snap.js` is the one to reach for when moving code rather than changing it. It
+hashes every screen and every generated form, so a refactor that preserves
+behaviour passes untouched and one that does not names the screen it broke. A
+deliberate change fails it too — read the diff, then `node test/snap.js --write`.
+`test/dom.js` holds the DOM stub, fake clock and voice stub both tests run on. They exist because the data files are fragments of
 one array literal — a stray comma in `src/data/b2.js` takes down the entire app,
 and the browser shows a blank page with the error only in the console.
 
@@ -29,9 +36,20 @@ src/data/placement.js    const PLACEMENT=[…];
 src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
 src/data/lex.js          const LEX=[…];      // tagged drill stems
 src/data/pos.js          const POS={…};      // word classes for the list
-src/app.js               everything else
+src/app.core.js          state, helpers, voice, the SRS ladder, routing
+src/app.lang.js          morphology and the drill generator (pure)
+src/app.screens.js       home, level, unit, quiz, words, sözlük, about
+src/app.uretim.js        production mode, chunk bank, retell
+src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
+
+The app is five files rather than one because it grew past the point
+where one was navigable. Order still matters: `app.boot.js` runs code, so
+it goes last, and everything it names must already be declared. Within a
+file, sections are separated by `/* ===== name ===== */` banners —
+`validate.js` slices the build on those banners to test the language
+engine on its own, so renaming one means updating that test.
 
 `unitsOf(lv)` filters `UNITS` in array order, so a unit's position in its level
 file is the order the learner sees. Keep `n:` in step with that position —

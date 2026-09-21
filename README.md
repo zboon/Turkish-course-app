@@ -50,8 +50,9 @@ sourcing rules.
 
 ```bash
 ./build.sh              # src/ → dist/index.html
-node test/validate.js   # data integrity
+node test/validate.js   # data integrity, and the Turkish the app generates
 node test/sim.js        # headless render of every screen
+node test/snap.js       # nothing drawn or generated changed
 ```
 
 No dependencies, no network, no build tooling — `cat` and `node`.

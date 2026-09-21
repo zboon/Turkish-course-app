@@ -41,10 +41,12 @@ if (cut < 0) { console.error("validate: cannot find the start of app.js in the b
 const foldSrc = /function fold\(s\)\{[\s\S]*?\n\}/.exec(code);
 if (!foldSrc) { console.error("validate: cannot find fold() in the build"); process.exit(1); }
 
-/* The morphology engine is pure — no DOM — so it can be lifted out of
-   app.js and exercised here against a hand-checked set of forms. */
+/* src/app.lang.js is pure — no DOM, no state — so the whole language
+   engine can be lifted out of the build and exercised here against a
+   table of hand-checked forms. It runs from its own banner to the first
+   screen. */
 const mStart = code.indexOf("/* ===================== biçimbilim");
-const mEnd = code.indexOf("/* ===================== üretim");
+const mEnd = code.indexOf("/* ===================== home");
 if (mStart < 0 || mEnd < 0) { console.error("validate: cannot find the morphology engine in the build"); process.exit(1); }
 const engine = code.slice(mStart, mEnd);
 
@@ -219,23 +221,23 @@ else {
    clever; it is not allowed to disagree with this table. Adding a word
    to LEX means adding its awkward forms here. */
 const NOUN_GOLD = [
-  /* stem, acc, dat, loc, abl, gen, poss1, poss3 */
-  ["kitap", "kitabı", "kitaba", "kitapta", "kitaptan", "kitabın", "kitabım", "kitabı"],
-  ["ev", "evi", "eve", "evde", "evden", "evin", "evim", "evi"],
-  ["araba", "arabayı", "arabaya", "arabada", "arabadan", "arabanın", "arabam", "arabası"],
-  ["çocuk", "çocuğu", "çocuğa", "çocukta", "çocuktan", "çocuğun", "çocuğum", "çocuğu"],
-  ["şehir", "şehri", "şehre", "şehirde", "şehirden", "şehrin", "şehrim", "şehri"],
-  ["burun", "burnu", "burna", "burunda", "burundan", "burnun", "burnum", "burnu"],
-  ["isim", "ismi", "isme", "isimde", "isimden", "ismin", "ismim", "ismi"],
-  ["renk", "rengi", "renge", "renkte", "renkten", "rengin", "rengim", "rengi"],
-  ["top", "topu", "topa", "topta", "toptan", "topun", "topum", "topu"],
-  ["su", "suyu", "suya", "suda", "sudan", "suyun", "suyum", "suyu"],
-  ["kalp", "kalbi", "kalbe", "kalpte", "kalpten", "kalbin", "kalbim", "kalbi"],
-  ["saat", "saati", "saate", "saatte", "saatten", "saatin", "saatim", "saati"],
-  ["göz", "gözü", "göze", "gözde", "gözden", "gözün", "gözüm", "gözü"],
-  ["gece", "geceyi", "geceye", "gecede", "geceden", "gecenin", "gecem", "gecesi"],
-  ["kapı", "kapıyı", "kapıya", "kapıda", "kapıdan", "kapının", "kapım", "kapısı"],
-  ["uçak", "uçağı", "uçağa", "uçakta", "uçaktan", "uçağın", "uçağım", "uçağı"]
+  /* stem, acc, dat, loc, abl, gen, poss1, poss3, plural */
+  ["kitap", "kitabı", "kitaba", "kitapta", "kitaptan", "kitabın", "kitabım", "kitabı", "kitaplar"],
+  ["ev", "evi", "eve", "evde", "evden", "evin", "evim", "evi", "evler"],
+  ["araba", "arabayı", "arabaya", "arabada", "arabadan", "arabanın", "arabam", "arabası", "arabalar"],
+  ["çocuk", "çocuğu", "çocuğa", "çocukta", "çocuktan", "çocuğun", "çocuğum", "çocuğu", "çocuklar"],
+  ["şehir", "şehri", "şehre", "şehirde", "şehirden", "şehrin", "şehrim", "şehri", "şehirler"],
+  ["burun", "burnu", "burna", "burunda", "burundan", "burnun", "burnum", "burnu", "burunlar"],
+  ["isim", "ismi", "isme", "isimde", "isimden", "ismin", "ismim", "ismi", "isimler"],
+  ["renk", "rengi", "renge", "renkte", "renkten", "rengin", "rengim", "rengi", "renkler"],
+  ["top", "topu", "topa", "topta", "toptan", "topun", "topum", "topu", "toplar"],
+  ["su", "suyu", "suya", "suda", "sudan", "suyun", "suyum", "suyu", "sular"],
+  ["kalp", "kalbi", "kalbe", "kalpte", "kalpten", "kalbin", "kalbim", "kalbi", "kalpler"],
+  ["saat", "saati", "saate", "saatte", "saatten", "saatin", "saatim", "saati", "saatler"],
+  ["göz", "gözü", "göze", "gözde", "gözden", "gözün", "gözüm", "gözü", "gözler"],
+  ["gece", "geceyi", "geceye", "gecede", "geceden", "gecenin", "gecem", "gecesi", "geceler"],
+  ["kapı", "kapıyı", "kapıya", "kapıda", "kapıdan", "kapının", "kapım", "kapısı", "kapılar"],
+  ["uçak", "uçağı", "uçağa", "uçakta", "uçaktan", "uçağın", "uçağım", "uçağı", "uçaklar"]
 ];
 const VERB_GOLD = [
   /* infinitive, prog.1sg, past.1sg, fut.1sg, aor.1sg, prog.3sg, aor.3sg */
@@ -288,7 +290,7 @@ else {
     if (got !== want) err("morphology", t + " " + what + ': generated "' + got + '", hand-checked form is "' + want + '"');
   };
   NOUN_GOLD.forEach(r => {
-    ["nAcc", "nDat", "nLoc", "nAbl", "nGen", "nP1", "nP3"].forEach((fn, i) => cell(r[0], fn, r[i + 1], fn.slice(1).toLowerCase()));
+    ["nAcc", "nDat", "nLoc", "nAbl", "nGen", "nP1", "nP3", "nPlur"].forEach((fn, i) => cell(r[0], fn, r[i + 1], fn.slice(1).toLowerCase()));
   });
   const vcell = (t, tense, p, neg, want) => {
     const e = find(t);
