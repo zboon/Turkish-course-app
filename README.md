@@ -1,0 +1,55 @@
+# Türkçe · A1–C2
+
+A self-paced Turkish course that runs as one offline HTML file: six CEFR levels,
+ten units each, built around graded reading that climbs from invented dialogue to
+Ottoman prose.
+
+**60 units · 300 exercises · 600 words · 432 graded sentences**
+
+## What's in it
+
+- **Four parts per unit** — Kelimeler (10 words, tap to hear, star to review),
+  Dilbilgisi (one grammar point, table, examples), Okuma (a graded passage — tap
+  a line for English, dotted words carry a gloss), Alıştırma (five exercises:
+  multiple choice, gap-fill, sentence building).
+- **Listening and shadowing** — *Dinle* reads a passage aloud line by line;
+  *Gölge* plays each line then waits the same length again for you to repeat it.
+  Speeds 0.6×–1×, using the device's own Turkish voice.
+- **Spaced review** — starred words return on a widening schedule
+  (1, 2, 4, 8, 16… days) until they stick.
+- **Test ahead** — a 12-question placement test, plus a ten-question exam on
+  every level that marks the whole level complete at 8 correct.
+- **Progress and bookmark** — automatic; the home screen resumes exactly where
+  you stopped. Backup and restore from the About screen.
+
+## Reading ladder
+
+Invented dialogue (A1) → Nasreddin Hoca and folk tales (A2) → Keloğlan, Ömer
+Seyfettin (B1) → idiom, Istanbul sketches, Turkish coffee, formal writing (B2) →
+Yeni Lisan, Dede Korkut, Ziya Gökalp, Sabahattin Ali, Evliya Çelebi, Karagöz
+(C1) → Ottoman petitions, dialects, translation, irony (C2).
+
+Every passage declares its source: **özgün metin** (written for the course),
+**sadeleştirilmiş** (anonymous folklore retold), or **uyarlama** (a public-domain
+work retold in graded Turkish, with author and date). See `CLAUDE.md` for the
+sourcing rules.
+
+## Build
+
+```bash
+./build.sh              # src/ → dist/index.html
+node test/validate.js   # data integrity
+node test/sim.js        # headless render of every screen
+```
+
+No dependencies, no network, no build tooling — `cat` and `node`.
+
+## Deploy
+
+Copy `dist/index.html`, `sw.js` and `manifest.json` to a static host (GitHub
+Pages works). Bump `APP_VERSION` in `src/app.js` and `CACHE` in `sw.js` together
+on every release, then open the app twice so the old service worker is replaced.
+
+Progress lives in `localStorage` on the device it was made on. Moving to a new
+URL or a new phone means exporting the backup text from About and pasting it in
+on the other side.

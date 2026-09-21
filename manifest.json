@@ -1,0 +1,10 @@
+{
+  "name": "Türkçe · A1–C2",
+  "short_name": "Türkçe",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F0EDE4",
+  "theme_color": "#1D3F73",
+  "lang": "en",
+  "description": "A self-paced Turkish course from A1 to C2, built around graded reading, listening and shadowing."
+}
