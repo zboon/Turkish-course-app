@@ -1,5 +1,5 @@
 /* Bump CACHE on every release or phones keep serving the old build. */
-const CACHE = "turkce-v2.00";
+const CACHE = "turkce-v2.10";
 const ASSETS = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", e => {

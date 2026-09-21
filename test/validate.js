@@ -44,12 +44,12 @@ if (!foldSrc) { console.error("validate: cannot find fold() in the build"); proc
 const sandbox = {};
 try {
   vm.createContext(sandbox);
-  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\nthis.D={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,fold:fold};", sandbox, { filename: file });
+  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\nthis.D={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,fold:fold};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
 }
-const { LEVELS, UNITS, PLACEMENT, fold } = sandbox.D;
+const { LEVELS, UNITS, PLACEMENT, CHUNKS, fold } = sandbox.D;
 
 /* ---------- helpers ---------- */
 const str = v => typeof v === "string" && v.trim().length > 0;
@@ -168,6 +168,22 @@ if (!Array.isArray(PLACEMENT) || PLACEMENT.length !== 12) err("PLACEMENT", "expe
    every level needs questions of its own to be reachable. */
 WANT.forEach(lv => { if (!(PLACEMENT || []).some(p => p.lv === lv)) err("PLACEMENT", "no question for " + lv); });
 
+/* ---------- chunk bank (üretim) ---------- */
+if (!Array.isArray(CHUNKS) || CHUNKS.length < 40) err("CHUNKS", "expected a bank of ~50 prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
+else {
+  if (!pairs(CHUNKS)) err("CHUNKS", "must be [Turkish, English] string pairs");
+  else {
+    const tr = CHUNKS.map(c => c[0]);
+    tr.forEach((t, i) => {
+      const w = "CHUNKS[" + i + "]";
+      if (tr.indexOf(t) !== i) err(w, 'repeats "' + t + '"');
+      if (TAGS.test(t) || TAGS.test(CHUNKS[i][1])) warn(w, "carries HTML, which is escaped on screen");
+      /* These are prefabs to be said whole, not sentences to parse. */
+      if (t.split(/\s+/).length > 6) warn(w, '"' + t + '" is ' + t.split(/\s+/).length + " words — long for a prefab");
+    });
+  }
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -180,5 +196,6 @@ if (errs.length) {
   process.exit(1);
 }
 console.log("validate ok · " + UNITS.length + " units · " + words + " words · " + lines +
-  " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions" +
+  " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
+  CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));
