@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity: 60 units, answer keys, order tiles
-node test/sim.js        # headless render of all 316 screens + quiz/voice/SRS paths
+node test/sim.js        # headless render of all 321 screens + quiz/voice/SRS/üretim paths
 ```
 
 Run all three before every commit. `build.sh` already runs the parse check; the
@@ -26,6 +26,7 @@ src/data/levels.js       const LEVELS=[…];  const UNITS=[
 src/data/a1.js … c2.js   unit objects, comma-separated, in display order
 src/data/_close.js       ];
 src/data/placement.js    const PLACEMENT=[…];
+src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
 src/app.js               everything else
 src/shell.foot.html      </script></body></html>
 ```
@@ -99,8 +100,17 @@ gathering and the tradition without reproducing Süleyman Çelebi's lines.
 ```js
 {done:{unitId:{score,of,at,byTest}}, seen:{unitId:{v,g,r,d}},
  place:{u,s}, star:["tr|en"], srs:{"tr|en":{b:box,d:dueDay}},
- tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate}
+ tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
+ prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
+ gap, prompten, pscope}
 ```
+
+Üretim keys are as permanent as unit ids and for the same reason:
+`s:<unitId>#<lineIndex>` for a passage line, `k:<index>` for a chunk.
+Reordering a unit's `lines` silently re-points every schedule built on it,
+so add lines at the end rather than inserting them. `gap`, `prompten` and
+`pscope` are settings, not progress — `wipe()` keeps them, like `theme`
+and `rate`.
 
 **Unit ids are permanent.** Everything above is keyed to them, so renaming
 `b1u3` silently wipes that unit's progress for every existing learner. Add
@@ -121,9 +131,14 @@ Two independent targets:
 
 1. **Published artifact** — `dist/index.html` published through Claude. No
    service worker there; the registration call is wrapped and fails silently.
-2. **GitHub Pages** — push `dist/index.html`, `sw.js`, `manifest.json` to the
-   Pages branch. Bump `APP_VERSION` in `src/app.js` **and** `CACHE` in `sw.js`
-   together on every release, then open the app twice to clear the old worker.
+2. **GitHub Pages** — automatic. `.github/workflows/pages.yml` builds `src/`,
+   runs all three checks and publishes `dist/` on every push to `main`; the
+   Pages source is set to "GitHub Actions", not a branch. `dist/` is
+   generated and git-ignored, so there is nothing to commit and nothing to
+   copy by hand. Still bump `APP_VERSION` in `src/app.js` **and** `CACHE` in
+   `sw.js` together on every release, then open the app twice to clear the
+   old worker — the workflow does not do this for you, and a stale worker is
+   the one bug that makes a shipped change look like it never shipped.
 
 ## House style
 
@@ -136,33 +151,48 @@ Two independent targets:
 - Everything is `innerHTML` + inline `onclick` calling globals — deliberate, it
   survives a full re-render with no framework. `render()` redraws the whole
   screen; anything that must persist across a redraw lives in `S` or a module
-  variable (`VOICE`, `Q`, `RV`, `FC`).
+  variable (`VOICE`, `Q`, `RV`, `FC`, `PR`).
 - Voice runs on the device's own `tr-TR` speech synthesis. `stopPlay()` is
   called at the top of `go()` and `home()` — any new navigation path must too,
-  or audio keeps playing over the next screen.
+  or audio keeps playing over the next screen. `stopPlay()` also clears the
+  Üretim countdown, so a timer started there dies with the screen; anything
+  else that sets a timer belongs in `prodStop()` for the same reason.
 
-## Next task: Üretim (production mode)
+## Üretim (production mode)
 
-The learner's stated gap is speaking, and the thing that worked for them was
-Pimsleur — because it forces a sentence out of the mouth *before* the model is
-heard. Build that, from the course's own 432 passage lines and 600 words:
+Built. The learner's gap is speaking, and what worked for them was Pimsleur —
+because it forces a sentence out of the mouth *before* the model is heard.
+`go('prod')` is the mode, drawn from the course's own 432 passage lines and
+50 prefabs:
 
-1. **Prompt → gap → model.** Show/speak the English, a silent countdown of
-   ~4s (a setting), then speak the Turkish and reveal it. Self-grade
-   Doğru/Yanlış, feeding the same `STEPS` schedule as the word queue.
-2. **Backward buildup** for long sentences: split on clause boundaries and drill
-   from the end forward — `bilmiyorum → ne dediğini bilmiyorum → adamın ne
-   dediğini bilmiyorum`. This is Turkish-specific: the verb lands last, and
-   holding the shape until then is exactly what breaks fluency.
-3. **Chunk bank** — ~50 conversational prefabs (`ne demek istiyorsun`,
-   `bir dakika müsaade`, `ne yapacağımı bilmiyorum`) as their own drillable set.
-4. **Say it three times** — a spaced retell of one unit's `speak:` task on
-   day 1, 3 and 7.
+1. **Prompt → gap → model.** The English shows (and is spoken if `prompten`
+   is on, in the device's English voice — never the `tr-TR` one). A silent
+   countdown of `gap` seconds runs on `#pcount`, then the Turkish is spoken
+   and revealed. Self-graded Doğru/Yanlış onto `STEPS`, the word queue's own
+   ladder: right moves a box out, wrong comes back today.
+2. **Backward buildup.** `clauseSplit()` cuts a sentence into tails that grow
+   leftwards — `bilmiyorum → ne dediğini bilmiyorum → adamın ne dediğini
+   bilmiyorum`. Boundaries are commas, clause-opening words, and the converb
+   and participle endings that close a subordinate clause; the suffix test
+   runs on `fold()`ed text, so `CONVERB` is written in folded spelling.
+   Postpositions (`için`, `sonra`, `gibi`) break *after*, never before, and
+   nothing may open on a clitic (`de`, `da`, `mi`) — both would produce a
+   piece that cannot stand on its own. A sentence marked wrong is offered
+   this way automatically. `sim.js` checks every one of the 432 lines: each
+   piece must be a true tail, each step longer than the last.
+3. **Chunk bank.** `src/data/chunks.js`, 50 conversational prefabs, drilled
+   by the same runner with `k:` keys.
+4. **Say it three times.** A unit's `speak:` task retold on day 1, 3 and 7
+   (`RETELL_NEXT`), started from the Konuşma card.
 
-No microphone: the learner asked for hear-and-shadow only, and self-grading
-keeps it working offline with no permissions.
+New sentences arrive in course order, not shuffled — the mode walks the
+material. Reviews come first, oldest due first, and a sitting is `SESSION`
+items. No microphone, by request: self-grading is what keeps it offline with
+nothing to permit.
 
-Then, in order: the verbatim **Kütüphane** (real public-domain texts with an
-orijinal/sadeleştirilmiş toggle, sourced and checked) and the **Osmanlıca**
+## Next, in order
+
+The verbatim **Kütüphane** (real public-domain texts with an
+orijinal/sadeleştirilmiş toggle, sourced and checked), then the **Osmanlıca**
 module (Arabic-script Turkish — the learner already reads the script fluently,
 so it is orthography and vocabulary, not letters).

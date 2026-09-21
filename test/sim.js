@@ -122,7 +122,7 @@ function drain(limit) {
   return n;
 }
 
-const voice = { spoken: [], said: 0, cancels: 0, pending: [] };
+const voice = { spoken: [], langs: [], said: 0, cancels: 0, pending: [] };
 class SpeechSynthesisUtteranceStub {
   constructor(text) { this.text = text; this.lang = ""; this.rate = 1; this.voice = null; this.onend = null; }
 }
@@ -130,7 +130,7 @@ const speechSynthesisStub = {
   onvoiceschanged: null,
   getVoices() { return [{ lang: "en-GB", name: "Daniel" }, { lang: "tr-TR", name: "Yelda" }]; },
   speak(u) {
-    voice.spoken.push(u.text); voice.said++;
+    voice.spoken.push(u.text); voice.said++; voice.langs.push(u.lang);
     if (u.onend) { const t = setTimeoutStub(() => { voice.pending = voice.pending.filter(x => x !== t); u.onend(); }, 20); voice.pending.push(t); }
   },
   cancel() {
@@ -505,7 +505,186 @@ step("review queue", () => {
   ok(ev("dueList().length") < due, "nothing left the due list after a review");
 });
 
-/* ===================== 8 · about, backup, restore ===================== */
+/* ===================== 8 · üretim · production ===================== */
+/* The point of the mode is the silence: the prompt is English, the gap is
+   empty, and the Turkish only arrives after it. So the things worth
+   proving are that the gap really runs on the clock, that the model is
+   spoken at the end of it, that a navigation away kills the countdown
+   rather than letting it speak over the next screen, and that the
+   self-grade lands on the same STEPS ladder the word queue uses. */
+const phase = () => ev("PR ? PR.phase : null");
+
+/* Walk one item: sit through the gap, then grade it. */
+function produce(good) {
+  const g = ev("prodGap()");
+  ok(phase() === "gap", "üretim did not open on the gap");
+  const before = ev("PR.left");
+  let ticks = 0;
+  while (phase() === "gap" && ticks < 30) { drain(1); ticks++; }
+  ok(before === g, "the gap started at " + before + " for a " + g + "s setting");
+  ok(ticks === g, "the countdown ran " + ticks + " ticks for a " + g + "s gap");
+  ok(phase() === "model", "the model did not arrive after the gap");
+  const it = ev("PR.q[PR.i]");
+  ok(voice.spoken[voice.spoken.length - 1] === it.tr, "the model spoken was not the sentence");
+  ok(voice.langs[voice.langs.length - 1] === "tr-TR", "the model was not spoken as Turkish");
+  ok(lastPaint.includes(esc(it.tr)), "the model was not revealed on screen");
+
+  const key = it.k, day = ev("dayNum()");
+  ev("prodMark(" + (good ? "true" : "false") + ")");
+  const rec = ev("S.prod[" + q(key) + "]");
+  ok(!!rec, "grading stored no schedule for " + key);
+  if (good) ok(rec.b === 1 && rec.d === day + ev("STEPS[1]"), "Doğru scheduled " + JSON.stringify(rec) + ", expected box 1 at +" + ev("STEPS[1]"));
+  else ok(rec.b === 0 && rec.d === day, "Yanlış did not bring the sentence back today");
+
+  /* A sentence you could not produce is offered backwards. */
+  if (phase() === "build") {
+    const parts = ev("PR.build");
+    ok(parts.length > 1, "buildup opened with a single piece");
+    ok(parts[parts.length - 1] === it.tr, "buildup does not end on the whole sentence");
+    for (let i = 0; i < parts.length + 1 && phase() === "build"; i++) ev("prodBuildNext()");
+    ok(phase() !== "build", "buildup did not finish");
+  }
+}
+
+step("üretim home", () => {
+  ev("wipe()");
+  ev("go('prod')");
+  ok(/Üretim/.test(lastPaint), "üretim screen is empty");
+  ok(/Kalıplar/.test(lastPaint), "chunk bank missing from üretim");
+  ok(/Üç kez anlat/.test(lastPaint), "retell section missing from üretim");
+  ev("setGap(3)");
+  ok(ev("prodGap()") === 3 && ev("S.gap") === 3, "gap setting was not kept");
+  ev("setScope('all')");
+  ok(ev("pscope()") === "all", "scope setting was not kept");
+  ok(ev("sentenceBank().length") === ev("UNITS.reduce(function(n,u){return n+u.read.lines.length},0)"),
+    "the all-units bank is not every passage line");
+  ev("setScope('done')");
+  ok(ev("sentenceBank().length") > 0, "an empty course still has to offer something to say");
+});
+
+step("üretim · sentences", () => {
+  ev("wipe()"); ev("setGap(3)"); ev("setScope('all')");
+  ev("startProd('s')");
+  ok(ev("V.view") === "prodrun", "üretim did not start");
+  const n = ev("PR.q.length");
+  ok(n === ev("SESSION"), "a session is " + n + " items, expected " + ev("SESSION"));
+  for (let i = 0; i < n; i++) produce(i % 3 !== 0);     /* miss every third */
+  ok(phase() === "end", "the session did not finish");
+  ok(/kendi değerlendirmen/.test(lastPaint), "no score screen after üretim");
+  ok(ev("Object.keys(S.prod).length") === n, "graded " + n + " but stored " + ev("Object.keys(S.prod).length"));
+
+  /* Due today should now be the missed ones, not the whole bank. */
+  const due = ev("prodDue(sentenceBank()).length"), all = ev("sentenceBank().length");
+  ok(due === all - ev("Object.keys(S.prod).filter(function(k){return S.prod[k].b>0}).length"),
+    "the sentences answered right are still due today");
+});
+
+step("üretim · the English prompt", () => {
+  ev("wipe()"); ev("setGap(3)"); ev("setScope('all')");
+  ok(ev("!S.prompten"), "the English prompt should be silent by default");
+  ev("togglePrompt()");
+  ok(ev("S.prompten") === true, "prompt voice did not turn on");
+  voice.spoken = []; voice.langs = [];
+  ev("startProd('s')");
+  ok(voice.spoken.length === 1, "the English prompt was not spoken");
+  ok(voice.langs[0] === "en-GB", "the English prompt was spoken as " + voice.langs[0] + ", not English");
+  ok(voice.spoken[0] === ev("PR.q[0].en"), "the prompt spoken was not the English");
+  ev("togglePrompt()");
+});
+
+step("üretim · the gap is cancelled by navigation", () => {
+  ev("wipe()"); ev("setGap(4)"); ev("setScope('all')");
+  ev("startProd('s')");
+  ok(phase() === "gap", "no gap running");
+  ok(ev("PR.tid !== null"), "the countdown has no timer");
+  ev("home()");                       /* stopPlay() must take the countdown with it */
+  ok(ev("PR.tid === null"), "home() left the üretim countdown running");
+  voice.spoken = [];
+  drain();
+  ok(voice.spoken.length === 0, "a cancelled countdown still spoke over the next screen");
+  ok(ev("V.view") === "home", "navigation away from üretim failed");
+});
+
+step("üretim · backward buildup", () => {
+  /* The shape CLAUDE.md names: the verb alone, then the clause, then all. */
+  const parts = ev("clauseSplit('Adamın ne dediğini bilmiyorum.')");
+  ok(parts.length === 3, "expected three steps, got " + JSON.stringify(parts));
+  ok(parts[0] === "bilmiyorum.", "buildup does not start on the verb: " + parts[0]);
+  ok(parts[1] === "ne dediğini bilmiyorum.", "middle step wrong: " + parts[1]);
+  ok(parts[2] === "Adamın ne dediğini bilmiyorum.", "buildup does not end whole: " + parts[2]);
+
+  /* It must never lie about the sentence, whatever the shape. */
+  let grew = 0;
+  UNITS.forEach(u => u.read.lines.forEach(ln => {
+    const p = ev("clauseSplit(" + q(ln[0]) + ")");
+    const whole = ev("sayable(" + q(ln[0]) + ")");
+    if (p[p.length - 1] !== whole) fails.push("buildup of " + q(ln[0]).slice(0, 40) + " does not end on the sentence");
+    for (let i = 1; i < p.length; i++) {
+      if (p[i].length <= p[i - 1].length) fails.push("buildup does not grow: " + p[i - 1] + " → " + p[i]);
+      if (!whole.endsWith(p[i - 1])) fails.push("buildup piece is not a tail of the sentence: " + p[i - 1]);
+    }
+    if (p.length > 1) grew++;
+  }));
+  checks += 2;
+  ok(grew > 200, "only " + grew + " of 432 lines split into a buildup — the rule is too shy");
+});
+
+step("üretim · chunks", () => {
+  ev("wipe()"); ev("setGap(3)");
+  ev("startProd('k')");
+  const n = ev("PR.q.length");
+  ok(n === ev("SESSION"), "chunk session is " + n);
+  ok(ev("PR.q[0].k").indexOf("k:") === 0, "chunk keys are not namespaced: " + ev("PR.q[0].k"));
+  for (let i = 0; i < n; i++) produce(true);
+  ok(phase() === "end", "chunk session did not finish");
+  ok(ev("prodDue(chunkBank()).length") === ev("CHUNKS.length") - n, "graded chunks are still due today");
+});
+
+step("üretim · say it three times", () => {
+  ev("wipe()");
+  const u = UNITS[0], day = ev("dayNum()");
+  ev("go('unit'," + q(u.id) + ",'r')");
+  ok(/Üç kez anlat/.test(lastPaint), "the reading screen offers no retell");
+  ev("startRetell(" + q(u.id) + ")");
+  ok(ev("V.view") === "retell", "retell did not open");
+  ok(lastPaint.includes(esc(u.speak)), "retell does not show the speaking task");
+
+  ev("retellDone(" + q(u.id) + ")");
+  ok(ev("S.retell[" + q(u.id) + "].n") === 1, "first telling not counted");
+  ok(ev("S.retell[" + q(u.id) + "].d") === day + 2, "second telling is not two days out (day 3)");
+  ok(ev("retellDue().length") === 0, "a told unit is still due today");
+
+  ev("S.retell[" + q(u.id) + "].d=dayNum()");   /* let day 3 arrive */
+  ev("retellDone(" + q(u.id) + ")");
+  ok(ev("S.retell[" + q(u.id) + "].d") === day + 4, "third telling is not four days on (day 7)");
+  ev("S.retell[" + q(u.id) + "].d=dayNum()");
+  ev("retellDone(" + q(u.id) + ")");
+  ok(ev("S.retell[" + q(u.id) + "].n") === 3, "third telling not counted");
+  ok(/Üç kez anlatıldı/.test(lastPaint), "no completion state after three tellings");
+  ok(ev("retellOpen().length") === 0, "a finished retell is still open");
+  ev("retellReset(" + q(u.id) + ")");
+  ok(ev("S.retell[" + q(u.id) + "].n") === 0, "reset did not clear the retell");
+});
+
+step("üretim · survives backup and wipe", () => {
+  ev("wipe()"); ev("setGap(5)"); ev("setScope('all')");
+  ev("startProd('s')"); produce(true);
+  ev("startRetell('a1u2')"); ev("retellDone('a1u2')");
+  const before = ev("JSON.stringify(S)");
+  ev("go('about')"); ev("exportBox()");
+  const saved = doc.getElementById("iobox").value;
+  ok(saved === before, "the backup does not carry üretim state");
+  ev("wipe()");
+  ok(ev("Object.keys(S.prod).length") === 0 && ev("Object.keys(S.retell).length") === 0, "wipe left üretim state behind");
+  ok(ev("S.gap") === 5, "wipe threw away the gap setting, which is not progress");
+  ev("go('about')");
+  doc.getElementById("iobox").value = saved;
+  ev("importBox()");
+  ok(ev("Object.keys(S.prod).length") === 1, "restore lost the sentence schedule");
+  ok(ev("S.retell['a1u2'].n") === 1, "restore lost the retell");
+});
+
+/* ===================== 9 · about, backup, restore ===================== */
 step("about and backup", () => {
   ev("go('about')");
   ok(/Bu kurs hakkında|Nasıl çalışır/.test(lastPaint), "about screen is empty");
@@ -542,7 +721,7 @@ step("about and backup", () => {
   ok(ev("!!S.done['a1u1']"), "a bad backup wiped good progress");
 });
 
-/* ===================== 9 · storage, theme, streak ===================== */
+/* ===================== 10 · storage, theme, streak ===================== */
 step("storage and chrome", () => {
   ok(store.has("turkce-course-v1"), "nothing was written to localStorage");
   const raw = JSON.parse(store.get("turkce-course-v1"));
