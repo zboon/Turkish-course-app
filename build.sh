@@ -17,6 +17,7 @@ cat \
   src/data/placement.js \
   src/data/chunks.js \
   src/data/lex.js \
+  src/data/pos.js \
   src/app.js \
   src/shell.foot.html \
   > "$OUT"

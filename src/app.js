@@ -271,6 +271,7 @@ function renderHome(){
   h+='<h2 class="sec">Araçlar</h2>'+
    navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
    navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
+   navRow("Sözlük","Every word in the course ("+dictAll().length+"), by type","go('dict')")+
    navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')")+
    navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')");
 
@@ -597,6 +598,84 @@ function renderCards(){
     (FC.show?'<p class="sub" style="margin-top:1rem;font-size:1.05rem">'+esc(p[1])+'</p>':'<p class="tiny" style="margin-top:1rem">tap to reveal</p>')+'</div>';
   h+='<div class="btn-row"><button class="btn ghost" onclick="flip()">Çevir</button><button class="btn" onclick="nextCard()">Sonraki</button></div></div>';
   app().innerHTML=h;
+}
+
+/* ===================== sözlük · the whole word list ===================== */
+/* Every word the course teaches, in one place, filterable. Verbs and
+   multiword entries classify themselves; POS carries the rest. */
+const CATS=[["all","Tümü","all"],["n","İsim","nouns"],["f","Fiil","verbs"],
+            ["s","Sıfat","adjectives"],["z","Zarf","adverbs"],
+            ["e","Edat","particles"],["i","İfade","expressions"]];
+let DICT={q:"",cat:"all",sort:"az"};
+
+function wordClass(t){
+  const s=String(t).trim();
+  if(/(mak|mek)$/.test(s))return "f";     /* verb first: "geç kalmak" is a verb */
+  if(POS[s])return POS[s];
+  return /\s/.test(s)?"i":"n";           /* a phrase unless told otherwise */
+}
+function dictAll(){
+  const seen={}, out=[];
+  UNITS.forEach(u=>u.vocab.forEach(w=>{
+    if(seen[w[0]])return; seen[w[0]]=1;
+    out.push({tr:w[0],en:w[1],lv:u.lv,u:u.id,n:u.n,c:wordClass(w[0])});
+  }));
+  return out;
+}
+function dictRows(){
+  const q=fold(DICT.q);
+  let r=dictAll();
+  if(DICT.cat!=="all")r=r.filter(w=>w.c===DICT.cat);
+  if(q)r=r.filter(w=>fold(w.tr).indexOf(q)>-1||fold(w.en).indexOf(q)>-1);
+  if(DICT.sort==="az")r.sort((x,y)=>x.tr.localeCompare(y.tr,"tr"));
+  else r.sort((x,y)=>x.lv===y.lv?x.n-y.n:LEVELS.findIndex(l=>l.id===x.lv)-LEVELS.findIndex(l=>l.id===y.lv));
+  return r;
+}
+function dictSearch(v){DICT.q=v;render();}
+function dictCat(c){DICT.cat=c;render();}
+function dictSort(){DICT.sort=DICT.sort==="az"?"lv":"az";render();}
+/* Starring from here needs a key, not an index into some unit. */
+function starWord(tr,en){
+  const k=starKey(tr,en), at=S.star.indexOf(k);
+  if(at<0){S.star.push(k);srsAdd(k);} else {S.star.splice(at,1);srsDrop(k);}
+  save();render();
+}
+function renderDict(){
+  const rows=dictRows(), all=dictAll();
+  const count=c=>c==="all"?all.length:all.filter(w=>w.c===c).length;
+  let h=bar("Sözlük","every word in the course",true)+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem .8rem">All '+all.length+' words the sixty units teach. Tap one to hear it, the star to send it to your review queue, or the row to open the unit it comes from.</p>';
+  h+='<input class="inp" id="dq" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" '+
+    'placeholder="ara · search Turkish or English" oninput="dictSearch(this.value)" value="'+esc(DICT.q)+'">';
+  h+='<div class="pillrow" style="margin:.7rem 0 .2rem">';
+  CATS.forEach(function(c){
+    h+='<button class="pill '+(DICT.cat===c[0]?"cob":"")+'" style="border:0" onclick="dictCat(\''+c[0]+'\')">'+
+     c[1]+' '+count(c[0])+'</button>';
+  });
+  h+='</div>';
+  h+='<div class="row" style="margin:.5rem .2rem"><span class="tiny grow">'+rows.length+' kelime'+
+   (DICT.cat==="all"?"":" · "+CATS.find(c=>c[0]===DICT.cat)[2])+'</span>'+
+   '<button class="sbtn" onclick="dictSort()">'+(DICT.sort==="az"?"A→Z":"seviyeye göre")+'</button></div>';
+  if(!rows.length)h+='<div class="empty">Bu aramaya uygun kelime yok.<br>No word matches that search.</div>';
+  else{
+    h+='<div class="card" style="padding:.3rem 1rem">';
+    rows.forEach(function(w){
+      const on=S.star.indexOf(starKey(w.tr,w.en))>-1;
+      h+='<div class="vrow">'+
+        '<button class="sbtn" onclick="sayWord(\''+w.tr.replace(/'/g,"\\'")+'\')" aria-label="Listen">'+IC.spk+'</button>'+
+        '<button class="grow" style="background:none;border:0;text-align:left;padding:0" onclick="go(\'unit\',\''+w.u+'\',\'v\')">'+
+        '<span class="vtr">'+esc(w.tr)+'</span><span class="ven" style="display:block">'+esc(w.en)+'</span></button>'+
+        '<span class="pill" style="flex:0 0 auto">'+w.lv+'</span>'+
+        '<button class="star '+(on?"on":"")+'" onclick="starWord(\''+w.tr.replace(/'/g,"\\'")+'\',\''+w.en.replace(/'/g,"\\'")+'\')" aria-label="Save word">'+IC.star+'</button>'+
+        '</div>';
+    });
+    h+='</div>';
+  }
+  h+='<p class="foot">Classified by ending where Turkish allows it — anything in -mak or -mek is a verb — and by hand otherwise. A word can belong to more than one class; the list picks the one the course uses it in.</p></div>';
+  app().innerHTML=h;
+  /* Typing re-renders the screen, so put the cursor back where it was. */
+  const box=document.getElementById("dq");
+  if(box&&DICT.q){try{box.focus();box.setSelectionRange(DICT.q.length,DICT.q.length);}catch(e){}}
 }
 
 /* ===================== biçimbilim · morphology ===================== */
@@ -1262,6 +1341,7 @@ function render(){
   else if(v==="prod")renderProd();
   else if(v==="prodrun")renderProdRun();
   else if(v==="retell")renderRetell();
+  else if(v==="dict")renderDict();
   else renderHome();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){

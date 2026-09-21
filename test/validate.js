@@ -52,13 +52,13 @@ const sandbox = {};
 try {
   vm.createContext(sandbox);
   vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine +
-    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,fold:fold," +
+    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,fold:fold," +
     "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
 }
-const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, fold } = sandbox.OUT;
+const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, POS, fold } = sandbox.OUT;
 const M = sandbox.OUT;
 
 /* ---------- helpers ---------- */
@@ -177,6 +177,26 @@ if (!Array.isArray(PLACEMENT) || PLACEMENT.length !== 12) err("PLACEMENT", "expe
 /* renderScore() walks LEVELS looking for a level answered perfectly, so
    every level needs questions of its own to be reachable. */
 WANT.forEach(lv => { if (!(PLACEMENT || []).some(p => p.lv === lv)) err("PLACEMENT", "no question for " + lv); });
+
+/* ---------- word classes ---------- */
+/* POS only needs to list what cannot be derived, so a key that is not a
+   word the course teaches is a typo — and a typo here silently files a
+   word under the wrong heading for ever. */
+const taught = new Map();
+UNITS.forEach(u => u.vocab.forEach(w => { if (!taught.has(w[0])) taught.set(w[0], w[1]); }));
+const CLASSES = ["n", "s", "z", "e", "i"];
+Object.keys(POS || {}).forEach(k => {
+  if (!taught.has(k)) err("POS", '"' + k + '" is classified but the course never teaches it');
+  if (!CLASSES.includes(POS[k])) err("POS", '"' + k + '" has unknown class ' + JSON.stringify(POS[k]));
+  if (/(mak|mek)$/.test(k.trim())) err("POS", '"' + k + '" is an infinitive — verbs classify themselves');
+  /* Multiword entries SHOULD be listed: "hafta sonu" is a noun and
+     "ara sıra" an adverb, and the space says neither. */
+});
+const wordClass = t => /(mak|mek)$/.test(t.trim()) ? "f" : (POS[t] || (/\s/.test(t.trim()) ? "i" : "n"));
+const classCount = {};
+taught.forEach((en, t) => { const c = wordClass(t); classCount[c] = (classCount[c] || 0) + 1; });
+if ((classCount.f || 0) < 80) err("POS", "only " + classCount.f + " verbs found — the -mak/-mek test is not working");
+if ((classCount.n || 0) < 100) err("POS", "only " + classCount.n + " nouns — the default is not being applied");
 
 /* ---------- chunk bank (üretim) ---------- */
 if (!Array.isArray(CHUNKS) || CHUNKS.length < 40) err("CHUNKS", "expected a bank of ~50 prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
@@ -334,5 +354,6 @@ if (errs.length) {
 console.log("validate ok · " + UNITS.length + " units · " + words + " words · " + lines +
   " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
-  LEX.length + " drill stems · " + mChecked + " hand-checked forms" +
+  LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
+  taught.size + " distinct words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

@@ -758,6 +758,62 @@ step("the generator does not produce nonsense", () => {
   ok(bad.length === 0, "transformations produced " + bad.length + " bad prompts");
 });
 
+step("sözlük · the whole word list", () => {
+  ev("wipe()");
+  ev("go('dict')");
+  ok(/Sözlük/.test(lastPaint), "the word list did not open");
+  const all = ev("dictAll().length");
+  ok(all > 500, "the word list holds only " + all + " words");
+  ok(ev("dictRows().length") === all, "the unfiltered list is not everything");
+  ok(ev("dictAll().every(function(w){return w.tr&&w.en&&w.lv&&w.u&&w.c})"), "a word row is missing a field");
+
+  /* Every word lands in exactly one class, and the classes add up. */
+  const classes = ev("dictAll().map(function(w){return w.c})");
+  const tally = {};
+  classes.forEach(c => tally[c] = (tally[c] || 0) + 1);
+  ok(Object.keys(tally).every(c => ["n", "f", "s", "z", "e", "i"].includes(c)), "unknown word class: " + Object.keys(tally));
+  ok(Object.values(tally).reduce((a, b) => a + b, 0) === all, "the classes do not add up to the whole list");
+  ok(tally.f > 80 && tally.n > 100, "class split looks wrong: " + JSON.stringify(tally));
+  /* Infinitives must never be filed as nouns. */
+  ok(ev("dictAll().filter(function(w){return /(mak|mek)$/.test(w.tr)&&w.c!=='f'}).length") === 0,
+    "an infinitive was not classified as a verb");
+
+  /* Filtering */
+  ev("dictCat('f')");
+  ok(ev("dictRows().every(function(w){return w.c==='f'})"), "the verb filter let other classes through");
+  ok(ev("dictRows().length") === tally.f, "the verb filter count does not match");
+  ev("dictCat('all')");
+
+  /* Search, including a diacritic-free spelling */
+  ev("dictSearch('kitap')");
+  ok(ev("dictRows().length") >= 1 && ev("dictRows()[0].tr").indexOf("kitap") > -1, "searching for kitap found nothing");
+  ev("dictSearch('book')");
+  ok(ev("dictRows().length") >= 1, "searching the English side found nothing");
+  ev("dictSearch('ogrenci')");
+  ok(ev("dictRows().length") >= 1, "search is not diacritic-folded — a learner without a Turkish keyboard cannot use it");
+  ev("dictSearch('zzzznothing')");
+  ok(ev("dictRows().length") === 0 && /No word matches/.test(lastPaint), "a search with no hits has no empty state");
+  ev("dictSearch('')");
+
+  /* Sorting */
+  ev("dictSort()");
+  ok(ev("DICT.sort") === "lv", "sort did not switch to level order");
+  ok(ev("dictRows()[0].lv") === "A1", "level order does not start at A1");
+  ev("dictSort()");
+  ok(ev("dictRows()[0].tr").localeCompare(ev("dictRows()[1].tr"), "tr") <= 0, "alphabetical order is not Turkish-collated");
+
+  /* Starring from the list keeps star and srs in step, like everywhere else */
+  const w = ev("dictRows()[0]");
+  ev("starWord(" + q(w.tr) + "," + q(w.en) + ")");
+  ok(ev("S.star.length") === 1 && ev("Object.keys(S.srs).length") === 1, "starring from the word list did not schedule it");
+  ev("starWord(" + q(w.tr) + "," + q(w.en) + ")");
+  ok(ev("S.star.length") === 0 && ev("Object.keys(S.srs).length") === 0, "unstarring from the word list left an orphan");
+
+  /* A row opens the unit it came from */
+  ev("go('unit'," + q(w.u) + ",'v')");
+  ok(ev("V.view") === "unit" && ev("V.u") === w.u, "the word does not lead back to its unit");
+});
+
 /* ===================== 9 · about, backup, restore ===================== */
 step("about and backup", () => {
   ev("go('about')");

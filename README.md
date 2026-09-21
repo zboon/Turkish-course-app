@@ -24,6 +24,9 @@ Ottoman prose.
   vetted lexicon, so the sentence cannot be recalled, only built, and
   *Dönüştürme*, which asks for one change to a sentence you are shown:
   past, negative, question, person.
+- **Sözlük** — every word in the course in one list, by class (nouns,
+  verbs, adjectives, adverbs, particles, expressions), searchable in
+  either language, each one speakable and starrable.
 - **Spaced review** — starred words and produced sentences return on a
   widening schedule (1, 2, 4, 8, 16… days) until they stick.
 - **Test ahead** — a 12-question placement test, plus a ten-question exam on

@@ -27,6 +27,8 @@ src/data/a1.js … c2.js   unit objects, comma-separated, in display order
 src/data/_close.js       ];
 src/data/placement.js    const PLACEMENT=[…];
 src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
+src/data/lex.js          const LEX=[…];      // tagged drill stems
+src/data/pos.js          const POS={…};      // word classes for the list
 src/app.js               everything else
 src/shell.foot.html      </script></body></html>
 ```
@@ -221,6 +223,21 @@ cannot catch: `e` (English forms — no more derivable than the Turkish),
 `obj`/`dat`/`loc`/`n` (collocations, or the generator writes *"I am
 drinking the school"*), and `needsObj`/`stative` (English cannot say
 *"Did we give?"* or *"I am liking"*).
+
+## Sözlük (the word list)
+
+`go('dict')` shows all 576 distinct words the units teach, filterable by
+class, searchable on either language (diacritic-folded, like the drills),
+sorted A→Z in Turkish collation or by level. A row hears the word, stars
+it into the review queue, or opens the unit it came from.
+
+Classification: anything ending `-mak`/`-mek` is a verb, `src/data/pos.js`
+carries the rest, and what is left defaults to noun for a single word and
+expression for a multiword entry. Multiword entries need listing more than
+single ones — `hafta sonu` is a noun, `burnu büyük` an adjective and
+`ara sıra` an adverb, and the space says none of that. `validate.js` fails
+on a POS key the course does not teach, so a typo cannot quietly file a
+word under the wrong heading for ever.
 
 ## Next, in order
 
