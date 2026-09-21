@@ -372,6 +372,10 @@ UNITS.forEach(u => step("quiz " + u.id, () => {
   ok(ev("S.done[" + q(u.id) + "].score") === u.drill.length, u.id + " stored the wrong score");
 }));
 
+/* Their sim asserted this and it is worth keeping: the per-unit ticks
+   must add up to a finished course. */
+ok(ev("allPct()") === 100, "every unit quiz passed but overall progress is " + ev("allPct()") + "%");
+
 step("failing a quiz", () => {
   ev("wipe()");
   const u = UNITS[0];

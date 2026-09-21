@@ -1,2 +1,4 @@
-dist/sw.js
-dist/manifest.json
+dist/
+node_modules/
+*.zip
+.DS_Store

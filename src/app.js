@@ -661,4 +661,3 @@ if(S.rate)VOICE.rate=S.rate;
 if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
 touchDay();
 render();
-
