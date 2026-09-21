@@ -19,9 +19,11 @@ runs the parse check.
 hashes every screen and every generated form, so a refactor that preserves
 behaviour passes untouched and one that does not names the screen it broke. A
 deliberate change fails it too — read the diff, then `node test/snap.js --write`.
-`test/dom.js` holds the DOM stub, fake clock and voice stub both tests run on. They exist because the data files are fragments of
-one array literal — a stray comma in `src/data/b2.js` takes down the entire app,
-and the browser shows a blank page with the error only in the console.
+`test/dom.js` holds the DOM stub, fake clock and voice stub both tests run on.
+
+They exist because the data files are fragments of one array literal — a stray
+comma in `src/data/b2.js` takes down the entire app, and the browser shows a
+blank page with the error only in the console.
 
 ## How the build works
 
@@ -152,10 +154,10 @@ Two independent targets:
 1. **Published artifact** — `dist/index.html` published through Claude. No
    service worker there; the registration call is wrapped and fails silently.
 2. **GitHub Pages** — automatic. `.github/workflows/pages.yml` builds `src/`,
-   runs all three checks and publishes `dist/` on every push to `main`; the
+   runs all four checks and publishes `dist/` on every push to `main`; the
    Pages source is set to "GitHub Actions", not a branch. `dist/` is
    generated and git-ignored, so there is nothing to commit and nothing to
-   copy by hand. Still bump `APP_VERSION` in `src/app.js` **and** `CACHE` in
+   copy by hand. Still bump `APP_VERSION` in `src/app.core.js` **and** `CACHE` in
    `sw.js` together on every release, then open the app twice to clear the
    old worker — the workflow does not do this for you, and a stale worker is
    the one bug that makes a shipped change look like it never shipped.
@@ -214,7 +216,8 @@ nothing to permit.
 
 Built. The course's own sentences can be memorised; these cannot, because
 they are assembled at the moment they are shown. `src/data/lex.js` holds
-the vetted drill stems and `LEX` drives a morphology engine in `app.js`.
+the vetted drill stems and `LEX` drives the morphology engine in
+`src/app.lang.js`.
 
 - **Frames** — `FRAMES` renders a spec `{f, v, n, a, p, t, neg}` into both
   languages. A spec is who, which verb, which tense, which polarity; the
@@ -229,7 +232,7 @@ the vetted drill stems and `LEX` drives a morphology engine in `app.js`.
 
 The morphology engine derives what is derivable and the lexicon lists
 what is not — see the flags at the top of `lex.js`. `validate.js` holds
-250 hand-checked forms and will not let the engine disagree with them,
+266 hand-checked forms and will not let the engine disagree with them,
 checks that every collocation names a noun that exists, and fails when a
 word is added without the flags its forms need. `sim.js` sweeps 600
 generated prompts for empty output, leaked `undefined`, double spaces,
