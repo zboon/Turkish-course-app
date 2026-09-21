@@ -1,0 +1,64 @@
+# Build the single file, check it, and publish dist/ to GitHub Pages.
+#
+# Pages can only serve a branch root or /docs, and index.html lives in
+# dist/ — so the site is published as an artifact from here rather than by
+# moving the build output into the repo layout.
+#
+# Set Settings → Pages → Source to "GitHub Actions" once; after that every
+# push to main republishes.
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let a newer commit win.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # build.sh runs test/parse.js itself, so a stray comma fails here.
+      - name: Build
+        run: ./build.sh
+
+      - name: Data integrity
+        run: node test/validate.js
+
+      - name: Render every screen
+        run: node test/sim.js
+
+      # dist/index.html is committed and deployed, so it must be exactly
+      # what src/ produces — this is what catches a hand-edited dist/.
+      - name: dist/ matches src/
+        run: git diff --exit-code -- dist/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
