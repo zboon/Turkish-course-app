@@ -1,5 +1,5 @@
 /* ===================== app ===================== */
-const APP_VERSION="v2.10";
+const APP_VERSION="v2.20";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -726,6 +726,151 @@ const TENSES=[
 ];
 function conj(e,tense,p,neg){const t=TENSES.find(x=>x.k===tense);return t?t.f(e,p,neg):"";}
 
+/* ===================== kurma · generative drills ===================== */
+/* A drill is a spec — who, which verb, which tense, which frame — that
+   renders into both languages. Transformations are then the same spec
+   with one field changed, which is why "make it past" can always show a
+   correct answer instead of an approximation. */
+const PRON=[["I","am","my"],["you","are","your"],["he","is","his"],["we","are","our"],["you (plural)","are","your"],["they","are","their"]];
+const NOFRILL={ev:["home","at home","from home"],okul:["to school","at school","from school"]};
+
+function the(e){return "the "+e.en.split(",")[0].trim();}
+function aN(e){const w=e.en.split(",")[0].trim();return ("aeiou".indexOf(w[0])>-1?"an ":"a ")+w;}
+function place(e,which){const p=NOFRILL[e.t];if(p)return p[which];
+  const at=e.lp||"at";
+  return [which===0?"to ":which===1?at+" ":"from "][0]+the(e);}
+
+/* English verb, by tense and polarity. */
+function engV(e,tense,p,neg){
+  const [base,ger,past,s3]=e.e, s=PRON[p][0], be=PRON[p][1];
+  /* Turkish says seviyorum; English says "I like", not "I am liking". */
+  if(tense==="prog"&&e.stative)return s+(neg?(p===2?" does not ":" do not ")+base:" "+(p===2?s3:base));
+  if(tense==="prog")return s+" "+be+(neg?" not ":" ")+ger;
+  if(tense==="past")return s+(neg?" did not "+base:" "+past);
+  if(tense==="fut")return s+" will"+(neg?" not ":" ")+base;
+  if(neg)return s+(p===2?" does not ":" do not ")+base;
+  return s+" "+(p===2?s3:base);
+}
+/* The question particle is a separate word and takes the person on
+   itself — geliyor muyum — except in the past, where the verb keeps it:
+   geldin mi. */
+function qPart(w,p){
+  const m="m"+I(w);
+  if(p===0)return m+"y"+I(m)+"m";
+  if(p===1)return m+"s"+I(m)+"n";
+  if(p===3)return m+"y"+I(m)+"z";
+  if(p===4)return m+"s"+I(m)+"n"+I(m)+"z";
+  return m;
+}
+function askTR(e,tense,p,neg){
+  if(tense==="past"){const f=conj(e,tense,p,neg);return f+" m"+I(f)+"?";}
+  if(p===5){const f=conj(e,tense,5,neg);return f+" m"+I(f)+"?";}
+  const base=conj(e,tense,2,neg);
+  return base+" "+qPart(base,p)+"?";
+}
+function askEN(e,tense,p,neg){
+  const [base,ger,past]=e.e, s=PRON[p][0], be=PRON[p][1];
+  if(tense==="prog"&&e.stative)return (p===2?"Does ":"Do ")+s+(neg?" not ":" ")+base+"?";
+  if(tense==="prog")return cap(be)+" "+s+(neg?" not ":" ")+ger+"?";
+  if(tense==="past")return (neg?"Did "+s+" not ":"Did "+s+" ")+base+"?";
+  if(tense==="fut")return "Will "+s+(neg?" not ":" ")+base+"?";
+  return (p===2?"Does ":"Do ")+s+(neg?" not ":" ")+base+"?";
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}            /* English */
+/* Turkish capitalises i as İ and ı as I. Getting this wrong is the most
+   visible possible mistake, so it has its own function. */
+function capTR(s){const c=s.charAt(0);
+  return (c==="i"?"İ":c==="ı"?"I":c.toUpperCase())+s.slice(1);}
+
+/* --- the frames ------------------------------------------------------ */
+/* Each returns {en, tr}. The spec carries v (verb), n (noun), a
+   (adjective), p (person), t (tense), neg, ask. */
+const FRAMES={
+ bare:{need:[],  lab:"fiil · verb alone",
+   en:s=>cap(engV(s.v,s.t,s.p,s.neg))+".",
+   tr:s=>capTR(conj(s.v,s.t,s.p,s.neg))+"."},
+ obj:{need:["obj"], lab:"nesne · object",
+   en:s=>cap(engV(s.v,s.t,s.p,s.neg))+" "+the(s.n)+".",
+   tr:s=>capTR(nAcc(s.n))+" "+conj(s.v,s.t,s.p,s.neg)+"."},
+ dat:{need:["dat"], lab:"yönelme · to",
+   en:s=>{const pr=s.v.prep;
+     const tail=pr==="to"?place(s.n,0):pr?pr+" "+the(s.n):the(s.n);
+     return cap(engV(s.v,s.t,s.p,s.neg))+" "+tail+".";},
+   tr:s=>capTR(nDat(s.n))+" "+conj(s.v,s.t,s.p,s.neg)+"."},
+ loc:{need:["loc"], lab:"bulunma · at",
+   en:s=>cap(engV(s.v,s.t,s.p,s.neg))+" "+place(s.n,1)+".",
+   tr:s=>capTR(nLoc(s.n))+" "+conj(s.v,s.t,s.p,s.neg)+"."},
+ adj:{need:["adj"], lab:"sıfat · description",
+   en:s=>cap(the(s.n))+" is"+(s.neg?" not ":" ")+s.a.en.split(",")[0].trim()+".",
+   tr:s=>capTR(s.n.t)+" "+s.a.t+(s.neg?" değil":"")+"."},
+ gen:{need:["obj"], lab:"tamlama · possessive",
+   en:s=>cap(the(s.owner))+"'s "+s.n.en.split(",")[0].trim()+".",
+   tr:s=>capTR(nGen(s.owner))+" "+nP3(s.n)+"."},
+ ask:{need:[], lab:"soru · question",
+   en:s=>askEN(s.v,s.t,s.p,s.neg),
+   tr:s=>capTR(askTR(s.v,s.t,s.p,s.neg))}
+};
+function specText(s){const f=FRAMES[s.f];return {en:f.en(s),tr:f.tr(s),lab:f.lab};}
+
+/* --- building a spec -------------------------------------------------- */
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function lexOf(p){return LEX.filter(e=>e.p===p);}
+function byName(t){return LEX.find(e=>e.t===t);}
+function drillable(){return lexOf("v").filter(e=>!e.aux&&e.e);}
+/* Some verbs cannot stand without an object — "Did we give?" is not a
+   prompt anyone can answer. */
+function standalone(){return drillable().filter(e=>!e.needsObj);}
+
+function makeSpec(kind){
+  const t=pick(["prog","prog","past","fut","aor"]);     /* present carries the load */
+  const p=Math.floor(Math.random()*6);
+  const neg=Math.random()<0.3;
+  if(kind==="adj"){
+    const a=pick(lexOf("a")), n=byName(pick(a.n));
+    return {f:"adj",a:a,n:n,p:2,t:t,neg:neg};
+  }
+  if(kind==="gen"){
+    const owner=byName(pick(OWNERS)), n=byName(pick(OWNED));
+    return {f:"gen",owner:owner,n:n,p:2,t:t,neg:false};
+  }
+  let f=kind;
+  const pool=f==="obj"?drillable().filter(e=>e.obj)
+          :f==="dat"?drillable().filter(e=>e.dat)
+          :f==="loc"?drillable().filter(e=>e.loc)
+          :standalone();
+  const v=pick(pool);
+  const n=f==="obj"?byName(pick(v.obj)):f==="dat"?byName(pick(v.dat)):f==="loc"?byName(pick(v.loc)):null;
+  return {f:f,v:v,n:n,p:p,t:t,neg:neg};
+}
+/* Only a person owns things, and only some things are owned. */
+const OWNERS=["çocuk","öğretmen","öğrenci","anne","baba","arkadaş"];
+const OWNED=["kitap","araba","ev","telefon","kalem","isim","para","köpek","kedi"];
+const KINDS=["bare","obj","dat","loc","adj","gen","ask"];
+
+/* --- transformations --------------------------------------------------- */
+/* The given sentence and the target are the same spec, one field apart. */
+const MOVES=[
+ {k:"neg",  tr:"Olumsuz yap",   en:"make it negative", ok:s=>!s.neg&&s.f!=="gen", go:s=>Object.assign({},s,{neg:true})},
+ {k:"pos",  tr:"Olumlu yap",    en:"make it positive", ok:s=>s.neg,               go:s=>Object.assign({},s,{neg:false})},
+ {k:"past", tr:"Geçmişe çevir", en:"put it in the past", ok:s=>s.t!=="past"&&s.f!=="adj"&&s.f!=="gen", go:s=>Object.assign({},s,{t:"past"})},
+ {k:"fut",  tr:"Geleceğe çevir",en:"put it in the future", ok:s=>s.t!=="fut"&&s.f!=="adj"&&s.f!=="gen", go:s=>Object.assign({},s,{t:"fut"})},
+ {k:"ask",  tr:"Soru yap",      en:"turn it into a question", ok:s=>s.f!=="ask"&&s.f!=="adj"&&s.f!=="gen"&&!!s.v, go:s=>Object.assign({},s,{f:"ask"})},
+ {k:"biz",  tr:"“biz” yap",     en:"change it to “we”", ok:s=>s.p!==3&&s.f!=="adj"&&s.f!=="gen", go:s=>Object.assign({},s,{p:3})},
+ {k:"o",    tr:"“o” yap",       en:"change it to “he”", ok:s=>s.p!==2&&s.f!=="adj"&&s.f!=="gen", go:s=>Object.assign({},s,{p:2})}
+];
+function makeMove(){
+  for(let i=0;i<40;i++){
+    const s=makeSpec(pick(["bare","obj","dat","loc"]));
+    const can=MOVES.filter(m=>m.ok(s));
+    if(!can.length)continue;
+    const m=pick(can), to=m.go(s);
+    const from=specText(s), target=specText(to);
+    if(from.tr===target.tr)continue;
+    return {from:from,to:target,move:m};
+  }
+  return null;
+}
+
 /* ===================== üretim · production ===================== */
 /* Pimsleur's one move: the sentence has to leave your mouth before the
    model is heard. English prompt, a silent gap, then the Turkish and the
@@ -823,11 +968,33 @@ function clauseSplit(t){
   return out;
 }
 
+/* Generated drills are scheduled by PATTERN, not by sentence: the
+   sentences are endless, but "the future negative" is a thing you can be
+   weak at, and that is what should come back. */
+function genBank(){
+  const out=[];
+  for(let i=0;i<SESSION;i++){
+    const s=makeSpec(pick(KINDS)), r=specText(s);
+    out.push({k:"g:"+s.f+":"+s.t,tr:r.tr,en:r.en,lv:"Kurma",from:r.lab});
+  }
+  return out;
+}
+function moveBank(){
+  const out=[];
+  for(let i=0;i<SESSION*3&&out.length<SESSION;i++){
+    const m=makeMove();
+    if(!m)continue;
+    out.push({k:"t:"+m.move.k,tr:m.to.tr,en:m.to.en,lv:"Dönüştürme",from:m.to.lab,
+              given:m.from.tr,instr:m.move.tr+" · "+m.move.en});
+  }
+  return out;
+}
+
 /* --- the run --------------------------------------------------------- */
 function prodStop(){if(PR&&PR.tid){clearTimeout(PR.tid);PR.tid=null;}}
 function startProd(mode){
   stopPlay();
-  const q=prodQueue(mode==="k"?chunkBank():sentenceBank());
+  const q=mode==="g"?genBank():mode==="t"?moveBank():prodQueue(mode==="k"?chunkBank():sentenceBank());
   if(!q.length){V={view:"prod"};render();return;}
   PR={mode:mode,q:q,i:0,phase:"gap",left:prodGap(),tid:null,right:0,build:null,bi:0};
   V={view:"prodrun"};window.scrollTo(0,0);
@@ -922,6 +1089,11 @@ function renderProd(){
   h+='<div class="card"><p class="lead">Kalıplar</p><p class="sub">'+CHUNKS.length+' conversational prefabs — the ready-made pieces a speaker reaches for before composing anything. '+kd+' due today.</p>'+
    '<button class="btn" onclick="startProd(\'k\')">Başla</button></div>';
 
+  h+='<div class="card"><p class="lead">Kurma · build it</p><p class="sub">Sentences assembled on the spot from '+LEX.length+' words — you will not have seen them before, so they cannot be recalled, only built.</p>'+
+   '<button class="btn" onclick="startProd(\'g\')">Başla</button></div>';
+  h+='<div class="card"><p class="lead">Dönüştürme · change it</p><p class="sub">A sentence arrives and one thing about it has to change: negative, past, future, question, person.</p>'+
+   '<button class="btn" onclick="startProd(\'t\')">Başla</button></div>';
+
   h+='<h2 class="sec">Üç kez anlat</h2><div class="card">';
   h+='<p class="sub">A unit\'s speaking task, told from memory three times: today, in two days, and in a week. Start one from any unit\'s Konuşma card.</p>';
   if(open.length){
@@ -955,11 +1127,13 @@ function renderProd(){
 function renderProdRun(){
   if(!PR){renderProd();return;}
   if(PR.phase==="end"){
-    const left=prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length;
+    const banked=PR.mode==="s"||PR.mode==="k";
+    const left=banked?prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length:0;
     app().innerHTML=bar("Üretim","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(PR.right*2>=PR.q.length?"pass":"fail")+'">'+PR.right+'/'+PR.q.length+'</div>'+
       '<p class="sub">kendi değerlendirmen · your own marking</p></div>'+
-      '<div class="card"><p class="sub">'+left+' still waiting in this set. The ones you missed come back today.</p>'+
+      '<div class="card"><p class="sub">'+(banked?left+' still waiting in this set. The ones you missed come back today.'
+        :'These are built fresh every time, so the set never runs out. What comes back is the pattern you missed.')+'</p>'+
       '<button class="btn" onclick="startProd(\''+PR.mode+'\')">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'prod\')">Üretim</button></div></div>';
     return;
@@ -969,7 +1143,10 @@ function renderProdRun(){
   h+='<div class="prog">'+PR.q.map(function(_,i){return '<i class="'+(i<PR.i?"ok":"")+'"></i>';}).join('')+'</div>';
   h+='<p class="qn">'+(PR.phase==="build"?"Sondan başa · backward buildup":"Söyle · say it")+'</p>';
   h+='<div class="card" style="text-align:center;padding:1.8rem 1rem">';
-  h+='<p class="sub" style="font-size:1.05rem;margin:0">'+esc(it.en)+'</p>';
+  if(it.given){
+    h+='<p style="font-family:\'Crimson Pro\',serif;font-size:1.35rem;margin:0 0 .5rem">'+esc(it.given)+'</p>'+
+     '<p class="pill cob" style="display:inline-block">'+esc(it.instr)+'</p>';
+  }else h+='<p class="sub" style="font-size:1.05rem;margin:0">'+esc(it.en)+'</p>';
   if(PR.phase==="gap"){
     h+='<p class="mark" id="pcount" style="font-size:3rem;margin:.8rem 0 .1rem;color:var(--turk)">'+PR.left+'</p>'+
      '<p class="tiny">Şimdi yüksek sesle söyle · say it out loud now</p>';

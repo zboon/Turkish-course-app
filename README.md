@@ -20,6 +20,10 @@ Ottoman prose.
   model. Self-graded, so it needs no microphone. Long sentences can be built
   backwards from the verb, there is a bank of fifty conversational prefabs,
   and a unit's speaking task comes back on day 1, 3 and 7.
+- **Kurma · sentence building** — drills assembled on the spot from a
+  vetted lexicon, so the sentence cannot be recalled, only built, and
+  *Dönüştürme*, which asks for one change to a sentence you are shown:
+  past, negative, question, person.
 - **Spaced review** — starred words and produced sentences return on a
   widening schedule (1, 2, 4, 8, 16… days) until they stick.
 - **Test ahead** — a 12-question placement test, plus a ten-question exam on

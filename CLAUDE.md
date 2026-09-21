@@ -190,6 +190,38 @@ material. Reviews come first, oldest due first, and a sitting is `SESSION`
 items. No microphone, by request: self-grading is what keeps it offline with
 nothing to permit.
 
+## Kurma ve Dönüştürme (generative drills)
+
+Built. The course's own sentences can be memorised; these cannot, because
+they are assembled at the moment they are shown. `src/data/lex.js` holds
+the vetted drill stems and `LEX` drives a morphology engine in `app.js`.
+
+- **Frames** — `FRAMES` renders a spec `{f, v, n, a, p, t, neg}` into both
+  languages. A spec is who, which verb, which tense, which polarity; the
+  frame decides the shape (bare verb, object, dative, locative, adjective,
+  genitive compound, question).
+- **Transformations** — `MOVES` takes a spec, changes one field and
+  re-renders, so "put it in the past" always has a correct answer rather
+  than an approximation.
+- **Scheduling by pattern, not sentence.** The sentences are endless, so
+  `S.prod` keys them `g:<frame>:<tense>` and `t:<move>`: what comes back
+  is the pattern you were weak at.
+
+The morphology engine derives what is derivable and the lexicon lists
+what is not — see the flags at the top of `lex.js`. `validate.js` holds
+250 hand-checked forms and will not let the engine disagree with them,
+checks that every collocation names a noun that exists, and fails when a
+word is added without the flags its forms need. `sim.js` sweeps 600
+generated prompts for empty output, leaked `undefined`, double spaces,
+English that Turkish grammar does not license (*"I am liking"*), and the
+Turkish capital İ.
+
+Three things the lexicon must carry or the drills go wrong in ways tests
+cannot catch: `e` (English forms — no more derivable than the Turkish),
+`obj`/`dat`/`loc`/`n` (collocations, or the generator writes *"I am
+drinking the school"*), and `needsObj`/`stative` (English cannot say
+*"Did we give?"* or *"I am liking"*).
+
 ## Next, in order
 
 The verbatim **Kütüphane** (real public-domain texts with an

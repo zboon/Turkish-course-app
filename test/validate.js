@@ -213,6 +213,7 @@ const NOUN_GOLD = [
   ["kalp", "kalbi", "kalbe", "kalpte", "kalpten", "kalbin", "kalbim", "kalbi"],
   ["saat", "saati", "saate", "saatte", "saatten", "saatin", "saatim", "saati"],
   ["göz", "gözü", "göze", "gözde", "gözden", "gözün", "gözüm", "gözü"],
+  ["gece", "geceyi", "geceye", "gecede", "geceden", "gecenin", "gecem", "gecesi"],
   ["kapı", "kapıyı", "kapıya", "kapıda", "kapıdan", "kapının", "kapım", "kapısı"],
   ["uçak", "uçağı", "uçağa", "uçakta", "uçaktan", "uçağın", "uçağım", "uçağı"]
 ];
@@ -283,6 +284,21 @@ else {
   });
   NEG_GOLD.forEach(r => vcell(r[0], r[1], r[2], true, r[3]));
   PERSON_GOLD.forEach(r => vcell(r[0], r[1], r[2], false, r[3]));
+
+  /* Collocations must point at nouns that exist, or a frame will build a
+     sentence around a word the app has never heard of. */
+  const nouns = new Set(LEX.filter(e => e.p === "n").map(e => e.t));
+  LEX.forEach(e => {
+    ["obj", "dat", "loc", "n"].forEach(k => {
+      if (!e[k]) return;
+      if (!Array.isArray(e[k]) || !e[k].length) { err("LEX " + e.t, k + " must be a non-empty list"); return; }
+      e[k].forEach(w => { if (!nouns.has(w)) err("LEX " + e.t, k + ' names "' + w + '", which is not a noun in the lexicon'); });
+    });
+    if (e.p === "v" && !e.aux && (!Array.isArray(e.e) || e.e.length !== 4 || !e.e.every(str)))
+      err("LEX " + e.t, "a drillable verb needs English [base, -ing, past, he-form]");
+    if (e.p === "a" && (!Array.isArray(e.n) || !e.n.length))
+      err("LEX " + e.t, "an adjective needs the nouns it can describe");
+  });
 
   /* Nothing generated may come out with a stray marker or empty. */
   LEX.forEach(e => {

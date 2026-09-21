@@ -530,11 +530,19 @@ function produce(good) {
   ok(lastPaint.includes(esc(it.tr)), "the model was not revealed on screen");
 
   const key = it.k, day = ev("dayNum()");
+  /* Generated drills are keyed by pattern, so the same key can come round
+     twice in one sitting — check the ladder, not the first rung. */
+  /* Snapshot: ev() hands back a live reference the app then mutates. */
+  const prior = JSON.parse(ev("JSON.stringify(S.prod[" + q(key) + "]||null)")) || { b: 0, d: day };
+  const fresh = !ev("!!S.prod[" + q(key) + "]");
   ev("prodMark(" + (good ? "true" : "false") + ")");
   const rec = ev("S.prod[" + q(key) + "]");
   ok(!!rec, "grading stored no schedule for " + key);
-  if (good) ok(rec.b === 1 && rec.d === day + ev("STEPS[1]"), "Doğru scheduled " + JSON.stringify(rec) + ", expected box 1 at +" + ev("STEPS[1]"));
-  else ok(rec.b === 0 && rec.d === day, "Yanlış did not bring the sentence back today");
+  if (good) {
+    const want = fresh ? 1 : Math.min(prior.b + 1, ev("STEPS.length") - 1);
+    ok(rec.b === want && rec.d === day + ev("STEPS[" + want + "]"),
+      "Doğru scheduled " + JSON.stringify(rec) + ", expected box " + want + " at +" + ev("STEPS[" + want + "]"));
+  } else ok(rec.b === 0 && rec.d === day, "Yanlış did not bring the sentence back today");
 
   /* A sentence you could not produce is offered backwards. */
   if (phase() === "build") {
@@ -682,6 +690,72 @@ step("üretim · survives backup and wipe", () => {
   ev("importBox()");
   ok(ev("Object.keys(S.prod).length") === 1, "restore lost the sentence schedule");
   ok(ev("S.retell['a1u2'].n") === 1, "restore lost the retell");
+});
+
+step("kurma · generated drills", () => {
+  ev("wipe()"); ev("setGap(3)");
+  ev("startProd('g')");
+  const n = ev("PR.q.length");
+  ok(n === ev("SESSION"), "generated session is " + n + " items");
+  const keys = ev("PR.q.map(function(i){return i.k})");
+  ok(keys.every(k => k.indexOf("g:") === 0), "generated items are not keyed by pattern: " + keys[0]);
+  ok(ev("PR.q.every(function(i){return i.tr&&i.en&&i.tr.length>2})"), "a generated drill came out empty");
+  ok(new Set(ev("PR.q.map(function(i){return i.tr})")).size > 1, "every generated sentence is the same");
+  for (let i = 0; i < n; i++) produce(i % 2 === 0);
+  ok(phase() === "end", "generated session did not finish");
+  /* Scheduling is by pattern, so a handful of keys, not a dozen. */
+  ok(ev("Object.keys(S.prod).length") <= n, "pattern scheduling stored more keys than items");
+  ok(ev("Object.keys(S.prod).every(function(k){return k.indexOf('g:')===0})"), "generated grading wrote a non-pattern key");
+  ok(/never runs out/.test(lastPaint), "the generated score screen still talks about a finite set");
+});
+
+step("dönüştürme · transformations", () => {
+  ev("wipe()"); ev("setGap(3)");
+  ev("startProd('t')");
+  const n = ev("PR.q.length");
+  ok(n > 0, "no transformation drills were built");
+  ok(ev("PR.q.every(function(i){return !!i.given&&!!i.instr})"), "a transformation has no sentence to transform");
+  ok(ev("PR.q.every(function(i){return i.given!==i.tr})"), "a transformation does not change the sentence");
+  ok(lastPaint.includes(esc(ev("PR.q[0].given"))), "the sentence to transform is not on screen");
+  ok(lastPaint.includes(esc(ev("PR.q[0].instr"))), "the instruction is not on screen");
+  for (let i = 0; i < n; i++) produce(true);
+  ok(phase() === "end", "transformation session did not finish");
+  ok(ev("Object.keys(S.prod).every(function(k){return k.indexOf('t:')===0})"), "transformation grading wrote a non-move key");
+});
+
+step("the generator does not produce nonsense", () => {
+  /* Cheap, blunt checks over a big sample — the kind of wrong that is
+     easy to introduce and hard to notice one drill at a time. */
+  const bad = [];
+  const BADEN = /\b(are|am|is) (liking|knowing|wanting|understanding|seeing)\b|Did (we|you|I|he|they) (make|give)\?/;
+  const seen = new Set();
+  for (let i = 0; i < 600; i++) {
+    const k = ev("KINDS")[i % ev("KINDS").length];
+    const r = JSON.parse(ev("JSON.stringify((function(){var s=makeSpec(" + q(k) + ");return specText(s)})())"));
+    seen.add(r.tr);
+    if (!r.tr || !r.en) bad.push("empty: " + k);
+    if (/undefined|NaN|\[object/.test(r.tr + r.en)) bad.push("leak: " + r.en + " / " + r.tr);
+    if (/ {2}/.test(r.tr + r.en)) bad.push("double space: " + r.tr);
+    if (BADEN.test(r.en)) bad.push("English: " + r.en);
+    /* Turkish capitalises i as İ — a leading bare "I" before a lowercase
+       letter means capTR was skipped somewhere. */
+    if (/^I[a-zçğıöşü]/.test(r.tr)) bad.push("capital: " + r.tr);
+  }
+  ok(bad.length === 0, "generator produced " + bad.length + " bad prompts, e.g. " + bad.slice(0, 3).join(" · "));
+  ok(seen.size > 200, "only " + seen.size + " distinct sentences in 600 draws — the generator is too repetitive");
+
+  /* Every transformation must be answerable: a different sentence, and
+     the same one the engine would build from the changed spec. */
+  let moves = 0;
+  for (let i = 0; i < 200; i++) {
+    const m = JSON.parse(ev("JSON.stringify(makeMove())"));
+    if (!m) continue;
+    moves++;
+    if (m.from.tr === m.to.tr) bad.push("no-op move: " + m.move.k);
+    if (!m.to.tr || /undefined/.test(m.to.tr)) bad.push("broken move: " + m.move.k);
+  }
+  ok(moves > 150, "only " + moves + " of 200 transformation draws produced a drill");
+  ok(bad.length === 0, "transformations produced " + bad.length + " bad prompts");
 });
 
 /* ===================== 9 · about, backup, restore ===================== */
