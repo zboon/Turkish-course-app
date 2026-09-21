@@ -43,6 +43,9 @@ jobs:
       - name: Render every screen
         run: node test/sim.js
 
+      - name: Nothing drawn or generated changed
+        run: node test/snap.js
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

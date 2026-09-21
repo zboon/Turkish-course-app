@@ -16,7 +16,13 @@ cat \
   src/data/_close.js \
   src/data/placement.js \
   src/data/chunks.js \
-  src/app.js \
+  src/data/lex.js \
+  src/data/pos.js \
+  src/app.core.js \
+  src/app.lang.js \
+  src/app.screens.js \
+  src/app.uretim.js \
+  src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"
 

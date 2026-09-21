@@ -21,196 +21,11 @@ const seenScreens = new Set();
 let checks = 0, screens = 0;
 function ok(cond, msg) { checks++; if (!cond) fails.push(msg); }
 
-/* ===================== the DOM stub ===================== */
-const VOID = new Set(["br", "hr", "img", "input", "meta", "link", "source", "path", "circle", "rect", "use", "stop"]);
-
-class El {
-  constructor(tag, attrs) {
-    this.tagName = (tag || "div").toLowerCase();
-    this.attrs = attrs || {};
-    this.id = this.attrs.id || "";
-    this.className = this.attrs.class || "";
-    this.dataset = {};
-    Object.keys(this.attrs).forEach(k => {
-      if (k.startsWith("data-")) this.dataset[k.slice(5).replace(/-([a-z])/g, (m, c) => c.toUpperCase())] = this.attrs[k];
-    });
-    this.style = { display: /display:\s*none/.test(this.attrs.style || "") ? "none" : "" };
-    this.value = this.attrs.value || "";
-    this.textContent = "";
-    this.parentNode = null;
-    this.children = [];
-    this._html = "";
-    this._doc = null;
-    const self = this;
-    this.classList = {
-      contains: c => self._classes().includes(c),
-      add(c) { if (!self._classes().includes(c)) self.className = (self.className + " " + c).trim(); },
-      remove(c) { self.className = self._classes().filter(x => x !== c).join(" "); },
-      toggle(c, on) { const has = self._classes().includes(c); const want = on === undefined ? !has : !!on; if (want) self.classList.add(c); else self.classList.remove(c); }
-    };
-  }
-  _classes() { return String(this.className).split(/\s+/).filter(Boolean); }
-  get innerHTML() { return this._html; }
-  set innerHTML(h) {
-    this._html = String(h);
-    this.children = parseInto(this, this._html);
-    if (this._doc) this._doc.reindex();
-    if (this._onpaint) this._onpaint(this._html);
-  }
-  get offsetWidth() { return 0; }
-  get offsetHeight() { return 0; }
-  descendants() { const out = []; const walk = n => n.children.forEach(c => { out.push(c); walk(c); }); walk(this); return out; }
-  matches(sel) {
-    if (sel.startsWith(".")) return this._classes().includes(sel.slice(1));
-    if (sel.startsWith("#")) return this.id === sel.slice(1);
-    return this.tagName === sel.toLowerCase();
-  }
-  querySelectorAll(sel) { const r = this.descendants().filter(e => e.matches(sel)); r.forEach = Array.prototype.forEach.bind(r); return r; }
-  querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
-  closest(sel) { let n = this; while (n) { if (n.matches && n.matches(sel)) return n; n = n.parentNode; } return null; }
-  getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; }
-  setAttribute(k, v) { this.attrs[k] = String(v); if (k === "class") this.className = String(v); }
-  appendChild(c) { c.parentNode = this; this.children.push(c); return c; }
-  remove() { if (this.parentNode) this.parentNode.children = this.parentNode.children.filter(c => c !== this); this.parentNode = null; }
-  getBoundingClientRect() { return { top: 10, left: 10, right: 40, bottom: 30, width: 30, height: 20 }; }
-  focus() { this._focused = true; }
-  select() { this._selected = true; }
-  addEventListener(t, fn) { (this._ev = this._ev || {})[t] = fn; }
-  removeEventListener() {}
-  scrollIntoView() {}
-}
-
-/* A forgiving tag scanner — enough structure for getElementById,
-   querySelectorAll and closest, which is all the app asks of the DOM. */
-function parseInto(rootEl, html) {
-  const re = /<(\/?)([a-zA-Z][\w-]*)((?:\s+[\w:-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/g;
-  const top = [];
-  const stack = [];
-  let m;
-  while ((m = re.exec(html))) {
-    const [, slash, tag, attrText, selfClose] = m;
-    const name = tag.toLowerCase();
-    if (slash) {
-      for (let i = stack.length - 1; i >= 0; i--) { if (stack[i].tagName === name) { stack.length = i; break; } }
-      continue;
-    }
-    const attrs = {};
-    const ar = /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-    let a;
-    while ((a = ar.exec(attrText))) attrs[a[1]] = a[2] !== undefined ? a[2] : a[3];
-    const el = new El(name, attrs);
-    const parent = stack[stack.length - 1];
-    if (parent) { el.parentNode = parent; parent.children.push(el); }
-    else { el.parentNode = rootEl; top.push(el); }
-    if (!selfClose && !VOID.has(name)) stack.push(el);
-  }
-  return top;
-}
-
-/* ===================== fake clock and voice ===================== */
-const clock = { now: 0, seq: 0, timers: [] };
-function setTimeoutStub(fn, ms) { const t = { id: ++clock.seq, fn, at: clock.now + (ms || 0), dead: false }; clock.timers.push(t); return t.id; }
-function clearTimeoutStub(id) { clock.timers = clock.timers.filter(t => t.id !== id); }
-function drain(limit) {
-  let n = 0;
-  while (clock.timers.length && n < (limit || 500)) {
-    clock.timers.sort((a, b) => a.at - b.at);
-    const t = clock.timers.shift();
-    clock.now = Math.max(clock.now, t.at);
-    if (!t.dead) { t.fn(); n++; }
-  }
-  return n;
-}
-
-const voice = { spoken: [], langs: [], said: 0, cancels: 0, pending: [] };
-class SpeechSynthesisUtteranceStub {
-  constructor(text) { this.text = text; this.lang = ""; this.rate = 1; this.voice = null; this.onend = null; }
-}
-const speechSynthesisStub = {
-  onvoiceschanged: null,
-  getVoices() { return [{ lang: "en-GB", name: "Daniel" }, { lang: "tr-TR", name: "Yelda" }]; },
-  speak(u) {
-    voice.spoken.push(u.text); voice.said++; voice.langs.push(u.lang);
-    if (u.onend) { const t = setTimeoutStub(() => { voice.pending = voice.pending.filter(x => x !== t); u.onend(); }, 20); voice.pending.push(t); }
-  },
-  cancel() {
-    voice.cancels++;
-    voice.pending.forEach(id => clearTimeoutStub(id));
-    voice.pending = [];
-  }
-};
-
-/* ===================== context ===================== */
-const html = fs.readFileSync(file, "utf8");
-const open = html.indexOf("<script>"), close = html.lastIndexOf("</script>");
-if (open < 0 || close < 0) { console.error("sim: no <script> block in " + file); process.exit(1); }
-const code = html.slice(open + "<script>".length, close);
-
-const store = new Map();
-const documentEl = new El("html", {});
-const bodyEl = new El("body", {});
-const appEl = new El("div", { id: "app" });
-const byId = new Map();
-
-const doc = {
-  documentElement: documentEl,
-  body: bodyEl,
-  reindex() {
-    byId.clear();
-    [bodyEl, appEl].forEach(rootNode => rootNode.descendants().forEach(e => { if (e.id && !byId.has(e.id)) byId.set(e.id, e); }));
-    byId.set("app", appEl);
-  },
-  getElementById(id) { return byId.get(id) || null; },
-  querySelector(sel) { return appEl.querySelector(sel) || bodyEl.querySelector(sel); },
-  querySelectorAll(sel) { const r = appEl.querySelectorAll(sel).concat(bodyEl.querySelectorAll(sel)); r.forEach = Array.prototype.forEach.bind(r); return r; },
-  createElement(t) { const e = new El(t, {}); e._doc = doc; return e; },
-  addEventListener() {},
-  execCommand() { return true; },
-  activeElement: null
-};
-appEl._doc = doc;
-bodyEl._doc = doc;
-bodyEl.appendChild(appEl);
-doc.reindex();
-
-let lastPaint = "";
-appEl._onpaint = h => { screens++; lastPaint = h; };
-
-const sandbox = {
-  console,
-  document: doc,
-  setTimeout: setTimeoutStub, clearTimeout: clearTimeoutStub,
-  setInterval: () => 0, clearInterval: () => {},
-  localStorage: {
-    getItem: k => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: k => store.delete(k)
-  },
-  navigator: {
-    /* The published artifact has no service worker; the call is wrapped
-       and must fail silently rather than take the boot down. */
-    serviceWorker: { register: () => Promise.reject(new Error("no service worker here")) },
-    clipboard: { writeText: () => {} }
-  },
-  location: { protocol: "https:" },
-  speechSynthesis: speechSynthesisStub,
-  SpeechSynthesisUtterance: SpeechSynthesisUtteranceStub,
-  confirm: () => true,
-  Date, Math, JSON, String, Number, Object, Array, Boolean, Set, Map, Error, RegExp, isNaN, parseFloat, parseInt
-};
-sandbox.window = sandbox;
-sandbox.globalThis = sandbox;
-sandbox.window.innerWidth = 390;
-sandbox.window.innerHeight = 780;
-sandbox.window.scrollTo = () => {};
-sandbox.window.addEventListener = () => {};
-sandbox.window.matchMedia = () => ({ matches: false, addListener() {}, addEventListener() {} });
-
-vm.createContext(sandbox);
-const ev = expr => vm.runInContext(expr, sandbox, { filename: "sim" });
-
-try { vm.runInContext(code, sandbox, { filename: file }); }
-catch (e) { console.error("sim: the app threw while booting\n  " + (e && e.stack || e)); process.exit(1); }
+/* The environment lives in test/dom.js, shared with test/snap.js. */
+const boot = require("./dom.js");
+const env = boot(file);
+const { ev, doc, appEl, bodyEl, documentEl, voice, drain, clock, store } = env;
+let lastPaint = env.lastHTML();             /* the app paints once while booting */
 
 const UNITS = ev("UNITS"), LEVELS = ev("LEVELS"), PLACEMENT = ev("PLACEMENT");
 const q = s => JSON.stringify(s);
@@ -530,11 +345,19 @@ function produce(good) {
   ok(lastPaint.includes(esc(it.tr)), "the model was not revealed on screen");
 
   const key = it.k, day = ev("dayNum()");
+  /* Generated drills are keyed by pattern, so the same key can come round
+     twice in one sitting — check the ladder, not the first rung. */
+  /* Snapshot: ev() hands back a live reference the app then mutates. */
+  const prior = JSON.parse(ev("JSON.stringify(S.prod[" + q(key) + "]||null)")) || { b: 0, d: day };
+  const fresh = !ev("!!S.prod[" + q(key) + "]");
   ev("prodMark(" + (good ? "true" : "false") + ")");
   const rec = ev("S.prod[" + q(key) + "]");
   ok(!!rec, "grading stored no schedule for " + key);
-  if (good) ok(rec.b === 1 && rec.d === day + ev("STEPS[1]"), "Doğru scheduled " + JSON.stringify(rec) + ", expected box 1 at +" + ev("STEPS[1]"));
-  else ok(rec.b === 0 && rec.d === day, "Yanlış did not bring the sentence back today");
+  if (good) {
+    const want = fresh ? 1 : Math.min(prior.b + 1, ev("STEPS.length") - 1);
+    ok(rec.b === want && rec.d === day + ev("STEPS[" + want + "]"),
+      "Doğru scheduled " + JSON.stringify(rec) + ", expected box " + want + " at +" + ev("STEPS[" + want + "]"));
+  } else ok(rec.b === 0 && rec.d === day, "Yanlış did not bring the sentence back today");
 
   /* A sentence you could not produce is offered backwards. */
   if (phase() === "build") {
@@ -682,6 +505,128 @@ step("üretim · survives backup and wipe", () => {
   ev("importBox()");
   ok(ev("Object.keys(S.prod).length") === 1, "restore lost the sentence schedule");
   ok(ev("S.retell['a1u2'].n") === 1, "restore lost the retell");
+});
+
+step("kurma · generated drills", () => {
+  ev("wipe()"); ev("setGap(3)");
+  ev("startProd('g')");
+  const n = ev("PR.q.length");
+  ok(n === ev("SESSION"), "generated session is " + n + " items");
+  const keys = ev("PR.q.map(function(i){return i.k})");
+  ok(keys.every(k => k.indexOf("g:") === 0), "generated items are not keyed by pattern: " + keys[0]);
+  ok(ev("PR.q.every(function(i){return i.tr&&i.en&&i.tr.length>2})"), "a generated drill came out empty");
+  ok(new Set(ev("PR.q.map(function(i){return i.tr})")).size > 1, "every generated sentence is the same");
+  for (let i = 0; i < n; i++) produce(i % 2 === 0);
+  ok(phase() === "end", "generated session did not finish");
+  /* Scheduling is by pattern, so a handful of keys, not a dozen. */
+  ok(ev("Object.keys(S.prod).length") <= n, "pattern scheduling stored more keys than items");
+  ok(ev("Object.keys(S.prod).every(function(k){return k.indexOf('g:')===0})"), "generated grading wrote a non-pattern key");
+  ok(/never runs out/.test(lastPaint), "the generated score screen still talks about a finite set");
+});
+
+step("dönüştürme · transformations", () => {
+  ev("wipe()"); ev("setGap(3)");
+  ev("startProd('t')");
+  const n = ev("PR.q.length");
+  ok(n > 0, "no transformation drills were built");
+  ok(ev("PR.q.every(function(i){return !!i.given&&!!i.instr})"), "a transformation has no sentence to transform");
+  ok(ev("PR.q.every(function(i){return i.given!==i.tr})"), "a transformation does not change the sentence");
+  ok(lastPaint.includes(esc(ev("PR.q[0].given"))), "the sentence to transform is not on screen");
+  ok(lastPaint.includes(esc(ev("PR.q[0].instr"))), "the instruction is not on screen");
+  for (let i = 0; i < n; i++) produce(true);
+  ok(phase() === "end", "transformation session did not finish");
+  ok(ev("Object.keys(S.prod).every(function(k){return k.indexOf('t:')===0})"), "transformation grading wrote a non-move key");
+});
+
+step("the generator does not produce nonsense", () => {
+  /* Cheap, blunt checks over a big sample — the kind of wrong that is
+     easy to introduce and hard to notice one drill at a time. */
+  const bad = [];
+  const BADEN = /\b(are|am|is) (liking|knowing|wanting|understanding|seeing)\b|Did (we|you|I|he|they) (make|give)\?/;
+  const seen = new Set();
+  for (let i = 0; i < 600; i++) {
+    const k = ev("KINDS")[i % ev("KINDS").length];
+    const r = JSON.parse(ev("JSON.stringify((function(){var s=makeSpec(" + q(k) + ");return specText(s)})())"));
+    seen.add(r.tr);
+    if (!r.tr || !r.en) bad.push("empty: " + k);
+    if (/undefined|NaN|\[object/.test(r.tr + r.en)) bad.push("leak: " + r.en + " / " + r.tr);
+    if (/ {2}/.test(r.tr + r.en)) bad.push("double space: " + r.tr);
+    if (BADEN.test(r.en)) bad.push("English: " + r.en);
+    /* Turkish capitalises i as İ — a leading bare "I" before a lowercase
+       letter means capTR was skipped somewhere. */
+    if (/^I[a-zçğıöşü]/.test(r.tr)) bad.push("capital: " + r.tr);
+  }
+  ok(bad.length === 0, "generator produced " + bad.length + " bad prompts, e.g. " + bad.slice(0, 3).join(" · "));
+  ok(seen.size > 200, "only " + seen.size + " distinct sentences in 600 draws — the generator is too repetitive");
+
+  /* Every transformation must be answerable: a different sentence, and
+     the same one the engine would build from the changed spec. */
+  let moves = 0;
+  for (let i = 0; i < 200; i++) {
+    const m = JSON.parse(ev("JSON.stringify(makeMove())"));
+    if (!m) continue;
+    moves++;
+    if (m.from.tr === m.to.tr) bad.push("no-op move: " + m.move.k);
+    if (!m.to.tr || /undefined/.test(m.to.tr)) bad.push("broken move: " + m.move.k);
+  }
+  ok(moves > 150, "only " + moves + " of 200 transformation draws produced a drill");
+  ok(bad.length === 0, "transformations produced " + bad.length + " bad prompts");
+});
+
+step("sözlük · the whole word list", () => {
+  ev("wipe()");
+  ev("go('dict')");
+  ok(/Sözlük/.test(lastPaint), "the word list did not open");
+  const all = ev("dictAll().length");
+  ok(all > 500, "the word list holds only " + all + " words");
+  ok(ev("dictRows().length") === all, "the unfiltered list is not everything");
+  ok(ev("dictAll().every(function(w){return w.tr&&w.en&&w.lv&&w.u&&w.c})"), "a word row is missing a field");
+
+  /* Every word lands in exactly one class, and the classes add up. */
+  const classes = ev("dictAll().map(function(w){return w.c})");
+  const tally = {};
+  classes.forEach(c => tally[c] = (tally[c] || 0) + 1);
+  ok(Object.keys(tally).every(c => ["n", "f", "s", "z", "e", "i"].includes(c)), "unknown word class: " + Object.keys(tally));
+  ok(Object.values(tally).reduce((a, b) => a + b, 0) === all, "the classes do not add up to the whole list");
+  ok(tally.f > 80 && tally.n > 100, "class split looks wrong: " + JSON.stringify(tally));
+  /* Infinitives must never be filed as nouns. */
+  ok(ev("dictAll().filter(function(w){return /(mak|mek)$/.test(w.tr)&&w.c!=='f'}).length") === 0,
+    "an infinitive was not classified as a verb");
+
+  /* Filtering */
+  ev("dictCat('f')");
+  ok(ev("dictRows().every(function(w){return w.c==='f'})"), "the verb filter let other classes through");
+  ok(ev("dictRows().length") === tally.f, "the verb filter count does not match");
+  ev("dictCat('all')");
+
+  /* Search, including a diacritic-free spelling */
+  ev("dictSearch('kitap')");
+  ok(ev("dictRows().length") >= 1 && ev("dictRows()[0].tr").indexOf("kitap") > -1, "searching for kitap found nothing");
+  ev("dictSearch('book')");
+  ok(ev("dictRows().length") >= 1, "searching the English side found nothing");
+  ev("dictSearch('ogrenci')");
+  ok(ev("dictRows().length") >= 1, "search is not diacritic-folded — a learner without a Turkish keyboard cannot use it");
+  ev("dictSearch('zzzznothing')");
+  ok(ev("dictRows().length") === 0 && /No word matches/.test(lastPaint), "a search with no hits has no empty state");
+  ev("dictSearch('')");
+
+  /* Sorting */
+  ev("dictSort()");
+  ok(ev("DICT.sort") === "lv", "sort did not switch to level order");
+  ok(ev("dictRows()[0].lv") === "A1", "level order does not start at A1");
+  ev("dictSort()");
+  ok(ev("dictRows()[0].tr").localeCompare(ev("dictRows()[1].tr"), "tr") <= 0, "alphabetical order is not Turkish-collated");
+
+  /* Starring from the list keeps star and srs in step, like everywhere else */
+  const w = ev("dictRows()[0]");
+  ev("starWord(" + q(w.tr) + "," + q(w.en) + ")");
+  ok(ev("S.star.length") === 1 && ev("Object.keys(S.srs).length") === 1, "starring from the word list did not schedule it");
+  ev("starWord(" + q(w.tr) + "," + q(w.en) + ")");
+  ok(ev("S.star.length") === 0 && ev("Object.keys(S.srs).length") === 0, "unstarring from the word list left an orphan");
+
+  /* A row opens the unit it came from */
+  ev("go('unit'," + q(w.u) + ",'v')");
+  ok(ev("V.view") === "unit" && ev("V.u") === w.u, "the word does not lead back to its unit");
 });
 
 /* ===================== 9 · about, backup, restore ===================== */

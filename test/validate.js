@@ -41,15 +41,27 @@ if (cut < 0) { console.error("validate: cannot find the start of app.js in the b
 const foldSrc = /function fold\(s\)\{[\s\S]*?\n\}/.exec(code);
 if (!foldSrc) { console.error("validate: cannot find fold() in the build"); process.exit(1); }
 
+/* src/app.lang.js is pure — no DOM, no state — so the whole language
+   engine can be lifted out of the build and exercised here against a
+   table of hand-checked forms. It runs from its own banner to the first
+   screen. */
+const mStart = code.indexOf("/* ===================== biçimbilim");
+const mEnd = code.indexOf("/* ===================== home");
+if (mStart < 0 || mEnd < 0) { console.error("validate: cannot find the morphology engine in the build"); process.exit(1); }
+const engine = code.slice(mStart, mEnd);
+
 const sandbox = {};
 try {
   vm.createContext(sandbox);
-  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\nthis.D={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,fold:fold};", sandbox, { filename: file });
+  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine +
+    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,fold:fold," +
+    "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
 }
-const { LEVELS, UNITS, PLACEMENT, CHUNKS, fold } = sandbox.D;
+const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, POS, fold } = sandbox.OUT;
+const M = sandbox.OUT;
 
 /* ---------- helpers ---------- */
 const str = v => typeof v === "string" && v.trim().length > 0;
@@ -168,6 +180,26 @@ if (!Array.isArray(PLACEMENT) || PLACEMENT.length !== 12) err("PLACEMENT", "expe
    every level needs questions of its own to be reachable. */
 WANT.forEach(lv => { if (!(PLACEMENT || []).some(p => p.lv === lv)) err("PLACEMENT", "no question for " + lv); });
 
+/* ---------- word classes ---------- */
+/* POS only needs to list what cannot be derived, so a key that is not a
+   word the course teaches is a typo — and a typo here silently files a
+   word under the wrong heading for ever. */
+const taught = new Map();
+UNITS.forEach(u => u.vocab.forEach(w => { if (!taught.has(w[0])) taught.set(w[0], w[1]); }));
+const CLASSES = ["n", "s", "z", "e", "i"];
+Object.keys(POS || {}).forEach(k => {
+  if (!taught.has(k)) err("POS", '"' + k + '" is classified but the course never teaches it');
+  if (!CLASSES.includes(POS[k])) err("POS", '"' + k + '" has unknown class ' + JSON.stringify(POS[k]));
+  if (/(mak|mek)$/.test(k.trim())) err("POS", '"' + k + '" is an infinitive — verbs classify themselves');
+  /* Multiword entries SHOULD be listed: "hafta sonu" is a noun and
+     "ara sıra" an adverb, and the space says neither. */
+});
+const wordClass = t => /(mak|mek)$/.test(t.trim()) ? "f" : (POS[t] || (/\s/.test(t.trim()) ? "i" : "n"));
+const classCount = {};
+taught.forEach((en, t) => { const c = wordClass(t); classCount[c] = (classCount[c] || 0) + 1; });
+if ((classCount.f || 0) < 80) err("POS", "only " + classCount.f + " verbs found — the -mak/-mek test is not working");
+if ((classCount.n || 0) < 100) err("POS", "only " + classCount.n + " nouns — the default is not being applied");
+
 /* ---------- chunk bank (üretim) ---------- */
 if (!Array.isArray(CHUNKS) || CHUNKS.length < 40) err("CHUNKS", "expected a bank of ~50 prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
 else {
@@ -184,6 +216,132 @@ else {
   }
 }
 
+/* ---------- morphology: the golden set ---------- */
+/* Every form below was checked by hand. The engine is allowed to be
+   clever; it is not allowed to disagree with this table. Adding a word
+   to LEX means adding its awkward forms here. */
+const NOUN_GOLD = [
+  /* stem, acc, dat, loc, abl, gen, poss1, poss3, plural */
+  ["kitap", "kitabı", "kitaba", "kitapta", "kitaptan", "kitabın", "kitabım", "kitabı", "kitaplar"],
+  ["ev", "evi", "eve", "evde", "evden", "evin", "evim", "evi", "evler"],
+  ["araba", "arabayı", "arabaya", "arabada", "arabadan", "arabanın", "arabam", "arabası", "arabalar"],
+  ["çocuk", "çocuğu", "çocuğa", "çocukta", "çocuktan", "çocuğun", "çocuğum", "çocuğu", "çocuklar"],
+  ["şehir", "şehri", "şehre", "şehirde", "şehirden", "şehrin", "şehrim", "şehri", "şehirler"],
+  ["burun", "burnu", "burna", "burunda", "burundan", "burnun", "burnum", "burnu", "burunlar"],
+  ["isim", "ismi", "isme", "isimde", "isimden", "ismin", "ismim", "ismi", "isimler"],
+  ["renk", "rengi", "renge", "renkte", "renkten", "rengin", "rengim", "rengi", "renkler"],
+  ["top", "topu", "topa", "topta", "toptan", "topun", "topum", "topu", "toplar"],
+  ["su", "suyu", "suya", "suda", "sudan", "suyun", "suyum", "suyu", "sular"],
+  ["kalp", "kalbi", "kalbe", "kalpte", "kalpten", "kalbin", "kalbim", "kalbi", "kalpler"],
+  ["saat", "saati", "saate", "saatte", "saatten", "saatin", "saatim", "saati", "saatler"],
+  ["göz", "gözü", "göze", "gözde", "gözden", "gözün", "gözüm", "gözü", "gözler"],
+  ["gece", "geceyi", "geceye", "gecede", "geceden", "gecenin", "gecem", "gecesi", "geceler"],
+  ["kapı", "kapıyı", "kapıya", "kapıda", "kapıdan", "kapının", "kapım", "kapısı", "kapılar"],
+  ["uçak", "uçağı", "uçağa", "uçakta", "uçaktan", "uçağın", "uçağım", "uçağı", "uçaklar"]
+];
+const VERB_GOLD = [
+  /* infinitive, prog.1sg, past.1sg, fut.1sg, aor.1sg, prog.3sg, aor.3sg */
+  ["gelmek", "geliyorum", "geldim", "geleceğim", "gelirim", "geliyor", "gelir"],
+  ["gitmek", "gidiyorum", "gittim", "gideceğim", "giderim", "gidiyor", "gider"],
+  ["okumak", "okuyorum", "okudum", "okuyacağım", "okurum", "okuyor", "okur"],
+  ["beklemek", "bekliyorum", "bekledim", "bekleyeceğim", "beklerim", "bekliyor", "bekler"],
+  ["yapmak", "yapıyorum", "yaptım", "yapacağım", "yaparım", "yapıyor", "yapar"],
+  ["yemek", "yiyorum", "yedim", "yiyeceğim", "yerim", "yiyor", "yer"],
+  ["demek", "diyorum", "dedim", "diyeceğim", "derim", "diyor", "der"],
+  ["etmek", "ediyorum", "ettim", "edeceğim", "ederim", "ediyor", "eder"],
+  ["almak", "alıyorum", "aldım", "alacağım", "alırım", "alıyor", "alır"],
+  ["görmek", "görüyorum", "gördüm", "göreceğim", "görürüm", "görüyor", "görür"],
+  ["uyumak", "uyuyorum", "uyudum", "uyuyacağım", "uyurum", "uyuyor", "uyur"],
+  ["başlamak", "başlıyorum", "başladım", "başlayacağım", "başlarım", "başlıyor", "başlar"],
+  ["konuşmak", "konuşuyorum", "konuştum", "konuşacağım", "konuşurum", "konuşuyor", "konuşur"],
+  ["açmak", "açıyorum", "açtım", "açacağım", "açarım", "açıyor", "açar"],
+  ["kalkmak", "kalkıyorum", "kalktım", "kalkacağım", "kalkarım", "kalkıyor", "kalkar"],
+  ["oturmak", "oturuyorum", "oturdum", "oturacağım", "otururum", "oturuyor", "oturur"],
+  ["yürümek", "yürüyorum", "yürüdüm", "yürüyeceğim", "yürürüm", "yürüyor", "yürür"],
+  ["unutmak", "unutuyorum", "unuttum", "unutacağım", "unuturum", "unutuyor", "unutur"],
+  ["içmek", "içiyorum", "içtim", "içeceğim", "içerim", "içiyor", "içer"],
+  ["satmak", "satıyorum", "sattım", "satacağım", "satarım", "satıyor", "satar"]
+];
+/* The negative, where Turkish stops being tidy: the aorist loses its r
+   in the first person and turns into -mez elsewhere. */
+const NEG_GOLD = [
+  ["gelmek", "prog", 0, "gelmiyorum"], ["okumak", "prog", 0, "okumuyorum"],
+  ["gelmek", "past", 0, "gelmedim"],   ["gelmek", "fut", 0, "gelmeyeceğim"],
+  ["gelmek", "aor", 0, "gelmem"],      ["gelmek", "aor", 1, "gelmezsin"],
+  ["gelmek", "aor", 3, "gelmeyiz"],    ["okumak", "aor", 3, "okumayız"],
+  ["okumak", "fut", 0, "okumayacağım"],["gitmek", "prog", 0, "gitmiyorum"]
+];
+const PERSON_GOLD = [
+  ["gelmek", "prog", 1, "geliyorsun"], ["gelmek", "prog", 3, "geliyoruz"],
+  ["gelmek", "prog", 4, "geliyorsunuz"], ["gelmek", "prog", 5, "geliyorlar"],
+  ["gelmek", "fut", 3, "geleceğiz"], ["okumak", "fut", 2, "okuyacak"],
+  ["gitmek", "past", 3, "gittik"], ["gelmek", "past", 4, "geldiniz"]
+];
+
+let mChecked = 0;
+if (!Array.isArray(LEX) || !LEX.length) err("LEX", "the drill lexicon is empty");
+else {
+  const find = t => LEX.find(x => x.t === t);
+  const cell = (t, fn, want, what) => {
+    const e = find(t);
+    if (!e) { err("LEX", t + " is in the golden set but not in the lexicon"); return; }
+    mChecked++;
+    const got = M[fn](e);
+    if (got !== want) err("morphology", t + " " + what + ': generated "' + got + '", hand-checked form is "' + want + '"');
+  };
+  NOUN_GOLD.forEach(r => {
+    ["nAcc", "nDat", "nLoc", "nAbl", "nGen", "nP1", "nP3", "nPlur"].forEach((fn, i) => cell(r[0], fn, r[i + 1], fn.slice(1).toLowerCase()));
+  });
+  const vcell = (t, tense, p, neg, want) => {
+    const e = find(t);
+    if (!e) { err("LEX", t + " is in the golden set but not in the lexicon"); return; }
+    mChecked++;
+    const got = M.conj(e, tense, p, neg);
+    if (got !== want) err("morphology", t + " " + tense + "." + p + (neg ? ".neg" : "") + ': generated "' + got + '", hand-checked form is "' + want + '"');
+  };
+  VERB_GOLD.forEach(r => {
+    vcell(r[0], "prog", 0, false, r[1]); vcell(r[0], "past", 0, false, r[2]);
+    vcell(r[0], "fut", 0, false, r[3]);  vcell(r[0], "aor", 0, false, r[4]);
+    vcell(r[0], "prog", 2, false, r[5]); vcell(r[0], "aor", 2, false, r[6]);
+  });
+  NEG_GOLD.forEach(r => vcell(r[0], r[1], r[2], true, r[3]));
+  PERSON_GOLD.forEach(r => vcell(r[0], r[1], r[2], false, r[3]));
+
+  /* Collocations must point at nouns that exist, or a frame will build a
+     sentence around a word the app has never heard of. */
+  const nouns = new Set(LEX.filter(e => e.p === "n").map(e => e.t));
+  LEX.forEach(e => {
+    ["obj", "dat", "loc", "n"].forEach(k => {
+      if (!e[k]) return;
+      if (!Array.isArray(e[k]) || !e[k].length) { err("LEX " + e.t, k + " must be a non-empty list"); return; }
+      e[k].forEach(w => { if (!nouns.has(w)) err("LEX " + e.t, k + ' names "' + w + '", which is not a noun in the lexicon'); });
+    });
+    if (e.p === "v" && !e.aux && (!Array.isArray(e.e) || e.e.length !== 4 || !e.e.every(str)))
+      err("LEX " + e.t, "a drillable verb needs English [base, -ing, past, he-form]");
+    if (e.p === "a" && (!Array.isArray(e.n) || !e.n.length))
+      err("LEX " + e.t, "an adjective needs the nouns it can describe");
+  });
+
+  /* Nothing generated may come out with a stray marker or empty. */
+  LEX.forEach(e => {
+    if (!["n", "v", "a"].includes(e.p)) err("LEX " + e.t, "unknown part of speech " + JSON.stringify(e.p));
+    if (!str(e.en)) err("LEX " + e.t, "no English gloss");
+    if (e.p === "v" && !/(mak|mek)$/.test(e.t)) err("LEX " + e.t, "a verb must be listed as an infinitive");
+    if (e.p === "n") {
+      ["nAcc", "nDat", "nLoc", "nAbl", "nGen"].forEach(fn => {
+        const g = M[fn](e);
+        if (!g || /undefined|NaN/.test(g) || g === e.t) err("LEX " + e.t, fn + " produced " + JSON.stringify(g));
+      });
+    }
+    if (e.p === "v") {
+      ["prog", "past", "fut", "aor"].forEach(t => [0, 2].forEach(p => [false, true].forEach(n => {
+        const g = M.conj(e, t, p, n);
+        if (!g || /undefined|NaN/.test(g)) err("LEX " + e.t, t + " produced " + JSON.stringify(g));
+      })));
+    }
+  });
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -197,5 +355,7 @@ if (errs.length) {
 }
 console.log("validate ok · " + UNITS.length + " units · " + words + " words · " + lines +
   " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
-  CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts" +
+  CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
+  LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
+  taught.size + " distinct words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

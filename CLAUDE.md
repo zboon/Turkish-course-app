@@ -7,14 +7,23 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity: 60 units, answer keys, order tiles
-node test/sim.js        # headless render of all 321 screens + quiz/voice/SRS/üretim paths
+node test/validate.js   # data integrity + 266 hand-checked Turkish forms
+node test/sim.js        # headless render of all 322 screens + quiz/voice/SRS/üretim paths
+node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
-Run all three before every commit. `build.sh` already runs the parse check; the
-other two take a second each. They exist because the data files are fragments of
-one array literal — a stray comma in `src/data/b2.js` takes down the entire app,
-and the browser shows a blank page with the error only in the console.
+Run all four before every commit; they take a second each. `build.sh` already
+runs the parse check.
+
+`snap.js` is the one to reach for when moving code rather than changing it. It
+hashes every screen and every generated form, so a refactor that preserves
+behaviour passes untouched and one that does not names the screen it broke. A
+deliberate change fails it too — read the diff, then `node test/snap.js --write`.
+`test/dom.js` holds the DOM stub, fake clock and voice stub both tests run on.
+
+They exist because the data files are fragments of one array literal — a stray
+comma in `src/data/b2.js` takes down the entire app, and the browser shows a
+blank page with the error only in the console.
 
 ## How the build works
 
@@ -27,9 +36,22 @@ src/data/a1.js … c2.js   unit objects, comma-separated, in display order
 src/data/_close.js       ];
 src/data/placement.js    const PLACEMENT=[…];
 src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
-src/app.js               everything else
+src/data/lex.js          const LEX=[…];      // tagged drill stems
+src/data/pos.js          const POS={…};      // word classes for the list
+src/app.core.js          state, helpers, voice, the SRS ladder, routing
+src/app.lang.js          morphology and the drill generator (pure)
+src/app.screens.js       home, level, unit, quiz, words, sözlük, about
+src/app.uretim.js        production mode, chunk bank, retell
+src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
+
+The app is five files rather than one because it grew past the point
+where one was navigable. Order still matters: `app.boot.js` runs code, so
+it goes last, and everything it names must already be declared. Within a
+file, sections are separated by `/* ===== name ===== */` banners —
+`validate.js` slices the build on those banners to test the language
+engine on its own, so renaming one means updating that test.
 
 `unitsOf(lv)` filters `UNITS` in array order, so a unit's position in its level
 file is the order the learner sees. Keep `n:` in step with that position —
@@ -132,10 +154,10 @@ Two independent targets:
 1. **Published artifact** — `dist/index.html` published through Claude. No
    service worker there; the registration call is wrapped and fails silently.
 2. **GitHub Pages** — automatic. `.github/workflows/pages.yml` builds `src/`,
-   runs all three checks and publishes `dist/` on every push to `main`; the
+   runs all four checks and publishes `dist/` on every push to `main`; the
    Pages source is set to "GitHub Actions", not a branch. `dist/` is
    generated and git-ignored, so there is nothing to commit and nothing to
-   copy by hand. Still bump `APP_VERSION` in `src/app.js` **and** `CACHE` in
+   copy by hand. Still bump `APP_VERSION` in `src/app.core.js` **and** `CACHE` in
    `sw.js` together on every release, then open the app twice to clear the
    old worker — the workflow does not do this for you, and a stale worker is
    the one bug that makes a shipped change look like it never shipped.
@@ -189,6 +211,54 @@ New sentences arrive in course order, not shuffled — the mode walks the
 material. Reviews come first, oldest due first, and a sitting is `SESSION`
 items. No microphone, by request: self-grading is what keeps it offline with
 nothing to permit.
+
+## Kurma ve Dönüştürme (generative drills)
+
+Built. The course's own sentences can be memorised; these cannot, because
+they are assembled at the moment they are shown. `src/data/lex.js` holds
+the vetted drill stems and `LEX` drives the morphology engine in
+`src/app.lang.js`.
+
+- **Frames** — `FRAMES` renders a spec `{f, v, n, a, p, t, neg}` into both
+  languages. A spec is who, which verb, which tense, which polarity; the
+  frame decides the shape (bare verb, object, dative, locative, adjective,
+  genitive compound, question).
+- **Transformations** — `MOVES` takes a spec, changes one field and
+  re-renders, so "put it in the past" always has a correct answer rather
+  than an approximation.
+- **Scheduling by pattern, not sentence.** The sentences are endless, so
+  `S.prod` keys them `g:<frame>:<tense>` and `t:<move>`: what comes back
+  is the pattern you were weak at.
+
+The morphology engine derives what is derivable and the lexicon lists
+what is not — see the flags at the top of `lex.js`. `validate.js` holds
+266 hand-checked forms and will not let the engine disagree with them,
+checks that every collocation names a noun that exists, and fails when a
+word is added without the flags its forms need. `sim.js` sweeps 600
+generated prompts for empty output, leaked `undefined`, double spaces,
+English that Turkish grammar does not license (*"I am liking"*), and the
+Turkish capital İ.
+
+Three things the lexicon must carry or the drills go wrong in ways tests
+cannot catch: `e` (English forms — no more derivable than the Turkish),
+`obj`/`dat`/`loc`/`n` (collocations, or the generator writes *"I am
+drinking the school"*), and `needsObj`/`stative` (English cannot say
+*"Did we give?"* or *"I am liking"*).
+
+## Sözlük (the word list)
+
+`go('dict')` shows all 576 distinct words the units teach, filterable by
+class, searchable on either language (diacritic-folded, like the drills),
+sorted A→Z in Turkish collation or by level. A row hears the word, stars
+it into the review queue, or opens the unit it came from.
+
+Classification: anything ending `-mak`/`-mek` is a verb, `src/data/pos.js`
+carries the rest, and what is left defaults to noun for a single word and
+expression for a multiword entry. Multiword entries need listing more than
+single ones — `hafta sonu` is a noun, `burnu büyük` an adjective and
+`ara sıra` an adverb, and the space says none of that. `validate.js` fails
+on a POS key the course does not teach, so a typo cannot quietly file a
+word under the wrong heading for ever.
 
 ## Next, in order
 

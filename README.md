@@ -20,6 +20,13 @@ Ottoman prose.
   model. Self-graded, so it needs no microphone. Long sentences can be built
   backwards from the verb, there is a bank of fifty conversational prefabs,
   and a unit's speaking task comes back on day 1, 3 and 7.
+- **Kurma · sentence building** — drills assembled on the spot from a
+  vetted lexicon, so the sentence cannot be recalled, only built, and
+  *Dönüştürme*, which asks for one change to a sentence you are shown:
+  past, negative, question, person.
+- **Sözlük** — every word in the course in one list, by class (nouns,
+  verbs, adjectives, adverbs, particles, expressions), searchable in
+  either language, each one speakable and starrable.
 - **Spaced review** — starred words and produced sentences return on a
   widening schedule (1, 2, 4, 8, 16… days) until they stick.
 - **Test ahead** — a 12-question placement test, plus a ten-question exam on
@@ -43,8 +50,9 @@ sourcing rules.
 
 ```bash
 ./build.sh              # src/ → dist/index.html
-node test/validate.js   # data integrity
+node test/validate.js   # data integrity, and the Turkish the app generates
 node test/sim.js        # headless render of every screen
+node test/snap.js       # nothing drawn or generated changed
 ```
 
 No dependencies, no network, no build tooling — `cat` and `node`.
