@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
-node test/sim.js        # headless render of all 335 screens + every runtime path
+node test/sim.js        # headless render of all 337 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
