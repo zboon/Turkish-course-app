@@ -130,6 +130,30 @@ drain(60000); grab("yolda:marking");
 ev("yolMiss(yolCovered()[0].k)"); grab("yolda:marking:missed");
 ev("YL=null;");
 
+/* Hata defteri. The row is the thing worth fingerprinting: prompt, what
+   was said, what was right, and the why — a change to any of those shows
+   up here rather than in a count. */
+ev("wipe()"); ev("go('hata')"); grab("hata:empty");
+ev("go('unit','a1u1','g')");
+ev("startUnitQuiz('a1u1')"); ev("answerMC(3)"); ev("nextQ()"); ev("answerMC(0)");
+ev("startUnitQuiz('a1u1')"); ev("answerMC(3)");
+ev("go('hata')"); grab("hata");
+reseed(2580); ev("startProd('t')"); ev("prodModel()"); ev("prodMark(false)");
+ev("go('hata')"); grab("hata:patterns");
+ev("errForget('q:a1u1#0')"); grab("hata:forgotten");
+ev("wipe()");
+
+/* Kendi kelimelerim: empty, with a word, and mid-edit. */
+ev("wipe()"); ev("mineOpen()"); grab("mine:empty");
+env.doc.getElementById("mtr").value = "zeytinyağı";
+env.doc.getElementById("men").value = "olive oil";
+env.doc.getElementById("mnote").value = "market label";
+ev("mineAdd()"); grab("mine");
+ev("mineEdit(0)"); grab("mine:editing");
+ev("mineCancel()");
+ev("go('dict')"); ev("dictSrc('mine')"); grab("dict:src:mine"); ev("dictSrc('all')");
+ev("wipe()");
+
 /* The three views a learner actually meets in their first minutes: the
    orientation card with nothing behind them, the plan once one unit has
    been opened, and the plan mid-unit. */

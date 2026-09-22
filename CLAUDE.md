@@ -46,11 +46,13 @@ src/app.uretim.js        production mode, chunk bank, retell
 src/app.dinle.js         dictation and audio-first listening
 src/app.tekrar.js        the repetition engine, grammar repetition, the daily plan
 src/app.yolda.js         hands-free audio sessions
+src/app.hata.js          the mistake book
+src/app.benim.js         the learner's own words
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is seven files rather than one because it grew past the point
+The app is nine files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -191,6 +193,7 @@ deliberate breakage.
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
+ err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
  gap, prompten, pscope, drate, dreplay, ygap, yrate, tips}
 ```
 
@@ -617,6 +620,113 @@ its screen locks**, on every platform this runs on. `yolWake()` asks for a
 screen wake lock, which is all the app can do about it; the learner still
 needs the phone unlocked and in a cradle rather than in a pocket.
 
+## Hata defteri (the mistake book)
+
+Built. Seven places in this app can tell a learner they were wrong, and
+until now every one of them threw the finding away the moment the screen
+changed. The quiz kept `{score,of,at}`; Üretim, Dinleme, Tekrar,
+Dilbilgisi and Yolda kept a box number. So the `why` written for all 300
+drills was shown once and discarded, and a learner could fail the same
+passive construction eleven times with nothing anywhere noticing.
+
+**It is not another queue, and that is the main design decision.** Every
+mode already brings a wrong answer back the same day — that is what box
+0 means — so a "drill your mistakes" runner would re-ask what is already
+coming, and would have been the obvious thing to build. The gap is not
+repetition. It is **the record**: what was asked, what you said, what was
+right, why, and what is catching you *repeatedly*. Nothing in the app
+could answer the last one.
+
+`S.err` is therefore keyed by the item rather than appended as a log. A
+log grows and says nothing; a map says "four times". Keys reuse each
+mode's own, so one item missed in two modes is one entry — a sentence
+fumbled in the car and at a desk is one weakness:
+
+```
+q:<unitId>#<i>   a unit drill        p:<i>        a placement question
+s:<unitId>#<i>   a passage line      k:<index>    a prefab
+d: / a:          dictation, audio-first — deliberately NOT merged
+r:<fold(word)>   a vocabulary item   y:<unitId>   a grammar point
+```
+
+`d:` and `a:` stay apart for the same reason they are apart in `S.dinle`:
+a sentence can be easy to recognise and hard to transcribe, and merging
+them would hide exactly that. `sim.js` pins it.
+
+Three things it has to get right:
+
+1. **Eviction ranks on the count, not the date.** `ERR_MAX` is 400, and
+   ranking by age was written first and is exactly backwards: it drops
+   the nine-time mistake to keep four hundred one-off slips from this
+   morning, throwing away the only question the feature exists to
+   answer. Least-repeated goes first; age breaks a tie.
+2. **An overruled mark is not a mistake.** `grAccept()` withdraws the
+   entry `grCheck()` just wrote, or the book records something the
+   learner did not get wrong. It uses `errForget2()`, which saves without
+   re-rendering — the button version re-renders, and a grading path must
+   not.
+3. **Yolda writes nothing until the marking is confirmed**, like its own
+   schedule, and records only what was actually marked missed.
+
+The weak-spot read is mostly the book counting itself by mode, plus one
+thing that needs no new bookkeeping: `S.prod` already keys the generated
+drills by *pattern* (`g:<frame>:<tense>`, `t:<move>`), so a pattern
+sitting on box 0 is one currently being got wrong. `errPatterns()` reads
+it straight out and names it by frame and tense rather than by the
+storage key — both branches are exercised, since a transformation and a
+built sentence are read back by different code.
+
+Clearing an entry or the whole book changes no schedule, which the
+screen says and `sim.js` checks. `S.err` is progress, not a setting:
+`wipe()` clears it and a backup carries it.
+
+## Kendi kelimelerim (your own words)
+
+Built. The only way into the review queue used to be a star beside a word
+the course had already chosen, so a word met on a shop sign or in a
+subtitle could not get in and the app was a closed box.
+
+**It adds no queue.** `S.star` and `S.srs` already are the spaced queue,
+`dueList()` already feeds Sözlüğüm's review and the flashcards, and the
+daily plan's Tekrar step already counts them — so a word added here is
+starred like any other and turns up in Bugün the next day with no
+machinery at all. `S.mine` exists only because `S.star` holds bare
+`"tr|en"` strings: unstar a word and it would otherwise vanish, and the
+dictionary would have nothing to list.
+
+**It deliberately does not feed Tekrar motoru.** That engine ranks words
+by how often the app's own corpus mentions them and drills the worst
+served; a word the learner brought has zero mentions by definition, so
+every one would sit permanently at the top and bury the course
+vocabulary the engine exists to rescue. The screen and About both say so.
+
+Four things it has to get right:
+
+1. **Clean pasted text at the door.** User input arrives by paste, and a
+   soft hyphen or zero-width space inside a word looks perfect on screen
+   while breaking every match it touches — `validate.js` checks the
+   course data for exactly this, and `cleanWord()` is the same rule
+   applied where the learner types.
+2. **A word the course already teaches gets starred, not copied.** A
+   second entry with the learner's own gloss would be worse than the
+   unit's, and would sit beside it in Sözlük for ever.
+3. **An edit carries the schedule.** The star key is built from the
+   spelling, so re-keying a typo fix would quietly drop a word to box 0
+   after a month of reviews — `mineRekey()` moves the box across and
+   keeps `star` and `srs` in step, which is the standing rule for those
+   two.
+4. **A message must survive the render that follows it.** Every path that
+   sets one ends in `render()`, which replaces the element it was just
+   poked into, so the first version showed the learner nothing at all.
+   `MMSG` is rendered rather than poked. But a *rejection* must still not
+   re-render, or it wipes what is in the input boxes — the same trap the
+   Dinleme replay had.
+
+In Sözlük they are a third source, badged **Benim**. A course row opens
+its unit and a core row filters to its topic; one of the learner's own
+has neither, so it opens the list it lives in — without that branch the
+row rendered `dictTopic('undefined')`, which `sim.js` caught.
+
 ## Bugün (the daily plan)
 
 The app had six ways in and no opinion about which to use. `planCard()` is
@@ -684,30 +794,20 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Hata defteri — the mistake book.** Every error the app sees is thrown
-   away: the quiz stores `{score,of,at}`, and Üretim, Dinleme, Tekrar and
-   Dilbilgisi store only the SRS box. Collect the wrong answers across all
-   modes with the `why` that goes with them, plus a weak-spots read over
-   `S.prod` (already keyed by pattern, `g:<frame>:<tense>` and `t:<move>`),
-   `S.dinle`, `S.rep`, `S.gram` and `S.srs`. Nothing new to author, and it
-   is the one thing every tutor does that the app does not.
-2. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
-   from a unit's vocabulary list and from Sözlük, so a word met in the wild
-   cannot enter the queue. Small, and it stops the app being a closed box.
-3. **Sor — question production.** The question frame already exists in
+1. **Sor — question production.** The question frame already exists in
    `FRAMES`; asking is the half of a conversation the course never drills.
-4. **Sayılar — numbers, times and prices at speed.** Generated, so no
+2. **Sayılar — numbers, times and prices at speed.** Generated, so no
    content to write. The thing that reliably fails in a real shop.
-5. **Branching dialogue and a repair kit.** The nearest an offline app gets
+3. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-6. **Kütüphane** — verbatim public-domain texts with an
+4. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-7. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+5. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 

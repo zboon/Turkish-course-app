@@ -212,7 +212,9 @@ function yolSave(){
      otherwise. Nothing was written during the drive, so abandoning a
      sitting costs nothing rather than inflating a box. */
   yolCovered().forEach(function(it){
-    prodGradeKey(it.k,!YL.missed[it.k]);
+    const miss=!!YL.missed[it.k];
+    prodGradeKey(it.k,!miss);
+    if(miss)errNote(it.k,{m:"s",q:it.en,c:it.tr,to:errUnitOf(it.k)});
   });
   YL=null;go("yolda");
 }

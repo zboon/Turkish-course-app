@@ -264,7 +264,7 @@ function repItem(e){
     if(!core)continue;
     const blanked=raw.slice();
     blanked.splice(span[0],span[1],(m?m[1]:"")+"___"+(m?m[3]:""));
-    return {k:e.k,tr:e.tr,en:e.en,kind:"cloze",q:blanked.join(" "),
+    return {k:e.k,u:e.unit,tr:e.tr,en:e.en,kind:"cloze",q:blanked.join(" "),
             c:core,alts:[fold(core)],hint:line[1],from:u.lv+" · "+u.tr};
   }
   /* No usable context: ask for the word itself. "ağabey (abi)" is two ways
@@ -272,7 +272,7 @@ function repItem(e){
      is what gets shown — asking the learner to type the whole entry,
      brackets and all, is not a question about Turkish. */
   const u=unit(e.unit);
-  return {k:e.k,tr:e.tr,en:e.en,kind:"recall",q:e.en,c:vocabPrimary(e.tr),
+  return {k:e.k,u:e.unit,tr:e.tr,en:e.en,kind:"recall",q:e.en,c:vocabPrimary(e.tr),
           alts:vocabForms(e.tr),hint:"",from:(u?u.lv+" · "+u.tr:e.lv)};
 }
 
@@ -303,6 +303,7 @@ function tkCheck(){
   TK.res=good;
   repGrade(it.k,good);
   if(good)TK.right++;
+  else errNote("r:"+it.k,{m:"r",q:it.q,c:it.c,a:TK.typed,to:it.u||""});
   TK.phase="check";render();
 }
 function tkSay(){
@@ -515,6 +516,7 @@ function grCheck(){
   GR.res=gramJudge(it.c,GR.typed);
   gramGrade(it.k,GR.res.same);
   if(GR.res.same)GR.right++;
+  else errNote(it.k,{m:"y",q:it.t+" · "+it.en,c:it.c,a:GR.typed,w:it.focus,to:it.id});
   GR.phase="check";render();
 }
 /* A word-level judge can mark words; it cannot mark Turkish. Where the
@@ -527,6 +529,9 @@ function grAccept(){
   if(!GR||GR.phase!=="check"||GR.res.same||GR.over)return;
   const it=GR.q[GR.i];
   gramAccept(it.k,GR.pre);
+  /* Overruled is not missed: the entry the mark just wrote comes back out
+     again, or the book would record a mistake the learner did not make. */
+  errForget2(it.k);
   GR.over=true;GR.right++;render();
 }
 function grSay(){const it=GR&&GR.q[GR.i];if(it)say(it.c);}
