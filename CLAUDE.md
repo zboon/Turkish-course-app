@@ -45,11 +45,12 @@ src/app.screens.js       home, level, unit, quiz, words, sözlük, about
 src/app.uretim.js        production mode, chunk bank, retell
 src/app.dinle.js         dictation and audio-first listening
 src/app.tekrar.js        the repetition engine, grammar repetition, the daily plan
+src/app.yolda.js         hands-free audio sessions
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is five files rather than one because it grew past the point
+The app is seven files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -190,7 +191,7 @@ deliberate breakage.
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
- gap, prompten, pscope, drate, dreplay, tips}
+ gap, prompten, pscope, drate, dreplay, ygap, yrate, tips}
 ```
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
@@ -209,7 +210,7 @@ rather than a count. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
-`pscope`, `drate`, `dreplay` and `tips` are settings, not progress —
+`pscope`, `drate`, `dreplay`, `ygap`, `yrate` and `tips` are settings, not progress —
 `wipe()` keeps them, like `theme` and `rate`. Because `wipe()` keeps
 `pscope`, a test that wipes still inherits whatever scope ran before it —
 set it explicitly when the default is what is under test.
@@ -330,9 +331,11 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 - Voice runs on the device's own `tr-TR` speech synthesis. `stopPlay()` is
   called at the top of `go()` and `home()` — any new navigation path must too,
   or audio keeps playing over the next screen. `stopPlay()` also clears the
-  Üretim countdown and the Dinleme timer, so a timer started in either dies
-  with the screen; anything else that sets a timer needs its own stop called
-  from `stopPlay()` for the same reason.
+  Üretim countdown, the Dinleme timer and a Yolda sitting, so a timer
+  started in any of them dies with the screen; anything else that sets a
+  timer needs its own stop called from `stopPlay()` for the same reason.
+  Yolda matters most here: it holds the speaker for minutes, so a leak is
+  louder there than anywhere else in the app.
 
 ## Üretim (production mode)
 
@@ -547,6 +550,72 @@ In the plan it sits **second**, with the reviews: it decays the way the
 words do, and unlike Dinle and Söyle it asks for a form rather than a
 sentence already met. `avail` withholds it until a grammar point has been
 read, so day one is still one instruction.
+
+## Yolda (hands-free sessions)
+
+Built, by request: something that can be practised while driving or
+working, with nothing to touch.
+
+Üretim already prompts, waits and plays the model, so the obvious move
+was a setting on it. That does not work. Every Üretim item ends in a
+Doğru/Yanlış tap, and a tap is the one thing a driver has not got — so
+`go('yolda')` is a separate mode rather than a switch, and the difference
+is not the audio but what happens to the grading.
+
+Three things make it Pimsleur rather than a playlist:
+
+1. **The English is always spoken.** In Üretim voicing the prompt is an
+   option (`prompten`); here it is the only input channel, so the setting
+   is ignored and the English always plays — in the device's English
+   voice, never the `tr-TR` one.
+2. **The graduated interval is inside the sitting.** The part of Pimsleur
+   that does the work is not the pause, it is that an item returns while
+   it is still half remembered. `YOL_SPACING` is `[3,8,20]` slots, and a
+   five-minute sitting therefore covers about a dozen phrases four times
+   each rather than rushing past fifty once.
+3. **Grading is deferred, not dropped.** Self-grading is what keeps this
+   app offline and microphone-free, and it cannot happen at sixty miles
+   an hour. The sitting runs untouched; the marking happens once at the
+   end, with everything taken as right and the ones that got away tapped.
+   **Nothing is written while it runs**, so abandoning a sitting costs
+   nothing rather than pushing a sentence you fumbled out to sixteen
+   days. The back arrow mid-sitting ends it and offers the marking — it
+   does not bin the work — while `home()` leaves and writes nothing.
+
+It adds **no new progress keys**. Items are the same `s:` and `k:`
+prefixes Üretim uses and grade onto the same ladder, which is right: a
+sentence produced in the car and one produced at a desk are the same
+sentence. `ygap` and `yrate` are settings, so `wipe()` keeps them.
+
+**Nothing is touched, so nothing can be rescued by touching.** Every step
+is armed twice — the voice's own `onend` and a watchdog — and a token
+makes sure exactly one of them wins. Both halves are pinned by `sim.js`:
+a browser that never fires `onend` still walks the sitting (fewer items,
+never a hang), and one that fires it twice covers exactly as many as one
+that fires it once. Getting that wrong skips items silently, which is
+invisible from the driver's seat.
+
+Two things went wrong first and are worth not repeating:
+
+- **`yolClear()` cleared the deadline as well as the step timer**, so the
+  first step cancelled the clock that ends the sitting and 5 and 10
+  minutes both ran the whole playlist. The deadline is not a step and
+  lives in `cid`, cleared only by `yolStop`/`yolFinish`.
+- **`YOL_SLOTS` was too small.** A slot is five to nine seconds depending
+  on the gap setting, so ten minutes at the shortest gap needs about 128
+  of them; at 90 the sitting ended early and quietly. It is 140, and
+  `sim.js` fails if a sitting ends on the playlist rather than the clock.
+
+Sentences are scoped to units read, as everywhere else. The prefabs are
+not, deliberately: they belong to no unit, Üretim has always offered them
+from day one, and they are the right thing to be saying in a car before
+any passage has been opened. So a fresh install gets a sitting of
+prefabs, the hub says so, and sentences join in as passages are read.
+
+One honest limit, in the About text too: **a phone stops speaking when
+its screen locks**, on every platform this runs on. `yolWake()` asks for a
+screen wake lock, which is all the app can do about it; the learner still
+needs the phone unlocked and in a cradle rather than in a pocket.
 
 ## Bugün (the daily plan)
 

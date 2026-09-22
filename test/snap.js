@@ -23,7 +23,7 @@ const file = process.argv.slice(2).filter(a => a !== "--write")[0] || path.join(
 const store = path.join(__dirname, "snapshot.json");
 
 const env = boot(file, { seed: 12345 });
-const ev = env.ev, app = env.appEl, doc = env.doc;
+const ev = env.ev, app = env.appEl, doc = env.doc, drain = env.drain;
 const q = s => JSON.stringify(s);
 const hash = s => crypto.createHash("sha256").update(s).digest("hex").slice(0, 16);
 
@@ -114,6 +114,21 @@ env.doc.getElementById("gbox").value = ev("GR.q[GR.i].c").split(/\s+/).slice(1).
 ev("grCheck()"); grab("gram:marked");
 ev("grAccept()"); grab("gram:overruled");
 ev("wipe()"); ev("go('gram')"); grab("gram:empty");
+
+/* Yolda. The run screen is the one thing in the app nobody is expected to
+   read while it is happening, so what is fingerprinted is that it stays
+   the same three shapes — prompt, countdown, model — plus the marking
+   screen, which is the only part that gets touched. */
+ev("wipe()"); ev("setYgap(5)"); ev("setYrate(1)");
+ev("go('yolda')"); grab("yolda:prefabs-only");
+ev("go('unit','a1u1','r')"); ev("go('unit','a1u2','r')");
+ev("go('yolda')"); grab("yolda");
+reseed(1470); ev("startYolda(5)"); grab("yolda:prompt");
+ev("yolGap()"); grab("yolda:gap");
+ev("yolModel()"); grab("yolda:model");
+drain(60000); grab("yolda:marking");
+ev("yolMiss(yolCovered()[0].k)"); grab("yolda:marking:missed");
+ev("YL=null;");
 
 /* The three views a learner actually meets in their first minutes: the
    orientation card with nothing behind them, the plan once one unit has

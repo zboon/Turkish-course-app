@@ -25,6 +25,7 @@ cat \
   src/app.uretim.js \
   src/app.dinle.js \
   src/app.tekrar.js \
+  src/app.yolda.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"
