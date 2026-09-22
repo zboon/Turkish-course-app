@@ -33,9 +33,11 @@ const grab = k => { snap[k] = hash(app.innerHTML); };
    shifting the next one's. */
 const reseed = n => ev("Math.random=(function(){var s=" + n + ";return function(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};})()");
 
+const meetAll = () => ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:1}}); save()");
+
 ev("wipe()");
 reseed(12345);
-ev("home()"); grab("home");
+ev("home()"); grab("home");            /* day one: orientation, one step */
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");
@@ -46,6 +48,11 @@ ev("dictCat('all')"); ev("dictSearch('göz')"); grab("dict:search"); ev("dictSea
 ["course", "core"].forEach(s => { ev("dictSrc(" + q(s) + ")"); grab("dict:src:" + s); });
 ev("dictSrc('core')"); ev("dictTopic('yemek')"); grab("dict:topic"); ev("dictTopic('')"); ev("dictSrc('all')");
 ev("dictSort()"); grab("dict:bylevel"); ev("dictSort()");
+/* Every review mode is scoped to units met, so the hubs are empty until
+   something has been. Meet the course here and the hub fingerprints stay
+   meaningful; the beginner's view, where all of this is deliberately
+   absent, is the "home" grab above and the plan grabs below. */
+meetAll();
 ev("go('prod')"); grab("prod");
 
 reseed(999); ev("startProd('g')"); grab("prod:gen");
@@ -72,7 +79,10 @@ ev("setDrate(1.5)"); ev("go('dinle')"); grab("dinle:fast"); ev("setDrate(1)");
    index or the matcher shows up here as the bars moving — which is the
    one number the engine exists to shift. Both question shapes are taken:
    a cloze, and the recall the once-only words fall back on. */
-ev("wipe()"); ev("go('tekrar')"); grab("tekrar");
+/* Every review mode is scoped to units met, so the walk has to meet them
+   before there is anything to fingerprint. The beginner's view — where all
+   of this is deliberately absent — is captured separately below. */
+ev("wipe()"); meetAll(); ev("go('tekrar')"); grab("tekrar");
 reseed(1122); ev("startTekrar()"); grab("tekrar:ask");
 env.doc.getElementById("tbox").value = ev("TK.q[TK.i].c");
 ev("tkCheck()"); grab("tekrar:right");
@@ -80,15 +90,20 @@ ev("tkNext()");
 env.doc.getElementById("tbox").value = "yanlış";
 ev("tkCheck()"); grab("tekrar:wrong");
 /* A cloze, wherever the first one in this sitting turns up. */
-ev("wipe()");
+ev("wipe()"); meetAll();
 ev("TKX = wordIndex().words.map(repItem).filter(function(i){return i.kind==='cloze'})[0]");
 ev("TK = {q:[TKX], i:0, phase:'ask', typed:'', res:null, right:0}");
 ev("V = {view:'tekrarrun'}"); ev("render()"); grab("tekrar:cloze");
 env.doc.getElementById("tbox").value = ev("TK.q[0].c");
 ev("tkCheck()"); grab("tekrar:cloze:right");
 
-ev("wipe()"); ev("home()"); grab("home:plan");
+/* The three views a learner actually meets in their first minutes: the
+   orientation card with nothing behind them, the plan once one unit has
+   been opened, and the plan mid-unit. */
+ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grab("home:plan");
 ev("go('unit','a1u4','r')"); ev("home()"); grab("home:plan:resume");
+ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grab("home:tips-hidden");
+ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");
 
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");
 ev("go('words')"); grab("words:full");

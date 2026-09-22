@@ -160,12 +160,20 @@ function repTotal(e){
   const r=S.rep&&S.rep[e.k];
   return e.nat+((r&&r.n)||0);
 }
+/* Only the words of units actually met, worst-served first. Without the
+   scope the engine sorted all 600 by how rarely the app mentions them,
+   and the rarest words live in the advanced units — so a learner who had
+   opened nothing was handed "abartı", "akıcı" and "anı" to recall. Worst
+   served *among what you have met* is the useful ordering. */
 function repBank(){
-  return wordIndex().words.slice().sort(function(a,b){
-    const d=repTotal(a)-repTotal(b);
-    return d||(a.k<b.k?-1:1);       /* stable: same total, alphabetical */
-  });
+  return wordIndex().words.filter(function(e){return metWords(e.unit);})
+    .sort(function(a,b){
+      const d=repTotal(a)-repTotal(b);
+      return d||(a.k<b.k?-1:1);     /* stable: same total, alphabetical */
+    });
 }
+/* The whole course, for the hub to say how far the scope reaches. */
+function repAll(){return wordIndex().words.length;}
 function repShort(){                 /* still under the target */
   return repBank().filter(function(e){return repTotal(e)<REP_TARGET;});
 }
@@ -232,8 +240,19 @@ function repHits(raw,form){
   return n;
 }
 function repItem(e){
-  for(let a=0;a<e.where.length;a++){
-    const p=e.where[a], u=unit(p[0]);
+  /* A word can occur in passages far above the learner's level — "hayır"
+     turns up in a C1 text — and blanking it there hands a beginner a
+     sentence they cannot read. Contexts are therefore restricted to units
+     met, and the word's own unit is tried first, so the sentence is one
+     that has actually been in front of them. No met context falls through
+     to plain recall, which is always readable. */
+  const where=e.where.filter(function(p){return metLines(p[0]);})
+    .sort(function(x,y){
+      const ax=x[0]===e.unit?0:1, ay=y[0]===e.unit?0:1;
+      return ax-ay;
+    });
+  for(let a=0;a<where.length;a++){
+    const p=where[a], u=unit(p[0]);
     if(!u||!u.read.lines[p[1]])continue;
     const line=u.read.lines[p[1]], raw=line[0].split(/\s+/);
     if(repHits(raw,e.form)!==1)continue;      /* the answer would be on screen */
@@ -416,34 +435,47 @@ function planToday(){
      already ticked instead of moving on. */
   const resuming=!!at&&!isDone(at.id);
   const nx=resuming?at:nextUnit();
+  /* A step with a zero count means one of two different things, and showing
+     a completion tick for both is a lie: either today's queue is cleared,
+     or the queue does not exist yet because nothing has been met. The
+     second kind is left out of the plan altogether — a beginner should see
+     one instruction, not three ticked rows for work they have never done. */
   const steps=[
     {k:"rep",  tr:"Tekrar",  en:"the words the course forgets", n:rep+words,
+     avail:repBank().length>0||S.star.length>0,
      mins:Math.round((rep*PLAN_MIN[0]+words*10)/60),
      go:rep?"startTekrar()":"startReview()"},
     {k:"dinle",tr:"Dinle",   en:"write down what you hear", n:dk,
+     avail:listenBank("d:").length>0,
      mins:Math.round(dk*PLAN_MIN[1]/60), go:"startDinle('d')"},
     {k:"prod", tr:"Söyle",   en:"say it before the model", n:pr,
+     avail:sentenceBank().length>0,
      mins:Math.round(pr*PLAN_MIN[2]/60), go:"startProd('s')"},
     {k:"new",  tr:resuming?"Devam":"Yeni",
      en:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s):""):"every unit is done",
-     n:nx?1:0, mins:nx?10:0,
+     n:nx?1:0, mins:nx?10:0, avail:!!nx,
      go:nx?"go('unit','"+nx.id+"','"+(resuming?S.place.s:"v")+"')":"home()"}
   ];
   if(rt)steps.splice(3,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",n:rt,
-                          mins:rt*3,go:"go('prod')"});
-  const left=steps.filter(function(s){return s.n>0;});
-  return {steps:steps,left:left,mins:steps.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
+                          avail:true,mins:rt*3,go:"go('prod')"});
+  const shown=steps.filter(function(s){return s.avail;});
+  const left=shown.filter(function(s){return s.n>0;});
+  return {steps:shown,left:left,all:steps,
+          mins:shown.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
 }
 function planCard(){
   const p=planToday();
+  const first=metUnits().length===0;
   let h='<h2 class="sec">Bugün</h2><div class="card">';
   if(!p.left.length){
     h+='<p class="lead">Bugünlük bitti</p>'+
      '<p class="sub">Every queue is empty and the course is finished. Anything you open now is revision by choice.</p></div>';
     return h;
   }
-  h+='<p class="sub" style="margin:0 0 .5rem">In this order: reviews decay on a schedule, new material does not. About '+
-   Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.</p>';
+  h+='<p class="sub" style="margin:0 0 .5rem">'+
+   (first?'Start with the first unit. The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
+        :'In this order: reviews decay on a schedule, new material does not. About '+
+          Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.')+'</p>';
   p.steps.forEach(function(s,i){
     const done=s.n===0;
     h+='<button class="unit" onclick="'+s.go+'">'+
@@ -452,6 +484,7 @@ function planCard(){
       '<span class="unit-s">'+esc(s.en)+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
       '<span class="chev">'+IC.chev+'</span></button>';
   });
-  h+='<button class="btn" onclick="'+p.left[0].go+'">'+p.left[0].tr+' ile başla</button></div>';
+  h+='<button class="btn" onclick="'+p.left[0].go+'">'+
+   (first?"Başla":p.left[0].tr+" ile başla")+'</button></div>';
   return h;
 }

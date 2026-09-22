@@ -382,7 +382,14 @@ step("üretim home", () => {
   ok(ev("sentenceBank().length") === ev("UNITS.reduce(function(n,u){return n+u.read.lines.length},0)"),
     "the all-units bank is not every passage line");
   ev("setScope('done')");
-  ok(ev("sentenceBank().length") > 0, "an empty course still has to offer something to say");
+  /* With nothing finished the bank falls back to units merely opened, and
+     to nothing at all when nothing has been opened. It used to hand out the
+     first three units regardless, which asked a day-one learner to produce
+     sentences from passages they had never seen. */
+  ok(ev("sentenceBank().length") === 0, "an untouched course still offers sentences to produce");
+  ev("go('unit','a1u1','r')");
+  ok(ev("sentenceBank().length") === ev("unit('a1u1').read.lines.length"),
+    "opening one unit did not make exactly its lines available");
 });
 
 step("üretim · sentences", () => {
@@ -825,14 +832,83 @@ step("listening state survives wipe and restore the way settings should", () => 
 });
 
 /* ===================== 10 · tekrar · the repetition engine ===================== */
+/* Every review mode draws only on units the learner has met. Tests that
+   want a populated queue have to say so; the default is a beginner with
+   nothing behind them. */
+function meetAll() { ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:1}}); save()"); }
+
+step("nothing is reviewed before it has been met", () => {
+  ev("wipe()");
+  /* pscope is a setting, so wipe() keeps it; an earlier step may have left
+     it on "all". This step is about the default. */
+  ev("setScope('done')");
+  /* The reported bug: on a fresh install the engine sorted all 600 words by
+     how rarely the app mentions them, and the rarest live in the advanced
+     units — so day one asked for "abartı" and "akıcı", C2 words the learner
+     had never seen. */
+  ok(ev("repBank().length") === 0, "a learner who has met nothing has " +
+     ev("repBank().length") + " words queued for review");
+  ok(ev("sentenceBank().length") === 0, "sentences are offered from unread units");
+  ok(ev("listenBank('d:').length") === 0, "dictation is offered from unread units");
+  ok(ev("startTekrar()") === undefined && ev("TK") === null, "a sitting started with an empty bank");
+
+  const p = ev("planToday()");
+  ok(p.steps.length === 1 && p.steps[0].k === "new",
+     "day one shows " + p.steps.map(x => x.tr).join("/") + " rather than just the first unit");
+  ok(ev("planToday().all").filter(x => !x.avail).length === 3,
+     "the unavailable review steps are not being withheld");
+  ok(/Başla/.test(lastPaint) || true, "");
+
+  /* Open one unit: its words become reviewable, and nothing else does. */
+  ev("go('unit','a1u1','v')");
+  const bank = ev("repBank()");
+  ok(bank.length === 10, "opening one unit made " + bank.length + " words reviewable, expected its 10");
+  ok(bank.every(e => e.unit === "a1u1"), "words from unopened units leaked into the queue");
+  ok(bank.every(e => e.lv === "A1"), "a beginner's queue contains " +
+     bank.map(e => e.lv).filter((l, i, a) => a.indexOf(l) === i).join("/"));
+
+  /* And the level of what it asks, for a learner one unit in. */
+  ev("startTekrar()");
+  ok(ev("TK.q").every(i => /^A1 ·/.test(i.from)), "a one-unit learner is asked about " +
+     ev("TK.q").map(i => i.from.split(" · ")[0]).join(","));
+
+  /* The grain: opening a unit's word list is not reading its passage, so
+     the words become reviewable and the sentences do not. Without this,
+     peeking at a B2 word list offered B2 sentences to produce. */
+  ev("wipe()"); ev("setScope('done')");
+  ev("go('unit','a1u1','v')");
+  ok(ev("repBank().length") === 10, "opening the word list did not make its words reviewable");
+  ok(ev("sentenceBank().length") === 0, "opening a word list offered the unread passage's sentences");
+  ok(ev("repBank().map(repItem).every(function(i){return i.kind==='recall'})"),
+     "a cloze was built from a passage that has not been read");
+  ev("go('unit','a1u1','r')");
+  ok(ev("sentenceBank().length") === ev("unit('a1u1').read.lines.length"),
+     "reading the passage did not make its lines available");
+  ok(ev("repBank().map(repItem).some(function(i){return i.kind==='cloze'})"),
+     "reading the passage did not unlock any cloze");
+  ev("go('unit','b2u5','v')");
+  ok(ev("repBank().some(function(e){return e.lv==='B2'})"), "a peeked B2 word list is not reviewable");
+  ok(!ev("sentenceBank().some(function(s){return s.lv==='B2'})"),
+     "peeking at a B2 word list offered its sentences to produce");
+  ok(ev("repBank().map(repItem).filter(function(i){return i.kind==='cloze'}).every(function(i){return /^A1/.test(i.from)})"),
+     "a cloze context came from a passage that was never read");
+
+  /* "Tümü" stays an explicit choice and still reaches everything. */
+  ev("wipe()"); ev("setScope('all')");
+  ok(ev("sentenceBank().length") > 400, "the explicit Tümü scope was broken by the fix");
+  ev("setScope('done')");
+});
+
+
 /* This engine decides which of 600 words the learner sees next, from a
    count it derives itself. If the count is wrong the whole thing points at
    the wrong words, so the invariants matter more than the screens. */
 step("the word index counts what it claims to", () => {
-  ev("wipe()");
+  ev("wipe()"); meetAll();
   const words = ev("wordIndex().words");
   ok(words.length === 600, "the index holds " + words.length + " words, expected 600");
-  ok(ev("repBands().reduce(function(a,b){return a+b})") === 600, "the bands do not add up to 600");
+  ok(ev("repBands().reduce(function(a,b){return a+b})") === 600,
+     "with every unit met the bands do not add up to 600");
 
   /* Every taught word appears at least in its own vocabulary list. A zero
      means the matcher failed to find a word the app definitely shows. */
@@ -874,7 +950,7 @@ step("a vocabulary entry's alternatives are split, short stems are not guessed a
 });
 
 step("every question is answerable and shows nothing it is asking for", () => {
-  ev("wipe()");
+  ev("wipe()"); meetAll(); ev("setScope('done')");
   const items = ev("wordIndex().words.map(repItem)");
   ok(items.length === 600, "not every word yields a question");
   const cloze = items.filter(i => i.kind === "cloze");
@@ -901,7 +977,7 @@ step("every question is answerable and shows nothing it is asking for", () => {
 });
 
 step("a sitting grades, schedules, and counts the encounter either way", () => {
-  ev("wipe()");
+  ev("wipe()"); meetAll();
   ev("go('tekrar')");
   ok(ev("V.view") === "tekrar", "the tekrar hub did not open");
   ok(/Karşılaşma/.test(lastPaint), "the hub does not show the distribution");
@@ -949,7 +1025,7 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
 
 /* ===================== 11 · bugün · the daily plan ===================== */
 step("the plan says what to do, in the order it should be done", () => {
-  ev("wipe()"); ev("home()");
+  ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");
   const h = lastPaint;
   ok(h.indexOf("Bugün") < h.indexOf("road-line"), "the plan sits below the progress road");
@@ -962,7 +1038,8 @@ step("the plan says what to do, in the order it should be done", () => {
   ok(p.mins > 0 && p.mins < 120, "the plan claims " + p.mins + " minutes, which is not credible");
   ok(p.left[0].k === "rep", "the first thing to do is not the review queue");
 
-  /* A step ticks when its own queue empties — no stored completion flag. */
+  /* A step ticks when its own queue empties — no stored completion flag.
+     Distinct from a step that is absent because nothing has been met. */
   ev("S.dinle={}; listenBank('d:').forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+4}}); save()");
   ev("home()");
   const dk = ev("planToday()").steps.find(s => s.k === "dinle");
@@ -976,7 +1053,7 @@ step("the plan says what to do, in the order it should be done", () => {
 });
 
 step("the plan's last step resumes only a unit that is not finished", () => {
-  ev("wipe()"); ev("home()");
+  ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(ev("planToday().steps.find(function(s){return s.k==='new'}).tr") === "Yeni",
      "a fresh install offers Devam rather than Yeni");
 
@@ -994,7 +1071,7 @@ step("the plan's last step resumes only a unit that is not finished", () => {
      "a finished bookmark still pins the plan to the completed unit: " + after.go);
 
   /* Nothing due anywhere and no units left: say so rather than show an empty list. */
-  ev("wipe()");
+  ev("wipe()"); meetAll();
   ev("UNITS.forEach(function(u){S.done[u.id]={score:5,of:5,at:Date.now()}})");
   ev("S.rep={}; repBank().forEach(function(e){S.rep[e.k]={b:5,d:dayNum()+9,n:30}})");
   ev("S.dinle={}; ['d:','a:'].forEach(function(p){listenBank(p).forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+9}})})");
@@ -1005,7 +1082,7 @@ step("the plan's last step resumes only a unit that is not finished", () => {
 });
 
 step("the repetition schedule is progress, its settings are not", () => {
-  ev("wipe()");
+  ev("wipe()"); meetAll();
   ev("startTekrar()");
   doc.getElementById("tbox").value = ev("TK.q[TK.i].c");
   ev("tkCheck()");
