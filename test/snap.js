@@ -29,6 +29,18 @@ const hash = s => crypto.createHash("sha256").update(s).digest("hex").slice(0, 1
 
 const snap = {};
 const grab = k => { snap[k] = hash(app.innerHTML); };
+/* Two things on these screens read the wall clock and no seed can make
+   either reproducible: how long the learner took in Sayılar, and the live
+   clock on the home screen, which changes on the minute — so a run that
+   straddles one would disagree with itself. Only those readings are
+   blanked, and everything else stays pinned: the verdict, the answer,
+   which way a pill is coloured, every other word on the page. "N.Ns"
+   appears nowhere else, speeds render with × and durations in dakika or
+   gün, and the clock's two elements hold nothing but text. */
+const scrub = h => h
+  .replace(/\d+\.\d+s/g, "#s")
+  .replace(/(id="hclock(?:d)?"[^>]*>)[^<]*/g, "$1#");
+const grabx = k => { snap[k] = hash(scrub(app.innerHTML)); };
 /* Reseeding before each walk keeps one section's randomness from
    shifting the next one's. */
 const reseed = n => ev("Math.random=(function(){var s=" + n + ";return function(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};})()");
@@ -37,7 +49,7 @@ const meetAll = () => ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:
 
 ev("wipe()");
 reseed(12345);
-ev("home()"); grab("home");            /* day one: orientation, one step */
+ev("home()"); grabx("home");            /* day one: orientation, one step */
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");
@@ -141,6 +153,29 @@ reseed(3311); ev("startProd('e')"); grab("sor:yesno:prompt");
 ev("prodModel()"); grab("sor:yesno:model");
 ev("PR=null;"); ev("wipe()");
 
+/* Sayılar. Both directions at both ends: what is on screen while the
+   clock runs, and what the verdict looks like — including the one that
+   only this mode can give, right but too late. */
+ev("wipe()"); ev("setNmax(9999)"); ev("setNcap(5)");
+/* The hub draws a fresh example beside each shape on every paint, so it
+   needs its own seed like every other walk in this file. */
+reseed(4099); ev("go('sayilar')"); grabx("sayilar");
+reseed(4100); ev("startNum('duy')"); grabx("sayilar:duy:ask");
+ev("document.getElementById('nbox').value=NM.q[0].show.replace(' TL','')");
+ev("numCheck()"); grabx("sayilar:duy:right");
+ev("numNext()");
+ev("document.getElementById('nbox').value='99999999'");
+ev("numCheck()"); grabx("sayilar:duy:wrong");
+ev("numNext()");
+ev("NM.t0=Date.now()-9000");
+ev("document.getElementById('nbox').value=NM.q[2].show.replace(' TL','')");
+ev("numCheck()"); grabx("sayilar:duy:slow");
+reseed(4101); ev("startNum('oku')"); grabx("sayilar:oku:ask");
+ev("numReveal()"); grabx("sayilar:oku:model");
+ev("numMark(true)");
+ev("NM.i=NM.q.length;NM.phase='end'"); ev("render()"); grabx("sayilar:end");
+ev("NM=null;"); ev("wipe()");
+
 /* Hata defteri. The row is the thing worth fingerprinting: prompt, what
    was said, what was right, and the why — a change to any of those shows
    up here rather than in a count. */
@@ -168,9 +203,9 @@ ev("wipe()");
 /* The three views a learner actually meets in their first minutes: the
    orientation card with nothing behind them, the plan once one unit has
    been opened, and the plan mid-unit. */
-ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grab("home:plan");
-ev("go('unit','a1u4','r')"); ev("home()"); grab("home:plan:resume");
-ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grab("home:tips-hidden");
+ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grabx("home:plan");
+ev("go('unit','a1u4','r')"); ev("home()"); grabx("home:plan:resume");
+ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grabx("home:tips-hidden");
 ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");
 
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");

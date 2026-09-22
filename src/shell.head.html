@@ -110,6 +110,13 @@ a{color:var(--cobalt)}
 }
 .tag{margin:.5rem 0 0;color:var(--faint);font-size:.83rem}
 
+/* The live clock: the time now, in words. Turquoise because it is Turkish
+   to be read rather than chrome to be operated. */
+.clock{display:block;width:100%;background:none;border:0;padding:.8rem 0 0;text-align:center}
+.clock .tr{display:block;font-family:'Crimson Pro',Georgia,serif;font-size:1.3rem;
+  line-height:1.25;color:var(--turk)}
+.clock .d{display:block;font-size:.72rem;letter-spacing:.08em;color:var(--faint);margin-top:.2rem}
+
 /* the road: A1 -> C2 */
 .road{margin:1.5rem 0 .3rem;position:relative}
 .road-line{position:absolute;left:6%;right:6%;top:13px;height:2px;background:var(--line)}
