@@ -4,9 +4,9 @@
 # dist/ — so the site is published as an artifact from here rather than by
 # moving the build output into the repo layout.
 #
-# Settings → Pages → Source is still "Deploy from a branch", so every push
-# starts GitHub's own legacy builder as well as this workflow. See the wait
-# in the deploy job below for why that matters and how it is handled.
+# Settings → Pages → Source is "GitHub Actions", so this workflow is the
+# only thing that publishes the site. The guard in the deploy job below is
+# what catches it if that ever stops being true.
 name: Build and publish
 
 on:
@@ -60,43 +60,40 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      # Two builders publish to one site, and the last one wins.
+      # A guard against the Pages source being set back to a branch.
       #
-      # Because the Pages source is a branch rather than "GitHub Actions",
-      # every push also starts GitHub's legacy builder, which publishes the
-      # repository root. There is no index.html there — dist/ is generated
-      # and git-ignored — so that deploy serves a 404. Which of the two
-      # lands last has been luck: on the v2.31 merge this workflow finished
-      # 12 seconds after it and the app went live, on the merge before that
-      # it finished 20 seconds earlier and the site 404'd until the
-      # workflow was dispatched by hand.
+      # While the source was "Deploy from a branch", every push also ran
+      # GitHub's legacy builder, which publishes the repository root. There
+      # is no index.html there — dist/ is generated and git-ignored — so
+      # that deploy served a 404, and because both write to one site the
+      # last one won. It was luck: one merge went live, the merge before it
+      # 404'd until this workflow was dispatched by hand.
       #
-      # So stop guessing and wait for it. Once the Pages source is switched
-      # to "GitHub Actions" the legacy builder stops running at all, this
-      # step finds nothing and returns in about ten seconds, so it is safe
-      # to leave in place afterwards.
-      - name: Wait for the legacy Pages builder
+      # The source is "GitHub Actions" now, so no legacy run exists and
+      # this step costs one API call. It stays because the failure it
+      # prevents is silent — the site serves a stale 404 while every check
+      # here is green — and because a setting is easier to change back than
+      # to notice.
+      - name: Guard against the legacy Pages builder
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # Both runs are created from the same push event, so anything in
+          # flight is already listed by the time this job starts.
           inflight() {
             gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$GITHUB_SHA&per_page=100" \
               --jq '[.workflow_runs[]
                      | select(.path == "dynamic/pages/pages-build-deployment")
                      | select(.status != "completed")] | length'
           }
-          # Both runs are queued within a second of the push, but this job
-          # starts after a build, so one poll would normally be enough. The
-          # grace period is for the case where it has not been created yet.
-          sleep 10
           for _ in $(seq 1 40); do          # 40 × 15s, so ten minutes at most
             n="$(inflight)"
             if [ "$n" -eq 0 ]; then
-              echo "legacy builder is not running — publishing now"
+              echo "no legacy builder in flight — publishing now"
               exit 0
             fi
-            echo "$n legacy run(s) still in flight; waiting"
+            echo "::warning::Pages source is a branch again: $n legacy run(s) in flight, waiting so the app lands last"
             sleep 15
           done
           echo "::warning::legacy Pages builder still running after ten minutes — publishing anyway"

@@ -182,13 +182,14 @@ Two independent targets:
    service worker there; the registration call is wrapped and fails silently.
 2. **GitHub Pages** — automatic. `.github/workflows/pages.yml` builds `src/`,
    runs all four checks and publishes `dist/` on every push to `main`. The
-   Pages source is still **"Deploy from a branch"**, which means every push
-   also starts GitHub's own legacy builder; that one publishes the repository
-   root, finds no `index.html` and serves a 404. Both write to the same site
-   and the last deploy wins, so the workflow waits for the legacy run to
-   finish before publishing — see the comment on that step. Switching the
-   source to "GitHub Actions" stops the legacy builder running at all and
-   makes the wait a no-op; until someone does, do not remove it. `dist/` is
+   Pages source is **"GitHub Actions"**, so this workflow is the only thing
+   that publishes the site. It was "Deploy from a branch" until v2.31, and
+   that meant a second builder — GitHub's own — published the repository
+   root on every push, found no `index.html` and served a 404; both wrote to
+   one site and the last deploy won, which was a coin flip. The deploy job
+   still checks for that builder before publishing. Keep the check: it now
+   costs one API call, and the failure it catches is silent — a stale 404
+   served while every check here is green. `dist/` is
    generated and git-ignored, so there is nothing to commit and nothing to
    copy by hand. `build.sh` also copies `sw.js`, `manifest.json` and the
    three icon files into `dist/`; the artifact copy has none of them and the
