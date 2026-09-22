@@ -176,27 +176,72 @@ does not travel between them. That's why About has backup/restore
 
 ## Deploying
 
-Two independent targets:
+Every release ships to **two** targets, and they do not update together.
+Pages republishes itself on push; the artifact only moves when someone
+publishes it. Both are on the checklist because the artifact is the copy
+holding the learner's real progress.
 
-1. **Published artifact** — `dist/index.html` published through Claude. No
-   service worker there; the registration call is wrapped and fails silently.
-2. **GitHub Pages** — automatic. `.github/workflows/pages.yml` builds `src/`,
-   runs all four checks and publishes `dist/` on every push to `main`. The
-   Pages source is **"GitHub Actions"**, so this workflow is the only thing
-   that publishes the site. It was "Deploy from a branch" until v2.31, and
-   that meant a second builder — GitHub's own — published the repository
-   root on every push, found no `index.html` and served a 404; both wrote to
-   one site and the last deploy won, which was a coin flip. The deploy job
-   still checks for that builder before publishing. Keep the check: it now
-   costs one API call, and the failure it catches is silent — a stale 404
-   served while every check here is green. `dist/` is
-   generated and git-ignored, so there is nothing to commit and nothing to
-   copy by hand. `build.sh` also copies `sw.js`, `manifest.json` and the
-   three icon files into `dist/`; the artifact copy has none of them and the
-   requests fail silently there. Still bump `APP_VERSION` in `src/app.core.js` **and** `CACHE` in
-   `sw.js` together on every release, then open the app twice to clear the
-   old worker — the workflow does not do this for you, and a stale worker is
-   the one bug that makes a shipped change look like it never shipped.
+### Release checklist
+
+1. Bump `APP_VERSION` in `src/app.core.js` **and** `CACHE` in `sw.js`
+   together. A stale worker is the one bug that makes a shipped change look
+   like it never shipped.
+2. `./build.sh` and all four checks.
+3. Merge to `main`. Pages deploys itself from there.
+4. **Republish the artifact** — see below. Not optional, and not automatic.
+5. Open the Pages app twice: the first load installs the new worker, the
+   second serves from it.
+
+### 1. GitHub Pages
+
+Automatic. `.github/workflows/pages.yml` builds `src/`, runs all four
+checks and publishes `dist/` on every push to `main`. The Pages source is
+**"GitHub Actions"**, so this workflow is the only thing that publishes the
+site.
+
+It was "Deploy from a branch" until v2.31, and that meant a second builder —
+GitHub's own — published the repository root on every push, found no
+`index.html` and served a 404; both wrote to one site and the last deploy
+won, which was a coin flip. The deploy job still checks for that builder
+before publishing. Keep the check: it now costs one API call, and the
+failure it catches is silent — a stale 404 served while every check here is
+green.
+
+`dist/` is generated and git-ignored, so there is nothing to commit and
+nothing to copy by hand. `build.sh` also copies `sw.js`, `manifest.json`
+and the three icon files into `dist/`.
+
+### 2. The published artifact
+
+**https://claude.ai/artifact/1md8QekEanvY4HQPsAc7eA** — publish
+`dist/index.html` there with the Artifact tool, passing that URL as `url`.
+
+**Always the same URL.** The artifact and Pages are different origins, so
+`localStorage` does not travel between them, and this artifact is where the
+learner's actual progress lives. Publishing without `url` creates a
+*separate* artifact and silently orphans every unit ticked, every starred
+word and every SRS box. There is no undo for that.
+
+Publish the icon files alongside the page (`manifest.json`, `icon.svg`,
+`icon-192.png`, `icon-512.png`) so the tab icon and "add to home screen"
+work there too. Do **not** publish `sw.js`: the artifact has no worker by
+design, the registration call is wrapped and fails silently, and a stale
+worker there would be unfixable from here.
+
+**To check whether it has drifted** — cheap, and the thing to do first.
+Read the artifact with `path: "index.html"`. That saves the live page to a
+file instead of loading it into the conversation, and `grep APP_VERSION`
+on it says which version is live. Do this rather than reading the artifact
+without `path`, which inlines all ~280KB.
+
+**To publish, the full-read gate applies.** The tool refuses to overwrite
+until the live version has been read *without* `path` — about 2600 lines,
+in chunks, because it guards against clobbering content saved from inside
+the page. Before paying that, check whether such content could exist at
+all: build the source at the commit the artifact was published from and
+`cmp` it against the saved copy. If it is byte-identical the artifact is
+pure generated output, nothing needs merging, and the read is a formality
+rather than a merge job. That was true at v2.00 → v2.31.
 
 ## House style
 
