@@ -1060,11 +1060,43 @@ Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
 1. **Kütüphane** — verbatim public-domain texts with an
-   orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
-   sourcing rule above requires checking against a real source, and
-   Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
-   It needs the texts supplied, or a session with network access. Do not
-   type them from memory.
+   orijinal/sadeleştirilmiş toggle. **Needs network access**, which is an
+   environment setting rather than anything in this repo. The sandbox's
+   egress proxy answers `CONNECT tunnel failed, 403` for
+   `tr.wikisource.org` and the WebFetch tool returns `EGRESS_BLOCKED` for
+   the same host — it is not specially banned, it is simply not on the
+   allowlist, which exempts npm, PyPI, crates.io, the Go proxy and GitHub
+   and tunnels everything else. Allow `tr.wikisource.org` (its API is on
+   the same host, so that covers both reading pages and pulling clean
+   wikitext), and `tr.wikipedia.org` for author death dates, since the
+   whole public-domain question is life + 70. The proxy config is baked at
+   container start, so a policy change does not reach a session already
+   running: it needs a **fresh** one. First thing to do in that session is
+   re-run the curl and confirm a 200 rather than assuming.
+
+   **Typing the texts from memory was considered and rejected, and the
+   reason is worth keeping.** The test case was the opening of Sabahattin
+   Ali's *Kürk Mantolu Madonna* — d.1948, so safely public domain, and the
+   most quoted sentence in modern Turkish prose, which makes it the best
+   case there is. It has three forks in it: `üzerimde` or `bende`, a comma
+   before `belki` or not, and how the edition prints `tesiri`. A page of
+   *Kaşağı* would have forty. The whole point of the toggle is that the
+   learner believes the left-hand column is the real object, and 97% right
+   is not 97% of a sentence — it is a wrong sentence with a named author
+   on it, and the learner cannot see which 3% to distrust. Even the
+   proverbs drift: `işleyen demir pas tutmaz` against `ışıldar`.
+
+   **Survey before building.** Turkish Wikisource is much thinner than the
+   English one and may hold three usable transcriptions or thirty. List
+   what is actually there first, then decide what the shelf is. Record the
+   page and its **revision id** in `src:` for every passage, so "checked
+   against a real source" still means something in a year. The no-verse
+   rule is a house rule rather than a copyright one and holds whatever
+   Wikisource turns out to have.
+
+   The fallback if the shelf is bare: **atasözleri ve deyimler** —
+   anonymous fixed short forms, where a real variant can honestly be
+   listed both ways, and the right register for a speaking course anyway.
 2. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
