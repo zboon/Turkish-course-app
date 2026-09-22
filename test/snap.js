@@ -68,6 +68,28 @@ reseed(1357); ev("startDinle('a')"); grab("dinle:hear");
 ev("hearReveal()"); grab("dinle:hear:reveal");
 ev("setDrate(1.5)"); ev("go('dinle')"); grab("dinle:fast"); ev("setDrate(1)");
 
+/* Tekrar. The hub carries the encounter distribution, so a change to the
+   index or the matcher shows up here as the bars moving — which is the
+   one number the engine exists to shift. Both question shapes are taken:
+   a cloze, and the recall the once-only words fall back on. */
+ev("wipe()"); ev("go('tekrar')"); grab("tekrar");
+reseed(1122); ev("startTekrar()"); grab("tekrar:ask");
+env.doc.getElementById("tbox").value = ev("TK.q[TK.i].c");
+ev("tkCheck()"); grab("tekrar:right");
+ev("tkNext()");
+env.doc.getElementById("tbox").value = "yanlış";
+ev("tkCheck()"); grab("tekrar:wrong");
+/* A cloze, wherever the first one in this sitting turns up. */
+ev("wipe()");
+ev("TKX = wordIndex().words.map(repItem).filter(function(i){return i.kind==='cloze'})[0]");
+ev("TK = {q:[TKX], i:0, phase:'ask', typed:'', res:null, right:0}");
+ev("V = {view:'tekrarrun'}"); ev("render()"); grab("tekrar:cloze");
+env.doc.getElementById("tbox").value = ev("TK.q[0].c");
+ev("tkCheck()"); grab("tekrar:cloze:right");
+
+ev("wipe()"); ev("home()"); grab("home:plan");
+ev("go('unit','a1u4','r')"); ev("home()"); grab("home:plan:resume");
+
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");
 ev("go('words')"); grab("words:full");
 /* Both of these shuffle, so they need their own seed: without it their

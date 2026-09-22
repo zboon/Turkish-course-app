@@ -25,22 +25,15 @@ function renderHome(){
   h+='<div class="wrap"><div class="hero">'+crest(76)+
    '<h1 class="mark">Türkçe</h1>'+
    '<p class="osm" dir="rtl" lang="ota" translate="no">\u062A\u0631\u0643\u062C\u0647</p>'+
-   '<p class="tag">A reading course from first words to literature</p></div>'+road;
+   '<p class="tag">A reading course from first words to literature</p></div>';
+
+  h+=planCard();
+  h+=road;
 
   h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>units done</span></div>'+
      '<div><b>'+streak()+'</b><span>day streak</span></div>'+
      '<div><b>'+S.star.length+'</b><span>saved words</span></div></div>';
 
-  if(S.place&&unit(S.place.u)){
-    const u=unit(S.place.u);
-    h+='<button class="card resume row" onclick="go(\'unit\',\''+u.id+'\',\''+S.place.s+'\')">'+
-      '<div class="grow"><p class="tiny">Devam et · pick up where you left off</p>'+
-      '<p class="lead">'+esc(u.lv+" · "+u.tr)+'</p><p class="sub">'+esc(secName(S.place.s))+'</p></div><span class="chev">'+IC.chev+'</span></button>';
-  }else if(nx){
-    h+='<button class="card resume row" onclick="go(\'unit\',\''+nx.id+'\',\'v\')"><div class="grow">'+
-      '<p class="tiny">Başla · start here</p><p class="lead">'+esc(nx.lv+" · "+nx.tr)+'</p>'+
-      '<p class="sub">'+esc(nx.en)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
-  }
 
   h+='<h2 class="sec">Seviyeler</h2>';
   LEVELS.forEach(l=>{
@@ -63,6 +56,7 @@ function renderHome(){
     '</div><span class="chev">'+IC.chev+'</span></button>';
   h+='<h2 class="sec">Araçlar</h2>'+
    navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
+   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')")+
    navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')")+
    navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
    navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')")+
@@ -576,10 +570,10 @@ function importBox(){
   if(!o||typeof o!=="object"||Array.isArray(o)){ioMsg("Bu metin okunamadı · that text could not be read.");return;}
   S=Object.assign({done:{},seen:{},place:null,star:[],tested:{},days:[],srs:{},theme:S.theme,rate:S.rate,
                    prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
-                   dinle:{},drate:S.drate,dreplay:S.dreplay},o);
+                   dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{}},o);
   if(!S.done)S.done={}; if(!S.star)S.star=[]; if(!S.srs)S.srs={}; if(!S.seen)S.seen={};
   if(!S.tested)S.tested={}; if(!S.days)S.days=[];
-  if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={};
+  if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
   save();
   if(S.rate)VOICE.rate=S.rate;
   home();
@@ -588,7 +582,7 @@ function wipe(){
   if(typeof confirm==="function"&&!confirm("Delete all progress, saved words and your place? This cannot be undone."))return;
   S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
      prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
-     dinle:{},drate:S.drate,dreplay:S.dreplay};
+     dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{}};
   save(); home();
 }
 

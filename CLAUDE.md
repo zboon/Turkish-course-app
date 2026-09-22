@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity + 266 hand-checked forms + 446 dictation scores
-node test/sim.js        # headless render of all 324 screens + quiz/voice/SRS/üretim/dinleme
+node test/sim.js        # headless render of all 326 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -44,6 +44,7 @@ src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
 src/app.uretim.js        production mode, chunk bank, retell
 src/app.dinle.js         dictation and audio-first listening
+src/app.tekrar.js        the repetition engine, and the daily plan
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
@@ -153,6 +154,7 @@ the line in an editor.
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
+ rep:{"kasagi":{b,d,n}},
  gap, prompten, pscope, drate, dreplay}
 ```
 
@@ -163,6 +165,10 @@ chunk in Üretim; `d:<unitId>#<lineIndex>` for dictation and
 prefixes are deliberately separate from each other and from `s:` — one
 sentence can be easy to recognise, harder to transcribe and hardest to
 produce, and collapsing those into one box would hide exactly that.
+`rep` is keyed by `fold(word)` — "kaşağı" is stored as "kasagi" — and `n`
+counts how many times the engine has drilled it, which is added to the
+word's natural encounters. Editing a vocabulary entry's spelling re-points
+its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
 `pscope`, `drate` and `dreplay` are settings, not progress — `wipe()`
@@ -389,6 +395,73 @@ One honest limit, and it is in the About text too: this is the device's TTS,
 not a person. No reduction, no accent, no overlapping turns. A clean 1.5×
 here is a floor, not a finish.
 
+## Tekrar motoru (the repetition engine)
+
+Built. Measured across every Turkish string the app can show, the median
+taught word is met **three** times, 182 of the 600 exactly once, and only
+105 reach eight — the rough floor for durable retention. Most of the
+course's own vocabulary was decoration.
+
+`go('tekrar')` adds no material. It counts what the app already exposes
+and drills whatever the app will not bring back by itself, worst served
+first, so the floor rises rather than the ceiling. The hub shows the
+distribution, which is the one number the engine exists to move.
+
+Two question shapes, both retrieval rather than recognition:
+
+- **cloze**, where the word appears in a passage line: the line returns with
+  it blanked and the answer is the form the sentence uses, so `aile` is
+  asked as `ailem`. 341 words get one.
+- **recall**, where it does not: English prompt, type the Turkish. The
+  once-only words land here, having no sentence to blank.
+
+Four things the counting has to get right, each of which was wrong first:
+
+1. **Alternatives are not phrases.** `ad / isim` is two words for one
+   thing and `ağabey (abi)` a word and its colloquial form. Folded naively
+   they become "ad isim" and "agabey abi", which occur nowhere — so those
+   entries scored zero and got no context. `vocabForms()` splits them; the
+   entry takes the best-served alternative, and `tkCheck()` accepts any.
+2. **Short stems must not prefix-match.** `ad` prefixes `adam` and `ada`.
+   `REP_PREFIX_MIN` is 4: below that, only exact matches count. Verbs
+   undercount regardless, since `gitmek` is not a prefix of `gidiyorum`.
+   Both errors run the same way — fewer encounters claimed than met — which
+   is the safe direction for a floor.
+3. **Index whole written words, not `fold()` fragments.** `fold()` turns
+   `Kapadokya'ya` into "kapadokya ya", and indexing those halves made a
+   dative suffix on a place name look like the particle `ya`, a taught
+   word. `repTokens()` keeps each written word whole, so the index and
+   `repSpan()` tokenise identically and cannot disagree about where a word
+   occurs.
+4. **A phrase inflects on its last word.** `karşı kıyı` appears as
+   `Karşı kıyının`, so `repSpan()` matches a run by prefix exactly as the
+   counter does. Matching them differently is what recorded contexts the
+   cloze builder could not then blank.
+
+A line that uses the word twice is rejected as a context: blanking one
+occurrence would leave the answer in the prompt. `sim.js` asserts all of
+the above, and every one was confirmed to fail on a deliberate breakage.
+
+## Bugün (the daily plan)
+
+The app had six ways in and no opinion about which to use. `planCard()` is
+the opinion, first thing on the home screen, above the progress road —
+action before orientation.
+
+Order is everything perishable first, new material last: reviews decay on a
+schedule and a unit does not. Tekrar, Dinle, Söyle, then Devam or Yeni, with
+Anlat inserted when a retell is due.
+
+**Nothing is stored.** A step is done when its own queue is empty, which is
+self-correcting — finish the work and the tick appears, come back tomorrow
+and it clears itself. A per-day completion flag would need its own state and
+could disagree with the queues.
+
+The last step absorbed the old resume card: mid-unit it returns to the exact
+section, and it falls back to the first unfinished unit otherwise. It must
+check `isDone` — a bookmark survives completion, and following it blindly
+pinned the plan to a unit already ticked.
+
 ## Sözlük (the word list)
 
 `go('dict')` shows every word in the app — the 576 the units teach and the
@@ -415,7 +488,25 @@ word under the wrong heading for ever.
 
 ## Next, in order
 
-The verbatim **Kütüphane** (real public-domain texts with an
-orijinal/sadeleştirilmiş toggle, sourced and checked), then the **Osmanlıca**
-module (Arabic-script Turkish — the learner already reads the script fluently,
-so it is orthography and vocabulary, not letters).
+Ordered by what moves the learner toward conversation, which is not the same
+as what is most interesting to build.
+
+1. **Chunks, 50 → 300+.** `src/data/chunks.js`. Pure data, no new
+   mechanics, and formulaic language is a large share of fluent speech — the
+   cheapest fluency per hour left.
+2. **Branching dialogue and a repair kit.** The nearest an offline app gets
+   to unpredictability, and it trains the thing that actually ends
+   conversations: not missing a word, but having to continue anyway.
+3. **Kütüphane** — verbatim public-domain texts with an
+   orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
+   sourcing rule above requires checking against a real source, and
+   Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
+   It needs the texts supplied, or a session with network access. Do not
+   type them from memory.
+4. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+   script, so it is orthography and vocabulary rather than letters.
+   Interesting, and orthogonal to speaking.
+
+No app on its own reliably produces a conversational speaker; every
+programme that does has a human in the loop. The work above makes tutor
+hours efficient rather than replacing them.

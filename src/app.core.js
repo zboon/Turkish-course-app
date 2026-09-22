@@ -3,17 +3,17 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v2.40";
+const APP_VERSION="v2.50";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
-       dinle:{},drate:1,dreplay:2};
+       dinle:{},drate:1,dreplay:2,rep:{}};
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
-  if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={};
+  if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -244,6 +244,7 @@ function back(){
   else if(V.view==="quiz"&&Q&&Q.mode==="level"){go("level",Q.lv);}
   else if(V.view==="prodrun"){go("prod");}
   else if(V.view==="dinlerun"){go("dinle");}
+  else if(V.view==="tekrarrun"){go("tekrar");}
   else if(V.view==="retell"){go("unit",V.u,"r");}
   else home();
 }
