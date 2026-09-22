@@ -7,8 +7,8 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 hand-checked forms + 446 dictation scores
-node test/sim.js        # headless render of all 326 screens + every runtime path
+node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
+node test/sim.js        # headless render of all 335 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -523,8 +523,9 @@ numbers are generated and endless, so "342" is not a thing to be weak at;
 
 The engine is split where its purity ends. Everything up to
 `/* --- what a sitting is made of --- */` is pure, so `validate.js` lifts it
-out of the build exactly as it lifts the morphology engine and holds **99
-hand-checked forms** against it; `sim.js` takes the half that needs `S` — the
+out of the build exactly as it lifts the morphology engine and holds **827
+hand-checked forms** against it — 99 of them written by hand, the rest the
+sweep of all 720 hour/minute pairs the live clock made reachable; `sim.js` takes the half that needs `S` — the
 judge, the clock, the screens, the book. Neither file holds a copy of the
 other's table.
 
