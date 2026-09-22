@@ -468,6 +468,26 @@ step("üretim · chunks", () => {
   for (let i = 0; i < n; i++) produce(true);
   ok(phase() === "end", "chunk session did not finish");
   ok(ev("prodDue(chunkBank()).length") === ev("CHUNKS.length") - n, "graded chunks are still due today");
+
+  /* The bank is the roadmap's first item, grown from 50 to 300+. Two
+     things had to survive that: the sitting stays a sitting, and the hub
+     reports the sitting rather than the whole bank — "307 due today" is
+     the debt-nobody-will-clear reading the Tekrar hub already had to
+     correct once. */
+  ok(ev("CHUNKS.length") >= 300, "the chunk bank is only " + ev("CHUNKS.length") + " deep");
+  ev("wipe()"); ev("go('prod')");
+  const card = /Kalıplar<\/p><p class="sub">([^<]*)/.exec(lastPaint);
+  ok(!!card, "the Kalıplar card is gone");
+  ok(card && card[1].indexOf(ev("SESSION") + " in this sitting") > -1,
+     "the chunk card offers the backlog rather than the sitting: " + (card ? card[1].slice(-70) : ""));
+  ok(!/<b>'+ev("CHUNKS.length")+'<\/b><span>kalıp/.test(lastPaint),
+     "the stat row still counts the whole bank as due");
+
+  /* Every prefab has to be usable as a prompt: something to say, and an
+     English that names it. A blank either side is an unanswerable item. */
+  let empty = 0;
+  ev("CHUNKS").forEach(c => { if (!String(c[0]).trim() || !String(c[1]).trim()) empty++; });
+  ok(empty === 0, empty + " chunks have an empty side");
 });
 
 step("üretim · say it three times", () => {
@@ -1170,6 +1190,131 @@ step("grammar comes back, and is produced rather than recognised", () => {
 
   ev("back()");
   ok(ev("V.view") === "gram", "back() from a grammar sitting did not return to the hub");
+});
+
+/* Yolda is the one mode that has to work with nobody touching it, so
+   what is tested here is mostly absence: no tap between Başla and the
+   end, no write until the car has stopped, no way to strand the run. */
+step("yolda · a sitting that runs without you", () => {
+  ev("wipe()"); ev("setScope('done')"); ev("setYgap(5)"); ev("setYrate(1)");
+
+  /* Prefabs belong to no unit, so unlike every other review mode this one
+     has material on day one — and it should say which kind it has. */
+  ev("go('yolda')");
+  ok(ev("sentenceBank().length") === 0, "a fresh install has met sentences");
+  ok(ev("yolBank().length") > 0, "a fresh install has nothing hands-free to do");
+  ok(/Prefabs only so far/.test(lastPaint), "the hub does not say the sentences are still missing");
+  ev("go('unit','a1u1','r')"); ev("go('yolda')");
+  ok(!/Prefabs only so far/.test(lastPaint), "the hub still claims prefabs only after a passage was read");
+
+  /* The whole sitting, on the fake clock, with nothing touched.
+     Flush first: earlier steps leave timers armed, and drain() would run
+     a leftover passage player interleaved with this sitting.
+     Then clear the log and index from its length — voice.said is a
+     running counter that earlier steps do not reset when they empty
+     voice.spoken, so it is not an index into it. */
+  drain(60000); ev("stopPlay()");
+  voice.spoken = []; voice.langs = [];
+  const said0 = voice.said;
+  ev("startYolda(5)");
+  const slots = ev("YL.q.length");
+  ok(slots === ev("YOL_SLOTS"), "the playlist is " + slots + " slots");
+  drain(60000);
+  ok(ev("YL.phase") === "end", "the sitting did not reach its end unattended");
+  const ran = ev("YL.i");
+  ok(ran > 0 && ran < slots, "a five-minute sitting ran " + ran + " of " + slots +
+     " slots — it should stop on the clock, not on the playlist");
+
+  /* Every item is prompted in English and answered in Turkish, and the
+     tr-TR voice is never handed the English. Counted by matching this
+     sitting's own texts rather than by totals: drain() also fires timers
+     other steps left armed, and those speak too. */
+  const want = [];
+  for (let i = 0; i < ran; i++) { want.push(ev("YL.q[" + i + "].it.en")); want.push(ev("YL.q[" + i + "].it.tr")); }
+  const mine = new Set(want);
+  const log = [];
+  for (let i = 0; i < voice.spoken.length; i++)
+    if (mine.has(voice.spoken[i])) log.push([voice.spoken[i], voice.langs[i]]);
+  ok(log.length === want.length, "the sitting spoke " + log.length + " of its " + want.length + " lines");
+  ok(log.every((p, i) => p[0] === want[i]), "the sitting spoke its lines out of order");
+  ok(log.every((p, i) => /^(en|tr)/.test(p[1]) && (i % 2 === 0 ? /^en/ : /^tr/).test(p[1])),
+     "a prompt was read by the wrong voice");
+
+  /* Nothing is written while it runs. A sitting abandoned mid-drive must
+     cost nothing rather than inflate a box. */
+  ok(ev("Object.keys(S.prod).length") === 0, "the drive wrote to the schedule before it was marked");
+  const cov = ev("yolCovered().map(function(i){return i.k})");
+  ok(cov.length > 0 && cov.length <= ran, "covered " + cov.length + " of " + ran + " slots");
+  ok(new Set(cov).size === cov.length, "the marking list repeats an item");
+  ev("yolMiss(" + q(cov[0]) + ")");
+  ok(ev("Object.keys(S.prod).length") === 0, "marking an item wrote it before Kaydet");
+  ev("yolSave()");
+  ok(ev("S.prod[" + q(cov[0]) + "].b") === 0, "a missed item did not come back today");
+  ok(ev("S.prod[" + q(cov[1]) + "].b") === 1, "an item left unmarked did not move out a box");
+  ok(ev("Object.keys(S.prod).length") === cov.length, "Kaydet graded something that was never covered");
+  ok(ev("YL") === null, "the run outlived its own marking");
+
+  /* The graduated interval is the Pimsleur part: an item comes back while
+     it is still half remembered, at widening distance. */
+  ev("wipe()"); ev("go('unit','a1u1','r')"); ev("startYolda(10)");
+  const ks = ev("YL.q.map(function(c){return c.it.k})");
+  const at = ks.map((k, i) => k === ks[0] ? i : -1).filter(i => i >= 0);
+  ok(at.length === ev("YOL_SPACING").length + 1, "an item is heard " + at.length + " times");
+  const gaps = at.slice(1).map((v, i) => v - at[i]);
+  ok(gaps.every((g, i) => i === 0 || g > gaps[i - 1]), "the interval does not widen: " + gaps.join(","));
+
+  /* Navigating away has to silence it — this one holds the speaker for
+     minutes, so a leak is louder than anywhere else in the app. */
+  const said1 = voice.said;
+  ev("home()");
+  drain(60000);
+  ok(voice.said === said1, "a hands-free sitting kept talking over the next screen");
+  ok(!ev("!!(YL && YL.tid)"), "a step timer was left armed after leaving");
+  ok(!ev("!!(YL && YL.cid)"), "the session deadline was left armed after leaving");
+
+  /* The back arrow mid-drive keeps the work: it ends the sitting and
+     offers the marking rather than binning everything covered. */
+  ev("wipe()"); ev("go('unit','a1u1','r')");
+  ev("startYolda(5)"); drain(200);
+  ok(ev("YL.phase") !== "end", "the sitting ended before back() was tested");
+  ev("back()");
+  ok(ev("YL && YL.phase") === "end", "back() mid-sitting discarded the run");
+  ok(ev("V.view") === "yoldarun" && /yolSave/.test(lastPaint), "back() did not offer the marking");
+  ev("YL=null;");
+
+  /* The other half of that: a browser that fires onend TWICE, or fires it
+     just as the watchdog lands, must not advance the step twice — that
+     skips an item silently, and skipping is invisible from the driver's
+     seat. Run the same sitting both ways and it has to come out the same
+     length. */
+  function sitting(patch) {
+    ev("wipe()"); ev("setYgap(5)"); ev("setYrate(1)");
+    ev("go('unit','a1u1','r')");
+    if (patch) ev("var _s2=speechSynthesis.speak;" +
+      "speechSynthesis.speak=function(u){_s2.call(speechSynthesis,u);" +
+      "if(u.onend){var f=u.onend;setTimeout(function(){f();},1);}};");
+    ev("startYolda(5)");
+    drain(60000);
+    const r = { i: ev("YL.i"), covered: ev("yolCovered().length") };
+    if (patch) ev("speechSynthesis.speak=_s2;");
+    ev("YL=null;");
+    return r;
+  }
+  const once = sitting(false), twice = sitting(true);
+  ok(twice.i === once.i, "a doubled onend ran " + twice.i + " slots where one ran " + once.i +
+     " — the step advanced twice and skipped an item");
+  ok(twice.covered === once.covered, "a doubled onend covered " + twice.covered +
+     " items where one covered " + once.covered);
+
+  /* A browser that drops onend must not strand it: there is no thumb. */
+  ev("wipe()"); ev("go('unit','a1u1','r')");
+  ev("var _sp=speechSynthesis.speak; speechSynthesis.speak=function(u){};");
+  ev("startYolda(5)");
+  drain(60000);
+  ok(ev("YL.phase") === "end", "a dropped onend stranded the sitting");
+  ok(ev("YL.i") > 1, "the watchdog advanced only " + ev("YL.i") + " slots");
+  ev("speechSynthesis.speak=_sp;");
+  ev("YL=null;");
 });
 
 step("the plan says what to do, in the order it should be done", () => {

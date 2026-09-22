@@ -3,13 +3,13 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v2.60";
+const APP_VERSION="v2.80";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
-       dinle:{},drate:1,dreplay:2,rep:{},gram:{},tips:true};
+       dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,tips:true};
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
@@ -178,6 +178,7 @@ function stopPlay(){
   if(VOICE.tid){clearTimeout(VOICE.tid);VOICE.tid=null;}
   prodStop();                    /* the Üretim gap is a timer too */
   dinleStop();                   /* and the Dinleme replay timer */
+  yolStop();                     /* and a hands-free sitting, which is all timers */
   if(ttsOK()){try{speechSynthesis.cancel();}catch(e){}}
   markMode();
 }
@@ -260,6 +261,10 @@ function back(){
   else if(V.view==="dinlerun"){go("dinle");}
   else if(V.view==="tekrarrun"){go("tekrar");}
   else if(V.view==="gramrun"){go("gram");}
+  /* Leaving a sitting mid-drive should not throw away what was covered:
+     the back arrow and the Bitir button do the same thing, which is what
+     a learner expects of a mode whose whole point is not touching it. */
+  else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
   else if(V.view==="retell"){go("unit",V.u,"r");}
   else home();
 }

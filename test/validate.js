@@ -229,7 +229,10 @@ else {
 }
 
 /* ---------- chunk bank (üretim) ---------- */
-if (!Array.isArray(CHUNKS) || CHUNKS.length < 40) err("CHUNKS", "expected a bank of ~50 prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
+/* The bank is append-only — Üretim keys it by index — so the count can
+   only ever grow. A drop below this floor means the file was truncated,
+   which would silently re-point nothing but would lose the tail. */
+if (!Array.isArray(CHUNKS) || CHUNKS.length < 300) err("CHUNKS", "expected a bank of 300+ prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
 else {
   if (!pairs(CHUNKS)) err("CHUNKS", "must be [Turkish, English] string pairs");
   else {
@@ -242,6 +245,84 @@ else {
       if (t.split(/\s+/).length > 6) warn(w, '"' + t + '" is ' + t.split(/\s+/).length + " words — long for a prefab");
     });
   }
+}
+
+/* Üretim keys this bank "k:<index>", so a chunk's position IS its
+   identity in every learner's saved schedule. Insert one at the top and
+   every box after it silently re-points to a different phrase — the same
+   hazard as renumbering a unit, and just as invisible from the outside.
+   These are the fifty the bank shipped with, pinned by index. Growing the
+   bank is appending; it is never rearranging. */
+const CHUNK_HEAD = [
+  "ne demek istiyorsun",
+  "bir dakika müsaade",
+  "ne yapacağımı bilmiyorum",
+  "nasıl desem",
+  "şöyle söyleyeyim",
+  "bana kalırsa",
+  "bence de",
+  "haklısın",
+  "emin değilim",
+  "hiç fikrim yok",
+  "yanlış anlama",
+  "öyle bir şey değil",
+  "anlamadım, tekrar eder misin",
+  "biraz yavaş konuşur musun",
+  "ne dedin",
+  "bir şey soracaktım",
+  "rahatsız ediyor muyum",
+  "müsait misin",
+  "acelem var",
+  "hiç vaktim yok",
+  "sonra konuşalım",
+  "görüşmek üzere",
+  "kendine iyi bak",
+  "geçmiş olsun",
+  "kolay gelsin",
+  "eline sağlık",
+  "afiyet olsun",
+  "estağfurullah",
+  "rica ederim",
+  "zahmet olmazsa",
+  "mümkün mü acaba",
+  "olur mu",
+  "tabii ki",
+  "ne yazık ki",
+  "maalesef olmaz",
+  "belki de haklısın",
+  "o kadar da değil",
+  "fark etmez",
+  "ne olursa olsun",
+  "her ihtimale karşı",
+  "bir bakayım",
+  "hemen geliyorum",
+  "az kalsın unutuyordum",
+  "aklımdan çıkmış",
+  "ne kadar sürer",
+  "nerede buluşalım",
+  "bilmiyorum ama öğrenirim",
+  "sana bir şey söyleyeyim",
+  "doğrusunu istersen",
+  "neyse, boş ver"
+];
+CHUNK_HEAD.forEach((t, i) => {
+  if (!CHUNKS[i] || CHUNKS[i][0] !== t)
+    err("CHUNKS[" + i + "]", 'moved: k:' + i + ' was "' + t + '", now "' +
+        (CHUNKS[i] ? CHUNKS[i][0] : "(gone)") + '" — every saved schedule on it now points elsewhere');
+});
+/* In Üretim the English IS the prompt, so two entries sharing one English
+   ask for an answer the prompt cannot determine. Passage lines are
+   prompted the same way and from the same screen, so they count too. */
+{
+  const seen = {};
+  CHUNKS.forEach((c, i) => {
+    if (seen[c[1]] !== undefined) err("CHUNKS[" + i + "]", 'shares the prompt "' + c[1] + '" with CHUNKS[' + seen[c[1]] + ']');
+    else seen[c[1]] = i;
+  });
+  UNITS.forEach(u => u.read.lines.forEach(ln => {
+    if (seen[ln[1]] !== undefined)
+      err("CHUNKS[" + seen[ln[1]] + "]", 'shares the prompt "' + ln[1] + '" with a passage line in ' + u.id);
+  }));
 }
 
 /* ---------- morphology: the golden set ---------- */

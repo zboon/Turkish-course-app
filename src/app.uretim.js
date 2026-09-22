@@ -211,13 +211,17 @@ function renderProd(){
   let h=bar("Üretim","production · speak first",true)+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">The prompt is English. You say the Turkish out loud in the silence, <b>before</b> the model plays — then mark yourself. Nothing is recorded and no microphone is used.</p>';
   h+='<div class="stat"><div><b>'+sd+'</b><span>cümle</span></div>'+
-     '<div><b>'+kd+'</b><span>kalıp</span></div>'+
+     '<div><b>'+Math.min(kd,SESSION)+'</b><span>kalıp</span></div>'+
      '<div><b>'+rd+'</b><span>anlatım</span></div></div>';
 
   h+='<h2 class="sec">Çalış</h2>';
   h+='<div class="card"><p class="lead">Cümleler</p><p class="sub">'+sb.length+' sentence'+(sb.length===1?"":"s")+' in range · '+sd+' due today. Up to '+SESSION+' in a sitting.</p>'+
    '<button class="btn" onclick="startProd(\'s\')">Başla</button></div>';
-  h+='<div class="card"><p class="lead">Kalıplar</p><p class="sub">'+CHUNKS.length+' conversational prefabs — the ready-made pieces a speaker reaches for before composing anything. '+kd+' due today.</p>'+
+  /* The actionable number is the sitting, not the bank. At fifty prefabs
+     "50 due today" was merely odd; at three hundred it reads as a debt
+     nobody will clear, when it really means "not started yet, twelve of
+     them now" — the same correction the Tekrar hub needed. */
+  h+='<div class="card"><p class="lead">Kalıplar</p><p class="sub">'+CHUNKS.length+' conversational prefabs — the ready-made pieces a speaker reaches for before composing anything, grouped by what the phrase does. '+Math.min(kd,SESSION)+' in this sitting, '+kd+' not yet worked through.</p>'+
    '<button class="btn" onclick="startProd(\'k\')">Başla</button></div>';
 
   h+='<div class="card"><p class="lead">Kurma · build it</p><p class="sub">Sentences assembled on the spot from '+LEX.length+' words — you will not have seen them before, so they cannot be recalled, only built.</p>'+

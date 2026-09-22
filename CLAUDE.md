@@ -45,11 +45,12 @@ src/app.screens.js       home, level, unit, quiz, words, sözlük, about
 src/app.uretim.js        production mode, chunk bank, retell
 src/app.dinle.js         dictation and audio-first listening
 src/app.tekrar.js        the repetition engine, grammar repetition, the daily plan
+src/app.yolda.js         hands-free audio sessions
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is five files rather than one because it grew past the point
+The app is seven files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -190,7 +191,7 @@ deliberate breakage.
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
- gap, prompten, pscope, drate, dreplay, tips}
+ gap, prompten, pscope, drate, dreplay, ygap, yrate, tips}
 ```
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
@@ -209,7 +210,7 @@ rather than a count. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
-`pscope`, `drate`, `dreplay` and `tips` are settings, not progress —
+`pscope`, `drate`, `dreplay`, `ygap`, `yrate` and `tips` are settings, not progress —
 `wipe()` keeps them, like `theme` and `rate`. Because `wipe()` keeps
 `pscope`, a test that wipes still inherits whatever scope ran before it —
 set it explicitly when the default is what is under test.
@@ -330,16 +331,18 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 - Voice runs on the device's own `tr-TR` speech synthesis. `stopPlay()` is
   called at the top of `go()` and `home()` — any new navigation path must too,
   or audio keeps playing over the next screen. `stopPlay()` also clears the
-  Üretim countdown and the Dinleme timer, so a timer started in either dies
-  with the screen; anything else that sets a timer needs its own stop called
-  from `stopPlay()` for the same reason.
+  Üretim countdown, the Dinleme timer and a Yolda sitting, so a timer
+  started in any of them dies with the screen; anything else that sets a
+  timer needs its own stop called from `stopPlay()` for the same reason.
+  Yolda matters most here: it holds the speaker for minutes, so a leak is
+  louder there than anywhere else in the app.
 
 ## Üretim (production mode)
 
 Built. The learner's gap is speaking, and what worked for them was Pimsleur —
 because it forces a sentence out of the mouth *before* the model is heard.
 `go('prod')` is the mode, drawn from the course's own 432 passage lines and
-50 prefabs:
+307 prefabs:
 
 1. **Prompt → gap → model.** The English shows (and is spoken if `prompten`
    is on, in the device's English voice — never the `tr-TR` one). A silent
@@ -356,8 +359,31 @@ because it forces a sentence out of the mouth *before* the model is heard.
    piece that cannot stand on its own. A sentence marked wrong is offered
    this way automatically. `sim.js` checks every one of the 432 lines: each
    piece must be a true tail, each step longer than the last.
-3. **Chunk bank.** `src/data/chunks.js`, 50 conversational prefabs, drilled
-   by the same runner with `k:` keys.
+3. **Chunk bank.** `src/data/chunks.js`, 307 conversational prefabs, drilled
+   by the same runner with `k:` keys, grouped by what the phrase *does* —
+   agreeing, refusing, repairing a conversation that has come apart,
+   buying the thing, holding the floor. `dueQueue` takes fresh items in
+   array order, so the groups are also the order a learner walks them.
+
+   **The bank is append-only.** `k:<index>` means a chunk's position *is*
+   its identity in every saved schedule: insert one at the top and every
+   box after it silently re-points to a different phrase, exactly as
+   renumbering a unit would. `validate.js` pins the original fifty by
+   index and fails by name if any of them moves.
+
+   In Üretim the English *is* the prompt, so no two entries may share one
+   — including with a passage line, which is prompted the same way from
+   the same screen. `validate.js` enforces that too; it caught one while
+   this bank was being written (`bence de` and `ben de öyle düşünüyorum`
+   were both glossed "I think so too").
+
+   Growing the bank to 300+ moved the Tekrar distribution barely at all —
+   105 words reaching eight encounters became 111, and the median stayed
+   at three. That is the honest result and it is not a disappointment:
+   prefabs are built from high-frequency function words, while the words
+   the course teaches are content words out of literary passages. Chunks
+   buy fluency, which is what they are for; they do not raise the
+   vocabulary floor, which is what Tekrar motoru is for.
 4. **Say it three times.** A unit's `speak:` task retold on day 1, 3 and 7
    (`RETELL_NEXT`), started from the Konuşma card.
 
@@ -525,6 +551,72 @@ words do, and unlike Dinle and Söyle it asks for a form rather than a
 sentence already met. `avail` withholds it until a grammar point has been
 read, so day one is still one instruction.
 
+## Yolda (hands-free sessions)
+
+Built, by request: something that can be practised while driving or
+working, with nothing to touch.
+
+Üretim already prompts, waits and plays the model, so the obvious move
+was a setting on it. That does not work. Every Üretim item ends in a
+Doğru/Yanlış tap, and a tap is the one thing a driver has not got — so
+`go('yolda')` is a separate mode rather than a switch, and the difference
+is not the audio but what happens to the grading.
+
+Three things make it Pimsleur rather than a playlist:
+
+1. **The English is always spoken.** In Üretim voicing the prompt is an
+   option (`prompten`); here it is the only input channel, so the setting
+   is ignored and the English always plays — in the device's English
+   voice, never the `tr-TR` one.
+2. **The graduated interval is inside the sitting.** The part of Pimsleur
+   that does the work is not the pause, it is that an item returns while
+   it is still half remembered. `YOL_SPACING` is `[3,8,20]` slots, and a
+   five-minute sitting therefore covers about a dozen phrases four times
+   each rather than rushing past fifty once.
+3. **Grading is deferred, not dropped.** Self-grading is what keeps this
+   app offline and microphone-free, and it cannot happen at sixty miles
+   an hour. The sitting runs untouched; the marking happens once at the
+   end, with everything taken as right and the ones that got away tapped.
+   **Nothing is written while it runs**, so abandoning a sitting costs
+   nothing rather than pushing a sentence you fumbled out to sixteen
+   days. The back arrow mid-sitting ends it and offers the marking — it
+   does not bin the work — while `home()` leaves and writes nothing.
+
+It adds **no new progress keys**. Items are the same `s:` and `k:`
+prefixes Üretim uses and grade onto the same ladder, which is right: a
+sentence produced in the car and one produced at a desk are the same
+sentence. `ygap` and `yrate` are settings, so `wipe()` keeps them.
+
+**Nothing is touched, so nothing can be rescued by touching.** Every step
+is armed twice — the voice's own `onend` and a watchdog — and a token
+makes sure exactly one of them wins. Both halves are pinned by `sim.js`:
+a browser that never fires `onend` still walks the sitting (fewer items,
+never a hang), and one that fires it twice covers exactly as many as one
+that fires it once. Getting that wrong skips items silently, which is
+invisible from the driver's seat.
+
+Two things went wrong first and are worth not repeating:
+
+- **`yolClear()` cleared the deadline as well as the step timer**, so the
+  first step cancelled the clock that ends the sitting and 5 and 10
+  minutes both ran the whole playlist. The deadline is not a step and
+  lives in `cid`, cleared only by `yolStop`/`yolFinish`.
+- **`YOL_SLOTS` was too small.** A slot is five to nine seconds depending
+  on the gap setting, so ten minutes at the shortest gap needs about 128
+  of them; at 90 the sitting ended early and quietly. It is 140, and
+  `sim.js` fails if a sitting ends on the playlist rather than the clock.
+
+Sentences are scoped to units read, as everywhere else. The prefabs are
+not, deliberately: they belong to no unit, Üretim has always offered them
+from day one, and they are the right thing to be saying in a car before
+any passage has been opened. So a fresh install gets a sitting of
+prefabs, the hub says so, and sentences join in as passages are read.
+
+One honest limit, in the About text too: **a phone stops speaking when
+its screen locks**, on every platform this runs on. `yolWake()` asks for a
+screen wake lock, which is all the app can do about it; the learner still
+needs the phone unlocked and in a cradle rather than in a pocket.
+
 ## Bugün (the daily plan)
 
 The app had six ways in and no opinion about which to use. `planCard()` is
@@ -546,7 +638,7 @@ left out of the card entirely — a beginner sees one instruction rather than
 three ticked rows for work never done.
 
 Two "N waiting" cards used to sit lower on the home screen. They duplicated
-the plan's own Tekrar and Söyle steps, and one counted the 50 standalone
+the plan's own Tekrar and Söyle steps, and one counted the standalone
 chunks as due, so on day one it advertised work while the plan correctly
 said there was none. One place answers "what now", and it is the plan;
 direct access stays in Araçlar.
@@ -592,33 +684,30 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Chunks, 50 → 300+.** `src/data/chunks.js`. Pure data, no new
-   mechanics, and formulaic language is a large share of fluent speech — the
-   cheapest fluency per hour left.
-2. **Hata defteri — the mistake book.** Every error the app sees is thrown
+1. **Hata defteri — the mistake book.** Every error the app sees is thrown
    away: the quiz stores `{score,of,at}`, and Üretim, Dinleme, Tekrar and
    Dilbilgisi store only the SRS box. Collect the wrong answers across all
    modes with the `why` that goes with them, plus a weak-spots read over
    `S.prod` (already keyed by pattern, `g:<frame>:<tense>` and `t:<move>`),
    `S.dinle`, `S.rep`, `S.gram` and `S.srs`. Nothing new to author, and it
    is the one thing every tutor does that the app does not.
-3. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
+2. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
    from a unit's vocabulary list and from Sözlük, so a word met in the wild
    cannot enter the queue. Small, and it stops the app being a closed box.
-4. **Sor — question production.** The question frame already exists in
+3. **Sor — question production.** The question frame already exists in
    `FRAMES`; asking is the half of a conversation the course never drills.
-5. **Sayılar — numbers, times and prices at speed.** Generated, so no
+4. **Sayılar — numbers, times and prices at speed.** Generated, so no
    content to write. The thing that reliably fails in a real shop.
-6. **Branching dialogue and a repair kit.** The nearest an offline app gets
+5. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-7. **Kütüphane** — verbatim public-domain texts with an
+6. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-8. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+7. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 
