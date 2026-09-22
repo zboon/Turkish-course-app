@@ -55,10 +55,26 @@ for (let i = 0; i < 3; i++) { ev("prodModel()"); grab("prod:move:model:" + i); e
 reseed(555); ev("startProd('s')"); grab("prod:sent");
 reseed(333); ev("startProd('k')"); grab("prod:chunk");
 
+/* Dinleme. The scored screen is the one worth fingerprinting: a change to
+   dictScore shows up here as the marked-up line changing shape. */
+ev("go('dinle')"); grab("dinle");
+reseed(2468); ev("startDinle('d')"); grab("dinle:dikte");
+env.doc.getElementById("dbox").value = ev("DK.q[DK.i].tr");
+ev("dikteCheck()"); grab("dinle:dikte:clean");
+ev("dinleNext()");
+env.doc.getElementById("dbox").value = ev("DK.q[DK.i].tr").split(/\s+/).slice(1).join(" ") + " zürafa";
+ev("dikteCheck()"); grab("dinle:dikte:marked");
+reseed(1357); ev("startDinle('a')"); grab("dinle:hear");
+ev("hearReveal()"); grab("dinle:hear:reveal");
+ev("setDrate(1.5)"); ev("go('dinle')"); grab("dinle:fast"); ev("setDrate(1)");
+
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");
 ev("go('words')"); grab("words:full");
-ev("startCards()"); grab("cards"); ev("flip()"); grab("cards:flip");
-ev("startReview()"); grab("review"); ev("rvFlip()"); grab("review:flip");
+/* Both of these shuffle, so they need their own seed: without it their
+   hashes depend on how much randomness everything above them happened to
+   consume, and adding a step anywhere earlier silently moves them. */
+reseed(8080); ev("startCards()"); grab("cards"); ev("flip()"); grab("cards:flip");
+reseed(9090); ev("startReview()"); grab("review"); ev("rvFlip()"); grab("review:flip");
 reseed(4242); ev("startUnitQuiz('a1u1')"); grab("quiz");
 reseed(4242); ev("startPlacement()"); grab("placement");
 ev("startRetell('a1u2')"); grab("retell");

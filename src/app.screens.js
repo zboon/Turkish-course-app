@@ -63,6 +63,7 @@ function renderHome(){
     '</div><span class="chev">'+IC.chev+'</span></button>';
   h+='<h2 class="sec">Araçlar</h2>'+
    navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
+   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')")+
    navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
    navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')")+
    navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')")+
@@ -195,12 +196,18 @@ function voiceBar(){
    '<button class="vb" id="btn-listen" onclick="playFrom(0,\'listen\')">'+IC.play+' Dinle</button>'+
    '<button class="vb" id="btn-shadow" onclick="playFrom(0,\'shadow\')">'+IC.spk+' Gölge</button>'+
    '<button class="vb" onclick="stopPlay()">'+IC.stop+' Dur</button></div>'+
-   '<div class="vrow2 spds">';
-  [0.6,0.75,0.85,1].forEach(function(x){
-    h+='<button class="spd '+(Math.abs(x-r)<0.01?"on":"")+'" data-r="'+x+'" onclick="setRate('+x+')">'+x+'×</button>';
+   '';
+  /* Two rows: the study pace, then past normal. Eight buttons in one row
+     do not fit a phone, and the split is the point anyway. */
+  SPEEDS.forEach(function(row){
+    h+='<div class="vrow2 spds">';
+    row.forEach(function(x){
+      h+='<button class="spd '+(Math.abs(x-r)<0.01?"on":"")+(x>1?" fast":"")+'" data-r="'+x+'" onclick="setRate('+x+')">'+x+'×</button>';
+    });
+    h+='</div>';
   });
-  h+='</div><p class="tiny" id="vstat" style="margin:.45rem 0 0;min-height:1.1em"></p>'+
-   '<p class="tiny" style="margin:.3rem 0 0">Gölge: each line plays, then waits the same length for you to repeat it aloud.</p></div>';
+  h+='<p class="tiny" id="vstat" style="margin:.45rem 0 0;min-height:1.1em"></p>'+
+   '<p class="tiny" style="margin:.3rem 0 0">Gölge: each line plays, then waits the same length for you to repeat it aloud. Speeds above 1× are the listening training — see Dinleme.</p></div>';
   return h;
 }
 function lineTap(ev,i){
@@ -531,7 +538,7 @@ function renderAbout(){
   let h=bar("Bu kurs hakkında","About",true)+'<div class="wrap"><div class="card gram">'+
   '<p class="lead">Nasıl çalışır</p>'+
   '<p>Six CEFR levels, ten units each — sixty in all. Every unit has four parts: <b>Kelimeler</b> (ten words you can save), <b>Dilbilgisi</b> (one grammar point with a table and examples), <b>Okuma</b> (a graded passage, tap any line for the English), and <b>Alıştırma</b> (five questions).</p>'+
-  '<p class="lead" style="margin-top:1.3rem">Ses · listening and shadowing</p>'+'<p>Every reading passage has a <b>Dinle</b> button (it reads the whole text aloud, line by line, at the speed you choose) and a <b>Gölge</b> button for shadowing: each line plays, then the app waits exactly as long again for you to repeat it out loud. Tap any single line’s speaker to hear just that line, and any vocabulary word to hear it alone.</p>'+'<p>This uses your device’s own Turkish voice. If nothing is heard, your phone has no Turkish voice installed — on Android add it under Settings → Languages → Text-to-speech; on iOS it is usually already there.</p>'+'<p class="lead" style="margin-top:1.3rem">Tekrar · the review queue</p>'+'<p>Starred words enter a spaced queue. Grade a word <b>Zor</b> and it returns today; <b>İyi</b> and it returns later each time — 1, 2, 4, 8, 16 days and on. The home screen shows what is due.</p>'+'<p class="lead" style="margin-top:1.3rem">Üretim · saying it first</p>'+'<p>Reading and listening are not speaking. <b>Üretim</b> gives you the English, then a silence of a few seconds, and only then plays the Turkish — so the sentence has to leave your mouth before you hear the model. You mark yourself <b>Doğru</b> or <b>Yanlış</b>, and the sentences ride the same widening schedule as the words.</p>'+'<p>Long sentences can be built <b>backwards</b>, from the end forwards: <i>bilmiyorum → ne dediğini bilmiyorum → adamın ne dediğini bilmiyorum</i>. The verb lands last in Turkish, and holding the shape until it arrives is the thing that breaks fluency. A sentence you mark wrong is offered this way automatically.</p>'+'<p>Alongside the course’s own sentences there is a bank of fifty <b>kalıplar</b> — the conversational prefabs you reach for whole — and <b>üç kez anlat</b>, which brings a unit’s speaking task back on day one, day three and day seven. Nothing is recorded and no microphone is used: you are the judge, which is also what keeps it working offline.</p>'+'<p>A unit is ticked when you answer 80% of its questions correctly. Each level also has a <b>test ahead</b> exam: ten questions drawn from the whole level, and eight correct marks the level complete — so nothing you already know has to be sat through.</p>'+
+  '<p class="lead" style="margin-top:1.3rem">Ses · listening and shadowing</p>'+'<p>Every reading passage has a <b>Dinle</b> button (it reads the whole text aloud, line by line, at the speed you choose) and a <b>Gölge</b> button for shadowing: each line plays, then the app waits exactly as long again for you to repeat it out loud. Tap any single line’s speaker to hear just that line, and any vocabulary word to hear it alone.</p>'+'<p>This uses your device’s own Turkish voice. If nothing is heard, your phone has no Turkish voice installed — on Android add it under Settings → Languages → Text-to-speech; on iOS it is usually already there.</p>'+'<p class="lead" style="margin-top:1.3rem">Tekrar · the review queue</p>'+'<p>Starred words enter a spaced queue. Grade a word <b>Zor</b> and it returns today; <b>İyi</b> and it returns later each time — 1, 2, 4, 8, 16 days and on. The home screen shows what is due.</p>'+'<p class="lead" style="margin-top:1.3rem">Dinleme · listening without the text</p>'+'<p>Dinle and Gölge leave the passage on screen, which trains reading with a soundtrack. <b>Dinleme</b> takes the text away. In <b>Dikte</b> a line plays and you type what you heard; the app marks it word by word and names the words that never reached you — diacritics are ignored, missing words are not. In <b>Ses önce</b> nothing is typed: you listen, decide whether it landed, and only then see the Turkish and the English.</p>'+'<p>The speed goes past normal on purpose, up to 1.75× on a passage and 1.5× in Dinleme. Real speech does not slow down, and comprehension that only works at 0.85× is comprehension that fails in a conversation. You can also cut the replays to one, which is how often a sentence is actually said to you.</p>'+'<p>One honest limit: this is your device’s own Turkish voice, not a recording of a person. It has no reduction, no regional accent and no overlapping speakers, so a clean 1.5× here is a floor and not a finish — the units on <i>Karagöz</i> and on <i>ağızlar</i> describe what it leaves out. Turkish radio and podcasts are the next step, and they are free.</p>'+'<p class="lead" style="margin-top:1.3rem">Üretim · saying it first</p>'+'<p>Reading and listening are not speaking. <b>Üretim</b> gives you the English, then a silence of a few seconds, and only then plays the Turkish — so the sentence has to leave your mouth before you hear the model. You mark yourself <b>Doğru</b> or <b>Yanlış</b>, and the sentences ride the same widening schedule as the words.</p>'+'<p>Long sentences can be built <b>backwards</b>, from the end forwards: <i>bilmiyorum → ne dediğini bilmiyorum → adamın ne dediğini bilmiyorum</i>. The verb lands last in Turkish, and holding the shape until it arrives is the thing that breaks fluency. A sentence you mark wrong is offered this way automatically.</p>'+'<p>Alongside the course’s own sentences there is a bank of fifty <b>kalıplar</b> — the conversational prefabs you reach for whole — and <b>üç kez anlat</b>, which brings a unit’s speaking task back on day one, day three and day seven. Nothing is recorded and no microphone is used: you are the judge, which is also what keeps it working offline.</p>'+'<p>A unit is ticked when you answer 80% of its questions correctly. Each level also has a <b>test ahead</b> exam: ten questions drawn from the whole level, and eight correct marks the level complete — so nothing you already know has to be sat through.</p>'+
   '<p>Your place is kept automatically; the home screen offers to resume it. Everything is stored in this browser only, so clearing site data clears your progress.</p>'+
   '<p class="lead" style="margin-top:1.3rem">Metinler · the texts</p>'+
   '<p>The reading difficulty climbs deliberately: invented dialogue at A1, anonymous folk tales at A2–B1, adapted short stories and essays at B2–C1, and Ottoman-era and mystical prose at C2.</p>'+
@@ -568,10 +575,11 @@ function importBox(){
   try{o=JSON.parse(raw);}catch(e){}
   if(!o||typeof o!=="object"||Array.isArray(o)){ioMsg("Bu metin okunamadı · that text could not be read.");return;}
   S=Object.assign({done:{},seen:{},place:null,star:[],tested:{},days:[],srs:{},theme:S.theme,rate:S.rate,
-                   prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope},o);
+                   prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
+                   dinle:{},drate:S.drate,dreplay:S.dreplay},o);
   if(!S.done)S.done={}; if(!S.star)S.star=[]; if(!S.srs)S.srs={}; if(!S.seen)S.seen={};
   if(!S.tested)S.tested={}; if(!S.days)S.days=[];
-  if(!S.prod)S.prod={}; if(!S.retell)S.retell={};
+  if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={};
   save();
   if(S.rate)VOICE.rate=S.rate;
   home();
@@ -579,7 +587,8 @@ function importBox(){
 function wipe(){
   if(typeof confirm==="function"&&!confirm("Delete all progress, saved words and your place? This cannot be undone."))return;
   S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
-     prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope};
+     prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
+     dinle:{},drate:S.drate,dreplay:S.dreplay};
   save(); home();
 }
 

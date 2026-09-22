@@ -3,16 +3,17 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v2.31";
+const APP_VERSION="v2.40";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
-       prod:{},retell:{},gap:4,prompten:false,pscope:"done"};
+       prod:{},retell:{},gap:4,prompten:false,pscope:"done",
+       dinle:{},drate:1,dreplay:2};
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
-  if(!S.prod)S.prod={}; if(!S.retell)S.retell={};
+  if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -162,6 +163,7 @@ function stopPlay(){
   VOICE.mode=null;
   if(VOICE.tid){clearTimeout(VOICE.tid);VOICE.tid=null;}
   prodStop();                    /* the Üretim gap is a timer too */
+  dinleStop();                   /* and the Dinleme replay timer */
   if(ttsOK()){try{speechSynthesis.cancel();}catch(e){}}
   markMode();
 }
@@ -173,6 +175,12 @@ function markMode(){
   });
   if(!VOICE.mode)vstat("");
 }
+/* The study rates and the ones past normal. 1x is where a TTS voice
+   sits naturally, so everything below it is a crutch and everything above
+   it is the training: real speech is faster than the pace you can read at,
+   and comprehension that only works at 0.85 is comprehension that fails in
+   a conversation. Rendered as two rows, slow then fast. */
+const SPEEDS=[[0.6,0.75,0.85,1],[1.15,1.3,1.5,1.75]];
 function setRate(r){VOICE.rate=r;S.rate=r;save();const m=VOICE.mode,i=VOICE.idx;stopPlay();
   document.querySelectorAll(".spd").forEach(function(b){b.classList.toggle("on",Math.abs(parseFloat(b.dataset.r)-r)<0.01);});
   if(m)playFrom(i,m);}
@@ -205,6 +213,21 @@ function grade(k,g){
 /* The starred list and the schedule are two halves of one fact, and
    CLAUDE.md's rule is that they never drift apart — so every caller goes
    through these rather than touching S.star directly. */
+/* Reviews first, oldest due first; the rest of the sitting is filled with
+   items never seen before, in course order, so a mode walks the material
+   rather than sampling it at random. Üretim and Dinleme keep separate
+   schedules — the same sentence can be easy to recognise and hard to
+   produce — so the map is passed in rather than assumed. */
+function dueQueue(map,bank,limit){
+  const n=dayNum(), old=[], fresh=[];
+  bank.forEach(function(it){
+    const r=map&&map[it.k];
+    if(r){if(r.d<=n)old.push(it);}else fresh.push(it);
+  });
+  old.sort(function(x,y){return map[x.k].d-map[y.k].d;});
+  return old.concat(fresh).slice(0,limit);
+}
+
 function starKey(tr,en){return tr+"|"+en;}
 function isStarred(tr,en){return S.star.indexOf(starKey(tr,en))>-1;}
 function addStar(k){if(S.star.indexOf(k)<0){S.star.push(k);srsAdd(k);}}
@@ -220,6 +243,7 @@ function back(){
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
   else if(V.view==="quiz"&&Q&&Q.mode==="level"){go("level",Q.lv);}
   else if(V.view==="prodrun"){go("prod");}
+  else if(V.view==="dinlerun"){go("dinle");}
   else if(V.view==="retell"){go("unit",V.u,"r");}
   else home();
 }

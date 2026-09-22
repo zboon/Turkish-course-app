@@ -31,6 +31,7 @@ const PARTS = [
   "src/app.lang.js",
   "src/app.screens.js",
   "src/app.uretim.js",
+  "src/app.dinle.js",
   "src/app.boot.js",
   "src/shell.foot.html"
 ];

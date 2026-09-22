@@ -16,6 +16,8 @@ function render(){
   else if(v==="prodrun")renderProdRun();
   else if(v==="retell")renderRetell();
   else if(v==="dict")renderDict();
+  else if(v==="dinle")renderDinle();
+  else if(v==="dinlerun")renderDinleRun();
   else renderHome();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){

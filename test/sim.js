@@ -662,7 +662,169 @@ step("sözlük · the whole word list", () => {
   ok(ev("V.view") === "unit" && ev("V.u") === w.u, "the word does not lead back to its unit");
 });
 
-/* ===================== 9 · about, backup, restore ===================== */
+/* ===================== 9 · dinleme · listening ===================== */
+/* The one mode that marks the learner rather than asking them to mark
+   themselves, so the scoring is worth pinning down, and the one that
+   deliberately runs the voice past 1x, so the rate has to be checked at
+   the synthesiser rather than in the setting. */
+step("speeds above normal actually reach the voice", () => {
+  ev("wipe()");
+  const rows = ev("SPEEDS");
+  ok(Array.isArray(rows) && rows.length === 2, "SPEEDS is not two rows");
+  const flat = rows[0].concat(rows[1]);
+  ok(flat.some(r => r > 1), "no speed above 1x is offered");
+  ok(Math.max.apply(null, flat) >= 1.5, "the fast row does not reach 1.5x");
+
+  ev("go('unit','a1u1','r')");
+  ok(/1\.75×/.test(lastPaint), "the reading screen does not offer the fast row");
+  flat.forEach(r => {
+    ev("setRate(" + r + ")");
+    voice.rates.length = 0;
+    ev("playFrom(0,'listen')");
+    const got = voice.rates[voice.rates.length - 1];
+    ok(Math.abs(got - r) < 0.001, "setRate(" + r + ") spoke at " + got);
+    ok(ev("S.rate") === r, "setRate(" + r + ") was not saved");
+    ev("stopPlay()");
+  });
+  ev("setRate(0.85)");
+});
+
+step("dictation marks what was typed, word by word", () => {
+  ev("wipe()"); ev("S.pscope='all'"); ev("save()");
+  ev("go('dinle')");
+  ok(ev("V.view") === "dinle", "dinleme hub did not open");
+  ok(/Dikte/.test(lastPaint) && /Ses önce/.test(lastPaint), "the hub is missing an exercise");
+
+  ev("startDinle('d')");
+  ok(ev("V.view") === "dinlerun", "dictation did not start");
+  const n = ev("DK.q.length");
+  ok(n === ev("DSESSION"), "a dictation sitting is " + n + ", expected " + ev("DSESSION"));
+  ok(voice.spoken[voice.spoken.length - 1] === ev("DK.q[0].tr"), "the first line was not spoken on entry");
+  ok(!lastPaint.includes(ev("DK.q[0].tr")), "the line is on screen before anything is typed");
+
+  /* typed exactly: full marks, nothing missing, box moves out */
+  const said = ev("DK.q[DK.i].tr"), key = ev("DK.q[DK.i].k");
+  ok(/^d:/.test(key), "dictation wrote the key " + key);
+  doc.getElementById("dbox").value = said;
+  ev("dikteCheck()");
+  ok(ev("DK.res.pct") === 100 && ev("DK.res.clean"), "an exact answer did not score 100");
+  ok(ev("S.dinle[" + q(key) + "].b") === 1, "a right answer did not move a box");
+  ok(lastPaint.includes(ev("DK.q[DK.i].en")), "the check screen hides the English");
+
+  /* a dropped word is named, not merely counted */
+  ev("dinleNext()");
+  const said2 = ev("DK.q[DK.i].tr"), key2 = ev("DK.q[DK.i].k");
+  const words = said2.split(/\s+/);
+  doc.getElementById("dbox").value = words.slice(1).join(" ");
+  ev("dikteCheck()");
+  ok(ev("DK.res.ops.filter(function(o){return o.t==='miss'}).length") >= 1,
+     "a dropped word was not reported missing");
+  ok(/class="dw miss"/.test(lastPaint), "the missing word is not marked on screen");
+  ok(ev("DK.res.pct") < 100, "a dropped word still scored 100");
+
+  /* an invented word fails even at full word recall */
+  ev("dinleNext()");
+  const said3 = ev("DK.q[DK.i].tr"), key3 = ev("DK.q[DK.i].k");
+  doc.getElementById("dbox").value = said3 + " zürafa";
+  ev("dikteCheck()");
+  ok(ev("DK.res.extra") === 1, "an invented word was not counted as extra");
+  ok(ev("!dictPass(DK.res)"), "an invented word still passed");
+  ok(ev("S.dinle[" + q(key3) + "].b") === 0, "a failed line did not come back to box 0");
+  ok(/class="dw extra"/.test(lastPaint), "the invented word is not struck through");
+
+  /* nothing typed scores zero and is not an error */
+  ev("dinleNext()");
+  doc.getElementById("dbox").value = "";
+  ev("dikteCheck()");
+  ok(ev("DK.res.pct") === 0, "an empty answer did not score 0");
+
+  /* finish the sitting */
+  let guard = 0;
+  while (ev("DK.phase") !== "end" && guard++ < 40) {
+    if (ev("DK.phase") === "play") { doc.getElementById("dbox").value = ev("DK.q[DK.i].tr"); ev("dikteCheck()"); }
+    else ev("dinleNext()");
+  }
+  ok(ev("DK.phase") === "end", "the dictation sitting never ended");
+  ok(/kelimesi kelimesine/.test(lastPaint), "the end screen does not say who marked it");
+  ok(ev("Object.keys(S.dinle).length") === n, "graded " + n + " lines but stored " + ev("Object.keys(S.dinle).length"));
+  ok(ev("Object.keys(S.dinle).every(function(k){return k.indexOf('d:')===0})"),
+     "dictation wrote a key that is not a dictation key");
+});
+
+step("replays are limited, and typing survives them", () => {
+  ev("wipe()"); ev("S.pscope='all'"); ev("setDreplay(2)");
+  ev("startDinle('d')");
+  ok(ev("DK.plays") === 1, "the line was not counted as played once on entry");
+  ok(ev("replayLeft()") === 1, "replayLeft is wrong after the first play");
+
+  /* a replay must not redraw — that would throw away the input */
+  doc.getElementById("dbox").value = "yarım cevap";
+  const paints = screens;
+  ev("dinlePlay()");
+  ok(screens === paints, "a replay repainted the screen and lost the input");
+  ok(ev("DK.plays") === 2 && ev("replayLeft()") === 0, "the second replay did not count");
+
+  /* and beyond the limit it refuses, still without losing the input */
+  ev("dinlePlay()");
+  ok(ev("DK.plays") === 2, "a replay past the limit was allowed");
+  ok(ev("DK.typed") === "yarım cevap", "a refused replay lost what was typed");
+  ok(doc.getElementById("dbox").value === "yarım cevap", "the input box was cleared");
+
+  /* unlimited is a real setting */
+  ev("go('dinle')"); ev("setDreplay(0)");
+  ok(ev("dreplay()") === 0 && ev("replayLeft()") > 1, "unlimited replays did not take");
+  ev("setDreplay(2)");
+});
+
+step("audio first reveals only after the decision", () => {
+  ev("wipe()"); ev("S.pscope='all'"); ev("save()");
+  ev("setDrate(1.3)");
+  voice.rates.length = 0;
+  ev("startDinle('a')");
+  ok(ev("DK.phase") === "play", "audio-first did not start in the play phase");
+  ok(Math.abs(voice.rates[voice.rates.length - 1] - 1.3) < 0.001, "the listening rate did not reach the voice");
+  const it = ev("DK.q[DK.i]");
+  ok(!lastPaint.includes(it.tr), "audio-first showed the Turkish before the reveal");
+  ok(!lastPaint.includes(it.en), "audio-first showed the English before the reveal");
+
+  ev("hearReveal()");
+  ok(ev("DK.phase") === "reveal", "reveal did not change phase");
+  ok(lastPaint.includes(it.tr) && lastPaint.includes(it.en), "the reveal shows nothing");
+
+  const key = it.k;
+  ok(/^a:/.test(key), "audio-first wrote the key " + key);
+  ev("hearMark(true)");
+  ok(ev("S.dinle[" + q(key) + "].b") === 1, "understood did not move a box");
+
+  /* the two exercises keep separate schedules for the same line */
+  const line = ev("DK.q[0].k").slice(2);
+  ev("wipe()"); ev("S.pscope='all'");
+  ev("S.dinle={'d:" + line + "':{b:4,d:0}}"); ev("save()");
+  ok(ev("dinleDue('a:')") === ev("listenBank('a:').length"),
+     "a dictation box changed what audio-first thinks is due");
+  ev("setDrate(1)");
+});
+
+step("listening state survives wipe and restore the way settings should", () => {
+  ev("wipe()"); ev("S.pscope='all'"); ev("setDrate(1.5)"); ev("setDreplay(1)");
+  ev("startDinle('d')");
+  doc.getElementById("dbox").value = ev("DK.q[DK.i].tr");
+  ev("dikteCheck()");
+  ok(ev("Object.keys(S.dinle).length") === 1, "nothing was scheduled");
+  const saved = ev("JSON.stringify(S)");
+
+  ev("wipe()");
+  ok(ev("Object.keys(S.dinle).length") === 0, "wipe left the listening schedule behind");
+  ok(ev("S.drate") === 1.5 && ev("S.dreplay") === 1, "wipe threw away the listening settings");
+
+  ev("go('about')");
+  doc.getElementById("iobox").value = saved;
+  ev("importBox()");
+  ok(ev("Object.keys(S.dinle).length") === 1, "restore lost the listening schedule");
+  ev("setDrate(1)"); ev("setDreplay(2)");
+});
+
+/* ===================== 10 · about, backup, restore ===================== */
 step("about and backup", () => {
   ev("go('about')");
   ok(/Bu kurs hakkında|Nasıl çalışır/.test(lastPaint), "about screen is empty");
@@ -699,7 +861,7 @@ step("about and backup", () => {
   ok(ev("!!S.done['a1u1']"), "a bad backup wiped good progress");
 });
 
-/* ===================== 10 · storage, theme, streak ===================== */
+/* ===================== 11 · storage, theme, streak ===================== */
 step("storage and chrome", () => {
   ok(store.has("turkce-course-v1"), "nothing was written to localStorage");
   const raw = JSON.parse(store.get("turkce-course-v1"));
