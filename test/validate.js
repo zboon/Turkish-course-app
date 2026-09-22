@@ -549,15 +549,36 @@ let nChecked = 0;
 
   /* Four shapes and no others, and after half past it counts down to the
      NEXT hour — which wraps, so 12:55 is "bire beş var". */
+  /* The live clock on the home screen reads every minute, not just the
+     multiples of five a generated prompt uses — so the odd ones are
+     hand-checked too, and the sweep below walks all 720. */
   [[3, 0, "saat üç"], [3, 5, "üçü beş geçiyor"], [3, 15, "üçü çeyrek geçiyor"],
    [3, 20, "üçü yirmi geçiyor"], [3, 30, "üç buçuk"], [3, 35, "dörde yirmi beş var"],
    [3, 45, "dörde çeyrek var"], [3, 55, "dörde beş var"], [4, 45, "beşe çeyrek var"],
-   [1, 15, "biri çeyrek geçiyor"], [11, 50, "on ikiye on var"], [12, 55, "bire beş var"]
+   [1, 15, "biri çeyrek geçiyor"], [11, 50, "on ikiye on var"], [12, 55, "bire beş var"],
+   [3, 1, "üçü bir geçiyor"], [3, 13, "üçü on üç geçiyor"], [3, 29, "üçü yirmi dokuz geçiyor"],
+   [3, 31, "dörde yirmi dokuz var"], [3, 37, "dörde yirmi üç var"], [3, 59, "dörde bir var"],
+   [12, 31, "bire yirmi dokuz var"], [11, 59, "on ikiye bir var"]
   ].forEach(([h, m, want]) => {
     nChecked++;
     const got = M.timeText(h, m);
     if (got !== want) err("numbers", h + ":" + String(m).padStart(2, "0") + ' reads "' + got + '", hand-checked form is "' + want + '"');
   });
+
+  /* Every hour and every minute: a shape the clock can reach but no drill
+     ever did is still a shape a learner reads off the home screen. */
+  {
+    let shapes = 0;
+    for (let h = 1; h <= 12; h++) for (let m = 0; m < 60; m++) {
+      const t = M.timeText(h, m);
+      shapes++;
+      if (!t || /undefined|NaN|  /.test(t))
+        err("numbers", h + ":" + m + " reads " + JSON.stringify(t));
+      else if (!/^saat /.test(t) && !/ (geçiyor|var)$/.test(t) && !/ buçuk$/.test(t))
+        err("numbers", h + ":" + m + ' reads "' + t + '", which is none of the four shapes');
+    }
+    nChecked += shapes;
+  }
 
   [[45, 0, "kırk beş lira"], [42, 50, "kırk iki lira elli kuruş"], [0, 50, "elli kuruş"],
    [1, 5, "bir lira beş kuruş"], [175, 25, "yüz yetmiş beş lira yirmi beş kuruş"],

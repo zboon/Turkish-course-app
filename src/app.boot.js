@@ -30,6 +30,9 @@ function render(){
   else if(v==="sayilar")renderSayilar();
   else if(v==="sayilarrun")renderSayilarRun();
   else renderHome();
+  /* The live clock arms itself where it is drawn and stops where it is
+     not, so this one call covers every screen. */
+  clockTick();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){
   try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(e){}

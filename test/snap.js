@@ -29,12 +29,18 @@ const hash = s => crypto.createHash("sha256").update(s).digest("hex").slice(0, 1
 
 const snap = {};
 const grab = k => { snap[k] = hash(app.innerHTML); };
-/* Sayılar is the one mode that prints a wall-clock reading — how long the
-   learner took — and no seed can make that reproducible. Only the reading
-   itself is blanked, so everything else on those screens (the verdict, the
-   answer, which way the pill is coloured) stays pinned. "N.Ns" appears
-   nowhere else: speeds render with × and durations in dakika or gün. */
-const grabx = k => { snap[k] = hash(app.innerHTML.replace(/\d+\.\d+s/g, "#s")); };
+/* Two things on these screens read the wall clock and no seed can make
+   either reproducible: how long the learner took in Sayılar, and the live
+   clock on the home screen, which changes on the minute — so a run that
+   straddles one would disagree with itself. Only those readings are
+   blanked, and everything else stays pinned: the verdict, the answer,
+   which way a pill is coloured, every other word on the page. "N.Ns"
+   appears nowhere else, speeds render with × and durations in dakika or
+   gün, and the clock's two elements hold nothing but text. */
+const scrub = h => h
+  .replace(/\d+\.\d+s/g, "#s")
+  .replace(/(id="hclock(?:d)?"[^>]*>)[^<]*/g, "$1#");
+const grabx = k => { snap[k] = hash(scrub(app.innerHTML)); };
 /* Reseeding before each walk keeps one section's randomness from
    shifting the next one's. */
 const reseed = n => ev("Math.random=(function(){var s=" + n + ";return function(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};})()");
@@ -43,7 +49,7 @@ const meetAll = () => ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:
 
 ev("wipe()");
 reseed(12345);
-ev("home()"); grab("home");            /* day one: orientation, one step */
+ev("home()"); grabx("home");            /* day one: orientation, one step */
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");
@@ -153,7 +159,7 @@ ev("PR=null;"); ev("wipe()");
 ev("wipe()"); ev("setNmax(9999)"); ev("setNcap(5)");
 /* The hub draws a fresh example beside each shape on every paint, so it
    needs its own seed like every other walk in this file. */
-reseed(4099); ev("go('sayilar')"); grab("sayilar");
+reseed(4099); ev("go('sayilar')"); grabx("sayilar");
 reseed(4100); ev("startNum('duy')"); grabx("sayilar:duy:ask");
 ev("document.getElementById('nbox').value=NM.q[0].show.replace(' TL','')");
 ev("numCheck()"); grabx("sayilar:duy:right");
@@ -197,9 +203,9 @@ ev("wipe()");
 /* The three views a learner actually meets in their first minutes: the
    orientation card with nothing behind them, the plan once one unit has
    been opened, and the plan mid-unit. */
-ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grab("home:plan");
-ev("go('unit','a1u4','r')"); ev("home()"); grab("home:plan:resume");
-ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grab("home:tips-hidden");
+ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grabx("home:plan");
+ev("go('unit','a1u4','r')"); ev("home()"); grabx("home:plan:resume");
+ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grabx("home:tips-hidden");
 ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");
 
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");

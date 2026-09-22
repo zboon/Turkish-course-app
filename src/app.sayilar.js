@@ -323,6 +323,7 @@ function renderSayilar(){
   let h=bar("Sayılar","numbers · at speed",true)+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">Turkish numbers are perfectly regular, so knowing them is not the problem — getting them in time is. Someone says a price and you have a second or two, not ten. These are generated, so there is nothing to memorise: what comes back is the <b>shape</b> you are slow at.</p>';
 
+  h+=clockHero();
   h+='<div class="stat"><div><b>'+numDue("duy")+'</b><span>duyma</span></div>'+
      '<div><b>'+numDue("oku")+'</b><span>söyleme</span></div>'+
      '<div><b>'+(cap?cap+"s":"—")+'</b><span>hedef</span></div></div>';
@@ -438,4 +439,61 @@ function renderSayilarRun(){
     box.focus();
     box.addEventListener("keydown",function(e){if(e.key==="Enter")numCheck();});
   }
+}
+
+/* --- the live clock ---------------------------------------------------- */
+/* Passive reinforcement, by request: the time right now, in words, sitting
+   on the home screen where it is read several times a day without anyone
+   deciding to practise. It carries the one construction that wants
+   exposure more than drilling — the hour goes to the accusative before
+   geçiyor and to the dative before var, and after half past it counts down
+   to the NEXT hour, which never feels natural until you have seen it a few
+   hundred times.
+
+   The digits underneath are the gloss, and no English is needed: 15:15
+   says it in every language, and pairing that with "üçü çeyrek geçiyor" is
+   the whole lesson. It is a button, so passive exposure has somewhere to
+   go the moment it stops being passive. */
+function nowHM(){
+  const d=new Date();
+  let h=d.getHours()%12; if(h===0)h=12;
+  return [h,d.getMinutes()];
+}
+function clockTR(){const t=nowHM();return timeText(t[0],t[1]);}
+function clockDigits(){
+  const d=new Date();
+  return d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
+}
+function clockHero(){
+  return '<button class="clock" onclick="go(\'sayilar\')" aria-label="Sayılar · saat">'+
+   '<span class="tr" id="hclock">'+esc(clockTR())+'</span>'+
+   '<span class="d" id="hclockd">'+esc(clockDigits())+'</span></button>';
+}
+/* Armed from render(), which is the one place that knows what is on
+   screen: it re-arms where the element exists and stops where it does
+   not, so navigating away disarms it with no bookkeeping anywhere else.
+   Deliberately NOT hooked into stopPlay(), which runs on every speaker
+   tap — a hook there would freeze the clock the moment a learner played
+   a word from the home screen, and leaving it running costs nothing,
+   since nothing here holds the speaker or paints a screen.
+
+   It was armed from the two screens that show it first. That left a
+   timeout pending after navigating away — harmless in a browser, where it
+   fires once and exits, but sim.js drains one timer at a time to count a
+   countdown's ticks, and a stray timer in the queue made a 3-second gap
+   take four drains. One call site in render() is both simpler and right. */
+let CLK=null;
+function clockStop(){if(CLK){clearTimeout(CLK);CLK=null;}}
+function clockTick(){
+  clockStop();
+  const a=document.getElementById("hclock");
+  if(!a)return;                      /* not on a screen that shows it */
+  const b=document.getElementById("hclockd");
+  a.textContent=clockTR();
+  if(b)b.textContent=clockDigits();
+  /* Wake ON the minute rather than 60s after the last paint, or it drifts
+     and changes a beat later every time. It pokes the text rather than
+     re-rendering, like the Üretim countdown — a clock must not be able to
+     throw away what is on the screen underneath it. */
+  CLK=setTimeout(clockTick,60000-(Date.now()%60000)+50);
 }

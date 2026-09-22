@@ -1802,6 +1802,63 @@ step("sayılar · the numbers, and the clock that marks them", () => {
   ok(/Sayılar/.test(lastPaint) && /Duy/.test(lastPaint) && /Söyle/.test(lastPaint), "the Sayılar hub lost a direction");
 });
 
+step("the clock on the home screen tells the time in Turkish", () => {
+  /* Passive reinforcement: the time now, in words, on the screen a learner
+     opens several times a day. The forms themselves are hand-checked in
+     validate.js across all 720 minutes; what is checked here is that the
+     element really carries the engine's answer for the time it is now,
+     rather than a string that merely looks like one. */
+  ev("wipe()"); ev("home()");
+  const tr = ev("document.getElementById('hclock').textContent");
+  const want = ev("timeText(nowHM()[0],nowHM()[1])");
+  ok(tr === want, "the clock reads " + q(tr) + " but the engine says " + q(want));
+  ok(/(geçiyor|var|buçuk)$/.test(tr) || /^saat /.test(tr), "the clock is not one of the four shapes: " + q(tr));
+  /* The hour shown in words is the 12-hour one; the digits beside it stay
+     on the 24-hour clock, and that pairing IS the lesson — it is how a
+     learner works out that 15:15 is said "üçü çeyrek geçiyor". */
+  const h24 = new Date().getHours();
+  ok(ev("nowHM()[0]") === (h24 % 12 || 12), "nowHM did not fold " + h24 + " onto the 12-hour clock");
+  ok(ev("document.getElementById('hclockd').textContent").indexOf(h24 + ":") === 0,
+     "the digits are not on the 24-hour clock");
+
+  /* It must poke the text, not re-render: a clock that redrew the home
+     screen every minute would throw away whatever is under it — the same
+     rule the Dinleme replay follows, and counted the same way, because
+     the paint counter is the only thing that can tell the difference. */
+  ev("document.getElementById('hclock').textContent='XXX'");
+  const paintsBefore = screens;
+  ev("clockTick()");
+  ok(ev("document.getElementById('hclock').textContent") === want, "the tick did not refresh the clock");
+  ok(screens === paintsBefore, "the tick re-rendered the screen instead of poking the text");
+
+  /* One timer at most, however many times it is armed. */
+  const n = clock.timers.length;
+  ev("clockTick()"); ev("clockTick()"); ev("clockTick()");
+  ok(clock.timers.length === n, "arming the clock three times left " + (clock.timers.length - n) + " extra timers");
+
+  /* And it stops itself on a screen that does not show it — which is why
+     it is armed from render() rather than from the screens themselves —
+     and why it must NOT be hooked into stopPlay(), which runs on every
+     speaker tap and would freeze the clock the moment a learner played a
+     word from the home screen. */
+  ev("go('about')");
+  ok(!ev("!!document.getElementById('hclock')"), "the clock followed us to About");
+  ok(ev("CLK===null"), "navigating away left the clock's timer armed");
+  ev("sayWord('merhaba')");
+  ev("home()");
+  ok(ev("CLK!==null"), "the clock did not re-arm on the home screen");
+  ev("sayWord('merhaba')");                /* stopPlay() runs inside this */
+  ok(ev("CLK!==null"), "playing a word from the home screen stopped the clock");
+
+  /* Sayılar shows it too, being the clock's own subject. */
+  ev("go('sayilar')");
+  ok(ev("!!document.getElementById('hclock')"), "the Sayılar hub lost the clock");
+  ok(ev("CLK!==null"), "the clock did not arm on the Sayılar hub");
+  /* Nowhere else. */
+  ev("go('level','A1')");
+  ok(!ev("!!document.getElementById('hclock')"), "the clock leaked onto the level screen");
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");

@@ -553,6 +553,42 @@ Four things it has to get right:
    drops `onend` would otherwise leave the clock unstarted and every answer
    instant.
 
+### The live clock
+
+By request, and the cheapest thing in the app: `clockHero()` puts the time
+now, in words, under the title on the home screen and at the top of the
+Sayılar hub — `üçü çeyrek geçiyor`, with `15:15` beneath it. It is read a
+few times a day by someone who never decided to practise, which is exactly
+the exposure the geçiyor/var construction wants. The digits are the gloss;
+no English is needed, because 15:15 says it in every language, and the
+12-hour words against the 24-hour digits is the whole lesson.
+
+Three things about it:
+
+- **`render()` arms it, not the screens.** `clockTick()` re-arms where
+  `#hclock` exists and stops where it does not, so one call at the end of
+  `render()` covers everything. Arming it from the two screens that draw it
+  was the first version and left a timeout pending after navigating away —
+  harmless in a browser, but `sim.js` drains one timer at a time to count a
+  countdown's ticks, and a stray timer made a 3-second gap take four drains.
+- **It is deliberately NOT hooked into `stopPlay()`**, which is the standing
+  rule for timers and wrong here: `stopPlay()` runs on every speaker tap, so
+  the hook would freeze the clock the moment a learner played a word from
+  the home screen. Nothing here holds the speaker or paints a screen, so
+  there is nothing to reclaim.
+- **It pokes the text rather than re-rendering**, like the Üretim countdown,
+  because a clock that redrew the home screen every minute would throw away
+  whatever was under it. `sim.js` counts paints to prove it — the DOM stub's
+  `textContent` does not write back into `innerHTML`, so comparing the paint
+  is not enough to tell the difference.
+
+A live clock also means `timeText()` now runs on **all 60 minutes**, where
+the generated drills only ever asked for multiples of five. `validate.js`
+hand-checks the odd ones and sweeps all 720 hour/minute pairs for shape.
+`snap.js` scrubs the two clock elements by id, for the same reason it
+scrubs the elapsed-time readings: a run that straddled a minute would
+otherwise disagree with itself.
+
 Sayılar is **not** in the daily plan, like Kurma ve Dönüştürme and Sor and
 for the same reason: it needs no material met, so it would be available on
 day one and push a beginner's plan past one instruction. Araçlar has it.
