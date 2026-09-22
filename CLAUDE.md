@@ -7,8 +7,8 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 hand-checked Turkish forms
-node test/sim.js        # headless render of all 322 screens + quiz/voice/SRS/üretim paths
+node test/validate.js   # data integrity + 266 hand-checked forms + 446 dictation scores
+node test/sim.js        # headless render of all 324 screens + quiz/voice/SRS/üretim/dinleme
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -43,6 +43,7 @@ src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
 src/app.uretim.js        production mode, chunk bank, retell
+src/app.dinle.js         dictation and audio-first listening
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
@@ -151,15 +152,21 @@ the line in an editor.
  place:{u,s}, star:["tr|en"], srs:{"tr|en":{b:box,d:dueDay}},
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
- gap, prompten, pscope}
+ dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
+ gap, prompten, pscope, drate, dreplay}
 ```
 
-Üretim keys are as permanent as unit ids and for the same reason:
-`s:<unitId>#<lineIndex>` for a passage line, `k:<index>` for a chunk.
+Üretim and Dinleme keys are as permanent as unit ids and for the same
+reason: `s:<unitId>#<lineIndex>` for a passage line and `k:<index>` for a
+chunk in Üretim; `d:<unitId>#<lineIndex>` for dictation and
+`a:<unitId>#<lineIndex>` for audio-first in Dinleme. The two Dinleme
+prefixes are deliberately separate from each other and from `s:` — one
+sentence can be easy to recognise, harder to transcribe and hardest to
+produce, and collapsing those into one box would hide exactly that.
 Reordering a unit's `lines` silently re-points every schedule built on it,
-so add lines at the end rather than inserting them. `gap`, `prompten` and
-`pscope` are settings, not progress — `wipe()` keeps them, like `theme`
-and `rate`.
+so add lines at the end rather than inserting them. `gap`, `prompten`,
+`pscope`, `drate` and `dreplay` are settings, not progress — `wipe()`
+keeps them, like `theme` and `rate`.
 
 **Unit ids are permanent.** Everything above is keyed to them, so renaming
 `b1u3` silently wipes that unit's progress for every existing learner. Add
@@ -262,8 +269,9 @@ rather than a merge job. That was true at v2.00 → v2.31.
 - Voice runs on the device's own `tr-TR` speech synthesis. `stopPlay()` is
   called at the top of `go()` and `home()` — any new navigation path must too,
   or audio keeps playing over the next screen. `stopPlay()` also clears the
-  Üretim countdown, so a timer started there dies with the screen; anything
-  else that sets a timer belongs in `prodStop()` for the same reason.
+  Üretim countdown and the Dinleme timer, so a timer started in either dies
+  with the screen; anything else that sets a timer needs its own stop called
+  from `stopPlay()` for the same reason.
 
 ## Üretim (production mode)
 
@@ -329,6 +337,42 @@ cannot catch: `e` (English forms — no more derivable than the Turkish),
 `obj`/`dat`/`loc`/`n` (collocations, or the generator writes *"I am
 drinking the school"*), and `needsObj`/`stative` (English cannot say
 *"Did we give?"* or *"I am liking"*).
+
+## Dinleme (harder listening)
+
+Built. Dinle and Gölge leave the passage on screen, so they train reading
+with a soundtrack; `go('dinle')` takes the text away.
+
+- **Dikte** — a line plays, the learner types it, and `dictScore()` marks it
+  word by word. This is the **only judge in the app that is not the
+  learner**: everything in Üretim is self-graded, and self-grading cannot
+  see a word you never heard. Alignment is a longest common subsequence over
+  `fold()`ed tokens, so word order counts, a dropped word shifts nothing
+  after it, and a learner without a Turkish keyboard is not punished.
+  `DICT_PASS` is 80% with nothing invented — one word forgiven in five.
+  `validate.js` holds 14 hand-checked scores plus every one of the 432 lines
+  scored against itself, which is what catches the tokeniser dropping
+  something a learner would be marked down for.
+- **Ses önce** — the same lines with nothing on screen: listen, decide
+  whether it landed, then reveal. Self-graded, because comprehension leaves
+  no typed evidence, but the decision comes before the reveal. `sim.js`
+  asserts the Turkish is absent from the paint until then.
+
+Speeds now pass 1×: `SPEEDS` in `app.core.js` is two rows, the study pace
+and the training pace, up to 1.75× on a passage, and `S.drate` runs Dinleme
+up to 1.5×. 1× is where a TTS voice sits naturally, so everything below it
+is a crutch. `sim.js` reads the rate off the utterance rather than the
+setting — the stub records `u.rate` for exactly that.
+
+Replays are capped (`S.dreplay`, one to unlimited) because a sentence is
+said to you once. Replaying must **not** re-render: the input box holds what
+has been typed, so `dinlePlay()` pokes the counter directly and captures the
+text *before* the limit check, or a refused replay would silently empty the
+box.
+
+One honest limit, and it is in the About text too: this is the device's TTS,
+not a person. No reduction, no accent, no overlapping turns. A clean 1.5×
+here is a floor, not a finish.
 
 ## Sözlük (the word list)
 

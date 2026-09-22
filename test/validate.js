@@ -18,6 +18,7 @@ const root = path.join(__dirname, "..");
 const file = process.argv[2] || path.join(root, "dist", "index.html");
 
 const errs = [], warns = [];
+let dChecked = 0;
 const err = (where, msg) => errs.push(where + ": " + msg);
 const warn = (where, msg) => warns.push(where + ": " + msg);
 
@@ -55,7 +56,8 @@ try {
   vm.createContext(sandbox);
   vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine +
     "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,CORE:CORE,fold:fold," +
-    "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj};", sandbox, { filename: file });
+    "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj," +
+    "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -368,6 +370,55 @@ else {
   });
 }
 
+/* ---------- dictation scoring ---------- */
+/* dictScore is the only judge in the app that is not the learner, so what
+   it forgives and what it does not is a decision rather than an
+   implementation detail. Hand-checked, like the morphology table:
+   expected percentage, and whether it counts as a pass. */
+{
+  const DS = M.dictScore, DP = M.dictPass;
+  if (!DS || !DP) err("dikte", "dictScore is not in the build");
+  else {
+    const said = "Sabah saat yedide kalkıyorum.";
+    const cases = [
+      [said, "Sabah saat yedide kalkıyorum.", 100, true,  "typed exactly"],
+      [said, "sabah saat yedide kalkiyorum",  100, true,  "no Turkish keyboard — folded, so it passes"],
+      [said, "SABAH SAAT YEDİDE KALKIYORUM",  100, true,  "shouting is not an error"],
+      [said, "Sabah  saat   yedide kalkıyorum", 100, true, "extra spaces"],
+      [said, "Sabah saat yedide kalkıyorum!!", 100, true, "punctuation folds away"],
+      [said, "Sabah yedide kalkıyorum",         75, false, "one word of four missed"],
+      [said, "saat yedide kalkıyorum",          75, false, "the first word missed"],
+      [said, "Sabah saat yedide çok kalkıyorum",100, false, "every word, plus one invented"],
+      [said, "kalkıyorum",                      25, false, "only the verb"],
+      [said, "",                                 0, false, "nothing typed"],
+      [said, "kalkıyorum yedide saat Sabah",    25, false, "right words, wrong order"],
+      ["Hepsi ne kadar?", "hepsi ne kadar",     100, true,  "short line, folded"],
+      ["Kazan ölebilir mi?", "kazan olebilir",   67, false, "the question particle dropped"],
+      ["— Merhaba! Benim adım Deniz.", "Merhaba benim adım Deniz", 100, true, "dash folds away"]
+    ];
+    cases.forEach(function (c) {
+      const r = DS(c[0], c[1]);
+      if (r.pct !== c[2]) err("dikte", c[4] + ": scored " + r.pct + "%, expected " + c[2] + "%");
+      if (DP(r) !== c[3]) err("dikte", c[4] + ": pass was " + DP(r) + ", expected " + c[3]);
+      dChecked++;
+    });
+    /* Word order has to count, or dictation is a bag-of-words quiz. */
+    if (DS("bir iki üç dört", "dört üç iki bir").pct === 100)
+      err("dikte", "a scrambled line still scored 100%");
+    /* Every real line has to score clean against itself, or the tokeniser
+       is dropping something the learner would be marked down for. */
+    UNITS.forEach(function (u) {
+      u.read.lines.forEach(function (ln) {
+        const r = DS(ln[0], ln[0]);
+        if (!r.clean) err("dikte " + u.id, "a line does not score clean against itself: " + ln[0]);
+        if (r.of === 0) err("dikte " + u.id, "a line tokenised to nothing: " + ln[0]);
+        dChecked++;
+      });
+    });
+    if (M.DICT_PASS !== 80) warn("dikte", "DICT_PASS is " + M.DICT_PASS + ", the golden table assumes 80");
+  }
+}
+
 /* ---------- the crest is drawn in three places ---------- */
 /* src/icon.svg is the source. The favicon is that file inlined, so the
    single published page carries its own icon; crest() redraws it with CSS
@@ -443,5 +494,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
+  dChecked + " dictation scores · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

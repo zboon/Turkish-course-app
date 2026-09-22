@@ -276,3 +276,50 @@ function makeMove(){
   return null;
 }
 
+
+/* ===================== dikte · scoring ===================== */
+/* What the learner typed against what was said, word by word.
+   A whole-line compare says pass or fail; this says WHICH words went
+   missing, and that is the only real error detection in the app —
+   self-grading cannot see a word you never heard in the first place.
+
+   Alignment is a longest common subsequence over fold()ed tokens, so a
+   dropped word shifts nothing after it, word order still counts, and a
+   learner without a Turkish keyboard is not punished for diacritics.
+   Pure: no DOM, no state. */
+function dictTokens(s){
+  const out=[];
+  String(s).split(/\s+/).forEach(function(w){
+    const f=fold(w);
+    if(!f)return;                       /* punctuation and dashes fold away */
+    const parts=f.split(" ");
+    /* fold() turns "vakt-i" into two words; there is no clean slice of the
+       original for each half, so those rare pieces show folded. */
+    if(parts.length===1)out.push({raw:w,f:f});
+    else parts.forEach(function(p){out.push({raw:p,f:p});});
+  });
+  return out;
+}
+function dictScore(said,typed){
+  const a=dictTokens(said), b=dictTokens(typed);
+  const n=a.length, m=b.length;
+  const L=[]; for(let i=0;i<=n;i++)L.push(new Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+    L[i][j]=a[i].f===b[j].f?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+  const ops=[]; let i=0,j=0;
+  while(i<n&&j<m){
+    if(a[i].f===b[j].f){ops.push({t:"ok",w:a[i].raw});i++;j++;}
+    else if(L[i+1][j]>=L[i][j+1]){ops.push({t:"miss",w:a[i].raw});i++;}
+    else {ops.push({t:"extra",w:b[j].raw});j++;}
+  }
+  while(i<n){ops.push({t:"miss",w:a[i].raw});i++;}
+  while(j<m){ops.push({t:"extra",w:b[j].raw});j++;}
+  const hit=ops.filter(function(o){return o.t==="ok";}).length;
+  const extra=ops.filter(function(o){return o.t==="extra";}).length;
+  return {ops:ops,hit:hit,of:n,extra:extra,
+          pct:n?Math.round(100*hit/n):0,clean:hit===n&&extra===0};
+}
+/* 80% of the words, with nothing invented, is a pass. A five-word line
+   forgives one word; a ten-word line forgives two. */
+const DICT_PASS=80;
+function dictPass(r){return !!r&&r.pct>=DICT_PASS&&r.extra===0;}

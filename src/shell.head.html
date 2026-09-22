@@ -241,6 +241,17 @@ h2.sec::after{
   box-shadow:0 6px 24px rgba(0,0,0,.28);font-family:'Karla',sans-serif}
 .bubble b{color:var(--gold)}
 
+/* ---------- dictation ---------- */
+/* The marked-up line after a dikte. Red is for wrong answers only, and a
+   word that never arrived is exactly that; a word the learner invented is
+   struck out rather than coloured, because it is noise, not an error. */
+.dline{font-family:'Crimson Pro',Georgia,serif;font-size:1.3rem;line-height:1.75;margin:0}
+.dw{padding:0 .1em;border-radius:4px}
+.dw.miss{background:var(--bole-soft);color:var(--bole);font-weight:600}
+.dw.extra{color:var(--faint);text-decoration:line-through}
+.spd.fast{border-style:dashed}
+.spd.fast.on{border-style:solid}
+
 /* ---------- exercises ---------- */
 .qn{color:var(--faint);font-size:.76rem;letter-spacing:.04em;margin-bottom:.4rem}
 .q{font-size:1.06rem;font-weight:600;line-height:1.45;margin:0 0 .9rem}
