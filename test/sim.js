@@ -468,6 +468,26 @@ step("üretim · chunks", () => {
   for (let i = 0; i < n; i++) produce(true);
   ok(phase() === "end", "chunk session did not finish");
   ok(ev("prodDue(chunkBank()).length") === ev("CHUNKS.length") - n, "graded chunks are still due today");
+
+  /* The bank is the roadmap's first item, grown from 50 to 300+. Two
+     things had to survive that: the sitting stays a sitting, and the hub
+     reports the sitting rather than the whole bank — "307 due today" is
+     the debt-nobody-will-clear reading the Tekrar hub already had to
+     correct once. */
+  ok(ev("CHUNKS.length") >= 300, "the chunk bank is only " + ev("CHUNKS.length") + " deep");
+  ev("wipe()"); ev("go('prod')");
+  const card = /Kalıplar<\/p><p class="sub">([^<]*)/.exec(lastPaint);
+  ok(!!card, "the Kalıplar card is gone");
+  ok(card && card[1].indexOf(ev("SESSION") + " in this sitting") > -1,
+     "the chunk card offers the backlog rather than the sitting: " + (card ? card[1].slice(-70) : ""));
+  ok(!/<b>'+ev("CHUNKS.length")+'<\/b><span>kalıp/.test(lastPaint),
+     "the stat row still counts the whole bank as due");
+
+  /* Every prefab has to be usable as a prompt: something to say, and an
+     English that names it. A blank either side is an unanswerable item. */
+  let empty = 0;
+  ev("CHUNKS").forEach(c => { if (!String(c[0]).trim() || !String(c[1]).trim()) empty++; });
+  ok(empty === 0, empty + " chunks have an empty side");
 });
 
 step("üretim · say it three times", () => {

@@ -339,7 +339,7 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 Built. The learner's gap is speaking, and what worked for them was Pimsleur —
 because it forces a sentence out of the mouth *before* the model is heard.
 `go('prod')` is the mode, drawn from the course's own 432 passage lines and
-50 prefabs:
+307 prefabs:
 
 1. **Prompt → gap → model.** The English shows (and is spoken if `prompten`
    is on, in the device's English voice — never the `tr-TR` one). A silent
@@ -356,8 +356,31 @@ because it forces a sentence out of the mouth *before* the model is heard.
    piece that cannot stand on its own. A sentence marked wrong is offered
    this way automatically. `sim.js` checks every one of the 432 lines: each
    piece must be a true tail, each step longer than the last.
-3. **Chunk bank.** `src/data/chunks.js`, 50 conversational prefabs, drilled
-   by the same runner with `k:` keys.
+3. **Chunk bank.** `src/data/chunks.js`, 307 conversational prefabs, drilled
+   by the same runner with `k:` keys, grouped by what the phrase *does* —
+   agreeing, refusing, repairing a conversation that has come apart,
+   buying the thing, holding the floor. `dueQueue` takes fresh items in
+   array order, so the groups are also the order a learner walks them.
+
+   **The bank is append-only.** `k:<index>` means a chunk's position *is*
+   its identity in every saved schedule: insert one at the top and every
+   box after it silently re-points to a different phrase, exactly as
+   renumbering a unit would. `validate.js` pins the original fifty by
+   index and fails by name if any of them moves.
+
+   In Üretim the English *is* the prompt, so no two entries may share one
+   — including with a passage line, which is prompted the same way from
+   the same screen. `validate.js` enforces that too; it caught one while
+   this bank was being written (`bence de` and `ben de öyle düşünüyorum`
+   were both glossed "I think so too").
+
+   Growing the bank to 300+ moved the Tekrar distribution barely at all —
+   105 words reaching eight encounters became 111, and the median stayed
+   at three. That is the honest result and it is not a disappointment:
+   prefabs are built from high-frequency function words, while the words
+   the course teaches are content words out of literary passages. Chunks
+   buy fluency, which is what they are for; they do not raise the
+   vocabulary floor, which is what Tekrar motoru is for.
 4. **Say it three times.** A unit's `speak:` task retold on day 1, 3 and 7
    (`RETELL_NEXT`), started from the Konuşma card.
 
@@ -546,7 +569,7 @@ left out of the card entirely — a beginner sees one instruction rather than
 three ticked rows for work never done.
 
 Two "N waiting" cards used to sit lower on the home screen. They duplicated
-the plan's own Tekrar and Söyle steps, and one counted the 50 standalone
+the plan's own Tekrar and Söyle steps, and one counted the standalone
 chunks as due, so on day one it advertised work while the plan correctly
 said there was none. One place answers "what now", and it is the plan;
 direct access stays in Araçlar.
@@ -592,33 +615,30 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Chunks, 50 → 300+.** `src/data/chunks.js`. Pure data, no new
-   mechanics, and formulaic language is a large share of fluent speech — the
-   cheapest fluency per hour left.
-2. **Hata defteri — the mistake book.** Every error the app sees is thrown
+1. **Hata defteri — the mistake book.** Every error the app sees is thrown
    away: the quiz stores `{score,of,at}`, and Üretim, Dinleme, Tekrar and
    Dilbilgisi store only the SRS box. Collect the wrong answers across all
    modes with the `why` that goes with them, plus a weak-spots read over
    `S.prod` (already keyed by pattern, `g:<frame>:<tense>` and `t:<move>`),
    `S.dinle`, `S.rep`, `S.gram` and `S.srs`. Nothing new to author, and it
    is the one thing every tutor does that the app does not.
-3. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
+2. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
    from a unit's vocabulary list and from Sözlük, so a word met in the wild
    cannot enter the queue. Small, and it stops the app being a closed box.
-4. **Sor — question production.** The question frame already exists in
+3. **Sor — question production.** The question frame already exists in
    `FRAMES`; asking is the half of a conversation the course never drills.
-5. **Sayılar — numbers, times and prices at speed.** Generated, so no
+4. **Sayılar — numbers, times and prices at speed.** Generated, so no
    content to write. The thing that reliably fails in a real shop.
-6. **Branching dialogue and a repair kit.** The nearest an offline app gets
+5. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-7. **Kütüphane** — verbatim public-domain texts with an
+6. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-8. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+7. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 
