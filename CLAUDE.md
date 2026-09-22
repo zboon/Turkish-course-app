@@ -269,7 +269,7 @@ inserted line shifts all of them. Strip the first line and that tail, drop
 the trailing newline, and compare the remainder: if it matches the build,
 the artifact is pure generated output, nothing needs merging, and the read
 is a formality rather than a merge job. That has held at every release so
-far — v2.00 → v2.31 → v2.40.
+far — v2.00 → v2.31 → v2.40 → v2.50.
 
 ## House style
 
