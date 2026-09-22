@@ -4,7 +4,7 @@ A self-paced Turkish course that runs as one offline HTML file: six CEFR levels,
 ten units each, built around graded reading that climbs from invented dialogue to
 Ottoman prose.
 
-**60 units · 300 exercises · 600 words · 432 graded sentences · 482 speaking prompts**
+**60 units · 300 exercises · 892 words · 432 graded sentences · 482 speaking prompts**
 
 ## What's in it
 
@@ -24,9 +24,10 @@ Ottoman prose.
   vetted lexicon, so the sentence cannot be recalled, only built, and
   *Dönüştürme*, which asks for one change to a sentence you are shown:
   past, negative, question, person.
-- **Sözlük** — every word in the course in one list, by class (nouns,
-  verbs, adjectives, adverbs, particles, expressions), searchable in
-  either language, each one speakable and starrable.
+- **Sözlük** — every word in the app in one list: the 576 the course
+  teaches plus 316 everyday words grouped by topic (food, getting about,
+  the body, feelings…), by class and searchable in either language, each
+  one speakable and starrable.
 - **Spaced review** — starred words and produced sentences return on a
   widening schedule (1, 2, 4, 8, 16… days) until they stick.
 - **Test ahead** — a 12-question placement test, plus a ten-question exam on

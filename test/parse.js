@@ -26,6 +26,7 @@ const PARTS = [
   "src/data/chunks.js",
   "src/data/lex.js",
   "src/data/pos.js",
+  "src/data/core.js",
   "src/app.core.js",
   "src/app.lang.js",
   "src/app.screens.js",

@@ -60,7 +60,7 @@ function renderHome(){
   h+='<h2 class="sec">Araçlar</h2>'+
    navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
    navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
-   navRow("Sözlük","Every word in the course ("+dictAll().length+"), by type","go('dict')")+
+   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')")+
    navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')")+
    navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')");
 
@@ -426,7 +426,8 @@ function renderCards(){
 const CATS=[["all","Tümü","all"],["n","İsim","nouns"],["f","Fiil","verbs"],
             ["s","Sıfat","adjectives"],["z","Zarf","adverbs"],
             ["e","Edat","particles"],["i","İfade","expressions"]];
-let DICT={q:"",cat:"all",sort:"az"};
+const SRCS=[["all","Tümü","everything"],["course","Ders","the sixty units"],["core","Çekirdek","everyday extras"]];
+let DICT={q:"",cat:"all",src:"all",topic:"",sort:"az"};
 
 function wordClass(t){
   const s=String(t).trim();
@@ -434,41 +435,67 @@ function wordClass(t){
   if(POS[s])return POS[s];
   return /\s/.test(s)?"i":"n";           /* a phrase unless told otherwise */
 }
+/* Two sources, one list: the sixty units, and the everyday words the
+   course never had room for. A course row opens its unit; a core row
+   filters to its topic, since it has no unit to go to. */
 function dictAll(){
   const seen={}, out=[];
   UNITS.forEach(u=>u.vocab.forEach(w=>{
     if(seen[w[0]])return; seen[w[0]]=1;
-    out.push({tr:w[0],en:w[1],lv:u.lv,u:u.id,n:u.n,c:wordClass(w[0])});
+    out.push({tr:w[0],en:w[1],lv:u.lv,u:u.id,n:u.n,c:wordClass(w[0]),src:"course"});
   }));
+  CORE.forEach(e=>{
+    if(seen[e.t])return; seen[e.t]=1;
+    out.push({tr:e.t,en:e.en,lv:e.k,k:e.k,c:/(mak|mek)$/.test(e.t.trim())?"f":(e.c||"n"),src:"core"});
+  });
   return out;
 }
 function dictRows(){
   const q=fold(DICT.q);
   let r=dictAll();
+  if(DICT.src!=="all")r=r.filter(w=>w.src===DICT.src);
+  if(DICT.topic)r=r.filter(w=>w.k===DICT.topic);
   if(DICT.cat!=="all")r=r.filter(w=>w.c===DICT.cat);
   if(q)r=r.filter(w=>fold(w.tr).indexOf(q)>-1||fold(w.en).indexOf(q)>-1);
   if(DICT.sort==="az")r.sort((x,y)=>x.tr.localeCompare(y.tr,"tr"));
-  else r.sort((x,y)=>x.lv===y.lv?x.n-y.n:LEVELS.findIndex(l=>l.id===x.lv)-LEVELS.findIndex(l=>l.id===y.lv));
+  else r.sort((x,y)=>{
+    /* by level for course words, then the core list by topic */
+    const a=LEVELS.findIndex(l=>l.id===x.lv), b=LEVELS.findIndex(l=>l.id===y.lv);
+    if(a<0&&b<0)return x.lv===y.lv?x.tr.localeCompare(y.tr,"tr"):x.lv.localeCompare(y.lv,"tr");
+    if(a<0)return 1;
+    if(b<0)return -1;
+    return a===b?x.n-y.n:a-b;
+  });
   return r;
 }
 function dictSearch(v){DICT.q=v;render();}
 function dictCat(c){DICT.cat=c;render();}
+function dictSrc(s){DICT.src=s;if(s==="course")DICT.topic="";render();}
+function dictTopic(k){DICT.topic=k;DICT.src=k?"core":DICT.src;render();}
 function dictSort(){DICT.sort=DICT.sort==="az"?"lv":"az";render();}
 /* Starring from the word list works by key, not by index into a unit. */
 function starWord(tr,en){setStar(tr,en,!isStarred(tr,en));save();render();}
 function renderDict(){
   const rows=dictRows(), all=dictAll();
-  const count=c=>c==="all"?all.length:all.filter(w=>w.c===c).length;
-  let h=bar("Sözlük","every word in the course",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem .8rem">All '+all.length+' words the sixty units teach. Tap one to hear it, the star to send it to your review queue, or the row to open the unit it comes from.</p>';
+  const inSrc=all.filter(w=>(DICT.src==="all"||w.src===DICT.src)&&(!DICT.topic||w.k===DICT.topic));
+  const count=c=>c==="all"?inSrc.length:inSrc.filter(w=>w.c===c).length;
+  let h=bar("Sözlük","ders ve çekirdek · every word",true)+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem .8rem">'+all.length+' words: the '+all.filter(w=>w.src==="course").length+
+   ' the sixty units teach and '+all.filter(w=>w.src==="core").length+' everyday ones they never had room for. Tap a word to hear it, the star to save it, or the row for its unit or topic.</p>';
   h+='<input class="inp" id="dq" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" '+
     'placeholder="ara · search Turkish or English" oninput="dictSearch(this.value)" value="'+esc(DICT.q)+'">';
-  h+='<div class="pillrow" style="margin:.7rem 0 .2rem">';
+  h+='<div class="segs" style="margin:.7rem 0 .4rem">';
+  SRCS.forEach(function(s){
+    h+='<button class="'+(DICT.src===s[0]?"on":"")+'" onclick="dictSrc(\''+s[0]+'\')">'+s[1]+'<i>'+s[2]+'</i></button>';
+  });
+  h+='</div>';
+  h+='<div class="pillrow" style="margin:.2rem 0">';
   CATS.forEach(function(c){
     h+='<button class="pill '+(DICT.cat===c[0]?"cob":"")+'" style="border:0" onclick="dictCat(\''+c[0]+'\')">'+
      c[1]+' '+count(c[0])+'</button>';
   });
   h+='</div>';
+  if(DICT.topic)h+='<div class="pillrow" style="margin:.2rem 0"><button class="pill gold" style="border:0" onclick="dictTopic(\'\')">konu: '+esc(DICT.topic)+' ×</button></div>';
   h+='<div class="row" style="margin:.5rem .2rem"><span class="tiny grow">'+rows.length+' kelime'+
    (DICT.cat==="all"?"":" · "+CATS.find(c=>c[0]===DICT.cat)[2])+'</span>'+
    '<button class="sbtn" onclick="dictSort()">'+(DICT.sort==="az"?"A→Z":"seviyeye göre")+'</button></div>';
@@ -479,15 +506,16 @@ function renderDict(){
       const on=isStarred(w.tr,w.en);
       h+='<div class="vrow">'+
         spkBtn(w.tr,{aria:"Listen"})+
-        '<button class="grow" style="background:none;border:0;text-align:left;padding:0" onclick="go(\'unit\',\''+w.u+'\',\'v\')">'+
+        '<button class="grow" style="background:none;border:0;text-align:left;padding:0" onclick="'+
+        (w.src==="course"?'go(\'unit\',\''+w.u+'\',\'v\')':'dictTopic(\''+w.k+'\')')+'">'+
         '<span class="vtr">'+esc(w.tr)+'</span><span class="ven" style="display:block">'+esc(w.en)+'</span></button>'+
-        '<span class="pill" style="flex:0 0 auto">'+w.lv+'</span>'+
+        '<span class="pill '+(w.src==="core"?"turk":"")+'" style="flex:0 0 auto">'+esc(w.lv)+'</span>'+
         starBtn(on,"starWord('"+jsq(w.tr)+"','"+jsq(w.en)+"')","Save word")+
         '</div>';
     });
     h+='</div>';
   }
-  h+='<p class="foot">Classified by ending where Turkish allows it — anything in -mak or -mek is a verb — and by hand otherwise. A word can belong to more than one class; the list picks the one the course uses it in.</p></div>';
+  h+='<p class="foot">Classified by ending where Turkish allows it — anything in -mak or -mek is a verb — and by hand otherwise. A word can belong to more than one class; the list picks the one it is used in here.</p></div>';
   app().innerHTML=h;
   /* Typing re-renders the screen, so put the cursor back where it was. */
   const box=document.getElementById("dq");

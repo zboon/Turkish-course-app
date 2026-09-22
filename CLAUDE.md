@@ -38,6 +38,7 @@ src/data/placement.js    const PLACEMENT=[…];
 src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
 src/data/lex.js          const LEX=[…];      // tagged drill stems
 src/data/pos.js          const POS={…};      // word classes for the list
+src/data/core.js         const CORE=[…];     // everyday words by topic
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -247,10 +248,19 @@ drinking the school"*), and `needsObj`/`stative` (English cannot say
 
 ## Sözlük (the word list)
 
-`go('dict')` shows all 576 distinct words the units teach, filterable by
-class, searchable on either language (diacritic-folded, like the drills),
-sorted A→Z in Turkish collation or by level. A row hears the word, stars
-it into the review queue, or opens the unit it came from.
+`go('dict')` shows every word in the app — the 576 the units teach and the
+316 everyday ones in `src/data/core.js` — filterable by source and class,
+searchable on either language (diacritic-folded, like the drills), sorted
+A→Z in Turkish collation or by level and topic. A row hears the word and
+stars it into the review queue; a course row opens its unit, a core row
+filters to its topic.
+
+`CORE` is grouped by topic rather than ranked by frequency, and each
+topic keeps its own verbs: `binmek` sits beside `otobüs`, not in a list
+of verbs. It is **additive by definition** — `validate.js` fails on a core
+word the course already teaches, which it did eleven times while this was
+being written, and on invisible characters, because a soft hyphen inside
+`kiralamak` looks perfect on screen and breaks every match it touches.
 
 Classification: anything ending `-mak`/`-mek` is a verb, `src/data/pos.js`
 carries the rest, and what is left defaults to noun for a single word and

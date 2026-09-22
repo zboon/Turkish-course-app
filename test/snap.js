@@ -43,6 +43,8 @@ ev("go('words')"); grab("words:empty");
 ev("go('dict')"); grab("dict");
 ["n", "f", "s", "z", "e", "i"].forEach(c => { ev("dictCat(" + q(c) + ")"); grab("dict:" + c); });
 ev("dictCat('all')"); ev("dictSearch('göz')"); grab("dict:search"); ev("dictSearch('')");
+["course", "core"].forEach(s => { ev("dictSrc(" + q(s) + ")"); grab("dict:src:" + s); });
+ev("dictSrc('core')"); ev("dictTopic('yemek')"); grab("dict:topic"); ev("dictTopic('')"); ev("dictSrc('all')");
 ev("dictSort()"); grab("dict:bylevel"); ev("dictSort()");
 ev("go('prod')"); grab("prod");
 

@@ -54,13 +54,13 @@ const sandbox = {};
 try {
   vm.createContext(sandbox);
   vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine +
-    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,fold:fold," +
+    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,CORE:CORE,fold:fold," +
     "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
 }
-const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, POS, fold } = sandbox.OUT;
+const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, POS, CORE, fold } = sandbox.OUT;
 const M = sandbox.OUT;
 
 /* ---------- helpers ---------- */
@@ -199,6 +199,32 @@ const classCount = {};
 taught.forEach((en, t) => { const c = wordClass(t); classCount[c] = (classCount[c] || 0) + 1; });
 if ((classCount.f || 0) < 80) err("POS", "only " + classCount.f + " verbs found — the -mak/-mek test is not working");
 if ((classCount.n || 0) < 100) err("POS", "only " + classCount.n + " nouns — the default is not being applied");
+
+/* ---------- çekirdek (the core word list) ---------- */
+/* Additive by construction: a core word that the course already teaches
+   is not extra vocabulary, it is a duplicate row in the word list. */
+if (!Array.isArray(CORE) || CORE.length < 200) err("CORE", "expected a few hundred core words, found " + (CORE ? CORE.length : 0));
+else {
+  const seenCore = new Set();
+  CORE.forEach((e, i) => {
+    const at = "CORE[" + i + "]" + (e.t ? ' "' + e.t + '"' : "");
+    if (!str(e.t) || !str(e.en) || !str(e.k)) { err(at, "needs t, en and k"); return; }
+    const key = e.t.toLocaleLowerCase("tr");
+    if (seenCore.has(key)) err(at, "appears twice in the core list");
+    seenCore.add(key);
+    if (taught.has(e.t)) err(at, "is already taught in the course — the core list is meant to add words, not repeat them");
+    if (e.c !== undefined && !["s", "z", "e", "i"].includes(e.c)) err(at, "unknown class " + JSON.stringify(e.c));
+    if (e.c && /(mak|mek)$/.test(e.t.trim())) err(at, "is an infinitive — verbs classify themselves");
+    /* A stray soft hyphen or zero-width space is invisible on screen and
+       breaks every match it touches. */
+    if (/[\u00ad\u200b-\u200d\ufeff]/.test(e.t) || /[\u00ad\u200b-\u200d\ufeff]/.test(e.en))
+      err(at, "contains an invisible character (soft hyphen or zero-width space)");
+    if (TAGS.test(e.t) || TAGS.test(e.en)) warn(at, "carries HTML, which is escaped on screen");
+  });
+  const topics = [...new Set(CORE.map(e => e.k))];
+  if (topics.length < 5) err("CORE", "only " + topics.length + " topics — the list is meant to be grouped");
+  topics.forEach(k => { if (CORE.filter(e => e.k === k).length < 5) warn("CORE", 'topic "' + k + '" has very few words'); });
+}
 
 /* ---------- chunk bank (üretim) ---------- */
 if (!Array.isArray(CHUNKS) || CHUNKS.length < 40) err("CHUNKS", "expected a bank of ~50 prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
@@ -357,5 +383,5 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
-  taught.size + " distinct words in " + Object.keys(classCount).length + " classes" +
+  taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

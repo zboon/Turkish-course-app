@@ -580,7 +580,31 @@ step("sözlük · the whole word list", () => {
   const all = ev("dictAll().length");
   ok(all > 500, "the word list holds only " + all + " words");
   ok(ev("dictRows().length") === all, "the unfiltered list is not everything");
-  ok(ev("dictAll().every(function(w){return w.tr&&w.en&&w.lv&&w.u&&w.c})"), "a word row is missing a field");
+  ok(ev("dictAll().every(function(w){return w.tr&&w.en&&w.lv&&w.c&&w.src})"), "a word row is missing a field");
+  ok(ev("dictAll().filter(function(w){return w.src==='course'}).every(function(w){return !!w.u})"), "a course word has no unit to open");
+  ok(ev("dictAll().filter(function(w){return w.src==='core'}).every(function(w){return !!w.k})"), "a core word has no topic");
+  const course = ev("dictAll().filter(function(w){return w.src==='course'}).length");
+  const core = ev("dictAll().filter(function(w){return w.src==='core'}).length");
+  ok(course > 500 && core > 200, "source split looks wrong: " + course + " course, " + core + " core");
+  ok(course + core === all, "the two sources do not add up to the list");
+  /* The core list is additive — no word appears under both sources. */
+  const trs = ev("dictAll().map(function(w){return w.tr})");
+  ok(new Set(trs).size === trs.length, "the same word appears twice in the word list");
+
+  /* Source filter, and the topic filter a core row opens */
+  ev("dictSrc('core')");
+  ok(ev("dictRows().every(function(w){return w.src==='core'})"), "the core filter let course words through");
+  ok(ev("dictRows().length") === core, "the core filter count does not match");
+  const topic = ev("dictRows()[0].k");
+  ev("dictTopic(" + q(topic) + ")");
+  ok(ev("dictRows().every(function(w){return w.k===" + q(topic) + "})"), "the topic filter let other topics through");
+  ok(ev("dictRows().length") > 3, "the topic filter left almost nothing");
+  ok(lastPaint.includes("konu: " + esc(topic)), "no way to see or clear the topic filter");
+  ev("dictTopic('')");
+  ok(!ev("DICT.topic"), "clearing the topic filter did not work");
+  ev("dictSrc('course')");
+  ok(ev("dictRows().every(function(w){return w.src==='course'})"), "the course filter let core words through");
+  ev("dictSrc('all')");
 
   /* Every word lands in exactly one class, and the classes add up. */
   const classes = ev("dictAll().map(function(w){return w.c})");
@@ -623,6 +647,15 @@ step("sözlük · the whole word list", () => {
   ok(ev("S.star.length") === 1 && ev("Object.keys(S.srs).length") === 1, "starring from the word list did not schedule it");
   ev("starWord(" + q(w.tr) + "," + q(w.en) + ")");
   ok(ev("S.star.length") === 0 && ev("Object.keys(S.srs).length") === 0, "unstarring from the word list left an orphan");
+
+  /* A core word stars into the same queue as a course word */
+  ev("dictSrc('core')");
+  const cw = ev("dictRows()[0]");
+  ev("starWord(" + q(cw.tr) + "," + q(cw.en) + ")");
+  ok(ev("S.star.length") === 1 && ev("Object.keys(S.srs).length") === 1, "starring a core word did not schedule it");
+  ok(ev("dueList().length") === 1, "a starred core word is not due");
+  ev("starWord(" + q(cw.tr) + "," + q(cw.en) + ")");
+  ev("dictSrc('all')");
 
   /* A row opens the unit it came from */
   ev("go('unit'," + q(w.u) + ",'v')");
