@@ -125,9 +125,15 @@ function moveBank(){
 function prodStop(){if(PR&&PR.tid){clearTimeout(PR.tid);PR.tid=null;}}
 function startProd(mode){
   stopPlay();
-  const q=mode==="g"?genBank():mode==="t"?moveBank():prodQueue(mode==="k"?chunkBank():sentenceBank());
+  const q=mode==="g"?genBank():mode==="t"?moveBank()
+         :mode==="q"?sorBank():mode==="e"?askBank()
+         :prodQueue(mode==="k"?chunkBank():sentenceBank());
   if(!q.length){V={view:"prod"};render();return;}
-  PR={mode:mode,q:q,i:0,phase:"gap",left:prodGap(),tid:null,right:0,build:null,bi:0};
+  /* Sor rides this runner but is not Üretim, and a sitting that calls
+     itself by the wrong name is the sort of small lie that makes a
+     learner distrust the rest. */
+  PR={mode:mode,q:q,i:0,phase:"gap",left:prodGap(),tid:null,right:0,build:null,bi:0,
+      title:(mode==="q"||mode==="e")?"Sor":"Üretim"};
   V={view:"prodrun"};window.scrollTo(0,0);
   touchDay();prodStep();
 }
@@ -265,7 +271,7 @@ function renderProdRun(){
   if(PR.phase==="end"){
     const banked=PR.mode==="s"||PR.mode==="k";
     const left=banked?prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length:0;
-    app().innerHTML=bar("Üretim","Bitti",true)+'<div class="wrap"><div class="score">'+
+    app().innerHTML=bar(PR.title,"Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(PR.right*2>=PR.q.length?"pass":"fail")+'">'+PR.right+'/'+PR.q.length+'</div>'+
       '<p class="sub">kendi değerlendirmen · your own marking</p></div>'+
       '<div class="card"><p class="sub">'+(banked?left+' still waiting in this set. The ones you missed come back today.'
@@ -275,7 +281,7 @@ function renderProdRun(){
     return;
   }
   const it=PR.q[PR.i];
-  let h=bar("Üretim",(PR.i+1)+" / "+PR.q.length,true)+'<div class="wrap">';
+  let h=bar(PR.title,(PR.i+1)+" / "+PR.q.length,true)+'<div class="wrap">';
   h+='<div class="prog">'+PR.q.map(function(_,i){return '<i class="'+(i<PR.i?"ok":"")+'"></i>';}).join('')+'</div>';
   h+='<p class="qn">'+(PR.phase==="build"?"Sondan başa · backward buildup":"Söyle · say it")+'</p>';
   h+='<div class="card" style="text-align:center;padding:1.8rem 1rem">';
