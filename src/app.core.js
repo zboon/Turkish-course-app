@@ -3,13 +3,13 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v2.50";
+const APP_VERSION="v2.51";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
-       dinle:{},drate:1,dreplay:2,rep:{}};
+       dinle:{},drate:1,dreplay:2,rep:{},tips:true};
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
@@ -37,6 +37,19 @@ function fold(s){
    .replace(/Ç/g,"c").replace(/ç/g,"c").replace(/[âÂ]/g,"a").replace(/[îÎ]/g,"i").replace(/[ûÛ]/g,"u")
    .toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
 }
+/* Nothing reviews material the learner has not met. A review of something
+   never seen is not a review — it is a test in a language not yet taught,
+   and getting it wrong handed a day-one learner C2 vocabulary to recall.
+   The grain matters too: opening a unit's word list is not reading its
+   passage, so the words become reviewable and the sentences do not.
+     metWords  — the ten vocabulary entries are in play
+     metLines  — the passage has been read, so its sentences are in play
+     isMet     — the unit has been opened at all */
+function seenSec(id,sec){return !!(S.seen&&S.seen[id]&&S.seen[id][sec]);}
+function metWords(id){return isDone(id)||seenSec(id,"v");}
+function metLines(id){return isDone(id)||seenSec(id,"r");}
+function isMet(id){return !!(S.seen&&S.seen[id])||isDone(id);}
+function metUnits(){return UNITS.filter(u=>isMet(u.id));}
 function unitsOf(lv){return UNITS.filter(u=>u.lv===lv);}
 function unit(id){return UNITS.find(u=>u.id===id);}
 function isDone(id){return !!S.done[id];}

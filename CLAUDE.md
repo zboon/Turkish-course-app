@@ -144,6 +144,40 @@ The home hero also carries **تركجه**, Türkçe in the Ottoman script, writt
 as \u escapes in `app.screens.js` so a right-to-left run does not scramble
 the line in an editor.
 
+## Nothing reviews what has not been met
+
+The rule a learner notices first when it is broken. Every review mode draws
+**only** on material actually met, and the grain matters:
+
+| helper | true when | governs |
+|---|---|---|
+| `metWords(id)` | the Kelimeler tab was opened, or the unit is done | the Tekrar word bank |
+| `metLines(id)` | the Okuma tab was opened, or the unit is done | `sentenceBank()`, so Üretim and Dinleme — and which passages a cloze may use |
+| `isMet(id)` | any tab was opened, or the unit is done | whether a plan step exists at all |
+
+This was got wrong twice in one release, and both failures looked identical
+from the outside — the app asking for material never seen:
+
+1. **Tekrar had no scope.** It sorted all 600 words by how rarely the app
+   mentions them, and the rarest live in the advanced units, so a fresh
+   install opened by asking for `abartı`, `akıcı` and `anı` — C2 vocabulary
+   — from English. Worst-served is the right ordering only *within* what has
+   been met.
+2. **The grain was too coarse.** With "met" meaning "opened at all", peeking
+   at a B2 unit's word list offered its unread passage's sentences to
+   produce, and allowed a cloze for an A1 word to be built from a C1
+   passage.
+
+`sentenceBank()` used to fall back to the first three units when nothing was
+finished, which is the same bug in a different hat. It now falls back to
+units read, and to nothing when nothing has been read. "Tümü" remains an
+explicit user choice and still reaches everything.
+
+Empty is a legitimate state, not a failure: a beginner should see one
+instruction, not five modes reporting zero. `sim.js` pins all of this,
+including the reported symptom, and each guard was confirmed to fail on a
+deliberate breakage.
+
 ## Progress storage — do not break it
 
 `localStorage["turkce-course-v1"]`, one object:
@@ -155,7 +189,7 @@ the line in an editor.
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}},
- gap, prompten, pscope, drate, dreplay}
+ gap, prompten, pscope, drate, dreplay, tips}
 ```
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
@@ -171,8 +205,10 @@ word's natural encounters. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
-`pscope`, `drate` and `dreplay` are settings, not progress — `wipe()`
-keeps them, like `theme` and `rate`.
+`pscope`, `drate`, `dreplay` and `tips` are settings, not progress —
+`wipe()` keeps them, like `theme` and `rate`. Because `wipe()` keeps
+`pscope`, a test that wipes still inherits whatever scope ran before it —
+set it explicitly when the default is what is under test.
 
 **Unit ids are permanent.** Everything above is keyed to them, so renaming
 `b1u3` silently wipes that unit's progress for every existing learner. Add
@@ -269,7 +305,7 @@ inserted line shifts all of them. Strip the first line and that tail, drop
 the trailing newline, and compare the remainder: if it matches the build,
 the artifact is pure generated output, nothing needs merging, and the read
 is a formality rather than a merge job. That has held at every release so
-far — v2.00 → v2.31 → v2.40 → v2.50.
+far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 
 ## House style
 
@@ -404,8 +440,9 @@ course's own vocabulary was decoration.
 
 `go('tekrar')` adds no material. It counts what the app already exposes
 and drills whatever the app will not bring back by itself, worst served
-first, so the floor rises rather than the ceiling. The hub shows the
-distribution, which is the one number the engine exists to move.
+first **among the words the learner has met** — see the rule above; without
+that scope it opens on C2 vocabulary. The hub shows the distribution, which
+is the one number the engine exists to move.
 
 Two question shapes, both retrieval rather than recognition:
 
@@ -456,6 +493,24 @@ Anlat inserted when a retell is due.
 self-correcting — finish the work and the tick appears, come back tomorrow
 and it clears itself. A per-day completion flag would need its own state and
 could disagree with the queues.
+A zero count means one of two different things, and a completion tick for
+both is a lie: either the queue is cleared, or the queue does not exist yet
+because nothing has been met. Steps carry `avail`, and unavailable ones are
+left out of the card entirely — a beginner sees one instruction rather than
+three ticked rows for work never done.
+
+Two "N waiting" cards used to sit lower on the home screen. They duplicated
+the plan's own Tekrar and Söyle steps, and one counted the 50 standalone
+chunks as due, so on day one it advertised work while the plan correctly
+said there was none. One place answers "what now", and it is the plan;
+direct access stays in Araçlar.
+
+**Nasıl çalışır** is the plain-English orientation card — above the plan
+while nothing has been met, below it afterwards. It retires itself once A2
+is complete, `Gizle` ends it early, and About offers it back. It exists
+because the interface is Turkish-labelled and a beginner has no way to know
+that an empty Tekrar is by design rather than broken.
+
 
 The last step absorbed the old resume card: mid-unit it returns to the exact
 section, and it falls back to the first unfinished unit otherwise. It must

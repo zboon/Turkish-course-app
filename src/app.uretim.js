@@ -25,7 +25,12 @@ function sayable(t){return String(t).replace(/^[—–-]\s*/,"").trim();}
 function sentenceBank(){
   const sc=pscope(), here=S.place&&S.place.u, out=[];
   let us=UNITS.filter(function(u){return sc==="all"?true:sc==="unit"?u.id===here:isDone(u.id);});
-  if(!us.length)us=UNITS.slice(0,3);   /* nothing finished yet — start at the start */
+  /* Nothing finished yet: fall back to what has at least been read, and to
+     nothing at all if that is nothing. The old fallback handed out the
+     first three units regardless, so a learner on day one was asked to
+     produce sentences from passages they had not opened. "Tümü" stays a
+     deliberate choice and is left alone. */
+  if(!us.length&&sc!=="all")us=UNITS.filter(function(u){return metLines(u.id);});
   us.forEach(function(u){
     u.read.lines.forEach(function(ln,i){
       out.push({k:"s:"+u.id+"#"+i,tr:sayable(ln[0]),en:ln[1],lv:u.lv,from:u.tr});

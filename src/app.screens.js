@@ -27,7 +27,9 @@ function renderHome(){
    '<p class="osm" dir="rtl" lang="ota" translate="no">\u062A\u0631\u0643\u062C\u0647</p>'+
    '<p class="tag">A reading course from first words to literature</p></div>';
 
-  h+=planCard();
+  /* Read-then-act on day one; reference-after-action once under way. */
+  if(metUnits().length===0){ h+=startCard(); h+=planCard(); }
+  else { h+=planCard(); h+=startCard(); }
   h+=road;
 
   h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>units done</span></div>'+
@@ -44,16 +46,11 @@ function renderHome(){
       '<span class="chev">'+IC.chev+'</span></div><div class="meter"><i style="width:'+p+'%"></i></div></button>';
   });
 
-  const due=dueList().length;
-  if(due)h+='<button class="card row" style="border-left:3px solid var(--turk)" onclick="startReview()"><div class="grow">'+
-    '<p class="tiny">Günün tekrarı · spaced review</p><p class="lead">'+due+' kelime bekliyor</p>'+
-    '<p class="sub">Words come back on a widening schedule until they stick.</p></div><span class="chev">'+IC.chev+'</span></button>';
-  const pd=prodDue(sentenceBank()).length+prodDue(chunkBank()).length, rt=retellDue().length;
-  if(pd||rt)h+='<button class="card row" style="border-left:3px solid var(--cobalt)" onclick="go(\'prod\')"><div class="grow">'+
-    '<p class="tiny">Üretim · say it before you hear it</p>'+
-    '<p class="lead">'+pd+' cümle'+(rt?' · '+rt+' anlatım':'')+' bekliyor</p>'+
-    '<p class="sub">English prompt, a silent gap, then the model. The sentence has to come out of your mouth first.</p>'+
-    '</div><span class="chev">'+IC.chev+'</span></button>';
+  /* Two "N waiting" cards used to live here, from before Bugün existed.
+     They duplicated the plan's own Tekrar and Söyle steps, and the second
+     counted the 50 standalone chunks as due — so on day one it advertised
+     work while the plan correctly said there was none. One place answers
+     "what now", and it is the plan. Direct access stays in Araçlar. */
   h+='<h2 class="sec">Araçlar</h2>'+
    navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
    navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')")+
@@ -65,6 +62,30 @@ function renderHome(){
 
   h+='<p class="foot">Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.</p></div>';
   app().innerHTML=h;
+}
+/* Plain-English orientation, because the interface is Turkish-labelled and
+   a beginner has no way to know that Tekrar is empty by design rather than
+   broken. Shown until A2 is complete, then it retires itself; "Gizle" ends
+   it early and About can bring it back. Placed above the plan while nothing
+   has been met — on day one you want to read before acting — and below it
+   afterwards, where it is reference rather than instruction. */
+function tipsOn(){return S.tips!==false&&lvPct("A2")<100;}
+function hideTips(){S.tips=false;save();render();}
+function showTips(){S.tips=true;save();home();}
+function startCard(){
+  if(!tipsOn())return "";
+  const nx=nextUnit();
+  let h='<h2 class="sec">Nasıl çalışır · how to use this</h2><div class="card gram">'+
+   '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app.</p>'+
+   '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
+   '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
+   '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
+   '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
+   '<p><b>5 · Already know some Turkish?</b> The placement test below puts you at a level in twelve questions, and every level has a <b>test ahead</b> exam that skips it outright if you score 8 of 10.</p>'+
+   (nx?'<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>':'')+
+   '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
+   '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button></div>';
+  return h;
 }
 function navRow(t,s,fn){
   return '<button class="card row" onclick="'+fn+'"><div class="grow"><p class="lead">'+esc(t)+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
@@ -545,6 +566,9 @@ function renderAbout(){
   '<div class="btn-row"><button class="btn ghost" onclick="exportBox()">Yedeği al</button>'+
   '<button class="btn" onclick="importBox()">Geri yükle</button></div>'+
   '<p class="tiny" id="iomsg" style="margin-top:.5rem"></p></div>'+
+  (S.tips===false?'<div class="card"><p class="lead">Başlangıç rehberi</p>'+
+   '<p class="sub">The how-to-use card on the home screen is hidden. It retires itself once A2 is complete.</p>'+
+   '<button class="btn ghost" onclick="showTips()">Tekrar göster</button></div>':'')+
   '<div class="card"><p class="lead">Sıfırla</p><p class="sub">Clear all progress, saved words and bookmarks on this device.</p>'+
   '<button class="btn ghost" onclick="wipe()">Tüm ilerlemeyi sil</button></div>'+
   '<p class="foot">Türkçe '+APP_VERSION+' · '+UNITS.length+' ünite · '+LEVELS.length+' seviye</p></div>';
@@ -570,7 +594,7 @@ function importBox(){
   if(!o||typeof o!=="object"||Array.isArray(o)){ioMsg("Bu metin okunamadı · that text could not be read.");return;}
   S=Object.assign({done:{},seen:{},place:null,star:[],tested:{},days:[],srs:{},theme:S.theme,rate:S.rate,
                    prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
-                   dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{}},o);
+                   dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{},tips:S.tips},o);
   if(!S.done)S.done={}; if(!S.star)S.star=[]; if(!S.srs)S.srs={}; if(!S.seen)S.seen={};
   if(!S.tested)S.tested={}; if(!S.days)S.days=[];
   if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
@@ -582,7 +606,7 @@ function wipe(){
   if(typeof confirm==="function"&&!confirm("Delete all progress, saved words and your place? This cannot be undone."))return;
   S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
      prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
-     dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{}};
+     dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{},tips:S.tips};
   save(); home();
 }
 
