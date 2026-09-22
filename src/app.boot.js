@@ -20,6 +20,8 @@ function render(){
   else if(v==="dinlerun")renderDinleRun();
   else if(v==="tekrar")renderTekrar();
   else if(v==="tekrarrun")renderTekrarRun();
+  else if(v==="gram")renderGram();
+  else if(v==="gramrun")renderGramRun();
   else renderHome();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){

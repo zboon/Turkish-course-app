@@ -855,7 +855,7 @@ step("nothing is reviewed before it has been met", () => {
   const p = ev("planToday()");
   ok(p.steps.length === 1 && p.steps[0].k === "new",
      "day one shows " + p.steps.map(x => x.tr).join("/") + " rather than just the first unit");
-  ok(ev("planToday().all").filter(x => !x.avail).length === 3,
+  ok(ev("planToday().all").filter(x => !x.avail).length === 4,
      "the unavailable review steps are not being withheld");
   ok(/Başla/.test(lastPaint) || true, "");
 
@@ -1024,6 +1024,154 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
 });
 
 /* ===================== 11 · bugün · the daily plan ===================== */
+/* The grammar engine drills 60 points that the course explains once each.
+   It is the word engine's problem one level up, so it carries the same
+   scope rule — and its own judge, which has to accept correct Turkish
+   the English prompt did not pin down. */
+step("grammar comes back, and is produced rather than recognised", () => {
+  ev("wipe()");
+  ok(ev("gramBank().length") === 0, "a learner who has read no grammar has " +
+     ev("gramBank().length") + " points queued");
+  ok(ev("startGram()") === undefined && ev("GR") === null, "a sitting started with no points read");
+  ev("go('gram')");
+  ok(/Henüz dilbilgisi yok/.test(lastPaint), "the empty grammar hub does not say so");
+
+  /* The grain, exactly as for words and sentences: the word list is not
+     the grammar tab. */
+  ev("go('unit','b2u1','v')");
+  ok(ev("gramBank().length") === 0, "peeking at a word list unlocked that unit's grammar");
+  ev("go('unit','b2u1','g')");
+  ok(ev("gramBank().length") === 1 && ev("gramBank()[0].u.id") === "b2u1",
+     "reading the grammar tab did not make the point reviewable");
+  ok(ev("metGram('b2u1')") && !ev("metGram('b2u2')"), "metGram is not tracking the g tab");
+
+  /* Finishing a unit counts as having met it, however it was met. */
+  ev("wipe()"); ev("S.done={'a1u1':{score:5,of:5,at:Date.now()}}; save()");
+  ok(ev("gramBank().length") === 1, "a completed unit's grammar is not reviewable");
+
+  /* A sitting over the whole course. */
+  ev("wipe()"); ev("UNITS.forEach(function(u){S.seen[u.id]={g:1}}); save()");
+  ok(ev("gramBank().length") === UNITS.length, "not every point is in the bank once all are read");
+  ev("startGram()");
+  ok(ev("GR.q.length") === ev("GRAM_SESSION"), "a sitting is " + ev("GR.q.length") +
+     " points, expected " + ev("GRAM_SESSION"));
+  ok(ev("GR.q[0].id") === UNITS[0].id, "the queue does not walk the course in order");
+  const target = ev("GR.q[0].c");
+  ok(!lastPaint.includes(esc(target)), "the ask screen shows the Turkish it is asking for");
+  ok(lastPaint.includes(esc(ev("GR.q[0].en"))), "the ask screen has no English prompt");
+  ok(lastPaint.includes(esc(ev("GR.q[0].t"))), "the ask screen does not name the point");
+  ok(!/class="table"/.test(lastPaint), "the pattern table is shown before it is asked for");
+  ev("grHint()");
+  ok(/class="table"/.test(lastPaint), "İpucu did not reveal the pattern");
+
+  /* Exact. */
+  doc.getElementById("gbox").value = target; ev("grCheck()");
+  ok(ev("GR.res.same") && ev("GR.res.clean"), "the model sentence did not score as right");
+  ok(ev("gramBox(GR.q[0].k)") === 1, "a right answer did not move the point out a box");
+  ok(ev("GR.right") === 1, "a right answer was not counted");
+  ok(!/grAccept/.test(lastPaint), "the override is offered on a right answer");
+  ev("grNext()");
+
+  /* Diacritics are forgiven, exactly as everywhere else in the app. */
+  const t2 = ev("GR.q[1].c");
+  doc.getElementById("gbox").value = ev("fold(" + q(t2) + ")"); ev("grCheck()");
+  ok(ev("GR.res.same"), "a learner without a Turkish keyboard was failed: " + t2);
+  ev("grNext()");
+
+  /* Word order is the learner's. 162 of the 181 targets would fail an
+     order-sensitive judge for a single swap, and every one of those
+     sentences is correct Turkish. */
+  const w3 = ev("GR.q[2].c").split(/\s+/);
+  if (w3.length > 2) {
+    doc.getElementById("gbox").value = [w3[1], w3[0]].concat(w3.slice(2)).join(" "); ev("grCheck()");
+    ok(ev("GR.res.same"), "a reordered but complete sentence was marked wrong");
+    ok(ev("GR.res.order") && !ev("GR.res.clean"), "the reorder was not reported as one");
+    ok(/farklı sıra|different order/.test(lastPaint), "the reorder is accepted silently");
+  }
+  ev("grNext()");
+
+  /* A missing word is a miss: the form is the whole question. */
+  const w4 = ev("GR.q[3].c").split(/\s+/);
+  doc.getElementById("gbox").value = w4.slice(0, -1).join(" "); ev("grCheck()");
+  ok(!ev("GR.res.same"), "dropping a word still passed");
+  ok(ev("gramBox(GR.q[3].k)") === 0, "a missed point did not drop to today");
+  ok(/dw miss/.test(lastPaint), "the marked line does not name the missing word");
+  ok(/grAccept/.test(lastPaint), "the override is not offered on a miss");
+
+  /* The learner overrules a mark the judge could not make. */
+  const k4 = ev("GR.q[3].k"), n4 = ev("S.gram[GR.q[3].k].n"), right4 = ev("GR.right");
+  ev("grAccept()");
+  ok(ev("gramBox(" + q(k4) + ")") === 1, "the override did not restore the box");
+  ok(ev("S.gram[" + q(k4) + "].n") === n4, "the override advanced the example counter twice");
+  ok(ev("GR.right") === right4 + 1, "the override was not counted");
+  ok(!/grAccept/.test(lastPaint), "the override is still offered after being taken");
+  ev("grAccept()");
+  ok(ev("gramBox(" + q(k4) + ")") === 1 && ev("GR.right") === right4 + 1,
+     "tapping the override twice graded twice");
+
+  /* An override from a high box restores that box, rather than resetting. */
+  ev("wipe()"); ev("S.seen={b2u1:{g:1}}; S.gram={'y:b2u1':{b:5,d:0,n:0}}; save()");
+  ev("startGram()");
+  doc.getElementById("gbox").value = "hiç doğru olmayan bir cümle"; ev("grCheck()");
+  ok(ev("gramBox('y:b2u1')") === 0, "a missed point sat on box " + ev("gramBox('y:b2u1')") +
+     " instead of dropping to today");
+  ok(ev("GR.pre") === 5, "the pre-miss box was recorded as " + ev("GR.pre") + ", not 5");
+  ev("grAccept()");
+  ok(ev("gramBox('y:b2u1')") === 6, "the override reset a box-5 point to box " +
+     ev("gramBox('y:b2u1')") + " instead of 6");
+
+  /* What is scheduled is the point, not a sentence: the examples rotate,
+     so the passive keeps coming back with a different sentence carrying
+     it. Keyed by sentence this would be memorised in a fortnight. */
+  ev("wipe()"); ev("S.seen={b2u1:{g:1}}; save()");
+  const eg = UNITS.find(u => u.id === "b2u1").gram.eg.length;
+  const seen = [];
+  for (let i = 0; i < eg + 1; i++) {
+    ev("startGram()");
+    seen.push(ev("GR.q[0].c"));
+    doc.getElementById("gbox").value = ev("GR.q[0].c"); ev("grCheck()");
+    ev("S.gram['y:b2u1'].d=0");
+  }
+  ok(new Set(seen.slice(0, eg)).size === eg, "the examples do not rotate: " +
+     new Set(seen).size + " distinct over " + eg + " sittings");
+  ok(seen[eg] === seen[0], "the rotation does not come back round");
+
+  /* Every target has to be answerable: it must survive its own tokeniser,
+     and a one-token sentence is not a sentence to build. */
+  let thin = 0, dirty = 0;
+  UNITS.forEach(u => u.gram.eg.forEach(e => {
+    const r = ev("gramJudge(" + q(e[0]) + "," + q(e[0]) + ")");
+    if (!r.same || !r.clean) dirty++;
+    if (r.of < 2) thin++;
+  }));
+  ok(dirty === 0, dirty + " grammar targets do not score as right when typed exactly");
+  ok(thin === 0, thin + " grammar targets tokenise to fewer than two words");
+
+  /* The bar on the data rather than on whichever item the queue served.
+     Dropping a word has to fail on every target and an invented word has
+     to fail on every target — otherwise dikte's four-in-five leniency has
+     leaked in, and on a nine-word sentence that forgives the suffix the
+     whole question was about. Reordering has to pass on every target, for
+     the same reason it passes on one. */
+  let lenient = 0, invented = 0, punished = 0;
+  UNITS.forEach(u => u.gram.eg.forEach(e => {
+    const w = e[0].split(/\s+/);
+    if (w.length > 1 &&
+        ev("gramJudge(" + q(e[0]) + "," + q(w.slice(0, -1).join(" ")) + ").same")) lenient++;
+    if (ev("gramJudge(" + q(e[0]) + "," + q(e[0] + " zürafa") + ").same")) invented++;
+    if (w.length > 2) {
+      const sw = [w[1], w[0]].concat(w.slice(2)).join(" ");
+      if (!ev("gramJudge(" + q(e[0]) + "," + q(sw) + ").same")) punished++;
+    }
+  }));
+  ok(lenient === 0, lenient + " grammar targets pass with a word missing");
+  ok(invented === 0, invented + " grammar targets pass with a word invented");
+  ok(punished === 0, punished + " grammar targets are failed for a reordering Turkish allows");
+
+  ev("back()");
+  ok(ev("V.view") === "gram", "back() from a grammar sitting did not return to the hub");
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");
@@ -1037,6 +1185,11 @@ step("the plan says what to do, in the order it should be done", () => {
   ok(p.steps.every(s => s.n === 0 || s.mins > 0), "a step with work claims no time");
   ok(p.mins > 0 && p.mins < 120, "the plan claims " + p.mins + " minutes, which is not credible");
   ok(p.left[0].k === "rep", "the first thing to do is not the review queue");
+  /* Grammar decays the way the words do, so it sits with the reviews and
+     ahead of the new unit rather than being an extra at the bottom. */
+  ok(p.steps.map(s => s.k).indexOf("gram") === 1,
+     "the grammar step is at position " + p.steps.map(s => s.k).indexOf("gram") +
+     " in " + p.steps.map(s => s.k).join("/"));
 
   /* A step ticks when its own queue empties — no stored completion flag.
      Distinct from a step that is absent because nothing has been met. */
@@ -1076,6 +1229,7 @@ step("the plan's last step resumes only a unit that is not finished", () => {
   ev("S.rep={}; repBank().forEach(function(e){S.rep[e.k]={b:5,d:dayNum()+9,n:30}})");
   ev("S.dinle={}; ['d:','a:'].forEach(function(p){listenBank(p).forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+9}})})");
   ev("S.prod={}; sentenceBank().forEach(function(it){S.prod[it.k]={b:3,d:dayNum()+9}})");
+  ev("S.gram={}; gramBank().forEach(function(it){S.gram[it.k]={b:3,d:dayNum()+9,n:1}})");
   ev("save()"); ev("home()");
   ok(ev("planToday().left.length") === 0, "with everything clear the plan still lists work");
   ok(/Bugünlük bitti/.test(lastPaint), "a cleared plan does not say so");
@@ -1087,15 +1241,25 @@ step("the repetition schedule is progress, its settings are not", () => {
   doc.getElementById("tbox").value = ev("TK.q[TK.i].c");
   ev("tkCheck()");
   ok(ev("Object.keys(S.rep).length") === 1, "nothing was scheduled");
+  /* The grammar schedule is the same kind of thing and keyed the same way:
+     permanent unit ids, wiped with progress, carried by a backup. */
+  ev("startGram()");
+  doc.getElementById("gbox").value = ev("GR.q[GR.i].c");
+  ev("grCheck()");
+  ok(ev("Object.keys(S.gram).length") === 1, "no grammar point was scheduled");
+  ok(ev("Object.keys(S.gram)[0]") === "y:" + ev("GR.q[0].id"),
+     "the grammar schedule is not keyed by unit id: " + ev("Object.keys(S.gram)[0]"));
   const saved = ev("JSON.stringify(S)");
 
   ev("wipe()");
   ok(ev("Object.keys(S.rep).length") === 0, "wipe left the repetition schedule behind");
+  ok(ev("Object.keys(S.gram).length") === 0, "wipe left the grammar schedule behind");
 
   ev("go('about')");
   doc.getElementById("iobox").value = saved;
   ev("importBox()");
   ok(ev("Object.keys(S.rep).length") === 1, "restore lost the repetition schedule");
+  ok(ev("Object.keys(S.gram).length") === 1, "restore lost the grammar schedule");
 });
 
 /* ===================== 12 · about, backup, restore ===================== */

@@ -97,6 +97,24 @@ ev("V = {view:'tekrarrun'}"); ev("render()"); grab("tekrar:cloze");
 env.doc.getElementById("tbox").value = ev("TK.q[0].c");
 ev("tkCheck()"); grab("tekrar:cloze:right");
 
+/* Dilbilgisi. The marked line is worth a fingerprint for the same reason
+   dikte's is — it is where a change to the judge shows up — and the
+   reorder case pins the one thing that judge exists to allow. */
+ev("wipe()"); ev("UNITS.forEach(function(u){S.seen[u.id]={g:1}}); save()");
+ev("go('gram')"); grab("gram");
+reseed(3690); ev("startGram()"); grab("gram:ask");
+ev("grHint()"); grab("gram:hint");
+env.doc.getElementById("gbox").value = ev("GR.q[GR.i].c");
+ev("grCheck()"); grab("gram:right");
+ev("grNext()");
+env.doc.getElementById("gbox").value = ev("GR.q[GR.i].c").split(/\s+/).reverse().join(" ");
+ev("grCheck()"); grab("gram:reordered");
+ev("grNext()");
+env.doc.getElementById("gbox").value = ev("GR.q[GR.i].c").split(/\s+/).slice(1).join(" ") + " zürafa";
+ev("grCheck()"); grab("gram:marked");
+ev("grAccept()"); grab("gram:overruled");
+ev("wipe()"); ev("go('gram')"); grab("gram:empty");
+
 /* The three views a learner actually meets in their first minutes: the
    orientation card with nothing behind them, the plan once one unit has
    been opened, and the plan mid-unit. */
