@@ -51,13 +51,24 @@ const mEnd = code.indexOf("/* ===================== home");
 if (mStart < 0 || mEnd < 0) { console.error("validate: cannot find the morphology engine in the build"); process.exit(1); }
 const engine = code.slice(mStart, mEnd);
 
+/* The number engine is pure in exactly the same way, up to the point where
+   a sitting is assembled and it starts needing S — so the forms half is
+   lifted out and hand-checked here, and the behaviour half (the clock, the
+   judge, the screens) is exercised in sim.js against a real state. */
+const nStart = code.indexOf("/* ===================== sayılar");
+const nEnd = code.indexOf("/* --- what a sitting is made of ---");
+if (nStart < 0 || nEnd < 0) { console.error("validate: cannot find the number engine in the build"); process.exit(1); }
+const numbers = code.slice(nStart, nEnd);
+
 const sandbox = {};
 try {
   vm.createContext(sandbox);
-  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine +
+  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine + "\n" + numbers +
     "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,CORE:CORE,fold:fold," +
     "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj," +
-    "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS};", sandbox, { filename: file });
+    "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS," +
+    "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,priceText:priceText," +
+    "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -500,6 +511,93 @@ else {
   }
 }
 
+/* ---------- numbers, the clock and prices ---------- */
+/* Turkish numbers are regular enough to generate and irregular enough in
+   two places to get wrong: yüz and bin drop their "bir" where milyon
+   keeps it, and dört softens before a vowel. Hand-checked, like the
+   morphology table, because a drill that teaches a wrong number is worse
+   than no drill. */
+let nChecked = 0;
+{
+  const N = M.numText;
+  [[0, "sıfır"], [1, "bir"], [9, "dokuz"], [10, "on"], [11, "on bir"], [19, "on dokuz"],
+   [20, "yirmi"], [42, "kırk iki"], [60, "altmış"], [70, "yetmiş"], [99, "doksan dokuz"],
+   [100, "yüz"], [101, "yüz bir"], [110, "yüz on"], [175, "yüz yetmiş beş"],
+   [200, "iki yüz"], [342, "üç yüz kırk iki"], [900, "dokuz yüz"],
+   [999, "dokuz yüz doksan dokuz"], [1000, "bin"], [1001, "bin bir"], [1100, "bin yüz"],
+   [1900, "bin dokuz yüz"], [2000, "iki bin"], [2020, "iki bin yirmi"],
+   [1994, "bin dokuz yüz doksan dört"], [11000, "on bir bin"], [100000, "yüz bin"],
+   [123456, "yüz yirmi üç bin dört yüz elli altı"], [1000000, "bir milyon"],
+   [2500000, "iki milyon beş yüz bin"], [1000000000, "bir milyar"]
+  ].forEach(([n, want]) => {
+    nChecked++;
+    const got = N(n);
+    if (got !== want) err("numbers", n + ' reads "' + got + '", hand-checked form is "' + want + '"');
+  });
+
+  /* The hour before geçiyor and before var. dört is the only awkward one,
+     and it is awkward in both. */
+  const ACC = ["biri", "ikiyi", "üçü", "dördü", "beşi", "altıyı", "yediyi",
+               "sekizi", "dokuzu", "onu", "on biri", "on ikiyi"];
+  const DAT = ["bire", "ikiye", "üçe", "dörde", "beşe", "altıya", "yediye",
+               "sekize", "dokuza", "ona", "on bire", "on ikiye"];
+  for (let h = 1; h <= 12; h++) {
+    nChecked += 2;
+    if (M.hourAcc(h) !== ACC[h - 1]) err("numbers", "hour " + h + ' accusative is "' + M.hourAcc(h) + '", expected "' + ACC[h - 1] + '"');
+    if (M.hourDat(h) !== DAT[h - 1]) err("numbers", "hour " + h + ' dative is "' + M.hourDat(h) + '", expected "' + DAT[h - 1] + '"');
+  }
+
+  /* Four shapes and no others, and after half past it counts down to the
+     NEXT hour — which wraps, so 12:55 is "bire beş var". */
+  [[3, 0, "saat üç"], [3, 5, "üçü beş geçiyor"], [3, 15, "üçü çeyrek geçiyor"],
+   [3, 20, "üçü yirmi geçiyor"], [3, 30, "üç buçuk"], [3, 35, "dörde yirmi beş var"],
+   [3, 45, "dörde çeyrek var"], [3, 55, "dörde beş var"], [4, 45, "beşe çeyrek var"],
+   [1, 15, "biri çeyrek geçiyor"], [11, 50, "on ikiye on var"], [12, 55, "bire beş var"]
+  ].forEach(([h, m, want]) => {
+    nChecked++;
+    const got = M.timeText(h, m);
+    if (got !== want) err("numbers", h + ":" + String(m).padStart(2, "0") + ' reads "' + got + '", hand-checked form is "' + want + '"');
+  });
+
+  [[45, 0, "kırk beş lira"], [42, 50, "kırk iki lira elli kuruş"], [0, 50, "elli kuruş"],
+   [1, 5, "bir lira beş kuruş"], [175, 25, "yüz yetmiş beş lira yirmi beş kuruş"],
+   [1250, 75, "bin iki yüz elli lira yetmiş beş kuruş"]
+  ].forEach(([l, k, want]) => {
+    nChecked++;
+    const got = M.priceText(l, k);
+    if (got !== want) err("numbers", l + "," + k + ' reads "' + got + '", hand-checked form is "' + want + '"');
+  });
+
+  /* What the learner may type. A Turkish keyboard writes 1.234 and an
+     English one 1,234, so both separators are forgiven — but 1.342 is one
+     thousand three hundred and forty-two, and must not read as 342. */
+  [["342", 342], ["3 4 2", 342], [" 342 ", 342], ["1.342", 1342], ["1,342", 1342],
+   ["", null], ["üç yüz", null], ["12a", null]
+  ].forEach(([raw, want]) => {
+    nChecked++;
+    const got = M.parsePlain(raw);
+    if (got !== want) err("numbers", "parsePlain(" + JSON.stringify(raw) + ") = " + got + ", expected " + want);
+  });
+  /* A clock face has no am and pm and neither does the spoken Turkish, so
+     15:15 and 3:15 are one answer — but 27:15 is not a time. */
+  [["3:15", "3,15"], ["3.15", "3,15"], ["315", "3,15"], ["1515", "3,15"], ["15:15", "3,15"],
+   ["03:15", "3,15"], ["0:15", "12,15"], ["27:15", null], ["3:75", null], ["3", null]
+  ].forEach(([raw, want]) => {
+    nChecked++;
+    const g = M.parseTime(raw);
+    const got = g ? g.join(",") : null;
+    if (got !== want) err("numbers", "parseTime(" + JSON.stringify(raw) + ") = " + got + ", expected " + want);
+  });
+  [["42,50", "42,50"], ["42.50", "42,50"], ["42,5", "42,50"], ["42,50 TL", "42,50"],
+   ["42", "42,0"], ["4250", "4250,0"], ["", null]
+  ].forEach(([raw, want]) => {
+    nChecked++;
+    const g = M.parsePrice(raw);
+    const got = g ? g.join(",") : null;
+    if (got !== want) err("numbers", "parsePrice(" + JSON.stringify(raw) + ") = " + got + ", expected " + want);
+  });
+}
+
 /* ---------- the crest is drawn in three places ---------- */
 /* src/icon.svg is the source. The favicon is that file inlined, so the
    single published page carries its own icon; crest() redraws it with CSS
@@ -575,6 +673,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
-  dChecked + " dictation scores · " +
+  dChecked + " dictation scores · " + nChecked + " number forms · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

@@ -27,6 +27,8 @@ function render(){
   else if(v==="hata")renderHata();
   else if(v==="mine")renderMine();
   else if(v==="sor")renderSor();
+  else if(v==="sayilar")renderSayilar();
+  else if(v==="sayilarrun")renderSayilarRun();
   else renderHome();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){

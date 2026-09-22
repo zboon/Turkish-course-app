@@ -29,6 +29,12 @@ const hash = s => crypto.createHash("sha256").update(s).digest("hex").slice(0, 1
 
 const snap = {};
 const grab = k => { snap[k] = hash(app.innerHTML); };
+/* Sayılar is the one mode that prints a wall-clock reading — how long the
+   learner took — and no seed can make that reproducible. Only the reading
+   itself is blanked, so everything else on those screens (the verdict, the
+   answer, which way the pill is coloured) stays pinned. "N.Ns" appears
+   nowhere else: speeds render with × and durations in dakika or gün. */
+const grabx = k => { snap[k] = hash(app.innerHTML.replace(/\d+\.\d+s/g, "#s")); };
 /* Reseeding before each walk keeps one section's randomness from
    shifting the next one's. */
 const reseed = n => ev("Math.random=(function(){var s=" + n + ";return function(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};})()");
@@ -140,6 +146,29 @@ ev("prodModel()"); grab("sor:ask:model");
 reseed(3311); ev("startProd('e')"); grab("sor:yesno:prompt");
 ev("prodModel()"); grab("sor:yesno:model");
 ev("PR=null;"); ev("wipe()");
+
+/* Sayılar. Both directions at both ends: what is on screen while the
+   clock runs, and what the verdict looks like — including the one that
+   only this mode can give, right but too late. */
+ev("wipe()"); ev("setNmax(9999)"); ev("setNcap(5)");
+/* The hub draws a fresh example beside each shape on every paint, so it
+   needs its own seed like every other walk in this file. */
+reseed(4099); ev("go('sayilar')"); grab("sayilar");
+reseed(4100); ev("startNum('duy')"); grabx("sayilar:duy:ask");
+ev("document.getElementById('nbox').value=NM.q[0].show.replace(' TL','')");
+ev("numCheck()"); grabx("sayilar:duy:right");
+ev("numNext()");
+ev("document.getElementById('nbox').value='99999999'");
+ev("numCheck()"); grabx("sayilar:duy:wrong");
+ev("numNext()");
+ev("NM.t0=Date.now()-9000");
+ev("document.getElementById('nbox').value=NM.q[2].show.replace(' TL','')");
+ev("numCheck()"); grabx("sayilar:duy:slow");
+reseed(4101); ev("startNum('oku')"); grabx("sayilar:oku:ask");
+ev("numReveal()"); grabx("sayilar:oku:model");
+ev("numMark(true)");
+ev("NM.i=NM.q.length;NM.phase='end'"); ev("render()"); grabx("sayilar:end");
+ev("NM=null;"); ev("wipe()");
 
 /* Hata defteri. The row is the thing worth fingerprinting: prompt, what
    was said, what was right, and the why — a change to any of those shows

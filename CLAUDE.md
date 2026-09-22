@@ -49,11 +49,12 @@ src/app.yolda.js         hands-free audio sessions
 src/app.hata.js          the mistake book
 src/app.benim.js         the learner's own words
 src/app.sor.js           question production, wh- and yes/no
+src/app.sayilar.js       numbers, times and prices against a clock
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is ten files rather than one because it grew past the point
+The app is eleven files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -195,7 +196,8 @@ deliberate breakage.
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
- gap, prompten, pscope, drate, dreplay, ygap, yrate, tips}
+ num:{"duy:3":{b,d}, "oku:saat":{b,d}},
+ gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips}
 ```
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
@@ -214,8 +216,11 @@ rather than a count. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
-`pscope`, `drate`, `dreplay`, `ygap`, `yrate` and `tips` are settings, not progress —
-`wipe()` keeps them, like `theme` and `rate`. Because `wipe()` keeps
+`pscope`, `drate`, `dreplay`, `ygap`, `yrate`, `nmax`, `ncap` and `tips` are
+settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
+`num` is keyed by the *shape* a number has rather than by any number —
+`duy:3` is three digits heard, `oku:saat` is a clock face read aloud —
+because the numbers are generated and endless while the shapes are six. Because `wipe()` keeps
 `pscope`, a test that wipes still inherits whatever scope ran before it —
 set it explicitly when the default is what is under test.
 
@@ -485,6 +490,81 @@ Dönüştürme would drill something else entirely.
 Sor is **not** in the daily plan, like Kurma ve Dönüştürme and for the same
 reason: it needs no material met, so it would be available on day one and
 push the plan past one instruction. Direct access is in Araçlar.
+
+## Sayılar (numbers at speed)
+
+Built. Turkish numbers are perfectly regular — there is no *quatre-vingt-dix*
+here — so knowing them was never the problem. **Latency** is. Someone says a
+price and you have a second or two; the conversion that arrives ten seconds
+later is no use, and accuracy climbs long before speed does, which is exactly
+why a drill that only marks accuracy reports success while the learner still
+cannot shop.
+
+So `go('sayilar')` puts a clock on it, and **the clock is part of the mark**:
+right but slow does not advance a box. `S.ncap` is the bar, it can be turned
+off, and turning it off is the learner's decision rather than the drill's.
+That one rule is the whole mode; everything else follows from it.
+
+Two directions, and the first of them matters most:
+
+- **Duy** (`duy:<shape>`) — a number, time or price is said once and the
+  learner types the digits. This is the app's **second objective judge**,
+  after Dikte, and for the same reason: `altmış` and `yetmiş` sound alike at
+  speed, and a learner who heard the wrong one is certain they were right.
+  Self-grading cannot see that; a typed 342 either is or is not the answer.
+- **Söyle** (`oku:<shape>`) — digits on screen, read aloud before the model
+  plays. Self-graded, like everything else that leaves no typed evidence,
+  but the clock still runs and still counts.
+
+**Scheduled by shape, not by number.** `S.num` keys `duy:2`, `duy:3`,
+`duy:4`, `duy:6`, `duy:saat`, `duy:fiyat` and the same six for `oku:`. The
+numbers are generated and endless, so "342" is not a thing to be weak at;
+"thousands" is. Same reasoning as the generated drills and Sor.
+
+The engine is split where its purity ends. Everything up to
+`/* --- what a sitting is made of --- */` is pure, so `validate.js` lifts it
+out of the build exactly as it lifts the morphology engine and holds **99
+hand-checked forms** against it; `sim.js` takes the half that needs `S` — the
+judge, the clock, the screens, the book. Neither file holds a copy of the
+other's table.
+
+Four things it has to get right:
+
+1. **The dropped bir.** A hundred is `yüz`, never *bir yüz*; a thousand is
+   `bin`, never *bir bin* — but a million keeps it, `bir milyon`. Three
+   rules, one of them an exception to the other two, and they are the
+   commonest error in the whole system.
+2. **The clock counts down to the next hour.** 3:35 is `dörde yirmi beş var`,
+   twenty-five to *four*, and it wraps: 12:55 is `bire beş var`. The hour
+   takes the accusative before `geçiyor` and the dative before `var`, and
+   `dört` softens in both (`dördü`, `dörde`) — so the forms come from the
+   morphology engine in `app.lang.js` rather than a second table that could
+   drift from it.
+3. **Each kind reaches its own parser.** A price read by the plain parser
+   scores `42,50` as 4250 and fails a right answer. Separators are forgiven
+   because a Turkish keyboard writes `1.234` and an English one `1,234` — but
+   `1.342` is one thousand three hundred and forty-two and must not read as
+   342. A clock face has no am and pm and neither does the spoken Turkish, so
+   `15:15` and `3:15` are one answer, while `27:15` is not a time.
+4. **The stopwatch starts when the prompt ends.** In the hearing direction
+   the clock starts when the voice stops, not when the screen paints, or a
+   long number is penalised for its own length. It is armed twice, like a
+   Yolda step — the voice's `onend` and an estimate — because a browser that
+   drops `onend` would otherwise leave the clock unstarted and every answer
+   instant.
+
+Sayılar is **not** in the daily plan, like Kurma ve Dönüştürme and Sor and
+for the same reason: it needs no material met, so it would be available on
+day one and push a beginner's plan past one instruction. Araçlar has it.
+
+One test trap worth not repeating: `sim.js` runs *unseeded* on purpose, and
+the first version of its assertion searched the raw paint for the generated
+answer. The input's own placeholder is a number and the bar carries `3 / 12`,
+so a drawn 342 or 12 failed on correct code — an assertion that only usually
+holds is worse than none. It reads the visible text now, with the counter
+stripped. `snap.js` has the mirror problem: these are the only screens that
+print a wall-clock reading, which no seed can reproduce, so `grabx()` blanks
+that one reading and fingerprints everything else on the screen.
 
 ## Dinleme (harder listening)
 
@@ -852,18 +932,16 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Sayılar — numbers, times and prices at speed.** Generated, so no
-   content to write. The thing that reliably fails in a real shop.
-2. **Branching dialogue and a repair kit.** The nearest an offline app gets
+1. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-3. **Kütüphane** — verbatim public-domain texts with an
+2. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-4. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+3. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 

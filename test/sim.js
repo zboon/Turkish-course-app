@@ -1680,6 +1680,128 @@ step("sor · producing the question, not the answer", () => {
      "the weak-spot card does not offer all three generated modes");
 });
 
+step("sayılar · the numbers, and the clock that marks them", () => {
+  /* The forms themselves — every number, every hour, the clock and every
+     price — are hand-checked in validate.js, which lifts that half of the
+     engine out of the build. What is left for here is the behaviour those
+     forms feed: the judge, the clock, and the screens.
+
+     The judge is the point of the hearing direction — a number either is
+     or is not 342, which is what self-grading cannot do — and each kind
+     has to reach its OWN parser. A price read by the plain parser would
+     score 42,50 as 4250 and mark a right answer wrong. */
+  [["sayi", "342", "342", "1.342"],
+   ["saat", "[3,15]", "15:15", "3:16"],
+   ["fiyat", "[42,50]", "42,5", "4250"]].forEach(([kind, val, yes, no]) => {
+    ev("SP={kind:" + q(kind) + ",val:" + val + "}");
+    ok(ev("numJudge(SP," + q(yes) + ")") === true, kind + " judged " + q(yes) + " wrong");
+    ok(ev("numJudge(SP," + q(no) + ")") === false, kind + " judged " + q(no) + " right");
+  });
+
+  /* The ceiling governs plain numbers only: the clock and prices are not
+     sizes and are always in play. */
+  ev("wipe()"); ev("setNmax(99)");
+  let bands = JSON.parse(ev("JSON.stringify(numBands().map(function(b){return b.k}))"));
+  ok(bands.join(",") === "2,saat,fiyat", "at a ceiling of 99 the bands are " + bands.join(","));
+  ev("setNmax(999999)");
+  bands = JSON.parse(ev("JSON.stringify(numBands().map(function(b){return b.k}))"));
+  ok(bands.length === 6, "at the top ceiling only " + bands.length + " bands are in play");
+
+  /* Every generated prompt must be answerable by its own digits, in both
+     directions and at every ceiling — a prompt the judge cannot mark is
+     worse than no prompt. */
+  const bad = [], seen = new Set();
+  ["duy", "oku"].forEach(m => {
+    [99, 999, 9999, 999999].forEach(mx => {
+      ev("setNmax(" + mx + ")");
+      for (let r = 0; r < 8; r++) {
+        const b = JSON.parse(ev("JSON.stringify(numBank(" + q(m) + "))"));
+        if (b.length !== ev("NUM_SESSION")) bad.push("short sitting: " + b.length);
+        b.forEach((it, i) => {
+          seen.add(it.band);
+          if (!it.tr || !it.show) bad.push("empty: " + it.k);
+          if (BAD.test(it.tr + it.show) || / {2}/.test(it.tr)) bad.push("leak: " + it.tr + " / " + it.show);
+          if (it.k.indexOf(m + ":") !== 0) bad.push("key: " + it.k);
+          const typed = it.show.replace(" TL", "");
+          if (!ev("numJudge(" + JSON.stringify(it) + "," + q(typed) + ")"))
+            bad.push("unjudgeable: " + it.k + " " + it.show + " = " + it.tr);
+        });
+      }
+    });
+  });
+  ok(bad.length === 0, "sayılar produced " + bad.length + " bad prompts, e.g. " + bad.slice(0, 3).join(" · "));
+  ok(seen.size === 6, "only " + seen.size + " of 6 shapes were ever generated");
+
+  /* The clock is part of the mark, and that is the whole mode. Right but
+     slow must not advance a box — a number worked out in nine seconds is
+     one you cannot use, and calling it a pass would be a lie the learner
+     has no way to detect. */
+  ev("wipe()"); ev("setNmax(999)"); ev("setNcap(5)");
+  ev("startNum('duy')");
+  ok(ev("NM.q.length") === ev("NUM_SESSION"), "the sitting came up short");
+  const it0 = JSON.parse(ev("JSON.stringify(NM.q[0])"));
+  /* What the learner can READ, not the markup: the input's own placeholder
+     is a number and the bar carries "3 / 12", so searching the raw HTML
+     for the answer fails on correct code whenever the drawn number
+     happens to match one of them. sim.js is deliberately unseeded, so an
+     assertion that only usually holds is worse than none. */
+  const shown = () => lastPaint.replace(/<[^>]*>/g, " ").replace(/\d+ \/ \d+/g, " ").replace(/\s+/g, " ");
+  ok(shown().indexOf(it0.show) === -1, "the hearing direction showed the number it was asking for");
+  ok(shown().indexOf(it0.tr) === -1, "the hearing direction printed the Turkish it was speaking");
+  ev("document.getElementById('nbox').value=" + q(it0.show.replace(" TL", "")));
+  ev("numCheck()");
+  ok(ev("NM.res.ok") === true && ev("NM.res.quick") === true, "a correct quick answer was not marked so");
+  ok(ev("S.num[" + q(it0.k) + "].b") === 1, "a correct quick answer did not move the shape out a box");
+  ev("numNext()");
+  const it1 = JSON.parse(ev("JSON.stringify(NM.q[1])"));
+  ev("NM.t0=Date.now()-9000");
+  ev("document.getElementById('nbox').value=" + q(it1.show.replace(" TL", "")));
+  ev("numCheck()");
+  ok(ev("NM.res.ok") === true, "the slow answer was marked wrong rather than slow");
+  ok(ev("NM.res.quick") === false, "nine seconds counted as inside a five-second bar");
+  ok(ev("S.num[" + q(it1.k) + "].b") === 0, "right but slow still advanced the box");
+  ok(/geç/.test(lastPaint), "the screen did not say the answer was late");
+  /* With the clock off it is an ordinary drill, and the same answer passes. */
+  ev("setNcap(0)"); ev("startNum('duy')");
+  const it2 = JSON.parse(ev("JSON.stringify(NM.q[0])"));
+  ev("NM.t0=Date.now()-9000");
+  ev("document.getElementById('nbox').value=" + q(it2.show.replace(" TL", "")));
+  ev("numCheck()");
+  ok(ev("NM.res.quick") === true, "the bar still applied after being switched off");
+  ok(ev("S.num[" + q(it2.k) + "].b") === 1, "with the clock off a right answer did not advance");
+
+  /* A wrong answer lands in the book, keyed by the shape rather than the
+     number — "three digits, four times" is the sentence worth saying. */
+  ev("setNcap(5)"); ev("wipe()"); ev("startNum('duy')");
+  const k0 = ev("NM.q[0].k");
+  ev("document.getElementById('nbox').value='99999999'");
+  ev("numCheck()");
+  ok(ev("Object.keys(S.err).length") === 1, "a wrong number did not reach the mistake book");
+  ok(ev("S.err['n:" + k0 + "'].m") === "n", "the book filed the number under the wrong mode");
+  ok(ev("S.err['n:" + k0 + "'].c") === JSON.parse(ev("JSON.stringify(NM.q[0].show)")), "the book recorded the wrong answer as right");
+  ev("go('hata')");
+  ok(/Sayılar/.test(lastPaint), "the mistake book does not name Sayılar as a mode");
+
+  /* The say-it direction keeps the digits on screen and the Turkish off it
+     until the learner has committed — the same rule Ses önce follows. */
+  ev("wipe()"); ev("startNum('oku')");
+  const o0 = JSON.parse(ev("JSON.stringify(NM.q[0])"));
+  ok(shown().indexOf(o0.show) > -1, "the say-it direction did not show the digits");
+  ok(shown().indexOf(o0.tr) === -1, "the say-it direction revealed the Turkish before the learner spoke");
+  ev("numReveal()");
+  ok(shown().indexOf(o0.tr) > -1, "the model was never revealed");
+  ev("numMark(true)");
+  ok(ev("S.num[" + q(o0.k) + "].b") === 1, "a self-marked right answer did not advance");
+
+  /* Progress is wiped; the ceiling and the bar are settings and are not. */
+  ev("setNmax(9999)"); ev("setNcap(3)");
+  ev("wipe()");
+  ok(ev("Object.keys(S.num).length") === 0, "wipe() kept the number schedule");
+  ok(ev("nmax()") === 9999 && ev("ncap()") === 3, "wipe() threw away the Sayılar settings");
+  ev("go('sayilar')");
+  ok(/Sayılar/.test(lastPaint) && /Duy/.test(lastPaint) && /Söyle/.test(lastPaint), "the Sayılar hub lost a direction");
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");

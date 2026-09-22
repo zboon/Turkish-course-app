@@ -3,18 +3,21 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.10";
+const APP_VERSION="v3.20";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
-       dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],tips:true};
+       dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
+       num:{},nmax:999,ncap:5,tips:true};
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
   if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
-  if(!S.gram)S.gram={}; if(!S.err)S.err={}; if(!S.mine)S.mine=[];   /* the grammar schedule, keyed by unit id — not a unit's own gram: block */
+  /* S.gram is the grammar schedule, keyed by unit id — not a unit's own
+     gram: block. S.num is keyed by the shape of a number, not a number. */
+  if(!S.gram)S.gram={}; if(!S.err)S.err={}; if(!S.mine)S.mine=[]; if(!S.num)S.num={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
