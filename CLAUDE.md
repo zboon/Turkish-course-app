@@ -241,14 +241,29 @@ file instead of loading it into the conversation, and `grep APP_VERSION`
 on it says which version is live. Do this rather than reading the artifact
 without `path`, which inlines all ~280KB.
 
-**To publish, the full-read gate applies.** The tool refuses to overwrite
-until the live version has been read *without* `path` — about 2600 lines,
-in chunks, because it guards against clobbering content saved from inside
-the page. Before paying that, check whether such content could exist at
-all: build the source at the commit the artifact was published from and
-`cmp` it against the saved copy. If it is byte-identical the artifact is
-pure generated output, nothing needs merging, and the read is a formality
-rather than a merge job. That was true at v2.00 → v2.31.
+**To publish, the full-read gate may apply.** In a conversation that has
+not already published this artifact, the tool refuses to overwrite until
+the live version has been read *without* `path` — about 2600 lines, in
+chunks, because it guards against clobbering content saved from inside the
+page. Publishing again later in the same conversation does not re-ask.
+
+Before paying that read, check whether such content could exist at all:
+build the source at the commit the artifact was published from and compare
+it against the live copy. **The comparison needs the platform wrapper
+subtracted first**, or it looks like the whole file changed — the served
+page is the published file with
+
+- a single minified `<!doctype html><html><head>…` line (about 536 bytes)
+  prepended,
+- `\n\n</body></html>` appended,
+- and the file's own trailing newline stripped.
+
+A raw `cmp` therefore reports almost every byte as differing, because one
+inserted line shifts all of them. Strip the first line and that tail, drop
+the trailing newline, and compare the remainder: if it matches the build,
+the artifact is pure generated output, nothing needs merging, and the read
+is a formality rather than a merge job. That has held at every release so
+far — v2.00 → v2.31 → v2.40.
 
 ## House style
 
