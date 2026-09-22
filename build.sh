@@ -27,6 +27,7 @@ cat \
   src/app.tekrar.js \
   src/app.yolda.js \
   src/app.hata.js \
+  src/app.benim.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"

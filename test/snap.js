@@ -143,6 +143,17 @@ ev("go('hata')"); grab("hata:patterns");
 ev("errForget('q:a1u1#0')"); grab("hata:forgotten");
 ev("wipe()");
 
+/* Kendi kelimelerim: empty, with a word, and mid-edit. */
+ev("wipe()"); ev("mineOpen()"); grab("mine:empty");
+env.doc.getElementById("mtr").value = "zeytinyağı";
+env.doc.getElementById("men").value = "olive oil";
+env.doc.getElementById("mnote").value = "market label";
+ev("mineAdd()"); grab("mine");
+ev("mineEdit(0)"); grab("mine:editing");
+ev("mineCancel()");
+ev("go('dict')"); ev("dictSrc('mine')"); grab("dict:src:mine"); ev("dictSrc('all')");
+ev("wipe()");
+
 /* The three views a learner actually meets in their first minutes: the
    orientation card with nothing behind them, the plan once one unit has
    been opened, and the plan mid-unit. */

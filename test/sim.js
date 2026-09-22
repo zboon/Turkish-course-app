@@ -1453,6 +1453,109 @@ step("hata defteri · every mode reaches the same book", () => {
   ok(ev("errList().length") === 1, "restore lost the mistake book");
 });
 
+/* Kendi kelimelerim. The point of the design is what it does NOT add: no
+   queue of its own, because S.star and S.srs already are one. */
+step("kendi kelimelerim · a word from the wild joins the same queue", () => {
+  const fill = (tr, en, note) => {
+    doc.getElementById("mtr").value = tr;
+    doc.getElementById("men").value = en;
+    const n = doc.getElementById("mnote"); if (n) n.value = note || "";
+  };
+  ev("wipe()"); ev("setScope('done')"); ev("mineOpen()");
+  ok(ev("S.mine.length") === 0, "wipe left the learner's own words behind");
+  ok(/Henüz kendi kelimen yok/.test(lastPaint), "the empty list does not say so");
+
+  /* Added, and in the spaced queue without a line of new machinery. */
+  fill("zeytinyağı", "olive oil", "market label");
+  ev("mineAdd()");
+  ok(ev("S.mine.length") === 1, "the word was not added");
+  ok(ev("isStarred('zeytinyağı','olive oil')"), "an added word was not starred");
+  ok(ev("dueList().indexOf('zeytinyağı|olive oil')") > -1, "it is not due in the review queue");
+  ok(ev("planToday().all.filter(function(s){return s.k==='rep'})[0].n") >= 1,
+     "it does not count toward the plan's Tekrar step");
+
+  /* A word the course already teaches: star that one, do not make a copy. */
+  fill("kitap", "book"); ev("mineAdd()");
+  ok(ev("S.mine.length") === 1, "a word the course teaches was copied into the list");
+  ok(ev("isStarred('kitap','book')"), "the course word was not starred instead");
+  ok(/already in the course/.test(ev("MMSG")), "no explanation was given: " + q(ev("MMSG")));
+
+  /* And the message has to survive the render that follows it — poking the
+     DOM alone was silently useless. */
+  ev("mineOpen()");
+  ok(ev("MMSG") === "", "a stale message survived re-opening the screen");
+  fill("zeytinyağı", "something else"); ev("mineAdd()");
+  ok(/already in your list/.test(ev("MMSG")), "a duplicate was not reported: " + q(ev("MMSG")));
+  ok(ev("S.mine.length") === 1, "a duplicate was added anyway");
+  fill("", "nothing"); ev("mineAdd()");
+  ok(/Both sides/.test(ev("MMSG")), "a half-filled entry was not reported");
+  ok(ev("S.mine.length") === 1, "a half-filled entry was added");
+  /* Reporting a problem must NOT re-render: that would wipe what is in the
+     boxes, which is the same trap the Dinleme replay had. */
+  ok(doc.getElementById("men") && doc.getElementById("men").value === "nothing",
+     "a rejected entry lost what the learner had typed");
+
+  /* Pasted text is the real hazard here: a soft hyphen or a zero-width
+     space looks perfect and breaks every match it touches. validate.js
+     checks the course data for it; user input has to be cleaned at the
+     door. */
+  ok(ev("cleanWord('ma\\u00ADnav\\u200B')") === "manav", "invisible characters survive cleanWord");
+  ev("mineOpen()"); fill("ma­nav​", "greengrocer"); ev("mineAdd()");
+  ok(ev("S.mine.filter(function(e){return e.tr==='manav'}).length") === 1,
+     "the pasted word was not stored clean: " + q(ev("S.mine.map(function(e){return e.tr})")));
+  ok(ev("isStarred('manav','greengrocer')"), "the cleaned word was not starred under its clean spelling");
+
+  /* An edit is usually a typo fix, and the star key is the spelling — so
+     re-keying would drop a word to box 0 after a month of reviews. */
+  ev("S.srs['zeytinyağı|olive oil']={b:5,d:dayNum()+16}; save()");
+  ev("mineOpen()"); ev("mineEdit(0)");
+  fill("zeytinyağı", "olive oil, cold pressed", "market label");
+  ev("mineSave(0)");
+  ok(ev("!!S.srs['zeytinyağı|olive oil, cold pressed']"), "the edited word left the queue");
+  ok(ev("S.srs['zeytinyağı|olive oil, cold pressed'].b") === 5,
+     "the edit reset the box to " + ev("S.srs['zeytinyağı|olive oil, cold pressed'].b") + " instead of carrying 5");
+  ok(!ev("!!S.srs['zeytinyağı|olive oil']"), "the old schedule key was left behind");
+  ok(ev("S.star.indexOf('zeytinyağı|olive oil')") < 0 &&
+     ev("S.star.indexOf('zeytinyağı|olive oil, cold pressed')") > -1,
+     "the star list and the schedule drifted apart on an edit");
+
+  /* In the dictionary, under its own source. */
+  ev("go('dict')"); ev("dictSrc('mine')");
+  const rows = ev("dictRows()");
+  ok(rows.length === ev("S.mine.length"), "Sözlük lists " + rows.length + " of " + ev("S.mine.length") + " own words");
+  ok(rows.every(w => w.lv === "Benim"), "an own word is not badged Benim");
+  ev("dictSrc('all')"); ev("dictSearch('manav')");
+  ok(ev("dictRows().some(function(w){return w.tr==='manav'&&w.src==='mine'})"),
+     "an own word cannot be found by search");
+  ev("dictSearch('')"); ev("dictSrc('all')");
+
+  /* Removing takes it out of the queue as well — a word left in S.star
+     with nothing listing it would be unreachable. */
+  ev("mineOpen()");
+  const stars = ev("S.star.length"), mine = ev("S.mine.length");
+  ev("mineDrop(0)");
+  ok(ev("S.mine.length") === mine - 1, "the word was not removed");
+  ok(ev("S.star.length") === stars - 1, "removing left it starred and unreachable");
+
+  /* It must NOT reach Tekrar motoru: that engine ranks by how often the
+     app's own corpus mentions a word, and a word the learner brought has
+     none — every one would sit at the top for ever and bury the course
+     vocabulary the engine exists to rescue. */
+  ev("wipe()"); ev("go('unit','a1u1','v')");
+  ev("mineOpen()"); fill("zürafa", "giraffe"); ev("mineAdd()");
+  ok(ev("repBank().every(function(e){return !!e.unit})"), "a word with no unit reached Tekrar motoru");
+  ok(!ev("repBank().some(function(e){return e.tr==='zürafa'})"), "an own word reached the encounter engine");
+  ok(ev("S.star.indexOf('zürafa|giraffe')") > -1, "but it should still be in the star queue");
+
+  /* Progress, not a setting. */
+  const saved = ev("JSON.stringify(S)");
+  ev("wipe()");
+  ok(ev("S.mine.length") === 0, "wipe kept the learner's own words");
+  ev("go('about')"); doc.getElementById("iobox").value = saved; ev("importBox()");
+  ok(ev("S.mine.length") === 1, "restore lost the learner's own words");
+  ok(ev("isStarred('zürafa','giraffe')"), "restore lost their place in the queue");
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");

@@ -47,11 +47,12 @@ src/app.dinle.js         dictation and audio-first listening
 src/app.tekrar.js        the repetition engine, grammar repetition, the daily plan
 src/app.yolda.js         hands-free audio sessions
 src/app.hata.js          the mistake book
+src/app.benim.js         the learner's own words
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is eight files rather than one because it grew past the point
+The app is nine files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -192,7 +193,7 @@ deliberate breakage.
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
- err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}},
+ err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
  gap, prompten, pscope, drate, dreplay, ygap, yrate, tips}
 ```
 
@@ -679,6 +680,53 @@ Clearing an entry or the whole book changes no schedule, which the
 screen says and `sim.js` checks. `S.err` is progress, not a setting:
 `wipe()` clears it and a backup carries it.
 
+## Kendi kelimelerim (your own words)
+
+Built. The only way into the review queue used to be a star beside a word
+the course had already chosen, so a word met on a shop sign or in a
+subtitle could not get in and the app was a closed box.
+
+**It adds no queue.** `S.star` and `S.srs` already are the spaced queue,
+`dueList()` already feeds Sözlüğüm's review and the flashcards, and the
+daily plan's Tekrar step already counts them — so a word added here is
+starred like any other and turns up in Bugün the next day with no
+machinery at all. `S.mine` exists only because `S.star` holds bare
+`"tr|en"` strings: unstar a word and it would otherwise vanish, and the
+dictionary would have nothing to list.
+
+**It deliberately does not feed Tekrar motoru.** That engine ranks words
+by how often the app's own corpus mentions them and drills the worst
+served; a word the learner brought has zero mentions by definition, so
+every one would sit permanently at the top and bury the course
+vocabulary the engine exists to rescue. The screen and About both say so.
+
+Four things it has to get right:
+
+1. **Clean pasted text at the door.** User input arrives by paste, and a
+   soft hyphen or zero-width space inside a word looks perfect on screen
+   while breaking every match it touches — `validate.js` checks the
+   course data for exactly this, and `cleanWord()` is the same rule
+   applied where the learner types.
+2. **A word the course already teaches gets starred, not copied.** A
+   second entry with the learner's own gloss would be worse than the
+   unit's, and would sit beside it in Sözlük for ever.
+3. **An edit carries the schedule.** The star key is built from the
+   spelling, so re-keying a typo fix would quietly drop a word to box 0
+   after a month of reviews — `mineRekey()` moves the box across and
+   keeps `star` and `srs` in step, which is the standing rule for those
+   two.
+4. **A message must survive the render that follows it.** Every path that
+   sets one ends in `render()`, which replaces the element it was just
+   poked into, so the first version showed the learner nothing at all.
+   `MMSG` is rendered rather than poked. But a *rejection* must still not
+   re-render, or it wipes what is in the input boxes — the same trap the
+   Dinleme replay had.
+
+In Sözlük they are a third source, badged **Benim**. A course row opens
+its unit and a core row filters to its topic; one of the learner's own
+has neither, so it opens the list it lives in — without that branch the
+row rendered `dictTopic('undefined')`, which `sim.js` caught.
+
 ## Bugün (the daily plan)
 
 The app had six ways in and no opinion about which to use. `planCard()` is
@@ -746,23 +794,20 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
-   from a unit's vocabulary list and from Sözlük, so a word met in the wild
-   cannot enter the queue. Small, and it stops the app being a closed box.
-2. **Sor — question production.** The question frame already exists in
+1. **Sor — question production.** The question frame already exists in
    `FRAMES`; asking is the half of a conversation the course never drills.
-3. **Sayılar — numbers, times and prices at speed.** Generated, so no
+2. **Sayılar — numbers, times and prices at speed.** Generated, so no
    content to write. The thing that reliably fails in a real shop.
-4. **Branching dialogue and a repair kit.** The nearest an offline app gets
+3. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-5. **Kütüphane** — verbatim public-domain texts with an
+4. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-6. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+5. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 
