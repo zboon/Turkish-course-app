@@ -55,6 +55,11 @@ const engine = code.slice(mStart, mEnd);
    a sitting is assembled and it starts needing S — so the forms half is
    lifted out and hand-checked here, and the behaviour half (the clock, the
    judge, the screens) is exercised in sim.js against a real state. */
+/* DIA_REPAIR lives in the app half, but what it has to agree with — the
+   chunk bank — lives in the data half, so it is lifted out on its own. */
+const repSrc = /const DIA_REPAIR=\[[\s\S]*?\n\];/.exec(code);
+if (!repSrc) { console.error("validate: cannot find DIA_REPAIR in the build"); process.exit(1); }
+
 const nStart = code.indexOf("/* ===================== sayılar");
 const nEnd = code.indexOf("/* --- what a sitting is made of ---");
 if (nStart < 0 || nEnd < 0) { console.error("validate: cannot find the number engine in the build"); process.exit(1); }
@@ -63,12 +68,13 @@ const numbers = code.slice(nStart, nEnd);
 const sandbox = {};
 try {
   vm.createContext(sandbox);
-  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine + "\n" + numbers +
+  vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine + "\n" + numbers + "\n" + repSrc[0] +
     "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,CORE:CORE,fold:fold," +
     "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj," +
     "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS," +
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,priceText:priceText," +
-    "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice};", sandbox, { filename: file });
+    "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
+    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -619,6 +625,111 @@ let nChecked = 0;
   });
 }
 
+/* ---------- diyalog (branching conversations) ---------- */
+/* A dead end in a dialogue tree is not a wrong answer on a screen — it is
+   a conversation the learner cannot get out of, in a mode whose entire
+   thesis is that you never get stuck. So every branch is walked here. */
+let gChecked = 0;
+{
+  const D = M.DIYALOG || [], R = M.DIA_REPAIR || [];
+  if (D.length < 4) err("diyalog", "expected at least 4 scenarios, found " + D.length);
+  const ids = {};
+  D.forEach(sc => {
+    gChecked++;
+    if (!sc.id || !/^[a-z]+$/.test(sc.id)) err("diyalog", "scenario id " + JSON.stringify(sc.id) + " is not a plain lowercase key");
+    if (ids[sc.id]) err("diyalog", "two scenarios share the id " + sc.id);
+    ids[sc.id] = 1;
+    if (!str(sc.tr) || !str(sc.en) || !str(sc.blurb)) err("diyalog", sc.id + ": missing tr, en or blurb");
+    if (!sc.beats || !sc.beats[sc.start]) { err("diyalog", sc.id + ": start beat " + sc.start + " does not exist"); return; }
+
+    /* Walk every branch from the start. Anything unreachable is dead
+       weight; anything with nowhere to go is a learner with nowhere to
+       go. */
+    const seen = {}, stack = [sc.start];
+    let ends = 0;
+    while (stack.length) {
+      const k = stack.pop();
+      if (seen[k]) continue;
+      seen[k] = 1;
+      const b = sc.beats[k];
+      if (!b) { err("diyalog", sc.id + ": nothing at beat " + k); continue; }
+      if (!str(b.say)) err("diyalog", sc.id + "." + k + ": the other person says nothing");
+      if (b.end) { ends++; continue; }
+      if (b.opts && b.want) err("diyalog", sc.id + "." + k + ": has both opts and want");
+      if (!b.opts && !b.want) err("diyalog", sc.id + "." + k + ": neither a choice nor a number, and not an end");
+      if (b.want) {
+        if (!sc.vars || !sc.vars[b.want]) err("diyalog", sc.id + "." + k + ": wants " + b.want + ", which is not a slot");
+        if (!b.to) err("diyalog", sc.id + "." + k + ": a typed beat with nowhere to go");
+        else stack.push(b.to);
+      }
+      (b.opts || []).forEach((o, i) => {
+        gChecked++;
+        if (!str(o.en) || !str(o.tr)) err("diyalog", sc.id + "." + k + " option " + i + ": missing en or tr");
+        if (!o.to) err("diyalog", sc.id + "." + k + " option " + i + ": no destination");
+        else if (!sc.beats[o.to]) err("diyalog", sc.id + "." + k + " option " + i + ": goes to " + o.to + ", which does not exist");
+        else stack.push(o.to);
+      });
+    }
+    Object.keys(sc.beats).forEach(k => {
+      if (!seen[k]) err("diyalog", sc.id + ": beat " + k + " can never be reached");
+    });
+    if (!ends) err("diyalog", sc.id + ": no beat ends the conversation");
+
+    /* Every {slot} must exist, and every {slot.field} must exist on EVERY
+       option of a pick — "Bursa'ya" and "İzmir'e" differ by a vowel the
+       engine could derive, but a proper name is the last place to let a
+       generated ending loose, so the data lists them and this checks the
+       list is complete. */
+    const texts = [];
+    Object.keys(sc.beats).forEach(k => {
+      const b = sc.beats[k];
+      ["say", "slow", "easy"].forEach(f => { if (b[f]) texts.push([k + "." + f, b[f]]); });
+      (b.opts || []).forEach((o, i) => { texts.push([k + ".opt" + i + ".tr", o.tr]); texts.push([k + ".opt" + i + ".en", o.en]); });
+    });
+    texts.forEach(([where, t]) => {
+      gChecked++;
+      const m = t.match(/\{[a-z0-9]+(?:\.[a-z0-9]+)?\}/gi) || [];
+      m.forEach(tok => {
+        const parts = tok.slice(1, -1).split(".");
+        const v = sc.vars && sc.vars[parts[0]];
+        if (!v) { err("diyalog", sc.id + " " + where + ": no slot named " + parts[0]); return; }
+        if (parts[1]) {
+          if (!v.pick) err("diyalog", sc.id + " " + where + ": " + tok + " asks for a form of a slot that is not a pick");
+          else v.pick.forEach(o => {
+            if (o[parts[1]] === undefined) err("diyalog", sc.id + " " + where + ": " + JSON.stringify(o.t) + " has no " + parts[1] + " form");
+          });
+        }
+      });
+      if (/[\u00AD\u200B\u200C\u200D\u2060\uFEFF]/.test(t))
+        err("diyalog", sc.id + " " + where + ": invisible character in the text");
+    });
+    Object.keys(sc.vars || {}).forEach(k => {
+      const v = sc.vars[k];
+      if (v.x2 && !sc.vars[v.x2]) err("diyalog", sc.id + ": slot " + k + " doubles " + v.x2 + ", which does not exist");
+      if (v.pick && !v.pick.every(o => str(o.t))) err("diyalog", sc.id + ": slot " + k + " has a pick with no t");
+      /* An option's English label renders the slot's OWN English. Without
+         one it falls back to the Turkish and the label reads "how much is
+         the soğan?", which is how this was found. */
+      if (v.pick) v.pick.forEach(o => {
+        if (!str(o.e)) err("diyalog", sc.id + ": " + JSON.stringify(o.t) + " in slot " + k + " has no English form");
+      });
+    });
+  });
+
+  /* The repair kit is prefabs, not new material. If a chunk is ever
+     reworded these stop being the same phrase the learner drilled, and
+     this is what says so. */
+  const bank = {};
+  CHUNKS.forEach(c => { bank[c[0]] = 1; });
+  if (R.length < 3) err("diyalog", "the repair kit has only " + R.length + " moves");
+  R.forEach(r => {
+    gChecked++;
+    if (!bank[r.tr]) err("diyalog", "repair move " + JSON.stringify(r.tr) + " is not in the chunk bank");
+    if (!(r.rate > 0 && r.rate <= 1)) err("diyalog", "repair move " + JSON.stringify(r.tr) + " has a nonsense rate");
+  });
+  if (!R.some(r => r.lv >= 2)) err("diyalog", "no repair move reaches the rephrase");
+}
+
 /* ---------- the crest is drawn in three places ---------- */
 /* src/icon.svg is the source. The favicon is that file inlined, so the
    single published page carries its own icon; crest() redraws it with CSS
@@ -695,5 +806,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
+  gChecked + " dialogue checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

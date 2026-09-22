@@ -29,6 +29,8 @@ function render(){
   else if(v==="sor")renderSor();
   else if(v==="sayilar")renderSayilar();
   else if(v==="sayilarrun")renderSayilarRun();
+  else if(v==="diyalog")diaHub();
+  else if(v==="diyalogrun")diaRun();
   else renderHome();
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */
