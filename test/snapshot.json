@@ -1,5 +1,5 @@
 {
- "home": "888329742f17dcf1",
+ "home": "24f1a6f0174fd6ce",
  "level:A1": "f72cc0f01ba42ccd",
  "level:A2": "2001ce9f06b1f75c",
  "level:B1": "05736529a3ceee02",
@@ -246,7 +246,7 @@
  "unit:c2u10:g": "065f66bc8771f0ad",
  "unit:c2u10:r": "d5ecb975f359a326",
  "unit:c2u10:d": "ad4f8d04a8c7b5d4",
- "about": "65d74843aa3cdeec",
+ "about": "8dbf5416b4c68718",
  "words:empty": "29637dd080de7b22",
  "dict": "8d8297253b533d1a",
  "dict:n": "46c3da1795505c32",
@@ -278,6 +278,14 @@
  "dinle:hear": "5fc1b5b384d5fff4",
  "dinle:hear:reveal": "09f84402fe98ce7d",
  "dinle:fast": "afad76c8d25b31a7",
+ "tekrar": "025833cde84efba6",
+ "tekrar:ask": "91c9e9e349d67efb",
+ "tekrar:right": "3b104b6e18bc777d",
+ "tekrar:wrong": "4c4a6d25fde64833",
+ "tekrar:cloze": "822563ce7458885e",
+ "tekrar:cloze:right": "177704731e8e7026",
+ "home:plan": "24f1a6f0174fd6ce",
+ "home:plan:resume": "44b4195ff3d3c79a",
  "words:full": "24bc7db87c2fa2ed",
  "cards": "f45c9d8b31c853e8",
  "cards:flip": "0f71e44731bb8c19",
@@ -288,5 +296,5 @@
  "retell": "166a324284abd246",
  "__pure": "4d3303857e21e992",
  "__pureForms": 2432,
- "__screens": 287
+ "__screens": 295
 }

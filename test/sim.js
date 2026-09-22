@@ -824,7 +824,204 @@ step("listening state survives wipe and restore the way settings should", () => 
   ev("setDrate(1)"); ev("setDreplay(2)");
 });
 
-/* ===================== 10 · about, backup, restore ===================== */
+/* ===================== 10 · tekrar · the repetition engine ===================== */
+/* This engine decides which of 600 words the learner sees next, from a
+   count it derives itself. If the count is wrong the whole thing points at
+   the wrong words, so the invariants matter more than the screens. */
+step("the word index counts what it claims to", () => {
+  ev("wipe()");
+  const words = ev("wordIndex().words");
+  ok(words.length === 600, "the index holds " + words.length + " words, expected 600");
+  ok(ev("repBands().reduce(function(a,b){return a+b})") === 600, "the bands do not add up to 600");
+
+  /* Every taught word appears at least in its own vocabulary list. A zero
+     means the matcher failed to find a word the app definitely shows. */
+  const zero = words.filter(w => w.nat < 1);
+  ok(zero.length === 0, zero.length + " words score zero encounters, e.g. " +
+     zero.slice(0, 3).map(w => w.tr).join(" · "));
+
+  /* Every remembered context must really contain the word, or the cloze
+     builder is being handed lines it cannot blank. */
+  let bogus = 0;
+  words.forEach(w => (w.where || []).slice(0, 2).forEach(p => {
+    const line = ev("unit(" + q(p[0]) + ").read.lines[" + p[1] + "][0]");
+    if (ev("repSpan(" + q(line) + ".split(/\\s+/)," + q(w.form) + ")") === null) bogus++;
+  }));
+  ok(bogus === 0, bogus + " remembered contexts do not contain their word");
+
+  /* Worst-served first, or the engine drills the wrong end of the list. */
+  const bank = ev("repBank()").map(e => ev("repTotal(" + JSON.stringify(e) + ")"));
+  let unsorted = 0;
+  for (let i = 1; i < bank.length; i++) if (bank[i] < bank[i - 1]) unsorted++;
+  ok(unsorted === 0, "the bank is not ordered worst-served first (" + unsorted + " inversions)");
+});
+
+step("a vocabulary entry's alternatives are split, short stems are not guessed at", () => {
+  ok(JSON.stringify(ev("vocabForms('ad / isim')")) === '["ad","isim"]',
+     "a slashed entry is not split: " + JSON.stringify(ev("vocabForms('ad / isim')")));
+  ok(JSON.stringify(ev("vocabForms('ağabey (abi)')")) === '["agabey","abi"]',
+     "a parenthesised alternative is not split: " + JSON.stringify(ev("vocabForms('ağabey (abi)')")));
+  ok(JSON.stringify(ev("vocabForms('hafta sonu')")) === '["hafta sonu"]',
+     "a genuine two-word noun was split apart");
+
+  /* "ad" must not collect "adam" and "ada"; "kitap" must still collect
+     "kitaplar". That asymmetry is the whole point of REP_PREFIX_MIN. */
+  ok(ev("repMatches('ad','ad')"), "an exact short form does not match itself");
+  ok(!ev("repMatches('adam','ad')"), "the short stem 'ad' still swallows 'adam'");
+  ok(!ev("repMatches('ada','ad')"), "the short stem 'ad' still swallows 'ada'");
+  ok(ev("repMatches('kitaplar','kitap')"), "'kitap' no longer reaches 'kitaplar'");
+  ok(!ev("repMatches('kitap','kitaplar')"), "matching runs the wrong way round");
+});
+
+step("every question is answerable and shows nothing it is asking for", () => {
+  ev("wipe()");
+  const items = ev("wordIndex().words.map(repItem)");
+  ok(items.length === 600, "not every word yields a question");
+  const cloze = items.filter(i => i.kind === "cloze");
+  ok(cloze.length > 250, "only " + cloze.length + " words get a context to blank");
+
+  ok(cloze.every(i => i.q.indexOf("___") > -1), "a cloze lost its blank");
+  ok(items.every(i => i.c && i.c.trim().length > 0), "a question has no answer");
+  /* A recall answer is a word to type, not an entry to transcribe. */
+  const brackets = items.filter(i => i.kind === "recall" && /[()\/]/.test(i.c));
+  ok(brackets.length === 0, brackets.length + " recall answers ask for brackets or slashes, e.g. " +
+     brackets.slice(0, 2).map(i => JSON.stringify(i.c)).join(" "));
+  ok(items.every(i => (i.alts || []).length > 0), "an item lists no acceptable answer");
+  /* The answer must not be sitting in the prompt. */
+  const leak = cloze.filter(i => ev("repTokens(" + q(i.q) + ")").indexOf(ev("fold(" + q(i.c) + ")")) > -1);
+  ok(leak.length === 0, leak.length + " cloze prompts contain their own answer");
+  /* Punctuation belongs to the sentence, not the answer. */
+  const punct = cloze.filter(i => /^[^\p{L}\p{N}]|[^\p{L}\p{N}?]$/u.test(i.c));
+  ok(punct.length === 0, punct.length + " answers carry punctuation, e.g. " +
+     punct.slice(0, 3).map(i => JSON.stringify(i.c)).join(" "));
+
+  /* And the check has to accept the answer the engine itself supplies. */
+  /* And the prompt must never be empty of everything but the blank. */
+  ok(cloze.every(i => i.q.replace("___", "").trim().length > 3), "a cloze prompt is only a blank");
+});
+
+step("a sitting grades, schedules, and counts the encounter either way", () => {
+  ev("wipe()");
+  ev("go('tekrar')");
+  ok(ev("V.view") === "tekrar", "the tekrar hub did not open");
+  ok(/Karşılaşma/.test(lastPaint), "the hub does not show the distribution");
+
+  ev("startTekrar()");
+  ok(ev("V.view") === "tekrarrun", "the run did not start");
+  const n = ev("TK.q.length");
+  ok(n === ev("REP_SESSION"), "a sitting is " + n + ", expected " + ev("REP_SESSION"));
+
+  const k1 = ev("TK.q[TK.i].k");
+  doc.getElementById("tbox").value = ev("TK.q[TK.i].c");
+  ev("tkCheck()");
+  ok(ev("TK.res") === true, "the engine's own answer was marked wrong");
+  ok(ev("S.rep[" + q(k1) + "].b") === 1, "a right answer did not move a box");
+  ok(ev("S.rep[" + q(k1) + "].n") === 1, "a right answer did not count as an encounter");
+
+  ev("tkNext()");
+  const k2 = ev("TK.q[TK.i].k");
+  doc.getElementById("tbox").value = "kesinlikle yanlış";
+  ev("tkCheck()");
+  ok(ev("TK.res") === false, "a wrong answer was accepted");
+  ok(ev("S.rep[" + q(k2) + "].b") === 0, "a wrong answer did not return to box 0");
+  ok(ev("S.rep[" + q(k2) + "].n") === 1, "a wrong answer did not count as an encounter — being asked is the encounter");
+
+  /* Diacritics are forgiven here as everywhere else. */
+  ev("tkNext()");
+  const want = ev("TK.q[TK.i].c");
+  doc.getElementById("tbox").value = ev("fold(" + q(want) + ")");
+  ev("tkCheck()");
+  ok(ev("TK.res") === true, "a folded answer was refused: " + want);
+
+  let guard = 0;
+  while (ev("TK.phase") !== "end" && guard++ < 40) {
+    if (ev("TK.phase") === "ask") { doc.getElementById("tbox").value = ev("TK.q[TK.i].c"); ev("tkCheck()"); }
+    else ev("tkNext()");
+  }
+  ok(ev("TK.phase") === "end", "the sitting never ended");
+  ok(ev("Object.keys(S.rep).length") === n, "graded " + n + " but stored " + ev("Object.keys(S.rep).length"));
+
+  /* Drilling has to actually move the number this engine exists to move. */
+  const before = ev("repShort().length");
+  ev("S.rep={}; repBank().slice(0,40).forEach(function(e){S.rep[e.k]={b:4,d:dayNum()+8,n:20}}); save()");
+  ok(ev("repShort().length") < before, "40 words at 20 encounters did not reduce the shortfall");
+});
+
+/* ===================== 11 · bugün · the daily plan ===================== */
+step("the plan says what to do, in the order it should be done", () => {
+  ev("wipe()"); ev("home()");
+  ok(/Bugün/.test(lastPaint), "home does not show a plan");
+  const h = lastPaint;
+  ok(h.indexOf("Bugün") < h.indexOf("road-line"), "the plan sits below the progress road");
+  ok(!/Devam et · pick up/.test(h), "the old resume card is still there as well as the plan");
+
+  const p = ev("planToday()");
+  ok(p.steps.length >= 4, "the plan has only " + p.steps.length + " steps");
+  ok(p.steps[p.steps.length - 1].k === "new", "new material is not last — reviews decay, it does not");
+  ok(p.steps.every(s => s.n === 0 || s.mins > 0), "a step with work claims no time");
+  ok(p.mins > 0 && p.mins < 120, "the plan claims " + p.mins + " minutes, which is not credible");
+  ok(p.left[0].k === "rep", "the first thing to do is not the review queue");
+
+  /* A step ticks when its own queue empties — no stored completion flag. */
+  ev("S.dinle={}; listenBank('d:').forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+4}}); save()");
+  ev("home()");
+  const dk = ev("planToday()").steps.find(s => s.k === "dinle");
+  ok(dk.n === 0, "clearing the dictation queue did not clear its step");
+  ok(/tick done/.test(lastPaint), "a finished step shows no tick");
+
+  /* Every step's tap target has to be a real call. */
+  ev("planToday()").steps.forEach(s => {
+    ok(/^[a-zA-Z]+\(/.test(s.go), "step " + s.k + " has no action: " + s.go);
+  });
+});
+
+step("the plan's last step resumes only a unit that is not finished", () => {
+  ev("wipe()"); ev("home()");
+  ok(ev("planToday().steps.find(function(s){return s.k==='new'}).tr") === "Yeni",
+     "a fresh install offers Devam rather than Yeni");
+
+  ev("go('unit','a1u3','r')"); ev("home()");
+  const mid = ev("planToday()").steps.find(s => s.k === "new");
+  ok(mid.tr === "Devam", "a bookmark mid-unit does not offer Devam");
+  ok(mid.go.indexOf("a1u3") > -1 && mid.go.indexOf("'r'") > -1,
+     "Devam does not return to the section that was open: " + mid.go);
+
+  /* Finish that unit; the bookmark survives, so the plan must move past it. */
+  ev("S.done['a1u3']={score:5,of:5,at:Date.now()}; save()");
+  ev("home()");
+  const after = ev("planToday()").steps.find(s => s.k === "new");
+  ok(after.go.indexOf("a1u3") < 0,
+     "a finished bookmark still pins the plan to the completed unit: " + after.go);
+
+  /* Nothing due anywhere and no units left: say so rather than show an empty list. */
+  ev("wipe()");
+  ev("UNITS.forEach(function(u){S.done[u.id]={score:5,of:5,at:Date.now()}})");
+  ev("S.rep={}; repBank().forEach(function(e){S.rep[e.k]={b:5,d:dayNum()+9,n:30}})");
+  ev("S.dinle={}; ['d:','a:'].forEach(function(p){listenBank(p).forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+9}})})");
+  ev("S.prod={}; sentenceBank().forEach(function(it){S.prod[it.k]={b:3,d:dayNum()+9}})");
+  ev("save()"); ev("home()");
+  ok(ev("planToday().left.length") === 0, "with everything clear the plan still lists work");
+  ok(/Bugünlük bitti/.test(lastPaint), "a cleared plan does not say so");
+});
+
+step("the repetition schedule is progress, its settings are not", () => {
+  ev("wipe()");
+  ev("startTekrar()");
+  doc.getElementById("tbox").value = ev("TK.q[TK.i].c");
+  ev("tkCheck()");
+  ok(ev("Object.keys(S.rep).length") === 1, "nothing was scheduled");
+  const saved = ev("JSON.stringify(S)");
+
+  ev("wipe()");
+  ok(ev("Object.keys(S.rep).length") === 0, "wipe left the repetition schedule behind");
+
+  ev("go('about')");
+  doc.getElementById("iobox").value = saved;
+  ev("importBox()");
+  ok(ev("Object.keys(S.rep).length") === 1, "restore lost the repetition schedule");
+});
+
+/* ===================== 12 · about, backup, restore ===================== */
 step("about and backup", () => {
   ev("go('about')");
   ok(/Bu kurs hakkında|Nasıl çalışır/.test(lastPaint), "about screen is empty");
@@ -861,7 +1058,7 @@ step("about and backup", () => {
   ok(ev("!!S.done['a1u1']"), "a bad backup wiped good progress");
 });
 
-/* ===================== 11 · storage, theme, streak ===================== */
+/* ===================== 13 · storage, theme, streak ===================== */
 step("storage and chrome", () => {
   ok(store.has("turkce-course-v1"), "nothing was written to localStorage");
   const raw = JSON.parse(store.get("turkce-course-v1"));

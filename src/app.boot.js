@@ -18,6 +18,8 @@ function render(){
   else if(v==="dict")renderDict();
   else if(v==="dinle")renderDinle();
   else if(v==="dinlerun")renderDinleRun();
+  else if(v==="tekrar")renderTekrar();
+  else if(v==="tekrarrun")renderTekrarRun();
   else renderHome();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){

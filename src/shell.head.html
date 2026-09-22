@@ -174,8 +174,12 @@ h2.sec::after{
 .tick.done{background:var(--turk);border-color:var(--turk);color:#fff}
 .tick.done svg{width:12px;height:12px}
 .tick.here{border-color:var(--gold);color:var(--gold)}
-.unit-t{font-weight:600;font-size:.97rem}
-.unit-s{color:var(--ink2);font-size:.8rem;margin-top:.1rem}
+/* Both are blocks: they are a title and its subtitle, and as inline spans
+   they sat on one line and only looked stacked when the text happened to be
+   long enough to wrap. The short rows in the daily plan do not wrap, which
+   is how this surfaced. */
+.unit-t{display:block;font-weight:600;font-size:.97rem}
+.unit-s{display:block;color:var(--ink2);font-size:.8rem;margin-top:.1rem}
 
 /* segmented control */
 .segs{display:flex;gap:.3rem;background:var(--sunk);padding:.25rem;border-radius:11px;margin:.2rem 0 1rem}
