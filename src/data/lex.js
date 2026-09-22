@@ -10,6 +10,12 @@
            in English than the Turkish is in Turkish
      obj   nouns this verb may take as an object, dat/loc likewise.
            Without them the generator writes "I am drinking the school".
+     oprep a preposition English puts before the object where Turkish
+           does not — beklemek takes a plain accusative but English has
+           to say "wait FOR the bus", and without this the generator
+           emitted "I am waiting the bus" in 4% of prompts.
+     who   this noun is a person, so a question about it is "Kimi/Who"
+           rather than "Ne/What".
 
    Only vetted stems belong here: the engine will happily generate
    confident, wrong Turkish from an unflagged word, and a drill that
@@ -20,7 +26,7 @@ const LEX=[
  {t:"kapı",en:"door",p:"n"},
  {t:"ev",en:"house",p:"n"},
  {t:"araba",en:"car",p:"n"},
- {t:"çocuk",en:"child",p:"n",soft:1},
+ {t:"çocuk",en:"child",p:"n",soft:1,who:1},
  {t:"ekmek",en:"bread",p:"n",soft:1},
  {t:"göz",en:"eye",p:"n"},
  {t:"el",en:"hand",p:"n"},
@@ -34,11 +40,11 @@ const LEX=[
  {t:"okul",en:"school",p:"n"},
  {t:"masa",lp:"at",en:"table",p:"n"},
  {t:"pencere",en:"window",p:"n"},
- {t:"öğrenci",en:"student",p:"n"},
- {t:"öğretmen",en:"teacher",p:"n"},
- {t:"arkadaş",en:"friend",p:"n"},
- {t:"anne",en:"mother",p:"n"},
- {t:"baba",en:"father",p:"n"},
+ {t:"öğrenci",en:"student",p:"n",who:1},
+ {t:"öğretmen",en:"teacher",p:"n",who:1},
+ {t:"arkadaş",en:"friend",p:"n",who:1},
+ {t:"anne",en:"mother",p:"n",who:1},
+ {t:"baba",en:"father",p:"n",who:1},
  {t:"para",en:"money",p:"n"},
  {t:"çay",en:"tea",p:"n"},
  {t:"kahve",en:"coffee",p:"n"},
@@ -73,7 +79,7 @@ const LEX=[
  {t:"bulmak",en:"to find",p:"v",aor:1,e:["find","finding","found","finds"],obj:["kitap","kalem","para","yol","ev"]},
  {t:"kalmak",en:"to stay",p:"v",aor:1,e:["stay","staying","stayed","stays"],loc:["ev","şehir","okul"]},
  {t:"olmak",en:"to be, to become",p:"v",aor:1,e:["become","becoming","became","becomes"]},
- {t:"yapmak",needsObj:1,en:"to do, to make",p:"v",e:["make","making","made","makes"],obj:["iş","ekmek","kahve","çay"]},
+ {t:"yapmak",needsObj:1,en:"to do, to make",p:"v",e:["make","making","made","makes"],obj:["ekmek","kahve","çay"]},
  {t:"etmek",en:"to do (with a noun)",p:"v",soft:1,e:["do","doing","did","does"],aux:1},
  {t:"içmek",en:"to drink",p:"v",e:["drink","drinking","drank","drinks"],obj:["çay","kahve","su"]},
  {t:"yemek",en:"to eat",p:"v",irr:{prog:"yi",fut:"yiyecek"},e:["eat","eating","ate","eats"],obj:["ekmek"]},
@@ -83,7 +89,7 @@ const LEX=[
  {t:"çalışmak",en:"to work, to study",p:"v",e:["work","working","worked","works"],loc:["ev","okul","market","şehir"]},
  {t:"konuşmak",en:"to speak",p:"v",e:["speak","speaking","spoke","speaks"]},
  {t:"anlamak",stative:1,en:"to understand",p:"v",e:["understand","understanding","understood","understands"],obj:["kitap","isim"]},
- {t:"beklemek",en:"to wait",p:"v",e:["wait","waiting","waited","waits"],obj:["otobüs","arkadaş","öğretmen"]},
+ {t:"beklemek",en:"to wait",p:"v",e:["wait","waiting","waited","waits"],oprep:"for",obj:["otobüs","arkadaş","öğretmen"]},
  {t:"başlamak",en:"to begin",p:"v",e:["begin","beginning","began","begins"],dat:["iş","kitap"]},
  {t:"istemek",needsObj:1,stative:1,en:"to want",p:"v",e:["want","wanting","wanted","wants"],obj:["çay","kahve","su","para","ekmek"]},
  {t:"sevmek",needsObj:1,stative:1,en:"to love, to like",p:"v",e:["like","liking","liked","likes"],obj:["çay","kahve","kedi","köpek","deniz","kitap","anne","baba","arkadaş"]},

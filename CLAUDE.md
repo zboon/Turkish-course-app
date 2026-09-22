@@ -48,11 +48,12 @@ src/app.tekrar.js        the repetition engine, grammar repetition, the daily pl
 src/app.yolda.js         hands-free audio sessions
 src/app.hata.js          the mistake book
 src/app.benim.js         the learner's own words
+src/app.sor.js           question production, wh- and yes/no
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is nine files rather than one because it grew past the point
+The app is ten files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -411,7 +412,8 @@ the vetted drill stems and `LEX` drives the morphology engine in
   than an approximation.
 - **Scheduling by pattern, not sentence.** The sentences are endless, so
   `S.prod` keys them `g:<frame>:<tense>` and `t:<move>`: what comes back
-  is the pattern you were weak at.
+  is the pattern you were weak at. Sor adds `sor:<frame>` and
+  `sor:mi:<tense>` to the same map, for the same reason.
 
 The morphology engine derives what is derivable and the lexicon lists
 what is not — see the flags at the top of `lex.js`. `validate.js` holds
@@ -427,6 +429,62 @@ cannot catch: `e` (English forms — no more derivable than the Turkish),
 `obj`/`dat`/`loc`/`n` (collocations, or the generator writes *"I am
 drinking the school"*), and `needsObj`/`stative` (English cannot say
 *"Did we give?"* or *"I am liking"*).
+
+## Sor (question production)
+
+Built. Every other mode in this app answers. Sixty units of reading, 432
+sentences to produce, 307 prefabs — and almost none of it is a question. A
+learner who can only answer is one a conversation stops dead with, because
+the other person eventually runs out of things to ask.
+
+`go('sor')` is the mode and it **adds no runner**: prompt → silence → model
+→ self-grade is already the right shape, and `S.prod` is already keyed by
+pattern, so Sor is two banks fed into `startProd`. Modes `q` and `e`.
+
+- **Ne sordum** (`sor:<frame>`) — a statement arrives and the learner
+  produces the question that would have drawn it out. `sorAsk()` maps each
+  frame to its question word: `obj` → Ne / Kimi, `dat` → Nereye, `loc` →
+  Nerede, `bare` → Kim, `adj` → nasıl, `gen` → Kimin.
+- **Evet/hayır** (`sor:mi:<tense>`) — the same statement as a yes-no
+  question. The particle is the whole difficulty: a separate word that
+  takes the person onto itself (`geliyor musun`) except in the past, where
+  the verb keeps it (`geldin mi`). Keyed by tense because that is the axis
+  it varies on.
+
+Four things it has to get right, and three of them were wrong first:
+
+1. **The person moves.** `ASK_P` maps the statement's person to the
+   question's: ben → sen, biz → siz, and the other three stand still.
+   Nobody asks *Nereye gidiyorum?* to be told *Okula gidiyorum*. This was
+   written as `[1,1,2,2,4,5]`, which asks a group *Nereye gidiyor?* to
+   elicit *Okula gidiyoruz* — and it survived a hand-check of every frame
+   because `SOR_P` only generated three persons, so the broken row was
+   never reached. The test now asserts both the table and that every
+   person in `SOR_P` actually turns up; without the second half the first
+   is a table nobody walks.
+2. **Not every dative is a place.** `bakmak` and `başlamak` take one that
+   is not, so *Nereye bakıyorsun?* is simply wrong. `sorAskable()` admits
+   the `dat` frame only for verbs whose `prep` is "to"; the rest are left
+   to the other frames rather than guessed at.
+3. **A subject question takes no do-support.** "Who came?", never "Who did
+   come?" — the opposite of every other wh-question in English, and what
+   an over-correcting learner writes. `whoEN()` is separate from `askEN()`
+   for that one reason.
+4. **A stranded preposition still has to land.** `beklemek` carries
+   `oprep:"for"`, so the question is "Who are you waiting **for**?". The
+   same flag fixes the statements: probing for this mode turned up 16 in
+   400 generated prompts reading *"I am waiting the bus"*, which had been
+   shipping since the generator was built.
+
+Questions are assembled at the moment they are shown, so nothing here can
+be memorised. In the mistake book `errPatterns()` reads `sor:` keys out of
+`S.prod` alongside `g:`/`t:` and tags each with the mode that drills it —
+`PAT_CARDS` renders one card per mode, because a Sor pattern offered to
+Dönüştürme would drill something else entirely.
+
+Sor is **not** in the daily plan, like Kurma ve Dönüştürme and for the same
+reason: it needs no material met, so it would be available on day one and
+push the plan past one instruction. Direct access is in Araçlar.
 
 ## Dinleme (harder listening)
 
@@ -794,20 +852,18 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Sor — question production.** The question frame already exists in
-   `FRAMES`; asking is the half of a conversation the course never drills.
-2. **Sayılar — numbers, times and prices at speed.** Generated, so no
+1. **Sayılar — numbers, times and prices at speed.** Generated, so no
    content to write. The thing that reliably fails in a real shop.
-3. **Branching dialogue and a repair kit.** The nearest an offline app gets
+2. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-4. **Kütüphane** — verbatim public-domain texts with an
+3. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-5. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+4. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 

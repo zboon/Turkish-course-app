@@ -130,6 +130,17 @@ drain(60000); grab("yolda:marking");
 ev("yolMiss(yolCovered()[0].k)"); grab("yolda:marking:missed");
 ev("YL=null;");
 
+/* Sor. The hub is stable prose; the two runners are what move, so both
+   are caught at the moment the statement is up and again once the
+   question has been revealed. */
+ev("wipe()"); ev("setGap(3)");
+ev("go('sor')"); grab("sor");
+reseed(3310); ev("startProd('q')"); grab("sor:ask:prompt");
+ev("prodModel()"); grab("sor:ask:model");
+reseed(3311); ev("startProd('e')"); grab("sor:yesno:prompt");
+ev("prodModel()"); grab("sor:yesno:model");
+ev("PR=null;"); ev("wipe()");
+
 /* Hata defteri. The row is the thing worth fingerprinting: prompt, what
    was said, what was right, and the why — a change to any of those shows
    up here rather than in a count. */

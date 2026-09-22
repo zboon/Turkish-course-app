@@ -1556,6 +1556,130 @@ step("kendi kelimelerim · a word from the wild joins the same queue", () => {
   ok(ev("isStarred('zürafa','giraffe')"), "restore lost their place in the queue");
 });
 
+step("sor · producing the question, not the answer", () => {
+  ev("wipe()");
+  ev("go('sor')");
+  ok(/Ne sordum/.test(lastPaint), "the Sor hub lost the wh- runner");
+  ok(/Evet \/ hayır/.test(lastPaint), "the Sor hub lost the yes-no runner");
+  ok(/Nereye gidiyorsun\?/.test(lastPaint), "the hub lost its question words");
+
+  /* The person moves, and that is the part a learner gets wrong: nobody
+     asks "Nereye gidiyorum?" to be told "Okula gidiyorum", and nobody
+     asks a group "Nereye gidiyor?" to be told "Okula gidiyoruz". ben and
+     biz move to sen and siz; the other three stand still. */
+  const shift = [
+    [0, "Okula gidiyorum.", "Nereye gidiyorsun?"],
+    [1, "Okula gidiyorsun.", "Nereye gidiyorsun?"],
+    [2, "Okula gidiyor.", "Nereye gidiyor?"],
+    [3, "Okula gidiyoruz.", "Nereye gidiyorsunuz?"],
+    [4, "Okula gidiyorsunuz.", "Nereye gidiyorsunuz?"],
+    [5, "Okula gidiyorlar.", "Nereye gidiyorlar?"],
+  ];
+  shift.forEach(([p, st, qn]) => {
+    ev("SS={f:'dat',v:byName('gitmek'),n:byName('okul'),p:" + p + ",t:'prog',neg:false}");
+    ok(ev("specText(SS).tr") === st, "person " + p + " states " + q(ev("specText(SS).tr")) + ", expected " + q(st));
+    ok(ev("sorAsk(SS).tr") === qn, "person " + p + " asks " + q(ev("sorAsk(SS).tr")) + ", expected " + q(qn));
+  });
+
+  /* A subject question takes no do-support in English — "Who came?",
+     never "Who did come?" — which is the opposite of every other
+     wh-question and exactly what an over-correcting learner writes. */
+  const who = [["past", false, "Who came?"], ["past", true, "Who did not come?"],
+               ["prog", false, "Who is coming?"], ["aor", false, "Who comes?"],
+               ["fut", false, "Who will come?"]];
+  who.forEach(([t, neg, en]) => {
+    ev("SS={f:'bare',v:byName('gelmek'),p:2,t:" + q(t) + ",neg:" + neg + "}");
+    ok(ev("sorAsk(SS).en") === en, "subject question reads " + q(ev("sorAsk(SS).en")) + ", expected " + q(en));
+  });
+
+  /* Where English needs a preposition before the object, the question
+     strands it at the end. Without this the app asks "Who are you
+     waiting?" — which is the same lexical flag the statements need. */
+  ev("SS={f:'obj',v:byName('beklemek'),n:byName('arkadaş'),p:0,t:'prog',neg:false}");
+  ok(ev("sorAsk(SS).en") === "Who are you waiting for?",
+     "a stranded preposition was dropped: " + q(ev("sorAsk(SS).en")));
+  ok(ev("sorAsk(SS).tr") === "Kimi bekliyorsun?", "a person object did not ask Kimi");
+
+  /* mI is a separate word carrying the person, except in the past where
+     the verb keeps it. Both are patterns a learner can be weak at, which
+     is why the yes-no bank is keyed by tense. */
+  const mi = [["prog", "Geliyor musun?"], ["past", "Geldin mi?"],
+              ["fut", "Gelecek misin?"], ["aor", "Gelir misin?"]];
+  mi.forEach(([t, tr]) => {
+    ev("SS={f:'ask',v:byName('gelmek'),p:1,t:" + q(t) + ",neg:false}");
+    ok(ev("specText(SS).tr") === tr, t + " yes-no reads " + q(ev("specText(SS).tr")) + ", expected " + q(tr));
+  });
+
+  /* Sweep: every generated question answerable, nothing leaking, and the
+     dative guard holding — bakmak and başlamak take a dative that is not
+     a place, so "Nereye?" would be simply wrong for them. */
+  const bad = [], frames = new Set(), words = new Set(), persons = new Set();
+  for (let i = 0; i < 400; i++) {
+    ev("SS=sorSpec(); AA=sorAsk(SS); ST=specText(SS)");
+    const f = ev("SS.f"), prep = ev("SS.v?(SS.v.prep||''):''");
+    const tr = ev("AA.tr"), en = ev("AA.en"), st = ev("ST.tr");
+    frames.add(f); words.add(ev("AA.qw")); persons.add(ev("SS.p"));
+    if (f === "dat" && prep !== "to") bad.push("Nereye for a non-place dative: " + tr);
+    if (!tr || !en || !/\?$/.test(tr) || !/\?$/.test(en)) bad.push("not a question: " + tr + " / " + en);
+    if (BAD.test(tr + en) || / {2}/.test(tr + en)) bad.push("leak: " + tr + " / " + en);
+    if (/^I[a-zçğıöşü]/.test(tr)) bad.push("capital: " + tr);
+    if (tr === st) bad.push("question equals its answer: " + tr);
+    if (/^Who did [a-z]+\?/.test(en)) bad.push("do-support: " + en);
+  }
+  ok(bad.length === 0, "sor produced " + bad.length + " bad questions, e.g. " + bad.slice(0, 3).join(" · "));
+  ok(frames.size === ev("SOR_FRAMES").length, "only " + frames.size + " of " + ev("SOR_FRAMES").length + " frames are reachable");
+  ok(words.size === 7, "only " + words.size + " question words are reachable, expected 7");
+  /* And the statements have to use those persons, or the shift above is a
+     table nobody walks: every person the bank claims to draw must turn up. */
+  ev("SOR_P").forEach(p => ok(persons.has(p), "no statement is ever generated in person " + p +
+     ", so the question's person shift is never exercised"));
+
+  /* Both banks fill a sitting and key by pattern rather than by sentence. */
+  const ks = new Set(), ms = new Set();
+  for (let i = 0; i < 12; i++) {
+    const b1 = JSON.parse(ev("JSON.stringify(sorBank())"));
+    const b2 = JSON.parse(ev("JSON.stringify(askBank())"));
+    ok(b1.length === ev("SESSION") && b2.length === ev("SESSION"), "a bank came up short");
+    b1.concat(b2).forEach(it => {
+      if (!it.given || !it.instr) bad.push("no statement to work from: " + it.tr);
+      if (it.k.indexOf("sor:") !== 0) bad.push("key: " + it.k);
+    });
+    b1.forEach(it => ks.add(it.k));
+    b2.forEach(it => ms.add(it.k));
+  }
+  ok(bad.length === 0, "a bank item is malformed: " + bad.slice(0, 2).join(" · "));
+  ok(ks.size === 6 && ms.size === 4, "the banks key " + ks.size + "/" + ms.size + " patterns, expected 6/4");
+
+  /* Through the real runner: the statement is what is shown, the question
+     is what is revealed, and the grade lands on the pattern. */
+  ["q", "e"].forEach(mode => {
+    ev("wipe()"); ev("setGap(3)"); ev("startProd(" + q(mode) + ")");
+    const it = JSON.parse(ev("JSON.stringify(PR.q[0])"));
+    ok(lastPaint.indexOf(it.given) > -1, "the runner did not show the statement");
+    ok(lastPaint.indexOf(it.tr) === -1, "the runner revealed the question before the silence");
+    ev("prodModel()");
+    ok(lastPaint.indexOf(it.tr) > -1, "the model was never revealed");
+    ev("prodMark(false)");
+    ok(ev("S.prod[" + q(it.k) + "].b") === 0, "a missed question did not come back today");
+    ok(ev("Object.keys(S.err).length") === 1, "the mistake book did not take the question");
+    ok(ev("S.err[" + q(it.k) + "].c") === it.tr, "the book recorded the wrong answer as right");
+  });
+
+  /* And the book names the pattern, with the button that drills it —
+     a Sor pattern offered to Dönüştürme would drill something else. */
+  ev("wipe()");
+  ev("S.prod={'sor:loc':{b:0,d:0},'sor:mi:past':{b:0,d:0},'t:neg':{b:0,d:0}}");
+  ev("errNote('sor:loc',{m:'s',q:'Where is he reading?',c:'Nerede okuyor?',a:'',w:''})");
+  const pats = JSON.parse(ev("JSON.stringify(errPatterns())"));
+  ok(pats.length === 3, "errPatterns saw " + pats.length + " weak patterns, expected 3");
+  ok(pats.filter(p => p.m === "q").length === 1 && pats.filter(p => p.m === "e").length === 1 &&
+     pats.filter(p => p.m === "t").length === 1, "a pattern was filed under the wrong mode");
+  ok(pats.every(p => p.tr && !BAD.test(p.tr)), "a pattern has no name");
+  ev("go('hata')");
+  ok(/startProd\('q'\)/.test(lastPaint) && /startProd\('e'\)/.test(lastPaint) && /startProd\('t'\)/.test(lastPaint),
+     "the weak-spot card does not offer all three generated modes");
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");

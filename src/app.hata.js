@@ -30,6 +30,18 @@ const ERR_MAX=400;
 const ERR_MODES=[["q","Alıştırma","unit drills"],["s","Üretim","producing"],
                  ["d","Dikte","transcribing"],["a","Ses önce","understanding"],
                  ["r","Tekrar","vocabulary"],["y","Dilbilgisi","grammar"]];
+/* Pattern cards, one per generated mode: heading, what it means, and the
+   button that drills exactly those. Split because the three are different
+   work — mode, title, blurb, button label. */
+const PAT_CARDS=[["t","Kurma ve Dönüştürme",
+  "The generated drills are scheduled by pattern rather than by sentence, so these are patterns you are currently getting wrong — not sentences you happened to miss.",
+  "Dönüştürme · drill these"],
+ ["q","Sor · soru sözcükleri",
+  "Questions are generated the same way, and keyed by which question word the answer calls for.",
+  "Sor · drill these"],
+ ["e","Sor · evet/hayır",
+  "Keyed by tense, because where <i>mi</i> lands and what it carries is what changes with it.",
+  "Evet/hayır · drill these"]];
 
 function errNote(k,o){
   if(!k||!o||!o.c)return;
@@ -80,20 +92,32 @@ function errByMode(){
 }
 /* The generated drills are the one place the app already thinks in
    patterns rather than sentences — S.prod keys them "g:<frame>:<tense>"
-   and "t:<move>". A pattern sitting on box 0 is one that was drilled and
-   missed, so it reads straight out without any new bookkeeping. */
+   and "t:<move>" for Kurma ve Dönüştürme, "sor:<frame>" and
+   "sor:mi:<tense>" for Sor. A pattern sitting on box 0 is one that was
+   drilled and missed, so it reads straight out without any new
+   bookkeeping. `m` is the mode that drills it, which is also the button
+   its card offers — a Sor pattern sent to Dönüştürme would drill
+   something else entirely. */
 function errPatterns(){
   if(!S.prod)return [];
   return Object.keys(S.prod).filter(function(k){
-    return (k.indexOf("g:")===0||k.indexOf("t:")===0)&&S.prod[k].b===0;
+    return (k.indexOf("g:")===0||k.indexOf("t:")===0||k.indexOf("sor:")===0)&&S.prod[k].b===0;
   }).map(function(k){
     const p=k.split(":");
+    if(p[0]==="sor"){
+      if(p[1]==="mi"){
+        const t=TENSES.find(function(x){return x.k===p[2];});
+        return {k:k,m:"e",tr:"evet/hayır"+(t?" · "+t.tr:""),en:t?t.en:"yes-no question"};
+      }
+      const f=FRAMES[p[1]];
+      return {k:k,m:"q",tr:"soru · "+(f?f.lab.split(" · ")[0]:p[1]),en:f?f.lab:"question"};
+    }
     if(p[0]==="t"){
       const m=MOVES.find(function(x){return x.k===p[1];});
-      return {k:k,tr:m?m.tr:p[1],en:m?m.en:"transformation"};
+      return {k:k,m:"t",tr:m?m.tr:p[1],en:m?m.en:"transformation"};
     }
     const f=FRAMES[p[1]], t=TENSES.find(function(x){return x.k===p[2];});
-    return {k:k,tr:(f?f.lab:p[1])+(t?" · "+t.tr:""),en:t?t.en:"pattern"};
+    return {k:k,m:"t",tr:(f?f.lab:p[1])+(t?" · "+t.tr:""),en:t?t.en:"pattern"};
   });
 }
 /* Where a key names a unit, so a row can offer to go back to it.
@@ -184,14 +208,16 @@ function renderHata(){
   });
   h+='<p class="tiny" style="margin-top:.5rem">Distinct items missed, not attempts. A tall bar is a skill to work on rather than a word to relearn.</p></div>';
 
-  if(pats.length){
-    h+='<div class="card"><p class="lead" style="font-size:.95rem">Kurma ve Dönüştürme</p>'+
-     '<p class="sub" style="margin-bottom:.5rem">The generated drills are scheduled by pattern rather than by sentence, so these are patterns you are currently getting wrong — not sentences you happened to miss.</p><div class="pillrow">';
-    pats.slice(0,10).forEach(function(p){
+  PAT_CARDS.forEach(function(c){
+    const ps=pats.filter(function(p){return p.m===c[0];});
+    if(!ps.length)return;
+    h+='<div class="card"><p class="lead" style="font-size:.95rem">'+c[1]+'</p>'+
+     '<p class="sub" style="margin-bottom:.5rem">'+c[2]+'</p><div class="pillrow">';
+    ps.slice(0,10).forEach(function(p){
       h+='<span class="pill bole">'+esc(p.tr)+'</span>';
     });
-    h+='</div><button class="btn ghost" onclick="startProd(\'t\')">Dönüştürme · drill these</button></div>';
-  }
+    h+='</div><button class="btn ghost" onclick="startProd(\''+c[0]+'\')">'+c[3]+'</button></div>';
+  });
 
   h+='<h2 class="sec">Son hatalar</h2>';
   errRecent().slice(0,15).forEach(function(e){h+=errRow(e);});

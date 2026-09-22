@@ -195,7 +195,9 @@ const FRAMES={
    en:s=>cap(engV(s.v,s.t,s.p,s.neg))+".",
    tr:s=>capTR(conj(s.v,s.t,s.p,s.neg))+"."},
  obj:{need:["obj"], lab:"nesne · object",
-   en:s=>cap(engV(s.v,s.t,s.p,s.neg))+" "+the(s.n)+".",
+   /* Turkish takes a plain accusative where English sometimes needs a
+      preposition: "otobüsü bekliyorum" is "I am waiting FOR the bus". */
+   en:s=>cap(engV(s.v,s.t,s.p,s.neg))+" "+(s.v.oprep?s.v.oprep+" ":"")+the(s.n)+".",
    tr:s=>capTR(nAcc(s.n))+" "+conj(s.v,s.t,s.p,s.neg)+"."},
  dat:{need:["dat"], lab:"yönelme · to",
    en:s=>{const pr=s.v.prep;
