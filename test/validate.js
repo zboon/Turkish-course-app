@@ -54,13 +54,13 @@ const sandbox = {};
 try {
   vm.createContext(sandbox);
   vm.runInContext(code.slice(0, cut) + "\n" + foldSrc[0] + "\n" + engine +
-    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,fold:fold," +
+    "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,CORE:CORE,fold:fold," +
     "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
 }
-const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, POS, fold } = sandbox.OUT;
+const { LEVELS, UNITS, PLACEMENT, CHUNKS, LEX, POS, CORE, fold } = sandbox.OUT;
 const M = sandbox.OUT;
 
 /* ---------- helpers ---------- */
@@ -199,6 +199,32 @@ const classCount = {};
 taught.forEach((en, t) => { const c = wordClass(t); classCount[c] = (classCount[c] || 0) + 1; });
 if ((classCount.f || 0) < 80) err("POS", "only " + classCount.f + " verbs found — the -mak/-mek test is not working");
 if ((classCount.n || 0) < 100) err("POS", "only " + classCount.n + " nouns — the default is not being applied");
+
+/* ---------- çekirdek (the core word list) ---------- */
+/* Additive by construction: a core word that the course already teaches
+   is not extra vocabulary, it is a duplicate row in the word list. */
+if (!Array.isArray(CORE) || CORE.length < 200) err("CORE", "expected a few hundred core words, found " + (CORE ? CORE.length : 0));
+else {
+  const seenCore = new Set();
+  CORE.forEach((e, i) => {
+    const at = "CORE[" + i + "]" + (e.t ? ' "' + e.t + '"' : "");
+    if (!str(e.t) || !str(e.en) || !str(e.k)) { err(at, "needs t, en and k"); return; }
+    const key = e.t.toLocaleLowerCase("tr");
+    if (seenCore.has(key)) err(at, "appears twice in the core list");
+    seenCore.add(key);
+    if (taught.has(e.t)) err(at, "is already taught in the course — the core list is meant to add words, not repeat them");
+    if (e.c !== undefined && !["s", "z", "e", "i"].includes(e.c)) err(at, "unknown class " + JSON.stringify(e.c));
+    if (e.c && /(mak|mek)$/.test(e.t.trim())) err(at, "is an infinitive — verbs classify themselves");
+    /* A stray soft hyphen or zero-width space is invisible on screen and
+       breaks every match it touches. */
+    if (/[\u00ad\u200b-\u200d\ufeff]/.test(e.t) || /[\u00ad\u200b-\u200d\ufeff]/.test(e.en))
+      err(at, "contains an invisible character (soft hyphen or zero-width space)");
+    if (TAGS.test(e.t) || TAGS.test(e.en)) warn(at, "carries HTML, which is escaped on screen");
+  });
+  const topics = [...new Set(CORE.map(e => e.k))];
+  if (topics.length < 5) err("CORE", "only " + topics.length + " topics — the list is meant to be grouped");
+  topics.forEach(k => { if (CORE.filter(e => e.k === k).length < 5) warn("CORE", 'topic "' + k + '" has very few words'); });
+}
 
 /* ---------- chunk bank (üretim) ---------- */
 if (!Array.isArray(CHUNKS) || CHUNKS.length < 40) err("CHUNKS", "expected a bank of ~50 prefabs, found " + (CHUNKS ? CHUNKS.length : 0));
@@ -342,6 +368,66 @@ else {
   });
 }
 
+/* ---------- the crest is drawn in three places ---------- */
+/* src/icon.svg is the source. The favicon is that file inlined, so the
+   single published page carries its own icon; crest() redraws it with CSS
+   variables so it can follow the theme. Three copies of one drawing is two
+   chances to change one and forget the others, so check they agree: the
+   favicon byte for byte, the crest on the numbers that set its shape. */
+const svgFile = path.join(root, "src", "icon.svg");
+if (fs.existsSync(svgFile)) {                       // absent when run on a lone dist file
+  const svg = fs.readFileSync(svgFile, "utf8");
+  const minify = t => t.replace(/<!--[\s\S]*?-->/g, "").replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
+  const want = Buffer.from(minify(svg)).toString("base64");
+  const got = /<link rel="icon" href="data:image\/svg\+xml;base64,([A-Za-z0-9+/=]+)">/.exec(html);
+  if (!got) err("icon", "no inline favicon in the build");
+  else if (got[1] !== want) err("icon", "the inline favicon is not src/icon.svg — rebuild the data URI");
+
+  /* Same figure, different notation: the icon names its petals in <defs>,
+     crest() holds them in constants and rotates them in a loop. */
+  const pair = (label, re, text) => {
+    const m = re.exec(text);
+    if (!m) err("icon", "cannot find " + label);
+    return m ? m[1] : null;
+  };
+  const shape = [
+    ["outer petal", /<path id="o" d="([^"]+)"/, /const PETAL_OUT="([^"]+)"/],
+    ["inner petal", /<path id="i" d="([^"]+)"/, /const PETAL_IN="([^"]+)"/]
+  ];
+  shape.forEach(([label, inSvg, inApp]) => {
+    const a = pair(label + " in src/icon.svg", inSvg, svg);
+    const b = pair(label + " in crest()", inApp, code);
+    if (a && b && a !== b) err("icon", label + " differs: icon.svg has " + a + ", crest() has " + b);
+  });
+  /* Colours. crest() fills from --crest-*, which sit outside the light and
+     dark palettes precisely so the crest stays the icon; check the two
+     agree element for element, in the order each file draws them. */
+  const rootCss = /:root\{([^}]*)\}/.exec(html);
+  const vars = {};
+  if (rootCss) rootCss[1].replace(/(--crest-[a-z]+)\s*:\s*(#[0-9A-Fa-f]{6})/g, (_, k, v) => vars[k] = v.toUpperCase());
+  const baked = (svg.slice(svg.indexOf("<g transform")).match(/(?:fill|stroke)="(#[0-9A-Fa-f]{6})"/g) || [])
+    .map(x => x.slice(x.indexOf("#"), -1).toUpperCase());
+  const named = (code.slice(code.indexOf("function crest(")).match(/var\(--crest-[a-z]+\)/g) || [])
+    .map(x => x.slice(4, -1));
+  if (named.length !== baked.length) {
+    err("icon", "crest() paints " + named.length + " elements, src/icon.svg " + baked.length);
+  } else {
+    named.forEach((v, i) => {
+      if (!vars[v]) err("icon", v + " is used by crest() but not defined on :root");
+      else if (vars[v] !== baked[i]) err("icon", v + " is " + vars[v] + " but src/icon.svg paints that element " + baked[i]);
+    });
+  }
+
+  /* Radii and the gold band, in the order both files draw them. */
+  const nums = t => (t.match(/(?:r|stroke-width)="(\d+)"/g) || []).map(x => x.replace(/\D/g, "")).join(",");
+  const svgNums = nums(svg.slice(svg.indexOf("<g transform")));
+  const appNums = nums(code.slice(code.indexOf("function crest(")));
+  if (svgNums && appNums && !appNums.startsWith(svgNums)) {
+    err("icon", "crest() draws different circles (" + appNums.split(",").slice(0, 6).join(",") +
+      ") from src/icon.svg (" + svgNums + ")");
+  }
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -357,5 +443,5 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   " graded lines · " + drills + " drills · " + PLACEMENT.length + " placement questions · " +
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
-  taught.size + " distinct words in " + Object.keys(classCount).length + " classes" +
+  taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

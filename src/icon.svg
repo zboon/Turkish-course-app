@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Türkçe">
+  <!-- İznik rosette: eight rumi petals round a hatayi centre inside a gold
+       band. crest() in src/app.core.js draws the same figure with CSS
+       variables so it follows the theme; this file bakes the colours in,
+       because an icon has no stylesheet. test/validate.js keeps the two,
+       and the inline favicon in src/shell.head.html, from drifting. -->
+  <rect width="512" height="512" fill="#EFEADC"/>
+  <g transform="translate(256 256)">
+    <circle r="212" fill="#173A6B"/>
+    <circle r="193" fill="none" stroke="#AF7F32" stroke-width="7"/>
+    <defs>
+      <path id="o" d="M0 -172C40 -126 48 -86 0 -48C-48 -86-40 -126 0 -172Z"/>
+      <path id="i" d="M0 -150C24 -118 28 -92 0 -66C-28 -92-24 -118 0 -150Z"/>
+    </defs>
+    <g fill="#1F7D79"><use href="#o"/><use href="#o" transform="rotate(45)"/><use href="#o" transform="rotate(90)"/><use href="#o" transform="rotate(135)"/><use href="#o" transform="rotate(180)"/><use href="#o" transform="rotate(225)"/><use href="#o" transform="rotate(270)"/><use href="#o" transform="rotate(315)"/></g>
+    <g fill="#EFEADC"><use href="#i"/><use href="#i" transform="rotate(45)"/><use href="#i" transform="rotate(90)"/><use href="#i" transform="rotate(135)"/><use href="#i" transform="rotate(180)"/><use href="#i" transform="rotate(225)"/><use href="#i" transform="rotate(270)"/><use href="#i" transform="rotate(315)"/></g>
+    <circle r="56" fill="#9E3327"/>
+    <circle r="34" fill="#AF7F32"/>
+    <circle r="14" fill="#EFEADC"/>
+  </g>
+</svg>

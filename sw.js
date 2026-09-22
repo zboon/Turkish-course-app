@@ -1,6 +1,7 @@
 /* Bump CACHE on every release or phones keep serving the old build. */
-const CACHE = "turkce-v2.20";
-const ASSETS = ["./", "./index.html", "./manifest.json"];
+const CACHE = "turkce-v2.31";
+const ASSETS = ["./", "./index.html", "./manifest.json",
+  "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
