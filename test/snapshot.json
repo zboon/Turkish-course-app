@@ -1,5 +1,5 @@
 {
- "home": "5c55f62b7cd6ac1a",
+ "home": "3055ac7912f76763",
  "level:A1": "f72cc0f01ba42ccd",
  "level:A2": "2001ce9f06b1f75c",
  "level:B1": "05736529a3ceee02",
@@ -246,7 +246,7 @@
  "unit:c2u10:g": "065f66bc8771f0ad",
  "unit:c2u10:r": "d5ecb975f359a326",
  "unit:c2u10:d": "ad4f8d04a8c7b5d4",
- "about": "4ef6e018067d42ae",
+ "about": "984fa43884d5a49d",
  "words:empty": "29637dd080de7b22",
  "dict": "8d8297253b533d1a",
  "dict:n": "46c3da1795505c32",
@@ -299,10 +299,14 @@
  "yolda:model": "459f370a0bf7c15f",
  "yolda:marking": "7570057e8e3c7c11",
  "yolda:marking:missed": "c0c2cb0b2b8d27cf",
- "home:plan": "fe91d9870901a1a8",
- "home:plan:resume": "55ade06a8c4dbc9e",
- "home:tips-hidden": "65e8af5508eaadcd",
- "about:tips-hidden": "11a19d75d4de524e",
+ "hata:empty": "340f35a0803bb84c",
+ "hata": "53f0b85cef863c3b",
+ "hata:patterns": "b51ab23e958f5b93",
+ "hata:forgotten": "e55a4f3f4255979e",
+ "home:plan": "a49907ac589e8c14",
+ "home:plan:resume": "080acaab4f163a51",
+ "home:tips-hidden": "ca55139dbc395e61",
+ "about:tips-hidden": "28e50954a22bfdff",
  "words:full": "24bc7db87c2fa2ed",
  "cards": "f45c9d8b31c853e8",
  "cards:flip": "0f71e44731bb8c19",
@@ -313,5 +317,5 @@
  "retell": "166a324284abd246",
  "__pure": "4d3303857e21e992",
  "__pureForms": 2432,
- "__screens": 312
+ "__screens": 316
 }

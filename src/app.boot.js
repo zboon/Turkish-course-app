@@ -24,6 +24,7 @@ function render(){
   else if(v==="gramrun")renderGramRun();
   else if(v==="yolda")renderYolda();
   else if(v==="yoldarun")renderYoldaRun();
+  else if(v==="hata")renderHata();
   else renderHome();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){

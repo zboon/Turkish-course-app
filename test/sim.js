@@ -1317,6 +1317,142 @@ step("yolda · a sitting that runs without you", () => {
   ev("YL=null;");
 });
 
+/* The mistake book. Seven modes can tell a learner they were wrong and
+   every one of them has to reach the same store, keyed the same way, or
+   the count — the whole point — is wrong. */
+step("hata defteri · every mode reaches the same book", () => {
+  ev("wipe()"); ev("setScope('done')");
+  ok(ev("errList().length") === 0, "wipe left mistakes behind");
+  ev("go('hata')");
+  ok(/Defter boş/.test(lastPaint), "the empty book does not say so");
+
+  /* The quiz, which is the only place a `why` exists. */
+  ev("startUnitQuiz('a1u1')");
+  const it0 = ev("Q.items[0]");
+  ev("answerMC(" + (it0.c === 0 ? 3 : 0) + ")");
+  const e0 = ev("S.err['q:a1u1#0']");
+  ok(!!e0, "a wrong multiple choice was not recorded");
+  ok(e0.c === it0.a[it0.c], "the recorded answer is not the right one");
+  ok(e0.w === it0.why, "the explanation was dropped — it is the reason this exists");
+  ok(e0.to === "a1u1", "the entry does not say which unit it came from");
+  ok(e0.n === 1, "a first miss counted as " + e0.n);
+
+  /* Missing the same drill again counts rather than duplicating: keyed by
+     the item, so "four times" is answerable. A log could not say that. */
+  ev("startUnitQuiz('a1u1')");
+  ev("answerMC(" + (it0.c === 0 ? 3 : 0) + ")");
+  ok(ev("S.err['q:a1u1#0'].n") === 2, "a repeat did not raise the count");
+  ok(ev("errList().length") === 1, "a repeat made a second entry");
+  ok(ev("errRepeat().length") === 1, "the repeat list is empty after two misses");
+
+  /* A right answer must not write anything — checked on the COUNT, not
+     the length: the entry already exists, so recording it again bumps n
+     and leaves the length alone. */
+  const n0 = ev("errList().length"), c0 = ev("S.err['q:a1u1#0'].n");
+  ev("startUnitQuiz('a1u1')"); ev("answerMC(" + it0.c + ")");
+  ok(ev("errList().length") === n0, "a correct answer added an entry");
+  ok(ev("S.err['q:a1u1#0'].n") === c0, "a correct answer raised the miss count to " +
+     ev("S.err['q:a1u1#0'].n"));
+
+  /* The other five modes, each with its own key prefix. */
+  ev("wipe()");
+  ev("go('unit','a1u1','v')"); ev("go('unit','a1u1','r')"); ev("go('unit','a1u1','g')");
+  ev("startProd('s')"); ev("prodModel()"); ev("prodMark(false)");
+  ev("startDinle('d')"); doc.getElementById("dbox").value = "tamamen yanlis"; ev("dikteCheck()");
+  ev("startDinle('a')"); ev("hearReveal()"); ev("hearMark(false)");
+  ev("startTekrar()"); doc.getElementById("tbox").value = "yanlis"; ev("tkCheck()");
+  ev("startGram()"); doc.getElementById("gbox").value = "yanlis"; ev("grCheck()");
+  const by = ev("errByMode()");
+  ["s", "d", "a", "r", "y"].forEach(m => ok(by[m] >= 1, "mode " + m + " never reached the book"));
+  ok(ev("errList().every(function(e){return !!e.c})"), "an entry has no right answer to show");
+  ok(ev("errList().every(function(e){return e.n>=1})"), "an entry was recorded with no count");
+
+  /* Dikte and Ses önce are the same sentence and must NOT collapse: one
+     can be easy to recognise and hard to transcribe, which is why the two
+     prefixes are separate in S.dinle to begin with. */
+  ok(ev("!!S.err['d:a1u1#0']") && ev("!!S.err['a:a1u1#0']"),
+     "dictation and audio-first collapsed into one entry");
+
+  /* A mark the learner overrules is not a mistake, and withdrawing it
+     must not re-render in the middle of grading. */
+  ev("wipe()"); ev("go('unit','a1u1','g')");
+  ev("startGram()"); doc.getElementById("gbox").value = "hiç doğru olmayan";
+  ev("grCheck()");
+  ok(ev("errList().length") === 1, "the grammar miss was not recorded");
+  ev("grAccept()");
+  ok(ev("errList().length") === 0, "overruling the mark left the mistake in the book");
+  ok(ev("V.view") === "gramrun", "withdrawing an entry navigated away mid-grade");
+
+  /* Yolda writes nothing until the marking is confirmed, like its own
+     schedule, and records only what was actually marked missed. */
+  ev("wipe()"); ev("go('unit','a1u1','r')");
+  ev("startYolda(5)"); drain(60000);
+  ok(ev("errList().length") === 0, "the drive wrote mistakes before it was marked");
+  const cov = ev("yolCovered().map(function(i){return i.k})");
+  ev("yolMiss(" + q(cov[0]) + ")");
+  ok(ev("errList().length") === 0, "marking wrote before Kaydet");
+  ev("yolSave()");
+  ok(ev("errList().length") === 1, "Kaydet recorded " + ev("errList().length") +
+     " mistakes where one was marked out of " + cov.length);
+  ev("YL=null;");
+
+  /* Bounded, and what it throws away is the least repeated — not the
+     oldest. Ranking on age drops the nine-time mistake to keep this
+     morning's slips, which is exactly backwards. */
+  ev("wipe()"); ev("S.err={};");
+  ev("S.err['old:often']={m:'q',q:'a',c:'b',a:'',w:'',to:'',at:dayNum()-400,n:9};");
+  ev("S.err['old:once']={m:'q',q:'a',c:'b',a:'',w:'',to:'',at:dayNum()-400,n:1};");
+  ev("for(var i=0;i<400;i++)S.err['new:'+i]={m:'q',q:'a',c:'b',a:'',w:'',to:'',at:dayNum(),n:1};");
+  ev("errTrim()");
+  ok(ev("Object.keys(S.err).length") === ev("ERR_MAX"), "the book is not bounded");
+  ok(ev("!!S.err['old:often']"), "a mistake made nine times was evicted to keep one-off slips");
+  ok(!ev("!!S.err['old:once']"), "an old one-off survived the trim");
+
+  /* The hub: the repeat list, the why, the weak-spot read, and the one
+     thing the app already knows in patterns rather than sentences. */
+  ev("wipe()"); ev("go('unit','a1u1','g')");
+  ev("startUnitQuiz('a1u1')"); ev("answerMC(" + (it0.c === 0 ? 3 : 0) + ")");
+  ev("startUnitQuiz('a1u1')"); ev("answerMC(" + (it0.c === 0 ? 3 : 0) + ")");
+  /* Both pattern shapes: a transformation keys "t:<move>" and a built
+     sentence keys "g:<frame>:<tense>", and they are read back by
+     different branches. Exercising only one left the other unchecked. */
+  ev("startProd('t')"); ev("prodModel()"); ev("prodMark(false)");
+  ev("startProd('g')"); ev("prodModel()"); ev("prodMark(false)");
+  ok(ev("errPatterns().some(function(p){return p.k.indexOf('t:')===0})"), "no transformation pattern was read back");
+  ok(ev("errPatterns().some(function(p){return p.k.indexOf('g:')===0})"), "no frame pattern was read back");
+  ev("go('hata')");
+  ok(/Tekrarlayanlar/.test(lastPaint), "the repeat section is missing");
+  ok(lastPaint.indexOf(esc(it0.why)) > -1, "the hub does not show the explanation");
+  ok(/Nerede zayıfsın/.test(lastPaint), "the weak-spot read is missing");
+  ok(ev("errPatterns().length") > 0, "a missed generated pattern is not read back");
+  /* Named by the frame or move, not by the raw storage key: "g:obj:past"
+     is not something to show a learner. */
+  ok(ev("errPatterns().every(function(p){return !!p.tr&&p.tr.indexOf('undefined')<0})"),
+     "a pattern renders as undefined: " + q(ev("errPatterns()")));
+  ok(ev("errPatterns().every(function(p){return p.tr!==p.k&&p.tr.indexOf(':')<0})"),
+     "a pattern is shown as its storage key: " + q(ev("errPatterns()")));
+  ok(/Kurma ve Dönüştürme/.test(lastPaint), "the pattern card is missing");
+
+  /* Clearing one entry, and the book, without touching the schedules. */
+  const prodBefore = ev("Object.keys(S.prod).length");
+  ev("errForget('q:a1u1#0')");
+  ok(!ev("!!S.err['q:a1u1#0']"), "'artık biliyorum' did not remove the entry");
+  ok(ev("Object.keys(S.prod).length") === prodBefore, "clearing an entry touched a schedule");
+  ev("errWipe()");
+  ok(ev("errList().length") === 0, "the book did not clear");
+  ok(ev("Object.keys(S.prod).length") === prodBefore, "clearing the book touched the schedules");
+
+  /* Progress, not a setting: a backup carries it, a wipe does not. */
+  ev("startUnitQuiz('a1u1')"); ev("answerMC(" + (it0.c === 0 ? 3 : 0) + ")");
+  const saved = ev("JSON.stringify(S)");
+  ev("wipe()");
+  ok(ev("errList().length") === 0, "wipe kept the mistake book");
+  ev("go('about')");
+  doc.getElementById("iobox").value = saved;
+  ev("importBox()");
+  ok(ev("errList().length") === 1, "restore lost the mistake book");
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");

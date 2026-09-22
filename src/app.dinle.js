@@ -100,6 +100,7 @@ function dikteCheck(){
   const good=dictPass(DK.res);
   dinleGrade(it.k,good);
   if(good)DK.right++;
+  else errNote(it.k,{m:"d",q:it.en,c:it.tr,a:DK.typed,to:errUnitOf(it.k)});
   DK.phase="check";window.scrollTo(0,0);render();
 }
 function hearReveal(){
@@ -112,6 +113,7 @@ function hearMark(good){
   const it=DK.q[DK.i]; if(!it)return;
   dinleGrade(it.k,good);
   if(good)DK.right++;
+  else errNote(it.k,{m:"a",q:it.en,c:it.tr,to:errUnitOf(it.k)});
   dinleNext();
 }
 function dinleSay(){

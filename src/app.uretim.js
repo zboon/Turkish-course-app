@@ -158,6 +158,7 @@ function prodMark(good){
   const it=PR&&PR.q[PR.i];if(!it)return;
   prodGradeKey(it.k,good);
   if(good)PR.right++;
+  else errNote(it.k,{m:"s",q:it.en,c:it.tr,to:errUnitOf(it.k)});
   /* A sentence you could not produce is the one worth building up. */
   if(!good&&clauseSplit(it.tr).length>1){prodBuild();return;}
   prodNext();
