@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v2.30";
+const APP_VERSION="v2.31";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -73,6 +73,34 @@ function spkBtn(text,o){
 }
 function starBtn(on,click,aria){
   return '<button class="star '+(on?"on":"")+'" onclick="'+click+'" aria-label="'+aria+'">'+IC.star+'</button>';
+}
+
+/* ===================== arma · the crest ===================== */
+/* The İznik rosette the app is named by: eight rumi petals round a hatayi
+   centre, inside a gold band. It is drawn in three places — src/icon.svg
+   with the colours baked in, because an icon has no stylesheet; that file
+   inlined as the favicon, so the single published page carries its own
+   icon; and here. This copy fills from --crest-*, which deliberately sit
+   outside the light and dark palettes: a crest is a painted object, and
+   inverting it turns glazed tile into pastel. The petals are emitted in a
+   loop rather than with <use> because two crests on one screen would
+   collide on the same element ids. validate.js checks that all three
+   still draw the same figure in the same colours. */
+const PETAL_OUT="M0 -172C40 -126 48 -86 0 -48C-48 -86-40 -126 0 -172Z";
+const PETAL_IN="M0 -150C24 -118 28 -92 0 -66C-28 -92-24 -118 0 -150Z";
+function petals(d,fill){
+  let s="";
+  for(let i=0;i<8;i++) s+='<path d="'+d+'" fill="'+fill+'" transform="rotate('+(i*45)+')"/>';
+  return s;
+}
+function crest(px){
+  return '<svg class="crest" width="'+px+'" height="'+px+'" viewBox="0 0 512 512" '+
+    'aria-hidden="true" focusable="false"><g transform="translate(256 256)">'+
+    '<circle r="212" fill="var(--crest-ground)"/>'+
+    '<circle r="193" fill="none" stroke="var(--crest-band)" stroke-width="7"/>'+
+    petals(PETAL_OUT,"var(--crest-petal)")+petals(PETAL_IN,"var(--crest-inner)")+
+    '<circle r="56" fill="var(--crest-heart)"/><circle r="34" fill="var(--crest-band)"/>'+
+    '<circle r="14" fill="var(--crest-inner)"/></g></svg>';
 }
 
 /* ===================== voice ===================== */

@@ -27,7 +27,10 @@ cat \
   src/shell.foot.html \
   > "$OUT"
 
-cp -f sw.js manifest.json dist/ 2>/dev/null || true
+# The page is self-contained, but the Pages copy also serves a manifest,
+# a worker and the icon files it names.
+cp -f sw.js manifest.json dist/
+cp -f src/icon.svg src/icon-192.png src/icon-512.png dist/
 
 # Smoke test: does the inlined script parse at all?
 node test/parse.js "$OUT"

@@ -116,6 +116,32 @@ copyright status; teach the language around them and point the learner to the
 full text elsewhere. The Mevlid unit (c1u7) is the model: it describes the
 gathering and the tradition without reproducing Süleyman Çelebi's lines.
 
+## The crest
+
+`src/icon.svg` is the İznik rosette the app is named by, and the source of
+truth for it. The same figure is drawn in two other places, because it has
+to be:
+
+- **The favicon** — `src/icon.svg` minified and base64'd into a `data:` URI
+  in `shell.head.html`, so the published single file carries its own icon
+  with nothing to fetch.
+- **`crest(px)`** in `app.core.js` — the home screen mark, filled from
+  `--crest-*` rather than baked hex. Those variables sit *outside* the light
+  and dark palette blocks on purpose: a crest is a painted object, and
+  inverting it in dark mode turns glazed tile into pastel. It looks the same
+  in both themes.
+
+Three copies of one drawing is two chances to change one and forget the
+others, so `validate.js` checks the favicon byte for byte against the file,
+and checks `crest()` on the numbers and colours that set its shape. Change
+the icon and you will hear about it. `src/icon-192.png` and `src/icon-512.png`
+are rendered from the SVG for `manifest.json`; re-render them if the drawing
+changes.
+
+The home hero also carries **تركجه**, Türkçe in the Ottoman script, written
+as \u escapes in `app.screens.js` so a right-to-left run does not scramble
+the line in an editor.
+
 ## Progress storage — do not break it
 
 `localStorage["turkce-course-v1"]`, one object:
@@ -158,7 +184,9 @@ Two independent targets:
    runs all four checks and publishes `dist/` on every push to `main`; the
    Pages source is set to "GitHub Actions", not a branch. `dist/` is
    generated and git-ignored, so there is nothing to commit and nothing to
-   copy by hand. Still bump `APP_VERSION` in `src/app.core.js` **and** `CACHE` in
+   copy by hand. `build.sh` also copies `sw.js`, `manifest.json` and the
+   three icon files into `dist/`; the artifact copy has none of them and the
+   requests fail silently there. Still bump `APP_VERSION` in `src/app.core.js` **and** `CACHE` in
    `sw.js` together on every release, then open the app twice to clear the
    old worker — the workflow does not do this for you, and a stale worker is
    the one bug that makes a shipped change look like it never shipped.
@@ -167,9 +195,13 @@ Two independent targets:
 
 - Interface language is Turkish with English underneath (`Kelimeler · words`).
   Learner-facing prose is plain English, no exclamation marks, no cheerleading.
-- Palette is İznik: cobalt `--cobalt`, turquoise `--turk`, bole red `--bole`,
-  gold `--gold`, ivory paper. Red is for wrong answers only. Gold is for
-  bookmarks, glosses and "test ahead".
+- Palette is İznik, at tile-glaze strength: cobalt `--cobalt` #173A6B,
+  turquoise `--turk` #1F7D79, bole red `--bole` #9E3327, gold `--gold`
+  #AF7F32, ivory paper #EFEADC. Red is for wrong answers only. Gold is for
+  bookmarks, glosses, "test ahead" and the ornament.
+- Ornament is Ottoman and restrained — illumination framed the text rather
+  than crowding it. One gold hairline runs out of each section heading
+  (`h2.sec::after`) and stops. Resist adding more.
 - Type: Crimson Pro for Turkish text and display, Karla for interface.
 - Everything is `innerHTML` + inline `onclick` calling globals — deliberate, it
   survives a full re-render with no framework. `render()` redraws the whole

@@ -368,6 +368,66 @@ else {
   });
 }
 
+/* ---------- the crest is drawn in three places ---------- */
+/* src/icon.svg is the source. The favicon is that file inlined, so the
+   single published page carries its own icon; crest() redraws it with CSS
+   variables so it can follow the theme. Three copies of one drawing is two
+   chances to change one and forget the others, so check they agree: the
+   favicon byte for byte, the crest on the numbers that set its shape. */
+const svgFile = path.join(root, "src", "icon.svg");
+if (fs.existsSync(svgFile)) {                       // absent when run on a lone dist file
+  const svg = fs.readFileSync(svgFile, "utf8");
+  const minify = t => t.replace(/<!--[\s\S]*?-->/g, "").replace(/>\s+</g, "><").replace(/\s+/g, " ").trim();
+  const want = Buffer.from(minify(svg)).toString("base64");
+  const got = /<link rel="icon" href="data:image\/svg\+xml;base64,([A-Za-z0-9+/=]+)">/.exec(html);
+  if (!got) err("icon", "no inline favicon in the build");
+  else if (got[1] !== want) err("icon", "the inline favicon is not src/icon.svg — rebuild the data URI");
+
+  /* Same figure, different notation: the icon names its petals in <defs>,
+     crest() holds them in constants and rotates them in a loop. */
+  const pair = (label, re, text) => {
+    const m = re.exec(text);
+    if (!m) err("icon", "cannot find " + label);
+    return m ? m[1] : null;
+  };
+  const shape = [
+    ["outer petal", /<path id="o" d="([^"]+)"/, /const PETAL_OUT="([^"]+)"/],
+    ["inner petal", /<path id="i" d="([^"]+)"/, /const PETAL_IN="([^"]+)"/]
+  ];
+  shape.forEach(([label, inSvg, inApp]) => {
+    const a = pair(label + " in src/icon.svg", inSvg, svg);
+    const b = pair(label + " in crest()", inApp, code);
+    if (a && b && a !== b) err("icon", label + " differs: icon.svg has " + a + ", crest() has " + b);
+  });
+  /* Colours. crest() fills from --crest-*, which sit outside the light and
+     dark palettes precisely so the crest stays the icon; check the two
+     agree element for element, in the order each file draws them. */
+  const rootCss = /:root\{([^}]*)\}/.exec(html);
+  const vars = {};
+  if (rootCss) rootCss[1].replace(/(--crest-[a-z]+)\s*:\s*(#[0-9A-Fa-f]{6})/g, (_, k, v) => vars[k] = v.toUpperCase());
+  const baked = (svg.slice(svg.indexOf("<g transform")).match(/(?:fill|stroke)="(#[0-9A-Fa-f]{6})"/g) || [])
+    .map(x => x.slice(x.indexOf("#"), -1).toUpperCase());
+  const named = (code.slice(code.indexOf("function crest(")).match(/var\(--crest-[a-z]+\)/g) || [])
+    .map(x => x.slice(4, -1));
+  if (named.length !== baked.length) {
+    err("icon", "crest() paints " + named.length + " elements, src/icon.svg " + baked.length);
+  } else {
+    named.forEach((v, i) => {
+      if (!vars[v]) err("icon", v + " is used by crest() but not defined on :root");
+      else if (vars[v] !== baked[i]) err("icon", v + " is " + vars[v] + " but src/icon.svg paints that element " + baked[i]);
+    });
+  }
+
+  /* Radii and the gold band, in the order both files draw them. */
+  const nums = t => (t.match(/(?:r|stroke-width)="(\d+)"/g) || []).map(x => x.replace(/\D/g, "")).join(",");
+  const svgNums = nums(svg.slice(svg.indexOf("<g transform")));
+  const appNums = nums(code.slice(code.indexOf("function crest(")));
+  if (svgNums && appNums && !appNums.startsWith(svgNums)) {
+    err("icon", "crest() draws different circles (" + appNums.split(",").slice(0, 6).join(",") +
+      ") from src/icon.svg (" + svgNums + ")");
+  }
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);

@@ -20,7 +20,11 @@ function renderHome(){
 
   let h='<div class="bar"><div class="bar-in"><div style="width:34px"></div><div class="bar-title">Türkçe<small>A1 → C2</small></div>'+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button></div></div>';
-  h+='<div class="wrap"><div class="hero"><h1 class="mark">türkçe<span class="dot">.</span></h1>'+
+  /* \u062A\u0631\u0643\u062C\u0647 is Türkçe in the Ottoman script, written as
+     escapes so a right-to-left run does not scramble this line in an editor. */
+  h+='<div class="wrap"><div class="hero">'+crest(76)+
+   '<h1 class="mark">Türkçe</h1>'+
+   '<p class="osm" dir="rtl" lang="ota" translate="no">\u062A\u0631\u0643\u062C\u0647</p>'+
    '<p class="tag">A reading course from first words to literature</p></div>'+road;
 
   h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>units done</span></div>'+

@@ -5,18 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Türkçe · A1–C2</title>
 <meta name="description" content="A self-paced Turkish course from A1 to C2, built around graded reading from Turkish literature.">
+<meta name="theme-color" content="#173A6B" media="(prefers-color-scheme:light)">
+<meta name="theme-color" content="#10161E" media="(prefers-color-scheme:dark)">
+<!-- The crest is inlined so the single published file carries its own icon.
+     src/icon.svg is the source; validate.js fails if the two drift apart.
+     manifest.json and the touch icon only resolve on the Pages copy — the
+     published artifact is one file and has neither. -->
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlTDvHJrw6dlIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iI0VGRUFEQyIvPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDI1NiAyNTYpIj48Y2lyY2xlIHI9IjIxMiIgZmlsbD0iIzE3M0E2QiIvPjxjaXJjbGUgcj0iMTkzIiBmaWxsPSJub25lIiBzdHJva2U9IiNBRjdGMzIiIHN0cm9rZS13aWR0aD0iNyIvPjxkZWZzPjxwYXRoIGlkPSJvIiBkPSJNMCAtMTcyQzQwIC0xMjYgNDggLTg2IDAgLTQ4Qy00OCAtODYtNDAgLTEyNiAwIC0xNzJaIi8+PHBhdGggaWQ9ImkiIGQ9Ik0wIC0xNTBDMjQgLTExOCAyOCAtOTIgMCAtNjZDLTI4IC05Mi0yNCAtMTE4IDAgLTE1MFoiLz48L2RlZnM+PGcgZmlsbD0iIzFGN0Q3OSI+PHVzZSBocmVmPSIjbyIvPjx1c2UgaHJlZj0iI28iIHRyYW5zZm9ybT0icm90YXRlKDQ1KSIvPjx1c2UgaHJlZj0iI28iIHRyYW5zZm9ybT0icm90YXRlKDkwKSIvPjx1c2UgaHJlZj0iI28iIHRyYW5zZm9ybT0icm90YXRlKDEzNSkiLz48dXNlIGhyZWY9IiNvIiB0cmFuc2Zvcm09InJvdGF0ZSgxODApIi8+PHVzZSBocmVmPSIjbyIgdHJhbnNmb3JtPSJyb3RhdGUoMjI1KSIvPjx1c2UgaHJlZj0iI28iIHRyYW5zZm9ybT0icm90YXRlKDI3MCkiLz48dXNlIGhyZWY9IiNvIiB0cmFuc2Zvcm09InJvdGF0ZSgzMTUpIi8+PC9nPjxnIGZpbGw9IiNFRkVBREMiPjx1c2UgaHJlZj0iI2kiLz48dXNlIGhyZWY9IiNpIiB0cmFuc2Zvcm09InJvdGF0ZSg0NSkiLz48dXNlIGhyZWY9IiNpIiB0cmFuc2Zvcm09InJvdGF0ZSg5MCkiLz48dXNlIGhyZWY9IiNpIiB0cmFuc2Zvcm09InJvdGF0ZSgxMzUpIi8+PHVzZSBocmVmPSIjaSIgdHJhbnNmb3JtPSJyb3RhdGUoMTgwKSIvPjx1c2UgaHJlZj0iI2kiIHRyYW5zZm9ybT0icm90YXRlKDIyNSkiLz48dXNlIGhyZWY9IiNpIiB0cmFuc2Zvcm09InJvdGF0ZSgyNzApIi8+PHVzZSBocmVmPSIjaSIgdHJhbnNmb3JtPSJyb3RhdGUoMzE1KSIvPjwvZz48Y2lyY2xlIHI9IjU2IiBmaWxsPSIjOUUzMzI3Ii8+PGNpcmNsZSByPSIzNCIgZmlsbD0iI0FGN0YzMiIvPjxjaXJjbGUgcj0iMTQiIGZpbGw9IiNFRkVBREMiLz48L2c+PC9zdmc+">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --paper:#F0EDE4; --card:#FAF8F3; --sunk:#E7E2D6;
+  --paper:#EFEADC; --card:#FBF8F0; --sunk:#E4DDCB;
   --ink:#1B2430; --ink2:#4A5566; --faint:#8A93A1;
-  --line:#D8D2C4;
-  --cobalt:#1D3F73; --cobalt-soft:#E3E8F1;
-  --turk:#2C8B86; --turk-soft:#DDEDEB;
-  --bole:#A6382C; --bole-soft:#F3E0DC;
-  --gold:#B8873B; --gold-soft:#F2E7D0;
+  --line:#D6CDB8;
+  --cobalt:#173A6B; --cobalt-soft:#E1E7F0;
+  --turk:#1F7D79; --turk-soft:#D9EAE8;
+  --bole:#9E3327; --bole-soft:#F2DEDA;
+  --gold:#AF7F32; --gold-soft:#F1E4CB;
+
+  /* The crest is a painted object rather than chrome, so it keeps its
+     glaze in both themes and these are deliberately outside the light and
+     dark blocks below. They are the colours baked into src/icon.svg —
+     validate.js fails if the two ever disagree. */
+  --crest-ground:#173A6B; --crest-band:#AF7F32; --crest-petal:#1F7D79;
+  --crest-inner:#EFEADC; --crest-heart:#9E3327;
   --shadow:0 1px 0 rgba(27,36,48,.05);
   --r:14px;
   box-sizing:border-box;
@@ -25,24 +41,24 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --paper:#111821; --card:#18212C; --sunk:#0C1219;
-    --ink:#E9E4D8; --ink2:#AEB6C1; --faint:#78828F;
+    --paper:#10161E; --card:#18202B; --sunk:#0B1118;
+    --ink:#EDE6D6; --ink2:#AEB6C1; --faint:#78828F;
     --line:#2A3542;
-    --cobalt:#7FA6DE; --cobalt-soft:#1B2A3F;
+    --cobalt:#88ACE0; --cobalt-soft:#1B2A3F;
     --turk:#4FBFB6; --turk-soft:#13302F;
     --bole:#E08476; --bole-soft:#33201D;
-    --gold:#D8AC62; --gold-soft:#2C2416;
+    --gold:#DCB169; --gold-soft:#2C2416;
     --shadow:none;
   }
 }
 :root[data-theme="dark"]{
-  --paper:#111821; --card:#18212C; --sunk:#0C1219;
-  --ink:#E9E4D8; --ink2:#AEB6C1; --faint:#78828F;
+  --paper:#10161E; --card:#18202B; --sunk:#0B1118;
+  --ink:#EDE6D6; --ink2:#AEB6C1; --faint:#78828F;
   --line:#2A3542;
-  --cobalt:#7FA6DE; --cobalt-soft:#1B2A3F;
+  --cobalt:#88ACE0; --cobalt-soft:#1B2A3F;
   --turk:#4FBFB6; --turk-soft:#13302F;
   --bole:#E08476; --bole-soft:#33201D;
-  --gold:#D8AC62; --gold-soft:#2C2416;
+  --gold:#DCB169; --gold-soft:#2C2416;
   --shadow:none;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -78,13 +94,21 @@ a{color:var(--cobalt)}
 .wrap{max-width:620px;margin:0 auto;padding:1.1rem .9rem 5rem}
 
 /* ---------- hero ---------- */
-.hero{padding:1.6rem 0 .4rem;text-align:center}
+.hero{padding:1.5rem 0 .4rem;text-align:center}
+.crest{display:block;width:76px;height:76px;margin:0 auto .6rem}
 .mark{
   font-family:'Crimson Pro',Georgia,serif; font-weight:600;
   font-size:clamp(2.6rem,12vw,3.4rem); line-height:1; letter-spacing:-.01em; margin:0;
 }
-.mark .dot{color:var(--bole)}
-.tag{margin:.45rem 0 0;color:var(--faint);font-size:.83rem}
+/* The Ottoman spelling of the app's own name. Every device that can show
+   Turkish also ships an Arabic face, but the stack ends in serif so a
+   machine without one degrades to a shrug rather than a row of boxes. */
+.osm{
+  margin:.3rem 0 0; color:var(--gold); line-height:1;
+  font-family:'Noto Naskh Arabic','Geeza Pro','Scheherazade New','Times New Roman',serif;
+  font-size:1.25rem;
+}
+.tag{margin:.5rem 0 0;color:var(--faint);font-size:.83rem}
 
 /* the road: A1 -> C2 */
 .road{margin:1.5rem 0 .3rem;position:relative}
@@ -110,9 +134,17 @@ button.card,a.card{display:block;width:100%;text-align:left;text-decoration:none
 .row{display:flex;align-items:center;gap:.75rem}
 .grow{flex:1;min-width:0}
 .chev{color:var(--faint);flex:0 0 auto}
+/* Illumination framed the text rather than crowding it: a gold hairline
+   runs out of each section heading and stops. Decorative only — the
+   headings themselves hold a single line of text, so the flex is safe. */
 h2.sec{
   font-family:'Karla',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.06em;
   color:var(--faint);margin:1.7rem .2rem .5rem;
+  display:flex;align-items:center;gap:.6rem;
+}
+h2.sec::after{
+  content:"";flex:1;height:1px;
+  background:linear-gradient(90deg,var(--gold),transparent);opacity:.45;
 }
 .lead{font-weight:600;font-size:1.02rem;margin:0}
 .sub{color:var(--ink2);font-size:.84rem;margin:.15rem 0 0}
