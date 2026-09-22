@@ -408,6 +408,238 @@ function renderTekrarRun(){
   }
 }
 
+/* ===================== dilbilgisi · grammar repetition ===================== */
+/* The same hole the word engine filled, one level up. Each unit carries
+   one grammar point, and `u.gram` renders in exactly one place — the
+   unit's Dilbilgisi tab. Read it once and the course never asks for it
+   again. Sixty points, met once each.
+
+   What comes back here is the POINT, not a sentence: `S.gram` is keyed by
+   unit id and the three or four worked examples rotate, so "the passive"
+   returns on a widening schedule and a different sentence carries it each
+   time. Keyed by sentence it would be memorised in a fortnight; keyed by
+   pattern it stays a question about the grammar.
+
+   And it is tested by production — English in, Turkish typed — because
+   recognising what -DIK does is not the skill. The examples are already
+   written in both languages and hand-checked, so the target is a vetted
+   sentence rather than something generated.
+
+   Scoped to points actually met, per CLAUDE.md: reading a B2 unit's word
+   list does not put you in front of its grammar. */
+const GRAM_SESSION=6;
+function metGram(id){return isDone(id)||seenSec(id,"g");}
+function gramBank(){
+  return UNITS.filter(function(u){return metGram(u.id)&&u.gram&&u.gram.eg&&u.gram.eg.length;})
+    .map(function(u){return {k:"y:"+u.id,u:u};});
+}
+function gramDue(){
+  return gramBank().filter(function(it){return isDue(S.gram,it.k);});
+}
+function gramGrade(k,good){
+  if(!S.gram)S.gram={};
+  const had=S.gram[k];
+  const r=bump(S.gram,k,function(b){return good?b+1:0;});
+  r.n=((had&&had.n)||0)+1;           /* which example comes next */
+  save();
+}
+/* The learner overrules the mark. It was just graded, so this replaces
+   that grade rather than stacking another on top of it — from the box
+   the point was on BEFORE the miss — and it must not advance the example
+   counter a second time. */
+function gramAccept(k,pre){
+  if(!S.gram)S.gram={};
+  const n=(S.gram[k]&&S.gram[k].n)||0;
+  bump(S.gram,k,function(){return (pre<0?0:pre)+1;});
+  S.gram[k].n=n;
+  save();
+}
+/* Turkish word order is freer than these English prompts pin down:
+   "I had him write the letter" is as truly "Ona mektubu yazdırdım" as
+   "Mektubu ona yazdırdım", and 162 of the 181 targets would be failed by
+   an order-sensitive judge for a single swap. So the verdict is the bag
+   of words — every word the model has, nothing it does not — while the
+   marked line stays the LCS, which is what names the word whose suffix
+   went wrong. Reordering is reported, not punished. */
+function gramJudge(model,typed){
+  const r=dictScore(model,typed);
+  const bag=function(s){return dictTokens(s).map(function(t){return t.f;}).sort().join(" ");};
+  r.same=bag(model)===bag(typed);
+  r.order=r.same&&!r.clean;
+  return r;
+}
+function gramBox(k){const r=S.gram&&S.gram[k];return r?r.b:-1;}
+function gramItem(it){
+  const u=it.u, eg=u.gram.eg;
+  const n=(S.gram&&S.gram[it.k]&&S.gram[it.k].n)||0;
+  const e=eg[n%eg.length];
+  return {k:it.k,id:u.id,en:e[1],c:e[0],t:u.gram.t,pt:u.gram.en,
+          focus:u.focus,tbl:u.gram.tbl,lv:u.lv,from:u.lv+" · "+u.tr};
+}
+/* Weakest first, and "never drilled" is not a weakness — it sorts after
+   everything that has been asked and missed. */
+function gramWeak(){
+  return gramBank().slice().sort(function(a,b){
+    const x=gramBox(a.k), y=gramBox(b.k);
+    if((x<0)!==(y<0))return x<0?1:-1;
+    return x-y;
+  });
+}
+
+/* --- the run --------------------------------------------------------- */
+let GR=null;
+function startGram(){
+  stopPlay();
+  const q=dueQueue(S.gram,gramBank(),GRAM_SESSION).map(gramItem);
+  if(!q.length){V={view:"gram"};render();return;}
+  GR={q:q,i:0,phase:"ask",typed:"",res:null,right:0,hint:false,pre:-1,over:false};
+  V={view:"gramrun"};window.scrollTo(0,0);
+  touchDay();render();
+}
+function grKeep(){
+  const box=document.getElementById("gbox");
+  if(box&&GR)GR.typed=box.value;
+}
+function grHint(){grKeep();if(GR){GR.hint=true;render();}}
+function grCheck(){
+  if(!GR)return;
+  const it=GR.q[GR.i]; if(!it)return;
+  grKeep();
+  /* Every word, in any order — not dikte's four in five. The examples run
+     four words at the median and the whole question is whether the form
+     came out right, so forgiving one word in four would forgive the
+     point. The marked line still names which word went wrong, which is
+     the part worth reading. */
+  GR.pre=gramBox(it.k);
+  GR.over=false;
+  GR.res=gramJudge(it.c,GR.typed);
+  gramGrade(it.k,GR.res.same);
+  if(GR.res.same)GR.right++;
+  GR.phase="check";render();
+}
+/* A word-level judge can mark words; it cannot mark Turkish. Where the
+   prompt leaves the choice open — a synonym, a tense English does not
+   distinguish, an object the English only implies — the learner knows
+   whether what they wrote was right, and everything else in Üretim is
+   self-graded for exactly that reason. This is the escape hatch, and it
+   is deliberately one tap rather than the default. */
+function grAccept(){
+  if(!GR||GR.phase!=="check"||GR.res.same||GR.over)return;
+  const it=GR.q[GR.i];
+  gramAccept(it.k,GR.pre);
+  GR.over=true;GR.right++;render();
+}
+function grSay(){const it=GR&&GR.q[GR.i];if(it)say(it.c);}
+function grNext(){
+  if(!GR)return;
+  GR.i++;GR.typed="";GR.res=null;GR.hint=false;GR.over=false;GR.pre=-1;GR.phase="ask";window.scrollTo(0,0);
+  if(GR.i>=GR.q.length)GR.phase="end";
+  render();
+}
+
+/* --- screens ---------------------------------------------------------- */
+function renderGram(){
+  const bank=gramBank(), due=gramDue().length, now=Math.min(due,GRAM_SESSION);
+  const firm=bank.filter(function(it){return gramBox(it.k)>=4;}).length;
+  let h=bar("Dilbilgisi tekrarı","grammar · produce it, do not recognise it",true)+'<div class="wrap">';
+  if(!bank.length){
+    h+='<div class="card"><p class="lead">Henüz dilbilgisi yok</p>'+
+     '<p class="sub">This drills the grammar points you have read. Open a unit’s Dilbilgisi tab and its point starts coming back here.</p>'+
+     '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
+    app().innerHTML=h;return;
+  }
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">The course explains each grammar point once, in one tab, and then moves on. '+
+   'This brings the point back on a widening schedule and asks you to <i>build</i> a sentence with it from English — '+
+   'the examples rotate, so what is being tested is the pattern rather than one sentence.</p>';
+  h+='<div class="stat"><div><b>'+now+'</b><span>şimdi</span></div>'+
+     '<div><b>'+bank.length+'</b><span>read</span></div>'+
+     '<div><b>'+firm+'</b><span>holding</span></div></div>';
+
+  h+='<h2 class="sec">Çalış</h2><div class="card">'+
+   '<p class="lead">'+now+' konu · bu oturum</p>'+
+   '<p class="sub">English in, Turkish typed. Every word has to be there — these sentences are short, and the form is the whole question — but the order is yours, because Turkish allows what the English prompt does not pin down. '+
+   'Diacritics are forgiven, so ı ş ğ ç ö ü are optional, and where you produced a different correct sentence you can say so. The point and its table are there if you want them before answering.</p>'+
+   (due?'<button class="btn" onclick="startGram()">Başla</button>'
+       :'<p class="tiny">Nothing due. Points come back as their boxes come round.</p>')+'</div>';
+
+  const weak=gramWeak();
+  h+='<h2 class="sec">Konular</h2><div class="card">'+
+   '<p class="sub" style="margin-bottom:.6rem">Weakest first. A point missed drops to today; a point produced correctly moves out one box.</p>';
+  weak.slice(0,10).forEach(function(it){
+    const b=gramBox(it.k);
+    h+='<button class="unit" onclick="go(\'unit\',\''+it.u.id+'\',\'g\')">'+
+      '<span class="grow"><span class="unit-t">'+esc(it.u.gram.t)+'</span>'+
+      '<span class="unit-s">'+it.u.lv+' · '+esc(it.u.gram.en)+' · '+
+      (b<0?"hiç sorulmadı · not yet asked":"kutu "+b+" · box "+b)+'</span></span>'+
+      '<span class="chev">'+IC.chev+'</span></button>';
+  });
+  if(weak.length>10)h+='<p class="tiny" style="margin-top:.5rem">and '+(weak.length-10)+' more, further out.</p>';
+  h+='</div>';
+  h+='<p class="foot">The target sentences are the units’ own worked examples.<br>Nothing here is generated, so nothing here is approximate.</p></div>';
+  app().innerHTML=h;
+}
+
+function renderGramRun(){
+  if(!GR){renderGram();return;}
+  if(GR.phase==="end"){
+    app().innerHTML=bar("Dilbilgisi","Bitti",true)+'<div class="wrap"><div class="score">'+
+      '<div class="big '+(GR.right*2>=GR.q.length?"pass":"fail")+'">'+GR.right+'/'+GR.q.length+'</div>'+
+      '<p class="sub">doğru üretildi · produced</p></div>'+
+      '<div class="card"><p class="sub">Anything missed comes back today, the rest moves out a box. '+
+      'A near miss counts as a miss here — the point is the form, and the marked line showed you which word carried it.</p>'+
+      '<button class="btn" onclick="startGram()">Devam</button>'+
+      '<button class="btn ghost" onclick="go(\'gram\')">Dilbilgisi tekrarı</button></div></div>';
+    return;
+  }
+  const it=GR.q[GR.i];
+  let h=bar("Dilbilgisi",(GR.i+1)+" / "+GR.q.length,true)+'<div class="wrap">';
+  h+='<div class="prog">'+GR.q.map(function(_,i){
+    return '<i class="'+(i<GR.i?(GR.res&&!GR.res.same&&!GR.over&&i===GR.i-1?"no":"ok"):"")+'"></i>';
+  }).join('')+'</div>';
+  /* The point is named before the question, always. This is not a memory
+     test about which chapter a suffix came from — it is "use this, now". */
+  h+='<p class="qn">'+esc(it.t)+' · '+esc(it.pt)+'</p>';
+  h+='<p class="q">'+esc(it.en)+'</p>';
+
+  if(GR.phase==="ask"){
+    h+='<input class="inp" id="gbox" autocapitalize="off" autocomplete="off" autocorrect="off" '+
+     'spellcheck="false" placeholder="Türkçe yaz…" value="'+esc(GR.typed||"")+'">'+
+     '<button class="btn" onclick="grCheck()">Kontrol et</button>';
+    if(GR.hint&&it.tbl){
+      h+='<div class="card gram"><p class="tiny" style="margin:0 0 .4rem">'+esc(it.focus)+'</p><table class="table">';
+      it.tbl.forEach(function(r){h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';});
+      h+='</table></div>';
+    }else if(it.tbl){
+      h+='<button class="btn ghost" onclick="grHint()">İpucu · show the pattern</button>';
+    }
+  }else{
+    const r=GR.res;
+    h+='<div class="card"><p class="dline">'+r.ops.map(function(o){
+      return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';
+    }).join(" ")+'</p>'+
+     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+'</p>'+
+     '<button class="sbtn" style="margin-top:.4rem" onclick="grSay()">'+IC.spk+' dinle</button></div>';
+    const won=r.same||GR.over;
+    h+='<div class="fb '+(won?"ok":"no")+'"><b>'+
+     (GR.over&&!r.same?"Kabul edildi":r.same?"Doğru":r.hit+" / "+r.of+" kelime")+'</b>'+
+     (GR.over&&!r.same?"Taken as right. The point moves out a box."
+      :r.same?(r.order?"Same words, different order — Turkish allows it, and the model above is the usual one. It comes back later and later from here."
+                      :"It comes back later and later from here.")
+             :(r.extra?"Struck-through words are not in the sentence. ":"")+
+              "Red is what the model has and you did not. This point comes back today.")+'</div>';
+    if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
+    h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
+    h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
+  }
+  h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
+  app().innerHTML=h;
+  const box=document.getElementById("gbox");
+  if(box){
+    box.focus();
+    box.addEventListener("keydown",function(e){if(e.key==="Enter")grCheck();});
+  }
+}
+
 /* ===================== bugün · the daily plan ===================== */
 /* The app had six ways in and no opinion about which to use. This is the
    opinion, in the order the evidence supports: everything perishable
@@ -418,10 +650,11 @@ function renderTekrarRun(){
    self-correcting: finish the work and the tick appears, come back
    tomorrow and it clears itself. The alternative, a per-day completion
    flag, would need its own state and could disagree with the queues. */
-const PLAN_MIN=[15,30,20];           /* seconds per item: tekrar, dikte, üretim */
+const PLAN_MIN=[15,30,20,25];        /* seconds per item: tekrar, dikte, üretim, dilbilgisi */
 function planToday(){
   const rep=Math.min(repDue().length,REP_SESSION);
   const words=dueList().length;
+  const gr=Math.min(gramDue().length,GRAM_SESSION);
   const dk=Math.min(dinleDue("d:"),DSESSION);
   const pr=Math.min(prodDue(sentenceBank()).length,SESSION);
   const rt=retellDue().length;
@@ -445,6 +678,12 @@ function planToday(){
      avail:repBank().length>0||S.star.length>0,
      mins:Math.round((rep*PLAN_MIN[0]+words*10)/60),
      go:rep?"startTekrar()":"startReview()"},
+    /* Grammar sits second: it decays like the words do, and unlike Dinle
+       and Söyle it is the one step that asks for a form rather than a
+       sentence already met. */
+    {k:"gram", tr:"Dilbilgisi",en:"build a sentence with the pattern", n:gr,
+     avail:gramBank().length>0,
+     mins:Math.round(gr*PLAN_MIN[3]/60), go:"startGram()"},
     {k:"dinle",tr:"Dinle",   en:"write down what you hear", n:dk,
      avail:listenBank("d:").length>0,
      mins:Math.round(dk*PLAN_MIN[1]/60), go:"startDinle('d')"},
@@ -456,7 +695,7 @@ function planToday(){
      n:nx?1:0, mins:nx?10:0, avail:!!nx,
      go:nx?"go('unit','"+nx.id+"','"+(resuming?S.place.s:"v")+"')":"home()"}
   ];
-  if(rt)steps.splice(3,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",n:rt,
+  if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",n:rt,
                           avail:true,mins:rt*3,go:"go('prod')"});
   const shown=steps.filter(function(s){return s.avail;});
   const left=shown.filter(function(s){return s.n>0;});

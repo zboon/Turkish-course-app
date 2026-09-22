@@ -44,7 +44,7 @@ src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
 src/app.uretim.js        production mode, chunk bank, retell
 src/app.dinle.js         dictation and audio-first listening
-src/app.tekrar.js        the repetition engine, and the daily plan
+src/app.tekrar.js        the repetition engine, grammar repetition, the daily plan
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
@@ -153,6 +153,7 @@ The rule a learner notices first when it is broken. Every review mode draws
 |---|---|---|
 | `metWords(id)` | the Kelimeler tab was opened, or the unit is done | the Tekrar word bank |
 | `metLines(id)` | the Okuma tab was opened, or the unit is done | `sentenceBank()`, so Üretim and Dinleme — and which passages a cloze may use |
+| `metGram(id)` | the Dilbilgisi tab was opened, or the unit is done | `gramBank()`, so Dilbilgisi tekrarı |
 | `isMet(id)` | any tab was opened, or the unit is done | whether a plan step exists at all |
 
 This was got wrong twice in one release, and both failures looked identical
@@ -188,7 +189,7 @@ deliberate breakage.
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
- rep:{"kasagi":{b,d,n}},
+ rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
  gap, prompten, pscope, drate, dreplay, tips}
 ```
 
@@ -201,7 +202,10 @@ sentence can be easy to recognise, harder to transcribe and hardest to
 produce, and collapsing those into one box would hide exactly that.
 `rep` is keyed by `fold(word)` — "kaşağı" is stored as "kasagi" — and `n`
 counts how many times the engine has drilled it, which is added to the
-word's natural encounters. Editing a vocabulary entry's spelling re-points
+word's natural encounters. `gram` is keyed by unit id (`y:` is stripped
+nowhere — the key is the whole string `y:b1u3`) and its `n` chooses which
+of the point's worked examples comes next, so it is a rotation cursor
+rather than a count. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
@@ -479,6 +483,48 @@ A line that uses the word twice is rejected as a context: blanking one
 occurrence would leave the answer in the prompt. `sim.js` asserts all of
 the above, and every one was confirmed to fail on a deliberate breakage.
 
+## Dilbilgisi tekrarı (grammar repetition)
+
+Built. The vocabulary problem one level up. Each unit carries one grammar
+point, and `u.gram` renders in exactly one place — the unit's Dilbilgisi
+tab. Sixty points, read once each, and the course never asks again.
+
+`go('gram')` brings the point back on `STEPS` and tests it by
+**production**: English in, Turkish typed. Recognising what `-DIK` does is
+not the skill.
+
+- **The point is scheduled, not the sentence.** `S.gram` is keyed `y:<unitId>`
+  and `n` counts sittings, so the point's three or four worked `eg`
+  examples rotate. Keyed by sentence, 181 sentences would be memorised in a
+  fortnight; keyed by pattern, "the passive" keeps coming back with a
+  different sentence carrying it. `metGram(id)` is the `g` tab or the unit
+  done — the same grain as `metWords`/`metLines`, and for the same reason.
+- **The judge is order-free.** `gramJudge()` marks with `dictScore()` — so
+  the line shows *which* word's ending went wrong, and diacritics are
+  forgiven — but the verdict is the bag of folded tokens. Turkish word
+  order is freer than these English prompts pin down: *"I had him write the
+  letter"* is as truly `Ona mektubu yazdırdım` as `Mektubu ona yazdırdım`,
+  and **162 of the 181 targets** would be failed by an order-sensitive
+  judge for a single swap.
+- **Every word, though.** Not Dikte's four in five. The targets are four
+  words at the median and the form is the whole question, so forgiving one
+  word forgives the point — measured: an 80% bar passes **46 of the 181**
+  with a word missing. `sim.js` pins all three invariants across every
+  target: a dropped word never passes, an invented word never passes, a
+  reordering always does.
+- **The learner overrules.** A word-level judge can mark words; it cannot
+  mark Turkish. Where the English leaves the choice open — a synonym, a
+  tense English does not distinguish — `grAccept()` takes the answer as
+  right. It restores the box the point was on *before* the miss (`GR.pre`),
+  not box 1, and must not advance `n` a second time or the rotation skips
+  an example. Everything in Üretim is self-graded for the same reason; this
+  is deliberately one tap rather than the default.
+
+In the plan it sits **second**, with the reviews: it decays the way the
+words do, and unlike Dinle and Söyle it asks for a form rather than a
+sentence already met. `avail` withholds it until a grammar point has been
+read, so day one is still one instruction.
+
 ## Bugün (the daily plan)
 
 The app had six ways in and no opinion about which to use. `planCard()` is
@@ -486,8 +532,8 @@ the opinion, first thing on the home screen, above the progress road —
 action before orientation.
 
 Order is everything perishable first, new material last: reviews decay on a
-schedule and a unit does not. Tekrar, Dinle, Söyle, then Devam or Yeni, with
-Anlat inserted when a retell is due.
+schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
+or Yeni, with Anlat inserted before the last step when a retell is due.
 
 **Nothing is stored.** A step is done when its own queue is empty, which is
 self-correcting — finish the work and the tick appears, come back tomorrow
@@ -549,18 +595,38 @@ as what is most interesting to build.
 1. **Chunks, 50 → 300+.** `src/data/chunks.js`. Pure data, no new
    mechanics, and formulaic language is a large share of fluent speech — the
    cheapest fluency per hour left.
-2. **Branching dialogue and a repair kit.** The nearest an offline app gets
+2. **Hata defteri — the mistake book.** Every error the app sees is thrown
+   away: the quiz stores `{score,of,at}`, and Üretim, Dinleme, Tekrar and
+   Dilbilgisi store only the SRS box. Collect the wrong answers across all
+   modes with the `why` that goes with them, plus a weak-spots read over
+   `S.prod` (already keyed by pattern, `g:<frame>:<tense>` and `t:<move>`),
+   `S.dinle`, `S.rep`, `S.gram` and `S.srs`. Nothing new to author, and it
+   is the one thing every tutor does that the app does not.
+3. **Kendi kelimelerim — add your own words.** `setStar` is reachable only
+   from a unit's vocabulary list and from Sözlük, so a word met in the wild
+   cannot enter the queue. Small, and it stops the app being a closed box.
+4. **Sor — question production.** The question frame already exists in
+   `FRAMES`; asking is the half of a conversation the course never drills.
+5. **Sayılar — numbers, times and prices at speed.** Generated, so no
+   content to write. The thing that reliably fails in a real shop.
+6. **Branching dialogue and a repair kit.** The nearest an offline app gets
    to unpredictability, and it trains the thing that actually ends
    conversations: not missing a word, but having to continue anyway.
-3. **Kütüphane** — verbatim public-domain texts with an
+7. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-4. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+8. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
+
+Marginal, and recorded so they are not proposed again as if new: a strict
+spelling mode with a Turkish character bar (`fold()` forgives ı ş ğ ç ö ü
+everywhere, which is deliberate — a keyboard the learner does not have is
+not a language failure), and a progress-over-time chart (`S.days` already
+has the data; it measures attendance, not Turkish).
 
 No app on its own reliably produces a conversational speaker; every
 programme that does has a human in the loop. The work above makes tutor
