@@ -1613,12 +1613,12 @@ step("sor · producing the question, not the answer", () => {
   /* Sweep: every generated question answerable, nothing leaking, and the
      dative guard holding — bakmak and başlamak take a dative that is not
      a place, so "Nereye?" would be simply wrong for them. */
-  const bad = [], frames = new Set(), words = new Set(), persons = new Set();
+  const bad = [], frames = new Set(), persons = new Set();
   for (let i = 0; i < 400; i++) {
     ev("SS=sorSpec(); AA=sorAsk(SS); ST=specText(SS)");
     const f = ev("SS.f"), prep = ev("SS.v?(SS.v.prep||''):''");
     const tr = ev("AA.tr"), en = ev("AA.en"), st = ev("ST.tr");
-    frames.add(f); words.add(ev("AA.qw")); persons.add(ev("SS.p"));
+    frames.add(f); persons.add(ev("SS.p"));
     if (f === "dat" && prep !== "to") bad.push("Nereye for a non-place dative: " + tr);
     if (!tr || !en || !/\?$/.test(tr) || !/\?$/.test(en)) bad.push("not a question: " + tr + " / " + en);
     if (BAD.test(tr + en) || / {2}/.test(tr + en)) bad.push("leak: " + tr + " / " + en);
@@ -1628,7 +1628,24 @@ step("sor · producing the question, not the answer", () => {
   }
   ok(bad.length === 0, "sor produced " + bad.length + " bad questions, e.g. " + bad.slice(0, 3).join(" · "));
   ok(frames.size === ev("SOR_FRAMES").length, "only " + frames.size + " of " + ev("SOR_FRAMES").length + " frames are reachable");
-  ok(words.size === 7, "only " + words.size + " question words are reachable, expected 7");
+
+  /* Every question word, by construction rather than by sampling. This
+     was a count over the 400 draws above, and it was FLAKY: "kimi" needs
+     the obj frame and a person as the object, which 400 unseeded draws
+     miss about one run in fifty — so a correct build failed now and then,
+     which is worse than not checking at all. The same lesson as ASK_P:
+     when a table has to be covered, walk it, do not hope to land on it. */
+  [["ne",     "{f:'obj',v:byName('açmak'),n:byName('kapı'),p:2,t:'prog',neg:false}"],
+   ["kimi",   "{f:'obj',v:byName('beklemek'),n:byName('arkadaş'),p:2,t:'prog',neg:false}"],
+   ["kim",    "{f:'bare',v:byName('gelmek'),p:2,t:'past',neg:false}"],
+   ["nereye", "{f:'dat',v:byName('gitmek'),n:byName('okul'),p:2,t:'prog',neg:false}"],
+   ["nerede", "{f:'loc',v:byName('oturmak'),n:byName('ev'),p:2,t:'prog',neg:false}"],
+   ["nasıl",  "{f:'adj',a:byName('büyük'),n:byName('ev'),p:2,t:'prog',neg:false}"],
+   ["kimin",  "{f:'gen',owner:byName('öğretmen'),n:byName('kitap'),p:2,t:'prog',neg:false}"]
+  ].forEach(([want, spec]) => {
+    ev("SS=" + spec);
+    ok(ev("sorAsk(SS).qw") === want, "that frame asks with " + q(ev("sorAsk(SS).qw")) + ", expected " + q(want));
+  });
   /* And the statements have to use those persons, or the shift above is a
      table nobody walks: every person the bank claims to draw must turn up. */
   ev("SOR_P").forEach(p => ok(persons.has(p), "no statement is ever generated in person " + p +
@@ -1746,8 +1763,15 @@ step("sayılar · the numbers, and the clock that marks them", () => {
      happens to match one of them. sim.js is deliberately unseeded, so an
      assertion that only usually holds is worse than none. */
   const shown = () => lastPaint.replace(/<[^>]*>/g, " ").replace(/\d+ \/ \d+/g, " ").replace(/\s+/g, " ");
-  ok(shown().indexOf(it0.show) === -1, "the hearing direction showed the number it was asking for");
-  ok(shown().indexOf(it0.tr) === -1, "the hearing direction printed the Turkish it was speaking");
+  /* As a WHOLE word, not a substring. The number 10 is "on", and the
+     button underneath says "Kontrol et" — so a substring search failed on
+     correct code roughly one run in three hundred. Turkish letters are
+     not \w, so the boundary is spelled out. */
+  const LT = "a-zA-ZçÇğĞıIİiöÖşŞüÜ";
+  const saysIt = (hay, needle) => new RegExp("(^|[^" + LT + "])" +
+    needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^" + LT + "]|$)").test(hay);
+  ok(!saysIt(shown(), it0.show), "the hearing direction showed the number it was asking for");
+  ok(!saysIt(shown(), it0.tr), "the hearing direction printed the Turkish it was speaking");
   ev("document.getElementById('nbox').value=" + q(it0.show.replace(" TL", "")));
   ev("numCheck()");
   ok(ev("NM.res.ok") === true && ev("NM.res.quick") === true, "a correct quick answer was not marked so");
@@ -1786,10 +1810,10 @@ step("sayılar · the numbers, and the clock that marks them", () => {
      until the learner has committed — the same rule Ses önce follows. */
   ev("wipe()"); ev("startNum('oku')");
   const o0 = JSON.parse(ev("JSON.stringify(NM.q[0])"));
-  ok(shown().indexOf(o0.show) > -1, "the say-it direction did not show the digits");
-  ok(shown().indexOf(o0.tr) === -1, "the say-it direction revealed the Turkish before the learner spoke");
+  ok(saysIt(shown(), o0.show), "the say-it direction did not show the digits");
+  ok(!saysIt(shown(), o0.tr), "the say-it direction revealed the Turkish before the learner spoke");
   ev("numReveal()");
-  ok(shown().indexOf(o0.tr) > -1, "the model was never revealed");
+  ok(saysIt(shown(), o0.tr), "the model was never revealed");
   ev("numMark(true)");
   ok(ev("S.num[" + q(o0.k) + "].b") === 1, "a self-marked right answer did not advance");
 
@@ -1857,6 +1881,153 @@ step("the clock on the home screen tells the time in Turkish", () => {
   /* Nowhere else. */
   ev("go('level','A1')");
   ok(!ev("!!document.getElementById('hclock')"), "the clock leaked onto the level screen");
+});
+
+step("diyalog · a conversation you can always get out of", () => {
+  /* The shape of the trees — every branch reachable, every path ending,
+     every slot fillable — is checked in validate.js, which walks the data
+     without a DOM. What is checked here is the thing the data cannot say:
+     that the conversation behaves the way the mode promises. */
+  const visible = () => lastPaint.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+
+  ev("wipe()"); ev("go('diyalog')");
+  ok(/Diyalog/.test(lastPaint), "the Diyalog hub did not render");
+  ok(/Tamir çantası/.test(lastPaint), "the hub does not show the repair kit");
+  ev("DIA_REPAIR").forEach((r, i) => ok(lastPaint.indexOf(ev("DIA_REPAIR[" + i + "].tr")) > -1,
+    "the hub omits a repair move"));
+
+  /* Every line of every scenario, rendered with real slots. This sweep is
+     what found two content bugs the structural checks cannot see: a price
+     at the start of a sentence printed "üç yüz otuz sekiz lira" with no
+     capital, and an English label printed "how much is the soğan?"
+     because the slot had no English of its own. */
+  const flat = [];
+  JSON.parse(ev("JSON.stringify(DIYALOG.map(function(s){return s.id}))")).forEach((id, si) => {
+    ev("SC=DIYALOG[" + si + "]; VV=diaVars(SC)");
+    JSON.parse(ev("JSON.stringify(Object.keys(SC.beats))")).forEach(k => {
+      const bq = JSON.stringify(k);
+      ["say", "slow", "easy"].forEach(f => {
+        if (!ev("SC.beats[" + bq + "]." + f + "||''")) return;
+        flat.push([id + "." + k + "." + f, ev("diaText(SC.beats[" + bq + "]." + f + ",VV)"), "tr"]);
+      });
+      const n = ev("(SC.beats[" + bq + "].opts||[]).length");
+      for (let o = 0; o < n; o++) {
+        flat.push([id + "." + k + ".opt" + o, ev("diaText(SC.beats[" + bq + "].opts[" + o + "].tr,VV)"), "tr"]);
+        flat.push([id + "." + k + ".en" + o, ev("diaText(SC.beats[" + bq + "].opts[" + o + "].en,VV,'en')"), "en"]);
+      }
+    });
+  });
+  const textBad = flat.filter(([, t]) => !t || /[{}]/.test(t) || BAD.test(t) || / {2}/.test(t));
+  ok(textBad.length === 0, textBad.length + " dialogue lines are broken, e.g. " +
+     textBad.slice(0, 2).map(([w, t]) => w + ": " + q(t)).join(" · "));
+  /* Turkish capitalises i as İ, and a slot that lands at the start of a
+     sentence has to be capitalised after substitution. */
+  const lower = flat.filter(([, t, kind]) => kind === "tr" && (/^[a-zçğıöşü]/.test(t) || /[.!?]\s+[a-zçğıöşü]/.test(t)));
+  ok(lower.length === 0, lower.length + " Turkish lines start lowercase, e.g. " +
+     lower.slice(0, 2).map(([w, t]) => w + ": " + q(t)).join(" · "));
+
+  /* Walk every scenario to the end, taking the first move each time and
+     typing whatever number is asked for. All of them must finish: a
+     conversation with no way out is the one bug this mode cannot have. */
+  const ids = JSON.parse(ev("JSON.stringify(DIYALOG.map(function(s){return s.id}))"));
+  ok(ids.length >= 4, "only " + ids.length + " scenarios");
+  let leaks = 0, turns = 0;
+  ids.forEach(id => {
+    ev("wipe()"); ev("startDia(" + q(id) + ")");
+    let guard = 0;
+    while (ev("DG.phase") !== "end" && guard++ < 20) {
+      turns++;
+      /* The other person is heard and never read. If the line they are
+         speaking is on the screen, this is a reading exercise. */
+      if (ev("DG.phase") === "hear") {
+        const line = ev("diaLine()");
+        if (line && visible().indexOf(line) > -1) leaks++;
+        if (ev("!!diaBeat().want")) {
+          ev("document.getElementById('dgbox').value=String(DG.V[diaBeat().want].show||DG.V[diaBeat().want].t)");
+          ev("diaCheck()");
+        } else ev("diaPick(0)");
+      }
+      ev("diaNext()");
+    }
+    ok(ev("DG.phase") === "end", id + " never reached an end in 20 turns");
+    ok(ev("DG.done") === true, id + " ended without completing");
+    ok(ev("S.dia[" + q(id) + "].b") === 1, id + " completed but did not move a box");
+    ok(ev("S.dia[" + q(id) + "].n") === 1, id + " completed but was not counted");
+  });
+  ok(leaks === 0, leaks + " of " + turns + " turns printed what the other person was saying");
+
+  /* A repair is free, changes what you hear, and leaves no mark. */
+  ev("wipe()"); ev("startDia('bilet')");
+  const plain = ev("diaLine()");
+  const spoke = voice.spoken.length;
+  ev("diaRepair(0)");
+  ok(ev("DG.rep") === 1, "a repair was not counted");
+  ok(voice.spoken.length > spoke, "a repair did not say anything");
+  ok(voice.rates[voice.rates.length - 1] < 1, "a repair did not slow the voice down");
+  const slower = ev("diaLine()");
+  ok(slower !== plain, "asking again said exactly the same words at the same speed");
+  ev("diaRepair(2)");
+  ok(ev("DG.rep") === 2, "the second repair was not counted");
+  ok(ev("diaLine()") !== slower, "the rephrase was the same as the slow repeat");
+  /* Repairs must not reach the record. The first version kept the fewest
+     ever taken, which rewarded guessing at a price over asking about it —
+     the exact reflex this mode exists to remove. */
+  const keys = JSON.parse(ev("JSON.stringify(Object.keys(S.dia.bilet||{}))"));
+  ok(keys.indexOf("r") === -1, "the record keeps a repair count: " + keys.join(","));
+
+  /* A number is the one thing here a machine can mark — and getting it
+     wrong does not end the conversation, because in a shop you would hand
+     over the wrong note and be corrected, not walk out. */
+  ev("wipe()"); ev("startDia('kafe')");
+  let g2 = 0;
+  while (!ev("!!diaBeat().want") && g2++ < 10) { ev("diaPick(0)"); ev("diaNext()"); }
+  ok(ev("!!diaBeat().want"), "never reached a beat that asks for a number");
+  const before = ev("Object.keys(S.err).length");
+  ev("document.getElementById('dgbox').value='99999999'");
+  ev("diaCheck()");
+  ok(ev("DG.res") === false, "a wrong number was marked right");
+  ok(ev("Object.keys(S.err).length") === before + 1, "a missed number did not reach the book");
+  /* And it lands under Sayılar's own key, because a price missed at a
+     counter and one missed at a desk are one weakness. */
+  ok(Object.keys(JSON.parse(ev("JSON.stringify(S.err)")))
+       .some(k => k.indexOf("n:duy:") === 0), "the missed number was not filed under Sayılar's shape");
+  ev("diaNext()");
+  let g3 = 0;
+  while (ev("DG.phase") !== "end" && g3++ < 10) { ev("diaPick(0)"); ev("diaNext()"); }
+  ok(ev("DG.done") === true, "a wrong number ended the conversation");
+
+  /* Walking away is the only failure, and the only thing it books. */
+  ev("wipe()"); ev("startDia('eczane')");
+  ev("diaPick(0)"); ev("diaNext()");
+  ev("diaQuit()");
+  ok(ev("DG.done") === false, "quitting counted as finishing");
+  ok(ev("S.dia.eczane.b") === 0, "quitting did not drop the box");
+  ok(ev("S.dia.eczane.n") === 0, "quitting counted as a completion");
+  ok(ev("!!S.err['c:eczane']"), "walking away was not recorded");
+  ok(ev("S.err['c:eczane'].m") === "c", "walking away was filed under the wrong mode");
+  ev("go('hata')");
+  ok(/Diyalog/.test(lastPaint), "the mistake book does not name Diyalog");
+
+  /* The transcript is the reward for getting to the end: the lines you
+     were hearing, readable at last, and not a moment sooner. */
+  ev("wipe()"); ev("startDia('randevu')");
+  const opening = ev("DG.log[0].tr");
+  ok(visible().indexOf(opening) === -1, "the transcript was readable mid-conversation");
+  let g4 = 0;
+  while (ev("DG.phase") !== "end" && g4++ < 12) {
+    if (ev("!!diaBeat().want")) {
+      ev("document.getElementById('dgbox').value=String(DG.V[diaBeat().want].show||DG.V[diaBeat().want].t)");
+      ev("diaCheck()");
+    } else ev("diaPick(0)");
+    ev("diaNext()");
+  }
+  ok(visible().indexOf(opening) > -1, "the transcript does not show what was said");
+  ok(ev("DG.log.length") >= 4, "the transcript is missing turns");
+  ok(ev("DG.log[0].who") === "them", "the transcript does not begin with the other person");
+
+  /* The record is progress, not a setting. */
+  ev("wipe()");
+  ok(ev("Object.keys(S.dia).length") === 0, "wipe() kept the conversation record");
 });
 
 step("the plan says what to do, in the order it should be done", () => {

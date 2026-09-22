@@ -19,6 +19,7 @@ cat \
   src/data/lex.js \
   src/data/pos.js \
   src/data/core.js \
+  src/data/diyalog.js \
   src/app.core.js \
   src/app.lang.js \
   src/app.screens.js \
@@ -30,6 +31,7 @@ cat \
   src/app.benim.js \
   src/app.sor.js \
   src/app.sayilar.js \
+  src/app.diyalog.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"

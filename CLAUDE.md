@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
-node test/sim.js        # headless render of all 335 screens + every runtime path
+node test/sim.js        # headless render of all 337 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -39,6 +39,7 @@ src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
 src/data/lex.js          const LEX=[…];      // tagged drill stems
 src/data/pos.js          const POS={…};      // word classes for the list
 src/data/core.js         const CORE=[…];     // everyday words by topic
+src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -50,11 +51,12 @@ src/app.hata.js          the mistake book
 src/app.benim.js         the learner's own words
 src/app.sor.js           question production, wh- and yes/no
 src/app.sayilar.js       numbers, times and prices against a clock
+src/app.diyalog.js       branching conversation and the repair kit
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is eleven files rather than one because it grew past the point
+The app is twelve files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -196,7 +198,7 @@ deliberate breakage.
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
- num:{"duy:3":{b,d}, "oku:saat":{b,d}},
+ num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips}
 ```
 
@@ -220,7 +222,10 @@ so add lines at the end rather than inserting them. `gap`, `prompten`,
 settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
 `num` is keyed by the *shape* a number has rather than by any number —
 `duy:3` is three digits heard, `oku:saat` is a clock face read aloud —
-because the numbers are generated and endless while the shapes are six. Because `wipe()` keeps
+because the numbers are generated and endless while the shapes are six.
+`dia` is keyed by scenario id, which is therefore as permanent as a unit
+id, and `n` counts completions — it counts nothing else, deliberately; see
+Diyalog below. Because `wipe()` keeps
 `pscope`, a test that wipes still inherits whatever scope ran before it —
 set it explicitly when the default is what is under test.
 
@@ -603,6 +608,91 @@ stripped. `snap.js` has the mirror problem: these are the only screens that
 print a wall-clock reading, which no seed can reproduce, so `grabx()` blanks
 that one reading and fingerprints everything else on the screen.
 
+## Diyalog (branching conversation)
+
+Built. Every other mode here is **one exchange with a known answer**. A
+conversation is not: what comes back depends on what you said, and
+sometimes you simply do not catch it. `go('diyalog')` is a short errand —
+a ticket counter, a market stall, a pharmacy — with someone who talks at
+normal speed and does not know you are learning.
+
+**The thesis, and everything follows from it: a repair is not a mistake.**
+Every other mode marks you wrong for not knowing. This one marks you wrong
+only for *stopping*. Asking someone to repeat themselves is what a
+competent speaker does all day, and a mode that penalised it would train
+exactly the freeze it exists to cure — because what ends a conversation is
+almost never the missing word, it is the pause after it.
+
+So the score is **completion, not correctness**, and `S.dia[id]` counts
+completions and nothing else. The first version also kept the fewest
+repairs ever taken, as a record to beat. That quietly inverted the mode: a
+learner who guessed at a price and got it wrong finished with nought
+repairs and a *better* record than one who asked twice and got it right.
+The run reports its own repair count as information; nothing keeps score
+of it between runs, and `sim.js` asserts the key is absent.
+
+Three more decisions:
+
+- **The other person is heard, never read.** Read them and this is a
+  reading exercise with extra steps. There is also deliberately **no free
+  replay button** — if hearing it again were one tap away the repair kit
+  would be decoration and the reflex would never be built. The only way to
+  hear it again is to ask.
+- **The kit is three prefabs, and each does something different.** `bir
+  daha söyler misiniz` and `daha yavaş lütfen` re-say the beat's `slow`
+  line at 0.85× and 0.65×; `affedersiniz, anlamadım` reaches its `easy`
+  rephrase. They are chunk-bank phrases, not new material — `validate.js`
+  fails if one stops matching `CHUNKS`, because a reworded chunk would
+  silently strand the phrase the learner actually drilled.
+- **Slots are generated per run.** The skeleton repeats, so without them
+  the fourth sitting is recitation — but the price is a different price
+  every time and there is no way to answer but to parse it. The numbers
+  are the one thing in a conversation a machine can honestly mark, by
+  Sayılar's own parsers, and a miss is booked under **Sayılar's own key**:
+  a price missed at a counter and one missed at a desk are one weakness,
+  which is the mistake book's standing rule. Getting one wrong does not
+  end the conversation — in a shop you would hand over the wrong note and
+  be corrected, not walk out.
+
+Proper names carry their own inflected forms in the data (`{t:"Bursa",
+dat:"Bursa'ya"}`) rather than being derived. The engine could do the vowel
+harmony, but a proper name is the last place to let a generated ending
+loose in public, so the data lists what is not derivable — the same rule
+`lex.js` follows. `validate.js` checks every `{slot.form}` exists on
+**every** option of that pick, which is the way that goes wrong.
+
+`validate.js` walks every branch of every scenario: an option pointing
+nowhere, a beat nothing reaches, a path with no end. A dead end in a
+dialogue tree is not a wrong answer on a screen — it is a learner stuck in
+a mode whose whole thesis is that you never get stuck.
+
+### Two flaky assertions, found here and worth not repeating
+
+`sim.js` is unseeded by design, so an assertion that only *usually* holds
+fails on correct code now and then — which is worse than not checking at
+all, because it teaches you to re-run instead of read. Breaking Diyalog on
+purpose shook out two of them, both in tests written earlier in the same
+session:
+
+- **Sor**: the check that all seven question words are reachable was a
+  count over 400 random draws, and `kimi` needs the `obj` frame *and* a
+  person as the object — 400 draws miss it about **one run in fifty**. It
+  is checked by construction now, one built spec per question word. Same
+  lesson as `ASK_P`: when a table has to be covered, walk it, do not hope
+  to land on it.
+- **Sayılar**: the check that the heard number is not on screen was a
+  substring search, and the number 10 is `on` while the button underneath
+  says **K*on*trol et** — so it failed about one run in three hundred.
+  It matches whole words now, with the boundary spelled out, because
+  Turkish letters are not `\w`.
+
+Both had passed hundreds of runs before anything exposed them. If a test
+has to be *lucky* to pass, it will eventually be unlucky in front of
+someone who has no idea the code is fine.
+
+Diyalog is **not** in the daily plan, like the other generated modes and
+for the same reason. Araçlar has it.
+
 ## Dinleme (harder listening)
 
 Built. Dinle and Gölge leave the passage on screen, so they train reading
@@ -969,16 +1059,13 @@ word under the wrong heading for ever.
 Ordered by what moves the learner toward conversation, which is not the same
 as what is most interesting to build.
 
-1. **Branching dialogue and a repair kit.** The nearest an offline app gets
-   to unpredictability, and it trains the thing that actually ends
-   conversations: not missing a word, but having to continue anyway.
-2. **Kütüphane** — verbatim public-domain texts with an
+1. **Kütüphane** — verbatim public-domain texts with an
    orijinal/sadeleştirilmiş toggle. **Blocked in this environment**: the
    sourcing rule above requires checking against a real source, and
    Wikisource, Gutenberg and Wikipedia are all unreachable from the sandbox.
    It needs the texts supplied, or a session with network access. Do not
    type them from memory.
-3. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+2. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 

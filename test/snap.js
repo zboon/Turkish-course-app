@@ -153,6 +153,23 @@ reseed(3311); ev("startProd('e')"); grab("sor:yesno:prompt");
 ev("prodModel()"); grab("sor:yesno:model");
 ev("PR=null;"); ev("wipe()");
 
+/* Diyalog. The run screen is the one that matters: what a learner can see
+   while the other person is still talking, which must be the moves and
+   nothing else. Both endings are here too, because they are the whole
+   score. */
+ev("wipe()");
+reseed(5200); ev("go('diyalog')"); grab("diyalog");
+ev("startDia('bilet')"); grab("diyalog:hear");
+ev("diaRepair(0)"); grab("diyalog:repair");
+ev("diaRepair(2)"); grab("diyalog:rephrase");
+ev("diaPick(0)"); grab("diyalog:model");
+ev("diaNext()"); ev("diaPick(0)"); ev("diaNext()"); grab("diyalog:number");
+ev("document.getElementById('dgbox').value='1'"); ev("diaCheck()"); grab("diyalog:number:wrong");
+ev("diaNext()"); ev("diaPick(0)"); ev("diaNext()"); grab("diyalog:done");
+reseed(5201); ev("startDia('eczane')"); ev("diaPick(0)"); ev("diaNext()");
+ev("diaQuit()"); grab("diyalog:left");
+ev("DG=null;"); ev("wipe()");
+
 /* Sayılar. Both directions at both ends: what is on screen while the
    clock runs, and what the verdict looks like — including the one that
    only this mode can give, right but too late. */
