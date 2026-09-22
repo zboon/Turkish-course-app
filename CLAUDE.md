@@ -181,8 +181,14 @@ Two independent targets:
 1. **Published artifact** — `dist/index.html` published through Claude. No
    service worker there; the registration call is wrapped and fails silently.
 2. **GitHub Pages** — automatic. `.github/workflows/pages.yml` builds `src/`,
-   runs all four checks and publishes `dist/` on every push to `main`; the
-   Pages source is set to "GitHub Actions", not a branch. `dist/` is
+   runs all four checks and publishes `dist/` on every push to `main`. The
+   Pages source is still **"Deploy from a branch"**, which means every push
+   also starts GitHub's own legacy builder; that one publishes the repository
+   root, finds no `index.html` and serves a 404. Both write to the same site
+   and the last deploy wins, so the workflow waits for the legacy run to
+   finish before publishing — see the comment on that step. Switching the
+   source to "GitHub Actions" stops the legacy builder running at all and
+   makes the wait a no-op; until someone does, do not remove it. `dist/` is
    generated and git-ignored, so there is nothing to commit and nothing to
    copy by hand. `build.sh` also copies `sw.js`, `manifest.json` and the
    three icon files into `dist/`; the artifact copy has none of them and the
