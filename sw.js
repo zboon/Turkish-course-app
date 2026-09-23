@@ -1,5 +1,5 @@
 /* Bump CACHE on every release or phones keep serving the old build. */
-const CACHE = "turkce-v3.58";
+const CACHE = "turkce-v3.59";
 const ASSETS = ["./", "./index.html", "./manifest.json",
   "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
