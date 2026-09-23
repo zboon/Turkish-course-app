@@ -149,9 +149,14 @@ the icon and you will hear about it. `src/icon-192.png` and `src/icon-512.png`
 are rendered from the SVG for `manifest.json`; re-render them if the drawing
 changes.
 
-The home hero also carries **تركجه**, Türkçe in the Ottoman script, written
-as \u escapes in `app.screens.js` so a right-to-left run does not scramble
-the line in an editor.
+The hero no longer carries the Ottoman spelling of the app's own name. It
+sat between the wordmark and the tagline and was the fourth of five
+stacked elements before anything actionable, which is what the landing
+page was being simplified away from. `.osm` went with it, so re-adding
+the markup alone would paint unstyled — `sim.js` fails on any Arabic
+run in the home paint. The script itself is not gone from the plan:
+**Osmanlıca** is still on the roadmap as a mode, where it is the subject
+rather than an ornament.
 
 ## Nothing reviews what has not been met
 
