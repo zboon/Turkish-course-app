@@ -104,6 +104,23 @@ Gloss keys are dictionary headwords. `glossify()` wraps the first literal match
 the Sözlük list under the passage. That's intended — don't "fix" it by changing
 headwords to inflected forms.
 
+**a1u1's Dilbilgisi tab used to open with two named rules back to back** —
+two-way harmony, then four-way harmony, both stated abstractly before a
+single worked example — because the instinct behind it was reasonable:
+vowel harmony really is foundational and really does want teaching early.
+Foundational is not the same as first, though, and unit one's own vocab,
+reading and drill never once called on two-way harmony; only a1u2's
+plural does. So it now leads with the rule the unit's own copula table
+actually needs (concrete example first — *öğrenci* + "I am" is
+*öğrenciyim* — the abstract statement after), and the rule the unit does
+not need yet is named, defined and explicitly deferred rather than cut:
+`two-way harmony` still has to mean something the moment a1u2 says
+"by two-way harmony" with no re-introduction, so the term stays, just not
+demanding mastery in the same breath as the one lesson one actually
+requires. The general rule for any unit's `gram.body`: worked example
+before the named rule, and nothing stated as urgent that the unit's own
+`tbl`/`eg`/`drill` never asks the learner to use.
+
 ## Text sourcing — the rule that matters
 
 Every passage declares what it is in `kind:`, and the About screen explains the
@@ -1275,6 +1292,34 @@ believing it.**
 
 Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
+
+### `hazır` — which of Araçlar's fifteen rows have anything to do yet
+
+Eight draw on nothing but themselves — a prefab bank, a generator, the whole
+word list — and are exactly as full on day one as they will ever be. Five
+start at zero and fill in as units are read, words are starred, mistakes
+are made. A curious beginner who wanders into Araçlar before following
+`Bugün` can open any of the five and land on an honest "not yet" card —
+the same anticlimax `renderGram()`/`renderHata()` already handle
+gracefully one tap in, but one tap too late to have saved the visit.
+
+`hazır` says which is which *before* that tap: a small pill on the row,
+`navRow`'s optional fourth argument, present only where there is
+something to do right now. Nothing here is a hand-typed list, because a
+hand-typed list drifts — each flag is the same boolean the destination
+screen itself would show as empty, computed at the same render:
+`chunkBank()`/`LEX`/`DIYALOG`/`ATASOZU`/`DEYIM`/`dictAll()` never start at
+zero so those six are simply `true`; `listenBank()`, `repBank()`,
+`gramBank()`, `S.star.length` and `Object.keys(S.err).length` are read
+live, so the tag appears on Tekrar motoru the moment `repBank()` first
+returns something and not a render before. Leaving the argument off
+entirely — as Dersler's two `navRow` calls and Araçlar's own Kurs section
+do — is different from passing `false`: it means readiness is not that
+row's business at all, so no pill either way. `sim.js` walks the thirteen
+rows a readiness claim actually applies to — the two Kurs rows separately
+assert they carry no tag at all — then meets a1u1 one tab at a time and
+checks that exactly the row whose bank that tab feeds picks up the tag,
+never the others.
 
 ## Sözlük (the word list)
 

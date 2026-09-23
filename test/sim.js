@@ -2377,6 +2377,56 @@ step("araçlar · every tool is still reachable", () => {
   ok(heads === 5, "Araçlar has " + heads + " groups, wanted 5 — a flat list is what this replaced");
 });
 
+step("araçlar · hazır is honest, and lives, and dies", () => {
+  /* rowRaw pulls exactly one row's own markup — the pill has to be
+     found INSIDE that row, not merely somewhere on a page that also
+     mentions "hazır" in the explainer sentence above the list. */
+  const rowRaw = (fn) => {
+    const i = lastPaint.indexOf('onclick="' + fn + '"');
+    if (i < 0) return null;
+    return lastPaint.slice(i, lastPaint.indexOf("</button>", i));
+  };
+  const tagged = (fn) => { const r = rowRaw(fn); return !!r && /hazır/.test(r); };
+
+  ev("wipe()"); ev("go('araclar')");
+  /* Eight that never depend on a unit, a starred word or a mistake: a
+     prefab bank, a generator, or the whole dictionary. These carry the
+     tag from the very first paint. */
+  ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
+   "go('sayilar')", "go('dict')", "mineOpen()"].forEach(fn => {
+    ok(tagged(fn), fn + " should be tagged hazır on a fresh install — it needs nothing met");
+  });
+  /* Five that start empty and are not lying about it. */
+  ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')"].forEach(fn => {
+    ok(!tagged(fn), fn + " is tagged hazır on a fresh install, but its bank is empty");
+  });
+  /* Reference rows carry no readiness claim either way — "how this
+     works" is not a bank that fills up. */
+  ok(!tagged("go('nasil')") && !tagged("go('about')"),
+     "a reference row picked up a readiness tag it never asked for");
+
+  /* And each of the five flips on, independently, the moment its own
+     bank actually has something — never before, never all at once. */
+  ev("go('unit','a1u1','r')"); ev("go('araclar')");
+  ok(tagged("go('dinle')"), "reading a1u1's passage did not tag Dinleme hazır");
+  ok(!tagged("go('tekrar')"), "reading a passage tagged Tekrar motoru hazır too early");
+
+  ev("go('unit','a1u1','v')"); ev("go('araclar')");
+  ok(tagged("go('tekrar')"), "meeting a1u1's word list did not tag Tekrar motoru hazır");
+  ok(!tagged("go('gram')"), "meeting the word list tagged Dilbilgisi tekrarı hazır too early");
+
+  ev("go('unit','a1u1','g')"); ev("go('araclar')");
+  ok(tagged("go('gram')"), "meeting a1u1's grammar point did not tag Dilbilgisi tekrarı hazır");
+  ok(!tagged("go('words')"), "meeting a grammar point tagged Sözlüğüm hazır too early");
+  ok(!tagged("go('hata')"), "meeting a grammar point tagged Hata defteri hazır too early");
+
+  ev("setStar('merhaba','hello',true)"); ev("go('araclar')");
+  ok(tagged("go('words')"), "starring a word did not tag Sözlüğüm hazır");
+
+  ev("S.err['x:1']={m:'q',q:'?',c:'a',a:'b',w:'',to:'',at:0,n:1};save()"); ev("go('araclar')");
+  ok(tagged("go('hata')"), "a recorded mistake did not tag Hata defteri hazır");
+});
+
 step("back retraces the menu rather than jumping home", () => {
   ev("go('level','A1')"); ev("back()");
   ok(ev("V.view") === "dersler", "back() from a level did not return to Dersler");

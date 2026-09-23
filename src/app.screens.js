@@ -90,27 +90,38 @@ function renderDersler(){
 function renderAraclar(){
   let h=bar("Araçlar","tools · beside the lessons",true)+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything here is optional. If you only follow <b>Bugün</b> on the home screen you are using the course correctly — these are for working on one thing in particular.</p>';
+  /* Six of these thirteen draw on nothing but themselves — a bank of
+     prefabs, a generator, the whole word list — and are exactly as full
+     on day one as they ever are. The other five start at zero and fill in
+     as units are read, words starred, mistakes made: a curious beginner
+     who wanders in early can open any of them and land on an honest "not
+     yet" card, the same anticlimax renderGram()/renderHata() already
+     handle gracefully one tap in, but one tap too late to save the visit.
+     hazır says which is which before that tap, computed live off the same
+     banks the hubs themselves check — never a fixed list, so it keeps
+     telling the truth as the five fill in. */
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">A <span class="pill turk">hazır</span> tag means there is something to do here right now, with nothing read yet. The rest fill in on their own as you work through the course.</p>';
 
   h+='<h2 class="sec">Konuşma · speaking</h2>'+
-   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
-   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')")+
-   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')")+
-   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')")+
-   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')");
+   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')",true)+
+   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')",true)+
+   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')",true)+
+   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')",true)+
+   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')",true);
 
   h+='<h2 class="sec">Dinleme · listening</h2>'+
-   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')")+
-   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')");
+   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0)+
+   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true);
 
   h+='<h2 class="sec">Tekrar · bringing it back</h2>'+
-   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')")+
-   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')")+
-   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')")+
-   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')");
+   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')",repBank().length>0)+
+   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')",gramBank().length>0)+
+   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')",S.star.length>0)+
+   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')",Object.keys(S.err).length>0);
 
   h+='<h2 class="sec">Kelimeler · words</h2>'+
-   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')")+
-   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()");
+   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')",true)+
+   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()",true);
 
   h+='<h2 class="sec">Kurs</h2>'+
    navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')")+
@@ -178,8 +189,13 @@ function renderNasil(){
   app().innerHTML=h;
 }
 
-function navRow(t,s,fn){
-  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead">'+esc(t)+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
+/* ready is omitted everywhere except Araçlar's practice rows: true paints
+   the "hazır" tag, false paints nothing, and leaving it out entirely (as
+   Dersler's two calls do) is a different thing from false — it means
+   readiness is not this row's business, so no pill either way. */
+function navRow(t,s,fn,ready){
+  const tag=ready?' <span class="pill turk" style="vertical-align:.1em">hazır</span>':'';
+  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead">'+esc(t)+tag+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
 }
 
 /* ===================== level ===================== */
