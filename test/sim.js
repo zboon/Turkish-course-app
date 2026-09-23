@@ -3167,6 +3167,31 @@ step("the path opens in order", () => {
   ok(open("b1u1") && open("b1u10") && open("b2u1"), "passing the B1 test did not open B1 and the unit after it");
   ok(!open("a2u1"), "passing the B1 test opened A2");
 
+  /* Testing out of the intro altogether: ten questions spanning every
+     lesson, eight to pass, and all six ticked at once. */
+  ev("wipe(); go('unit','a1u1','v')");
+  ok(lastPaint.includes("startBaslaTest()"), "unit one's lock card does not offer the intro test");
+  ev("go('baslarken')");
+  ok(lastPaint.includes("startBaslaTest()"), "the intro list does not offer the intro test");
+  for (let run = 0; run < 20; run++) {
+    ev("startBaslaTest()");
+    const qs = ev("Q.items.map(function(it){return it.q})");
+    const hit = new Set(ev("Q.items").map(it => ev("BASLA").findIndex(L => L.check.some(c => c.q === it.q && JSON.stringify(c.a) === JSON.stringify(it.a) && c.c === it.c))));
+    if (qs.length !== 10 || hit.size !== ev("BASLA.length") || hit.has(-1)) { fails.push("an intro test was not ten questions spanning every lesson: " + qs.length + " questions, lessons " + [...hit].join(",")); break; }
+  }
+  ev("startBaslaTest()");
+  for (let i = 0; i < 3; i++) introReply(false);
+  while (ev("Q.i<Q.items.length")) introReply(true);
+  ok(!ev("introDone()") && !open("a1u1"), "seven out of ten passed the intro test");
+  ev("startBaslaTest()");
+  introReply(false); introReply(false);
+  while (ev("Q.i<Q.items.length")) introReply(true);
+  ok(ev("introDone()") && open("a1u1") && !open("a1u2"), "eight out of ten did not pass the intro, or opened more than unit one");
+  ok(ev("BASLA.every(function(L){return S.basla[L.id].byTest})"), "a lesson passed by the intro test is not marked as tested out");
+  ok(lastPaint.includes("go('unit','a1u1','v')"), "the intro test's score screen does not lead to unit one");
+  ev("go('baslarken')");
+  ok(!lastPaint.includes("startBaslaTest()"), "the intro test is still offered once the intro is passed");
+
   /* Progress from before the lock is never taken away. */
   ev("wipe(); S.seen['c1u4']={v:1}; S.done['a2u3']={score:5,of:5,at:1}; save(); home()");
   ok(open("c1u4") && !open("c1u5"), "a unit already opened was locked again, or opened the next");

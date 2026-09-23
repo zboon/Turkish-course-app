@@ -188,7 +188,7 @@ function renderNasil(){
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
    '<p><b>5 · Everything opens in order.</b> From nothing, <b>Bugün</b> begins with six short lessons before unit one: the letters and their sounds, how words are spelt, stressed and built, and how a sentence is put together. They are in Dersler under <b>Başlarken</b>. Each lesson opens when the one before it is passed, unit one opens when all six are, and every unit after that opens when the one before it is passed.</p>'+
-   '<p><b>Already know some Turkish?</b> Nothing has to be sat through. The questions at the end of each lesson can be taken straight away, the placement test suggests a level in twelve questions, and every level has a <b>test ahead</b> exam: eight out of ten marks the whole level complete and opens the next one.</p>'+
+   '<p><b>Already know some Turkish?</b> Nothing has to be sat through. The <b>intro test</b> in Başlarken skips all six lessons at once, the placement test suggests a level in twelve questions, and every level has a <b>test ahead</b> exam: eight out of ten marks the whole level complete and opens the next one.</p>'+
    '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required.</p>'+
    startBtn("btn")+
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
@@ -480,7 +480,7 @@ function renderScore(){
   const n=Q.res.filter(Boolean).length, of=Q.items.length;
   touchDay();
   let h=bar(Q.title,"Sonuç",true)+'<div class="wrap">';
-  if(Q.mode==="intro"){
+  if(Q.mode==="intro"||Q.mode==="introtest"){
     h+=baslaScore(n,of);
   }else if(Q.mode==="placement"){
     let best=-1;

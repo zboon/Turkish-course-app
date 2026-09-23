@@ -288,6 +288,7 @@ ev("go('level','A1')"); grab("locked:level:A1");
 ev("go('unit','a1u1','v')"); grab("locked:unit:a1u1");
 ev("go('unit','b2u3','v')"); grab("locked:unit:b2u3");
 ev("go('baslarken')"); grab("locked:baslarken");
+reseed(777); ev("startBaslaTest()"); grab("basla:test:q");
 ev("go('basla','cumle')"); grab("locked:basla:cumle");
 ev("wipe(); home()");
 

@@ -252,7 +252,7 @@ deliberate breakage.
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
- sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at}},
+ sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
@@ -1458,9 +1458,13 @@ the unit before it is passed (`unitOpen()`, in `app.core.js`). It is the
 model of the courses that lock a path — Duolingo's above all — including
 their escape hatch: **a level's test ahead is the way to skip**, and it
 already existed. Eight out of ten marks every unit in that level done,
-which opens it and the unit after it. The intro has no test of its own,
-because its questions can be taken straight away without reading the
-lesson, and the A1 test skips the lessons and A1 together.
+which opens it and the unit after it. The intro has its own:
+`startBaslaTest()`, ten questions with at least one from every lesson,
+eight to pass, and all six marked passed (`byTest`, as a level test marks
+its units) — so someone who already reads Turkish is not made to sit
+through the alphabet, and is not pushed into the A1 test to skip it.
+It is offered on the intro list and on unit one's lock card until the
+intro is passed. The A1 test still skips the lessons and A1 together.
 
 Three decisions:
 
@@ -1485,8 +1489,8 @@ The tests lift the lock. Almost every step in `sim.js` and every grab in
 reassign `unitOpen`/`baslaOpen` to always-true at the top and keep the
 real ones as `__unitOpen`/`__baslaOpen`. One `sim.js` step, **the path
 opens in order**, puts them back and tests the rule; `snap.js` grabs the
-locked views at the end the same way. Ten deliberate breakages each
-turned `sim.js` red. A new test that is about the lock has to restore
+locked views at the end the same way. Sixteen deliberate breakages,
+ten on the lock and six on the intro test, each turned `sim.js` red. A new test that is about the lock has to restore
 the real functions first, or it is testing the stub.
 
 ## Kendi kelimelerim (your own words)

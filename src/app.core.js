@@ -347,6 +347,7 @@ function back(){
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
   else if(V.view==="quiz"&&Q&&Q.mode==="level"){go("level",Q.lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="intro"){go("basla",Q.b);}
+  else if(V.view==="quiz"&&Q&&Q.mode==="introtest"){go("baslarken");}
   else if(V.view==="basla"){go("baslarken");}
   else if(V.view==="baslarken"){go("dersler");}
   else if(V.view==="prodrun"){go("prod");}
@@ -406,7 +407,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",
