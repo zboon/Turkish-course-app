@@ -20,12 +20,17 @@
 <style>
 :root{
   --paper:#EFEADC; --card:#FBF8F0; --sunk:#E4DDCB;
-  --ink:#1B2430; --ink2:#4A5566; --faint:#8A93A1;
+  --ink:#1B2430; --ink2:#4A5566; --faint:#606977;
   --line:#D6CDB8;
   --cobalt:#173A6B; --cobalt-soft:#E1E7F0;
-  --turk:#1F7D79; --turk-soft:#D9EAE8;
+  --turk:#1C716E; --turk-soft:#D9EAE8;
   --bole:#9E3327; --bole-soft:#F2DEDA;
   --gold:#AF7F32; --gold-soft:#F1E4CB;
+  /* --gold is ornament and stays the glaze; gold that must be READ uses
+     --gold-ink, and gold on the inverse tooltip uses --gold-inv. Text on a
+     filled accent is --on-accent, which flips in dark mode because the
+     accents there are pale. validate.js holds every pair to WCAG AA. */
+  --gold-ink:#835F25; --gold-inv:#DCB169; --on-accent:#FFFFFF;
 
   /* The crest is a painted object rather than chrome, so it keeps its
      glaze in both themes and these are deliberately outside the light and
@@ -42,23 +47,25 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --paper:#10161E; --card:#18202B; --sunk:#0B1118;
-    --ink:#EDE6D6; --ink2:#AEB6C1; --faint:#78828F;
+    --ink:#EDE6D6; --ink2:#AEB6C1; --faint:#7F8995;
     --line:#2A3542;
     --cobalt:#88ACE0; --cobalt-soft:#1B2A3F;
     --turk:#4FBFB6; --turk-soft:#13302F;
     --bole:#E08476; --bole-soft:#33201D;
     --gold:#DCB169; --gold-soft:#2C2416;
+    --gold-ink:#DCB169; --gold-inv:#835F25; --on-accent:#10161E;
     --shadow:none;
   }
 }
 :root[data-theme="dark"]{
   --paper:#10161E; --card:#18202B; --sunk:#0B1118;
-  --ink:#EDE6D6; --ink2:#AEB6C1; --faint:#78828F;
+  --ink:#EDE6D6; --ink2:#AEB6C1; --faint:#7F8995;
   --line:#2A3542;
   --cobalt:#88ACE0; --cobalt-soft:#1B2A3F;
   --turk:#4FBFB6; --turk-soft:#13302F;
   --bole:#E08476; --bole-soft:#33201D;
   --gold:#DCB169; --gold-soft:#2C2416;
+  --gold-ink:#DCB169; --gold-inv:#835F25; --on-accent:#10161E;
   --shadow:none;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -92,6 +99,14 @@ a{color:var(--cobalt)}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar-title small{display:block;font-weight:500;font-size:.72rem;color:var(--faint);letter-spacing:.02em}
 .wrap{max-width:620px;margin:0 auto;padding:1.1rem .9rem 5rem}
+/* Inside the sticky bar on purpose: the one warning that must not scroll
+   away, because every tap under it is being lost. Gold, not red — red is
+   for wrong answers, and this is the device, not the learner. */
+.savewarn{background:var(--gold-soft);border-top:1px solid var(--line)}
+.savewarn-in{max-width:620px;margin:0 auto;padding:.45rem .9rem;display:flex;align-items:center;gap:.7rem;
+  font-size:.8rem;line-height:1.35;color:var(--ink)}
+.savewarn button{flex:0 0 auto;background:none;border:1px solid var(--gold);border-radius:8px;
+  padding:.3rem .7rem;font-weight:700;font-size:.8rem;color:var(--gold-ink)}
 
 /* ---------- hero ---------- */
 .hero{padding:1.5rem 0 .4rem;text-align:center}
@@ -152,6 +167,9 @@ h2.sec::after{
 
 /* continue ribbon */
 .resume{border-left:3px solid var(--gold);background:linear-gradient(90deg,var(--gold-soft),var(--card) 60%)}
+/* A device problem, not a wrong answer, so gold (help) rather than red. */
+.vnote{border-left:3px solid var(--gold)}
+.vnote .btn{margin-top:.7rem}
 
 /* The two doors. The landing page is the plan, the road and these, and
    nothing else — fifteen tool rows stacked in one column was a wall, and
@@ -202,7 +220,7 @@ h2.sec::after{
   font-weight:700;font-size:.95rem;background:var(--cobalt-soft);color:var(--cobalt);
   font-family:'Karla',sans-serif;letter-spacing:.01em;
 }
-.lvl-badge.on{background:var(--cobalt);color:#fff}
+.lvl-badge.on{background:var(--cobalt);color:var(--on-accent)}
 .lvl-badge.tested{background:var(--turk-soft);color:var(--turk)}
 .meter{height:5px;border-radius:99px;background:var(--sunk);overflow:hidden;margin-top:.55rem}
 .meter i{display:block;height:100%;background:var(--turk);border-radius:99px;transition:width .5s ease}
@@ -214,9 +232,9 @@ h2.sec::after{
 .unit:last-child{border-bottom:0}
 .tick{flex:0 0 auto;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);
   display:grid;place-items:center;margin-top:.15rem;color:var(--faint);font-size:.72rem;font-weight:700}
-.tick.done{background:var(--turk);border-color:var(--turk);color:#fff}
+.tick.done{background:var(--turk);border-color:var(--turk);color:var(--on-accent)}
 .tick.done svg{width:12px;height:12px}
-.tick.here{border-color:var(--gold);color:var(--gold)}
+.tick.here{border-color:var(--gold);color:var(--gold-ink)}
 /* Both are blocks: they are a title and its subtitle, and as inline spans
    they sat on one line and only looked stacked when the text happened to be
    long enough to wrap. The short rows in the daily plan do not wrap, which
@@ -229,7 +247,7 @@ h2.sec::after{
 .segs button{flex:1;border:0;background:none;padding:.5rem .2rem;border-radius:8px;
   font-size:.79rem;font-weight:600;color:var(--ink2);white-space:nowrap}
 .segs button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
-.segs button i{display:block;font-style:normal;font-size:.62rem;color:var(--faint);font-weight:500}
+.segs button i{display:block;font-style:normal;font-size:.62rem;color:var(--ink2);font-weight:500}
 .segs button.on i{color:var(--turk)}
 
 
@@ -240,7 +258,7 @@ h2.sec::after{
 .vb{flex:1;display:flex;align-items:center;justify-content:center;gap:.35rem;background:var(--sunk);
   border:1px solid transparent;border-radius:9px;padding:.5rem .3rem;font-size:.84rem;font-weight:600;color:var(--ink2)}
 .vb svg{width:14px;height:14px}
-.vb.on{background:var(--turk);color:#fff;border-color:var(--turk)}
+.vb.on{background:var(--turk);color:var(--on-accent);border-color:var(--turk)}
 .spds{gap:.3rem}
 .spd{flex:1;background:none;border:1px solid var(--line);border-radius:8px;padding:.32rem .2rem;font-size:.76rem;color:var(--faint)}
 .spd.on{border-color:var(--turk);color:var(--turk);font-weight:700}
@@ -286,7 +304,7 @@ h2.sec::after{
 .bubble{position:fixed;z-index:80;max-width:240px;background:var(--ink);color:var(--paper);
   padding:.45rem .65rem;border-radius:9px;font-size:.82rem;line-height:1.35;
   box-shadow:0 6px 24px rgba(0,0,0,.28);font-family:'Karla',sans-serif}
-.bubble b{color:var(--gold)}
+.bubble b{color:var(--gold-inv)}
 
 /* ---------- dictation ---------- */
 /* The marked-up line after a dikte. Red is for wrong answers only, and a
@@ -325,7 +343,7 @@ h2.sec::after{
 .fb.ok{background:var(--turk-soft);color:var(--ink)}
 .fb.no{background:var(--bole-soft);color:var(--ink)}
 .fb b{display:block;margin-bottom:.15rem}
-.btn{display:block;width:100%;background:var(--cobalt);color:#fff;border:0;border-radius:12px;
+.btn{display:block;width:100%;background:var(--cobalt);color:var(--on-accent);border:0;border-radius:12px;
   padding:.85rem;font-weight:700;font-size:.97rem;margin-top:1rem}
 .btn.ghost{background:none;color:var(--cobalt);border:1.5px solid var(--line)}
 .btn.gold{background:var(--gold);color:#241a06}
@@ -353,7 +371,7 @@ h2.sec::after{
 .pill{font-size:.72rem;font-weight:600;padding:.22rem .55rem;border-radius:99px;
   background:var(--sunk);color:var(--ink2)}
 .pill.turk{background:var(--turk-soft);color:var(--turk)}
-.pill.gold{background:var(--gold-soft);color:var(--gold)}
+.pill.gold{background:var(--gold-soft);color:var(--gold-ink)}
 .pill.cob{background:var(--cobalt-soft);color:var(--cobalt)}
 </style>
 </head>

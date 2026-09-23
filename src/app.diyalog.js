@@ -52,6 +52,16 @@ const DIA_RATE=1;                    /* the other person talks at full speed */
    engine could do, but a proper name is exactly the place a generated
    ending goes wrong in public, so the data lists what is not derivable —
    the same rule lex.js follows. */
+/* A time carries both readings: {t} is what the time IS (üçü çeyrek
+   geçiyor) and {t.at} is AT that time (üçü çeyrek geçe), which is the one
+   a clerk or a friend proposing a meeting actually uses. */
+function diaTime(h,m){
+  const d=h+":"+String(m).padStart(2,"0");
+  return {t:d,tr:timeText(h,m),at:timeAt(h,m),val:[h,m],kind:"saat",show:d};
+}
+function diaPrice(l,ku){
+  return {t:String(l),tr:priceText(l,ku),val:[l,ku],kind:"fiyat",show:l+(ku?","+ku:"")+" TL"};
+}
 function diaVars(sc){
   const V={};
   Object.keys(sc.vars||{}).forEach(function(k){
@@ -60,26 +70,30 @@ function diaVars(sc){
       const o=pick(spec.pick);
       V[k]=Object.assign({},o,{tr:o.t,val:o.t,kind:"söz"});
     }else if(spec.price){
-      const l=numRand(spec.price[0],spec.price[1]), ku=pick([0,0,0,50]);
-      V[k]={t:String(l),tr:priceText(l,ku),val:[l,ku],kind:"fiyat",
-            show:l+(ku?","+ku:"")+" TL"};
+      /* A step rounds it: a rent is "yirmi üç bin", never 23 847 lira 50. */
+      const st=spec.step||1, l=numRand(spec.price[0]/st,spec.price[1]/st)*st;
+      V[k]=diaPrice(l,st>1?0:pick([0,0,0,50]));
     }else if(spec.time){
-      const h=numRand(1,12), m=pick([0,5,10,15,20,30,40,45,50]);
-      V[k]={t:h+":"+String(m).padStart(2,"0"),tr:timeText(h,m),val:[h,m],
-            kind:"saat",show:h+":"+String(m).padStart(2,"0")};
+      /* A range keeps it plausible: breakfast is not at three. */
+      const r=Array.isArray(spec.time)?spec.time:[1,12];
+      V[k]=diaTime(numRand(r[0],r[1]),pick([0,5,10,15,20,30,40,45,50]));
     }else if(spec.num){
       const n=numRand(spec.num[0],spec.num[1]);
       V[k]={t:String(n),tr:numText(n),val:n,kind:"sayi",show:String(n)};
     }
   });
-  /* Derived slots come last, so the thing they double already exists. */
+  /* Derived slots come last, so the thing they build on already exists. */
   Object.keys(sc.vars||{}).forEach(function(k){
     const spec=sc.vars[k];
-    if(!spec.x2)return;
-    const b=V[spec.x2]; if(!b)return;
-    const l=b.val[0]*2, ku=b.val[1];
-    V[k]={t:String(l),tr:priceText(l,ku),val:[l,ku],kind:"fiyat",
-          show:l+(ku?","+ku:"")+" TL"};
+    if(spec.x2){
+      const b=V[spec.x2]; if(!b)return;
+      V[k]=diaPrice(b.val[0]*2,b.val[1]);
+    }else if(spec.later){
+      /* "Can we make it later?" has to be answered with a later time; two
+         independent draws said an earlier one half the time. */
+      const b=V[spec.later]; if(!b)return;
+      V[k]=diaTime((b.val[0]-1+pick([1,2]))%12+1,b.val[1]);
+    }
   });
   return V;
 }
@@ -202,10 +216,17 @@ function diaCheck(){
 /* The conversation carries on whether or not the number was right. In a
    shop you would hand over the wrong note and be corrected; you would not
    walk out. */
+/* The other person is not on a script either. A destination may be a list,
+   and the list is resolved only when the conversation gets there: the
+   10:00 is full, the card machine is down, the tomatoes ran out. Without
+   this every reply was fixed by the learner's own choice, so once the tree
+   was known nothing could go off-script — and going off-script is the
+   whole of what this mode exists to practise. */
+function diaTo(to){return Array.isArray(to)?pick(to):to;}
 function diaNext(){
   if(!DG)return;
   const b=diaBeat(); if(!b)return;
-  const to=DG.said&&DG.said.to?DG.said.to:b.to;
+  const to=diaTo(DG.said&&DG.said.to?DG.said.to:b.to);
   DG.said=null;DG.res=null;DG.typed="";DG.lv=0;DG.phase="hear";
   if(!to||!DG.sc.beats[to]){diaFinish(true);return;}
   DG.at=to;
@@ -237,6 +258,7 @@ function diaHub(){
     h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but listening.</p></div></div>';
     app().innerHTML=h;return;
   }
+  h+=voiceNote();
   const done=DIYALOG.filter(function(s){return S.dia&&S.dia[s.id]&&S.dia[s.id].n;}).length;
   h+='<div class="stat"><div><b>'+DIYALOG.length+'</b><span>durum</span></div>'+
      '<div><b>'+done+'</b><span>tamamlandı</span></div>'+

@@ -138,6 +138,7 @@ function renderDinle(){
     h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, so there is nothing to listen to. On a phone the app’s other modes still work.</p></div></div>';
     app().innerHTML=h;return;
   }
+  h+=voiceNote();
 
   h+='<div class="stat"><div><b>'+dd+'</b><span>dikte</span></div>'+
      '<div><b>'+ad+'</b><span>ses önce</span></div>'+

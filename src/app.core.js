@@ -3,16 +3,25 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.56";
+const APP_VERSION="v3.58";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
-       num:{},nmax:999,ncap:5,dia:{},ata:{},tips:true};
+       num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},tips:true};
+/* Progress lives in this browser and nowhere else, so a save that fails is
+   the one silent bug that costs a learner months: every box, every star,
+   gone when the tab closes, and nothing said. It used to be swallowed.
+   Now it raises a strip in the top bar of every screen until a save goes
+   through again. A browser that accepts the write and discards it later
+   (a private window) cannot be told apart from one that keeps it, so this
+   claims only what it can see. */
+let SAVEFAIL=false;
 function load(){
-  try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
+  try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}
+  catch(e){SAVEFAIL=true;}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
   if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
   /* S.gram is the grammar schedule, keyed by unit id — not a unit's own
@@ -20,8 +29,20 @@ function load(){
   if(!S.gram)S.gram={}; if(!S.err)S.err={}; if(!S.mine)S.mine=[]; if(!S.num)S.num={}; if(!S.dia)S.dia={};
   /* S.ata is keyed by a saying's slug — "a:<id>"/"d:<id>" — not by a position. */
   if(!S.ata)S.ata={};
+  /* S.sik is keyed by the word itself, never its place in SIK. */
+  if(!S.sik)S.sik={};
 }
-function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
+function saveWarn(){
+  if(!SAVEFAIL)return "";
+  return '<div class="savewarn"><div class="savewarn-in"><span class="grow"><b>Kaydedilmiyor</b> · this browser is not saving your progress. What you do now is lost when the page closes.</span>'+
+    '<button onclick="saveHelp()">Yedekle</button></div></div>';
+}
+function saveHelp(){
+  go("about");
+  const e=document.getElementById("yedek");
+  if(e)try{e.scrollIntoView({block:"start"});}catch(x){}
+}
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function touchDay(){const t=today(); if(S.days[S.days.length-1]!==t){S.days.push(t); if(S.days.length>400)S.days=S.days.slice(-400); save();}}
 function streak(){
@@ -132,7 +153,42 @@ function trVoice(){
   let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
   return vs.find(v=>/^tr/i.test(v.lang))||null;
 }
-if(ttsOK()){try{speechSynthesis.onvoiceschanged=function(){VOICE.ready=true;};}catch(e){}}
+/* The middle answer is the one that matters. A device with speech but no
+   Turkish voice does not fall silent: it reads Turkish in its default
+   voice, so a beginner hears Merhaba in an English accent from lesson one
+   and nothing says so. "unknown" is a voice list not loaded yet, and says
+   nothing rather than warn on a device that is fine. */
+function voiceState(){
+  if(!ttsOK())return "none";
+  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
+  if(!vs.length)return "unknown";
+  return vs.some(v=>/^tr/i.test(v.lang))?"ok":"notr";
+}
+function voiceNoteInner(){
+  const st=voiceState();
+  if(st==="notr")return '<div class="card vnote"><p class="lead">Türkçe ses yok · no Turkish voice</p>'+
+    '<p class="sub">This device can speak but has no Turkish voice, so Turkish is read in another language’s voice with the wrong sounds. Treat what you hear as a rough guide, not a model to copy, until one is added.</p>'+
+    '<button class="btn ghost" onclick="voiceHelp()">Nasıl eklenir · how to add one</button></div>';
+  if(st==="none")return '<div class="card vnote"><p class="lead">Ses yok · no speech</p>'+
+    '<p class="sub">This browser cannot speak, so nothing will be read aloud. Everything else works.</p></div>';
+  return "";
+}
+/* Wrapped in #vnote so a voice list that arrives after the paint can fill
+   it in place — poked, not re-rendered, because a re-render would empty
+   whatever the learner had typed on the screen. */
+function voiceNote(){return '<div id="vnote">'+voiceNoteInner()+'</div>';}
+function voiceHelp(){
+  go("about");
+  const e=document.getElementById("ses");
+  if(e)try{e.scrollIntoView({block:"start"});}catch(x){}
+}
+if(ttsOK()){try{
+  speechSynthesis.onvoiceschanged=function(){
+    VOICE.ready=true;
+    const e=document.getElementById("vnote"); if(e)e.innerHTML=voiceNoteInner();
+  };
+  speechSynthesis.getVoices();   /* Chrome loads the list lazily, on first ask */
+}catch(e){}}
 function say(text,rate,onend,lang){
   if(!ttsOK())return false;
   try{
@@ -261,7 +317,7 @@ function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
 /* The tool screens all hang off Araçlar; Dersler holds the levels. */
 const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
-            "sayilar","diyalog","ata","words","dict","about","nasil"];
+            "sayilar","diyalog","ata","words","dict","about","nasil","sik"];
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
@@ -301,6 +357,6 @@ function bar(title,sub,showHome){
    (showHome?'<button class="icon-btn" onclick="home()" aria-label="Home">'+IC.home+'</button>':'')+
    '<div class="bar-title">'+esc(title)+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button>'+
-   '</div></div>';
+   '</div>'+saveWarn()+'</div>';
 }
 

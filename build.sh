@@ -19,6 +19,7 @@ cat \
   src/data/lex.js \
   src/data/pos.js \
   src/data/core.js \
+  src/data/sik.js \
   src/data/diyalog.js \
   src/data/atasozu.js \
   src/app.core.js \
@@ -34,6 +35,7 @@ cat \
   src/app.sayilar.js \
   src/app.diyalog.js \
   src/app.atasozu.js \
+  src/app.sik.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"

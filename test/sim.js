@@ -2057,6 +2057,89 @@ step("diyalog · a conversation you can always get out of", () => {
   ok(ev("Object.keys(S.dia).length") === 0, "wipe() kept the conversation record");
 });
 
+/* validate.js counts the routes; this plays them. Every route of every
+   scenario, through the real runner, with the other person's random
+   choices forced by construction — a route reached only by luck is a route
+   that one day is not reached, which is the lesson Sor and Sayılar taught. */
+step("diyalog · every route of every scenario plays to its end", () => {
+  ev("__rnd=Math.random");
+  const force = (j, n) => ev("Math.random=function(){return " + ((j + 0.5) / n) + "}");
+  const ids = JSON.parse(ev("JSON.stringify(DIYALOG.map(function(s){return s.id}))"));
+  let played = 0;
+  const broken = [];
+  ids.forEach(id => {
+    const sc = JSON.parse(ev("JSON.stringify(diaScenario(" + q(id) + "))"));
+    const routes = [];
+    const walk = (k, on, path) => {
+      const b = sc.beats[k];
+      if (!b || on.has(k) || routes.length > 500) return;
+      if (b.end) { routes.push(path.concat([{ k }])); return; }
+      on.add(k);
+      (b.opts ? b.opts.map((o, i) => ({ i, to: o.to })) : [{ i: -1, to: b.to }]).forEach(m => {
+        const tos = [].concat(m.to);
+        tos.forEach((t, j) => walk(t, on, path.concat([{ k, i: m.i, j: Array.isArray(m.to) ? j : -1, n: tos.length }])));
+      });
+      on.delete(k);
+    };
+    walk(sc.start, new Set(), []);
+    routes.forEach(r => {
+      ev("wipe()"); ev("startDia(" + q(id) + ")");
+      const trail = [];
+      for (const st of r) {
+        trail.push(st.k);
+        if (ev("DG.at") !== st.k) { broken.push(id + ": expected " + st.k + " after " + trail.slice(0, -1).join("→") + ", got " + ev("DG.at")); return; }
+        if (st.i === undefined) break;
+        if (st.i < 0) {
+          ev("document.getElementById('dgbox').value=String(DG.V[diaBeat().want].show||DG.V[diaBeat().want].t)");
+          ev("diaCheck()");
+          if (ev("DG.res") !== true) { broken.push(id + ": the right number was marked wrong at " + st.k); return; }
+        } else ev("diaPick(" + st.i + ")");
+        if (st.j >= 0) force(st.j, st.n);
+        ev("diaNext()");
+        ev("Math.random=__rnd");
+      }
+      if (ev("DG.phase") !== "end" || ev("DG.done") !== true) broken.push(id + ": " + trail.join("→") + " did not finish");
+      else played++;
+    });
+    /* The overcharge this rewrite found: one kilo was billed as two. */
+    if (id === "pazar") ok(routes.every(r => !(r.some(s => s.k === "c1") && r.some(s => s.k === "d"))),
+      "pazar: a one-kilo route still reaches the two-kilo total");
+  });
+  ev("Math.random=__rnd");
+  ok(broken.length === 0, broken.length + " dialogue routes broke, e.g. " + broken.slice(0, 3).join(" · "));
+  ok(played >= 100, "only " + played + " routes played — the trees have gone back to being scripts");
+
+  /* Proposing a meeting uses AT a time — geçe, kala, the locative — and
+     never the answer to "what time is it". Every hour and every minute
+     the slot can draw, not a sample of them. */
+  const wrongForm = [];
+  for (let h = 1; h <= 12; h++) [0, 5, 10, 15, 20, 30, 40, 45, 50].forEach(m => {
+    const t = ev("SC=diaScenario('randevu'); VV={saat:diaTime(" + h + "," + m + ")}; diaText(SC.beats.b.say,VV)");
+    if (/geçiyor|\bvar\b/.test(t) || !/(geçe|kala|[dt][ae]|buçukta), uygun mu\?$/.test(t)) wrongForm.push(t);
+  });
+  ok(wrongForm.length === 0, wrongForm.length + " proposed times use the wrong form, e.g. " + q(wrongForm[0] || ""));
+
+  /* "Could we make it later?" is answered with a later time. */
+  const notLater = [];
+  [0.02, 0.2, 0.45, 0.6, 0.85, 0.98].forEach(r => {
+    ev("Math.random=function(){return " + r + "}");
+    const v = JSON.parse(ev("JSON.stringify(diaVars(diaScenario('randevu')))"));
+    ev("Math.random=__rnd");
+    const d = (v.gec.val[0] - v.saat.val[0] + 12) % 12;
+    if (!(d === 1 || d === 2) || v.gec.val[1] !== v.saat.val[1]) notLater.push(v.saat.show + " → " + v.gec.show);
+  });
+  ok(notLater.length === 0, "a 'later' time was not later: " + notLater.join(", "));
+
+  /* A rounded price is round: a rent is never 23 847 lira 50. */
+  [0.02, 0.5, 0.98].forEach(r => {
+    ev("Math.random=function(){return " + r + "}");
+    const v = JSON.parse(ev("JSON.stringify(diaVars(diaScenario('kira')))"));
+    ev("Math.random=__rnd");
+    ok(v.kira.val[0] % 1000 === 0 && v.kira.val[1] === 0 && v.depo.val[0] === 2 * v.kira.val[0],
+      "a rent came out unrounded or the deposit is not two rents: " + v.kira.show + " / " + v.depo.show);
+  });
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");
@@ -2121,6 +2204,8 @@ step("the plan's last step resumes only a unit that is not finished", () => {
   ev("S.dinle={}; ['d:','a:'].forEach(function(p){listenBank(p).forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+9}})})");
   ev("S.prod={}; sentenceBank().forEach(function(it){S.prod[it.k]={b:3,d:dayNum()+9}})");
   ev("S.gram={}; gramBank().forEach(function(it){S.gram[it.k]={b:3,d:dayNum()+9,n:1}})");
+  /* Today's ten common words are part of "everything" too. */
+  ev("S.sik={}; SIK.slice(0,SIK_DAY).forEach(function(e){S.sik[e[0]]={d:dayNum()}})");
   ev("save()"); ev("home()");
   ok(ev("planToday().left.length") === 0, "with everything clear the plan still lists work");
   ok(/Bugünlük bitti/.test(lastPaint), "a cleared plan does not say so");
@@ -2389,11 +2474,11 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
   const tagged = (fn) => { const r = rowRaw(fn); return !!r && /hazır/.test(r); };
 
   ev("wipe()"); ev("go('araclar')");
-  /* Eight that never depend on a unit, a starred word or a mistake: a
-     prefab bank, a generator, or the whole dictionary. These carry the
-     tag from the very first paint. */
+  /* Nine that never depend on a unit, a starred word or a mistake: a
+     prefab bank, a generator, the whole dictionary, or the frequency list.
+     These carry the tag from the very first paint. */
   ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
-   "go('sayilar')", "go('dict')", "mineOpen()"].forEach(fn => {
+   "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')"].forEach(fn => {
     ok(tagged(fn), fn + " should be tagged hazır on a fresh install — it needs nothing met");
   });
   /* Five that start empty and are not lying about it. */
@@ -2610,6 +2695,189 @@ step("söz · a sitting ends and offers another", () => {
   ok(lastPaint.includes("Devam"), "the end card does not offer another sitting");
   ev("go('ata')");
   ok(ev("V.view") === "ata", "could not get back to the hub");
+});
+
+/* A device that can speak but has no Turkish voice is not silent — it reads
+   Turkish in an English accent — and until this step existed nothing in the
+   app said so, and nothing here had ever run the app without speech at all.
+   The stub normally offers a tr-TR voice, so each state is made by hand. */
+step("ses · the three voice states, each said where it matters", () => {
+  const TR = "[{lang:'en-GB',name:'Daniel'},{lang:'tr-TR',name:'Yelda'}]";
+  const setVoices = list => ev("speechSynthesis.getVoices=function(){return " + list + "}");
+  /* The stub keeps innerHTML only on elements it was set on, so a note
+     painted with the screen is read from the paint, and the element is
+     read only where the app pokes it. */
+  const NOTR = "Türkçe ses yok · no Turkish voice", NONE = "Ses yok · no speech";
+  const empty = () => lastPaint.includes('<div id="vnote"></div>');
+  ev("S.done={};S.seen={};save()");
+
+  setVoices(TR);
+  ev("go('unit','a1u1','v')");
+  ok(empty(), "a device with a Turkish voice was warned anyway");
+  ev("go('about')");
+  ok(/Yelda/.test(lastPaint), "About does not name the Turkish voice in use");
+  ok(!/If nothing is heard/.test(lastPaint), "About still claims a missing voice means silence — it means the wrong accent");
+
+  setVoices("[{lang:'en-GB',name:'Daniel',default:true}]");
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes(NOTR), "Kelimeler does not warn when there is no Turkish voice");
+  ev("go('unit','a1u1','r')");
+  ok(lastPaint.includes(NOTR), "Okuma does not warn when there is no Turkish voice");
+  ev("go('unit','a1u1','d')");
+  ok(!lastPaint.includes('id="vnote"'), "the drill tab carries the voice note, and nothing there speaks");
+  ["prod", "dinle", "diyalog", "yolda", "sayilar"].forEach(v => {
+    ev("go('" + v + "')");
+    ok(lastPaint.includes(NOTR), v + " does not warn when there is no Turkish voice");
+  });
+  const before = voice.said;
+  ev("sayWord('merhaba')");
+  ok(voice.said === before + 1, "no Turkish voice should still speak — a rough guide, and the learner has been told");
+  ev("go('unit','a1u1','v')");
+  ev("voiceHelp()");
+  ok(ev("V.view") === "about" && /id="ses"/.test(lastPaint), "the note's button does not reach the instructions");
+  ok(/no Turkish voice/.test(lastPaint) && /Spoken Content/.test(lastPaint), "About does not say what is wrong and how to fix it");
+
+  /* A list not loaded yet says nothing, then fills in place when it
+     arrives — a re-render there would empty a half-typed dictation. */
+  setVoices("[]");
+  ev("go('unit','a1u1','r')");
+  ok(empty(), "an unloaded voice list was reported as a problem");
+  const paints = screens;
+  setVoices("[{lang:'en-US',name:'Samantha'}]");
+  ev("speechSynthesis.onvoiceschanged()");
+  ok((doc.getElementById("vnote").innerHTML || "").includes(NOTR), "a voice list arriving late did not fill the note");
+  ok(screens === paints, "a late voice list re-rendered the screen instead of filling the note in place");
+
+  /* No speech at all: the unit says so once, and the hubs that already
+     explained it keep one card rather than gaining a second. */
+  ev("__ss=window.speechSynthesis; delete window.speechSynthesis");
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes(NONE), "the unit does not say this browser cannot speak");
+  [["dinle", /Ses yok/g], ["diyalog", /Ses yok/g], ["yolda", /Ses yok/g], ["sayilar", /no speech synthesis/g]].forEach(([v, re]) => {
+    ev("go('" + v + "')");
+    ok((lastPaint.match(re) || []).length === 1 && !lastPaint.includes(NOTR) && !lastPaint.includes(NONE),
+      v + " should explain missing speech exactly once");
+  });
+  ev("go('prod')");
+  ok(lastPaint.includes(NONE), "Üretim works without speech and should say the model will not be heard");
+  ev("window.speechSynthesis=__ss");
+  setVoices(TR);
+  ev("home()");
+});
+
+/* save() used to swallow every error, so a browser refusing to store left a
+   learner working for weeks toward nothing. A warning that scrolls away
+   or sits on one screen would be missed, so it lives in the top bar. */
+step("kayıt · a save that fails is said on every screen until one works", () => {
+  const STRIP = "Kaydedilmiyor";
+  const inBar = () => { const i = lastPaint.indexOf(STRIP), w = lastPaint.indexOf('<div class="wrap">');
+    return i > -1 && w > -1 && i < w; };
+  ev("S.star=[];S.srs={};save();home()");
+  ok(!lastPaint.includes(STRIP), "a working browser was told it is not saving");
+
+  ev("__si=localStorage.setItem; localStorage.setItem=function(){throw new Error('QuotaExceededError')}");
+  ev("go('araclar')");
+  ok(!lastPaint.includes(STRIP), "warned before any save had actually failed");
+  /* Opening a tab records it as seen, which is a save. */
+  ev("go('unit','a1u1','v')");
+  ok(inBar(), "a failed save is not said in the top bar of the screen it happened on");
+  ev("toggleStar(0)");
+  ev("home()");
+  ok(inBar(), "the home screen, which draws its own bar, does not carry the warning");
+  ev("go('araclar')");
+  ok(inBar(), "the warning did not follow the learner to the next screen");
+  ev("saveHelp()");
+  ok(ev("V.view") === "about" && /id="yedek"/.test(lastPaint), "the strip's button does not reach the backup");
+  ok(/not saving right now/.test(lastPaint), "the backup card does not say what to do while nothing saves");
+  /* The rescue has to work from memory: storage is the thing that broke. */
+  ev("exportBox()");
+  const dumped = doc.getElementById("iobox").value || "";
+  ok(dumped.includes('"star"') && JSON.parse(dumped).star.length === 1,
+    "a backup taken while saving fails lost the work done since — it must read the live state");
+
+  ev("localStorage.setItem=__si; save(); render()");
+  ok(!lastPaint.includes(STRIP), "a save that went through again did not clear the warning");
+
+  ev("__gi=localStorage.getItem; localStorage.getItem=function(){throw new Error('SecurityError')}");
+  ev("load(); home()");
+  ok(inBar(), "storage that cannot even be read is not reported");
+  ev("localStorage.getItem=__gi; save(); home()");
+  ok(!lastPaint.includes(STRIP), "the read failure outlived a working save");
+  ev("S.star=[];S.srs={};save()");
+});
+
+/* The frequency layer: ten a day, into the queue that already exists, and
+   only once there is a day one behind the learner. */
+step("sık · ten common words a day, into the ordinary reviews", () => {
+  const tagged = fn => { const i = lastPaint.indexOf('onclick="' + fn + '"'); return i > -1 && /hazır/.test(lastPaint.slice(i, lastPaint.indexOf("</button>", i))); };
+  const sikStep = () => ev("planToday()").steps.find(s => s.k === "sik");
+  ev("wipe()"); ev("S.tips=true; S.sik={}; save(); home()");
+  ok(!sikStep(), "day one offers common words — the plan must stay one instruction until a unit is done");
+  ok(ev("SIK.length") >= 1000, "the list is shorter than a thousand words");
+
+  ev("S.done['a1u1']={score:5,of:5,at:Date.now()}; save(); home()");
+  const st = sikStep();
+  ok(st && st.n === 10, "after a finished unit the plan does not offer ten words: " + JSON.stringify(st));
+  const order = ev("planToday()").steps.map(s => s.k);
+  ok(order.indexOf("sik") === order.length - 2, "the words are not the last thing before the new unit: " + order.join(","));
+
+  /* The batch is the list's own order, and nothing past it. */
+  ev("go('sik')");
+  const first = JSON.parse(ev("JSON.stringify(SIK.slice(0,11).map(function(e){return e[0]}))"));
+  const shows = w => lastPaint.indexOf('<div class="vtr">' + w.replace(/'/g, "&#39;") + "</div>") > -1;
+  ok(first.slice(0, 10).every(shows), "today's batch is not the first ten words of the list");
+  ok(!shows(first[10]), "the batch runs past ten");
+
+  /* Known costs nothing: the next word slides in, nothing is starred. */
+  ev("sikKnow(" + q(first[0]) + ")");
+  ok(!shows(first[0]) && shows(first[10]), "a known word stayed, or the next one did not come in");
+  ok(ev("S.sik[" + q(first[0]) + "].k") === 1 && !ev("isStarred(SIK[0][0],SIK[0][1])"), "a known word was starred or not recorded as known");
+  ok(sikStep().n === 10, "marking a word as known used up the day's quota");
+
+  /* Added: starred, first review tomorrow, the plan's Tekrar step untouched. */
+  const dueBefore = ev("dueList().length");
+  ev("sikAdd()");
+  ok(ev("SIK.slice(1,11).every(function(e){return isStarred(e[0],e[1])})"), "the batch did not reach the review queue");
+  ok(ev("SIK.slice(1,11).every(function(e){return S.srs[starKey(e[0],e[1])].d===dayNum()+1})"), "a new word is due today — it must come back tomorrow");
+  ok(ev("dueList().length") === dueBefore, "adding today's words put work into today's Tekrar step");
+  ok(sikStep().n === 0, "the plan's word step did not tick once today's ten were added");
+  ok(/Bugünlük bu kadar/.test(lastPaint), "the screen does not say today's words are done");
+  ev("go('araclar')");
+  ok(!tagged("go('sik')"), "Sık kelimeler is still tagged hazır with today's words done");
+
+  /* More on request, and never stored as a setting. */
+  ev("go('sik')");
+  const saved = store.get("turkce-course-v1");
+  ev("sikMore()");
+  ok(shows(ev("SIK[11][0]")), "ten more did not bring the next batch");
+  ok(store.get("turkce-course-v1") === saved && ev("JSON.stringify(S)") === saved,
+     "asking for ten more changed what is stored — it is a one-day choice, not progress");
+
+  /* The next day starts where the last one stopped, and yesterday's words are due. */
+  ev("SIKX={d:0,n:0}; Object.keys(S.sik).forEach(function(k){S.sik[k].d--}); SIK.slice(1,11).forEach(function(e){S.srs[starKey(e[0],e[1])].d--}); save(); home()");
+  ok(sikStep().n === 10, "a new day did not offer ten more");
+  ok(ev("SIK.slice(1,11).every(function(e){return dueList().indexOf(starKey(e[0],e[1]))>-1})"), "yesterday's words are not in today's reviews");
+  ev("go('sik')");
+  ok(shows(ev("SIK[11][0]")) && !shows(ev("SIK[1][0]")), "the new day did not start after yesterday's batch");
+
+  /* A word starred another way counts as met, and never becomes a second copy. */
+  ev("setStar(SIK[11][0],SIK[11][1],true); save(); render()");
+  ok(!shows(ev("SIK[11][0]")), "a word already starred was offered again");
+  ok(ev("mineTaught(SIK[12][0]).tr") === ev("SIK[12][0]"), "adding a common word as your own would make a second copy");
+
+  /* In Sözlük, under the everyday source, with a class. */
+  ev("DICT={q:SIK[0][0],cat:'all',src:'all',topic:'',sort:'az'}; go('dict')");
+  ok(ev("dictAll().filter(function(w){return w.k==='sık'}).length") === ev("SIK.length"), "Sözlük does not list every common word");
+  ok(lastPaint.indexOf(">sık<") > -1, "a common word's row does not say where it comes from");
+  ok(ev("dictAll().find(function(w){return w.tr==='zaten'}).c") === "z", "a common word lost its class");
+  ev("DICT={q:'',cat:'all',src:'all',topic:'',sort:'az'}");
+
+  /* Progress, not a setting: wipe clears it, a backup carries it. */
+  const dump = ev("JSON.stringify(S)");
+  ok(JSON.parse(dump).sik && Object.keys(JSON.parse(dump).sik).length > 0, "the backup does not carry the common words");
+  ev("confirm=function(){return true}; wipe()");
+  ok(Object.keys(ev("S.sik")).length === 0, "wipe() kept the common-word record");
+  ev("home()");
 });
 
 /* ===================== report ===================== */

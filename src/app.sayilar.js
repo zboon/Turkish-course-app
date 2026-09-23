@@ -81,6 +81,18 @@ function timeText(h,m){
   return hourDat(nextHour(h))+" "+(left===15?"çeyrek":numText(left))+" var";
 }
 
+/* The same four shapes for AT a time rather than what the time IS: geçe and
+   kala where the clock says geçiyor and var, and the locative on the hour
+   and the half. "Üçü çeyrek geçiyor, uygun mu?" proposes a meeting with the
+   answer to "what time is it" — Diyalog did exactly that until this. */
+function timeAt(h,m){
+  if(m===0)return "saat "+nLoc(HOUR_E[h]);
+  if(m===30)return nLoc({t:hourWord(h)+" buçuk"});
+  if(m<30)return hourAcc(h)+" "+(m===15?"çeyrek":numText(m))+" geçe";
+  const left=60-m;
+  return hourDat(nextHour(h))+" "+(left===15?"çeyrek":numText(left))+" kala";
+}
+
 /* --- prices ----------------------------------------------------------- */
 function priceText(l,k){
   if(!l)return numText(k)+" kuruş";
@@ -357,6 +369,7 @@ function renderSayilar(){
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">Turkish numbers are perfectly regular, so knowing them is not the problem — getting them in time is. Someone says a price and you have a second or two, not ten. These are generated, so there is nothing to memorise: what comes back is the <b>shape</b> you are slow at.</p>';
 
   h+=clockHero();
+  if(ttsOK())h+=voiceNote();
   h+='<div class="stat"><div><b>'+numDue("duy")+'</b><span>duyma</span></div>'+
      '<div><b>'+numDue("oku")+'</b><span>söyleme</span></div>'+
      '<div><b>'+(cap?cap+"s":"—")+'</b><span>hedef</span></div></div>';
