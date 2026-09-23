@@ -74,7 +74,7 @@ try {
     "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS," +
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
-    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR};", sandbox, { filename: file });
+    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -790,6 +790,143 @@ if (fs.existsSync(svgFile)) {                       // absent when run on a lone
   }
 }
 
+/* ---------- atasözleri ve deyimler ---------- */
+/* The judge here is the strictest in the app — every word, in order,
+   nothing extra — so the data has to be able to survive it. Two ways
+   that goes wrong and neither is visible by reading the file:
+
+   1. A saying the tokeniser cannot score against ITSELF. dictScore
+      folds and splits, and an apostrophe or a dash can leave the model
+      unable to match its own text, which would fail a learner who typed
+      it perfectly. Same check the 432 dictation lines get.
+   2. Two entries sharing one English prompt. The prompt IS the question
+      here, exactly as in Üretim, so two entries with the same prompt
+      make one of them unanswerable. CHUNKS has the same rule and it
+      caught a real collision when that bank was written. */
+let aChecked = 0;
+{
+  const A = M.ATASOZU, D = M.DEYIM, DS = M.dictScore;
+  if (!Array.isArray(A) || !A.length) err("söz", "ATASOZU is not in the build");
+  if (!Array.isArray(D) || !D.length) err("söz", "DEYIM is not in the build");
+
+  const ids = new Set(), prompts = new Map();
+  /* Invisible characters: a soft hyphen or a zero-width space looks
+     perfect on screen and breaks every match it touches. CORE is checked
+     for exactly this, and a saying matched EXACTLY has even less room. */
+  const INVIS = /[­​‌‍⁠﻿]/;
+
+  const common = (it, kind, where) => {
+    if (!str(it.id)) { err(where, "no id"); return; }
+    /* ids are permanent, like unit ids: S.ata is keyed by them. Keep them
+       boring so nothing has to be escaped or normalised later. */
+    if (!/^[a-z][a-z0-9]*$/.test(it.id)) err(where, "id \"" + it.id + "\" is not a plain lowercase slug");
+    const key = kind + ":" + it.id;
+    if (ids.has(key)) err(where, "duplicate id \"" + it.id + "\" — S.ata would merge two sayings into one box");
+    ids.add(key);
+    ["t", "en"].forEach(f => { if (!str(it[f])) err(where, "no " + f); });
+    [it.t, it.en, it.s, it.lit].concat(it.alt || []).forEach(v => {
+      if (typeof v === "string" && INVIS.test(v)) err(where, "invisible character in \"" + v + "\"");
+      if (typeof v === "string" && TAGS.test(v)) err(where, "raw HTML in a field the app escapes");
+    });
+  };
+
+  A.forEach(p => {
+    const where = "atasözü " + (p.id || "?");
+    common(p, "a", where);
+    aChecked++;
+    /* The prompt is the situation, never the gloss: knowing WHEN to say
+       one is the skill, and prompting with the meaning would drill
+       recognition instead. */
+    if (!str(p.s)) err(where, "no situation — the prompt for a proverb is the moment it answers, not its meaning");
+    /* A proverb is a whole utterance and is punctuated as one; an idiom
+       is a citation form and is not. The shapes must not drift. */
+    if (!/[.!?]$/.test(p.t || "")) err(where, "a proverb is a whole utterance and should end in a full stop");
+    if (/^[a-zçğıöşü]/.test(p.t || "")) err(where, "a proverb starts with a capital");
+    (p.alt || []).forEach(v => {
+      if (v === p.t) err(where, "alt repeats the main wording");
+      if (!/[.!?]$/.test(v)) err(where, "alt \"" + v + "\" should be punctuated like the main wording");
+    });
+  });
+
+  D.forEach(d => {
+    const where = "deyim " + (d.id || "?");
+    common(d, "d", where);
+    aChecked++;
+    if (!str(d.lit)) err(where, "no literal gloss — the gap between the words and the meaning is the whole lesson");
+    if (/[.!?]$/.test(d.t || "")) err(where, "an idiom is a citation form, not a sentence — no full stop");
+    if (!Array.isArray(d.ex) || d.ex.length !== 2 || !str(d.ex[0]) || !str(d.ex[1]))
+      err(where, "needs one example sentence as [tr, en]");
+  });
+
+  /* One prompt, one answer. */
+  A.concat(D).forEach(it => {
+    const q = fold(it.s || it.en);
+    const who = (it.s ? "atasözü " : "deyim ") + it.id;
+    if (prompts.has(q)) err(who, "shares its English prompt with " + prompts.get(q) + " — one of them cannot be answered");
+    else prompts.set(q, who);
+  });
+
+  /* Nothing here may duplicate what the sixty units or CORE already
+     teach: this bank is additive by the same rule CORE is, and it did
+     collide eight times while it was being written. */
+  const already = new Set();
+  UNITS.forEach(u => (u.vocab || []).forEach(v => already.add(fold(v[0]))));
+  (CORE || []).forEach(c => already.add(fold(c.t)));
+  A.concat(D).forEach(it => {
+    if (already.has(fold(it.t)))
+      err("söz " + it.id, "\"" + it.t + "\" is already taught by the course — this bank is additive");
+  });
+
+  /* Every accepted wording must score clean against itself, or a learner
+     who typed it exactly would be marked wrong. */
+  if (DS) {
+    A.concat(D).forEach(it => {
+      [it.t].concat(it.alt || []).forEach(f => {
+        const r = DS(f, f);
+        aChecked++;
+        if (!r.clean) err("söz " + it.id, "\"" + f + "\" does not score clean against itself (" + r.hit + "/" + r.of + ")");
+      });
+    });
+
+    /* The three invariants of an exact judge, swept across every entry.
+       The third is what separates this mode from Dilbilgisi, where a
+       reordering is deliberately allowed: a proverb is a fixed string,
+       so moving a word has to fail. */
+    A.concat(D).forEach(it => {
+      const w = it.t.split(/\s+/);
+      if (w.length < 2) return;
+      aChecked += 3;
+      const dropped = w.slice(0, -1).join(" ");
+      if (DS(it.t, dropped).clean) err("söz " + it.id, "a dropped word still passes");
+      if (DS(it.t, it.t + " filanca").clean) err("söz " + it.id, "an invented word still passes");
+      const swapped = w.slice();
+      swapped[0] = w[1]; swapped[1] = w[0];
+      if (fold(swapped.join(" ")) !== fold(it.t) && DS(it.t, swapped.join(" ")).clean)
+        err("söz " + it.id, "a reordering still passes — a fixed saying is not order-free like a grammar target");
+    });
+  }
+
+  /* An example sentence has to actually contain its idiom, or it
+     illustrates nothing. Matched the way the repetition engine matches a
+     phrase: by prefix, because the last word inflects — "kafa patlatmak"
+     turns up as "kafa patlattım". Stems under three letters prove
+     nothing and are skipped, the same reasoning as REP_PREFIX_MIN. */
+  D.forEach(d => {
+    if (!Array.isArray(d.ex)) return;
+    const hay = fold(d.ex[0]).split(" ");
+    const parts = fold(d.t).split(" ");
+    parts.forEach((w, i) => {
+      const last = i === parts.length - 1;
+      const stem = last ? w.replace(/(ma|me)?(mak|mek)$/, "") : w;
+      const need = Math.min(last ? 3 : 4, stem.length);
+      if (stem.length < 3) return;
+      aChecked++;
+      const hit = hay.some(h => h.slice(0, need) === stem.slice(0, need));
+      if (!hit) err("deyim " + d.id, "the example does not contain \"" + w + "\"");
+    });
+  });
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -806,6 +943,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));
