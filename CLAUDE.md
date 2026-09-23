@@ -1425,10 +1425,12 @@ seven ordinary quiz questions, run by the quiz engine as `Q.mode:"intro"`.
   checks every schedule is untouched after a run, wrong answers included.
 - **Offered first only to someone who has opened nothing.** `baslaPlan()`
   is the next unfinished lesson while `metUnits()` is empty, and Bugün's
-  last step points at it, still one instruction on day one. Opening a unit
-  is a choice of where to start, so from then on the plan follows the
-  units. Dersler shows Başlarken above the levels on the same rule, and
-  below them afterwards.
+  last step points at it, still one instruction on day one. Since the
+  path locks (below), a new learner cannot open a unit before the intro
+  is passed, so this now means the intro comes first; a learner whose
+  units predate the lock is followed by the plan through the units.
+  Dersler shows Başlarken above the levels on the same rule, and below
+  them afterwards.
 - **A question can be heard.** An item with `say:` plays its word once on
   arrival (`Q.heard` stops a redraw playing it again), with a button to
   hear it again, and prints neither the word nor its spelling outside the
@@ -1446,6 +1448,46 @@ deliberate breakage.
 The pronunciation notes are approximations for an English speaker and the
 stress patterns are the standard ones. This is another place a native
 speaker's pass would be worth having.
+
+### The path opens in order
+
+By request, after the intro shipped: nothing moves on until the thing
+before it is passed. Each intro lesson opens when the one before it is
+passed (`baslaOpen()`), unit one when all six are, and every unit when
+the unit before it is passed (`unitOpen()`, in `app.core.js`). It is the
+model of the courses that lock a path — Duolingo's above all — including
+their escape hatch: **a level's test ahead is the way to skip**, and it
+already existed. Eight out of ten marks every unit in that level done,
+which opens it and the unit after it. The intro has no test of its own,
+because its questions can be taken straight away without reading the
+lesson, and the A1 test skips the lessons and A1 together.
+
+Three decisions:
+
+- **Nothing already reached is locked again.** `unitOpen()` is true for
+  any unit `isMet()` — opened or passed — before it asks about the one
+  before. A learner with progress from before the lock keeps every unit
+  they had opened, and the plan keeps following them. Taking away a unit
+  someone was halfway through would be the lock punishing the learner
+  for the app changing.
+- **A locked row still opens.** Tapping one shows `lockCard()`: what
+  opens it, where to go instead (`startBtn()`, the first open unit not
+  passed, or the next intro lesson) and the level test. A dead row that
+  did nothing would leave the learner guessing why. The locked unit
+  screen is drawn *before* `markSeen()`, or looking at a locked unit
+  would count as meeting it and unlock it.
+- **The guard is in `renderUnit()`, not only in the level list.** Units
+  are reached from Sözlük, the mistake book, the grammar hub and the plan
+  as well, so the list is not the only door.
+
+The tests lift the lock. Almost every step in `sim.js` and every grab in
+`snap.js` is about what an open unit does, on a fresh state, so both
+reassign `unitOpen`/`baslaOpen` to always-true at the top and keep the
+real ones as `__unitOpen`/`__baslaOpen`. One `sim.js` step, **the path
+opens in order**, puts them back and tests the rule; `snap.js` grabs the
+locked views at the end the same way. Ten deliberate breakages each
+turned `sim.js` red. A new test that is about the lock has to restore
+the real functions first, or it is testing the stub.
 
 ## Kendi kelimelerim (your own words)
 

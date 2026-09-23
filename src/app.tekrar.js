@@ -852,7 +852,7 @@ function planCard(){
   }
   if(open){
     h+='<p class="sub" style="margin:0 0 .5rem">'+
-     (first?(baslaPlan()?'Start with the short lessons before unit one: the letters, the sounds and how a sentence is built. If you can already read Turkish, go straight to unit one from Dersler. ':'Start with the first unit. ')+'The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
+     (first?(baslaPlan()?'Start with the short lessons before unit one: the letters, the sounds and how a sentence is built. Each opens when the one before it is passed. ':'Start with the first unit. ')+'The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
           :'In this order: reviews decay on a schedule, new material does not. About '+
             Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.')+'</p>';
     p.steps.forEach(function(s,i){

@@ -11,13 +11,34 @@
    material to review — it is orientation, and a lesson is ticked by
    passing its few questions, the same four-in-five bar as a unit.
 
-   It is offered first only to a learner who has opened nothing. Bugün
-   points at the next lesson until all six are done or a unit is opened,
-   whichever comes first: someone who can already read Turkish goes
-   straight to unit one from Dersler, and from then on the plan follows
-   the units and the intro sits below the levels as reference. */
+   The lessons open in order, and unit one opens only when all six are
+   passed (unitOpen() in app.core.js). Nothing has to be sat through:
+   a lesson's questions can be taken without reading it, and the A1 test
+   ahead skips the lessons and A1 together. Bugün points at the next
+   lesson while no unit has been opened; a learner whose progress
+   predates the lock keeps every unit already opened, the plan follows
+   the units, and the intro sits below the levels as reference. */
 
 /* ===================== başlarken ===================== */
+/* Where "start" goes now: the first unit that is open and not passed,
+   or the next intro lesson while unit one is still locked. */
+function startBtn(cls){
+  const nx=UNITS.find(function(u){return !isDone(u.id)&&unitOpen(u.id);});
+  if(nx)return '<button class="'+cls+'" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
+  const b=baslaNext();
+  if(b)return '<button class="'+cls+'" onclick="go(\'basla\',\''+b.id+'\')">Giriş derslerine başla</button>';
+  return '';
+}
+/* A locked unit says what opens it and how to skip ahead. */
+function lockCard(u){
+  const k=unitKey(u.id);
+  const why=k?"Units open in order, so each one builds on the last. This one opens when you pass the unit before it, "+esc(k.lv+" · "+k.tr)+" (unit "+k.n+")."
+             :"Unit one opens once the six lessons in Başlarken are passed: the letters, the sounds and how a sentence is built.";
+  return '<div class="card"><p class="lead">Kilitli</p>'+
+    '<p class="sub">'+why+' To skip ahead, pass the '+u.lv+' level test: eight out of ten marks every unit in '+u.lv+' complete.</p>'+
+    startBtn("btn")+
+    '<button class="btn ghost" onclick="startLevelExam(\''+u.lv+'\')">İleri test</button></div>';
+}
 function baslaIdx(id){return BASLA.findIndex(function(l){return l.id===id;});}
 function baslaDone(id){return !!(S.basla&&S.basla[id]);}
 function baslaCount(){return BASLA.filter(function(l){return baslaDone(l.id);}).length;}
@@ -35,20 +56,20 @@ function baslaItems(L){
 function renderBaslarken(){
   const nd=baslaCount(), nx=nextUnit();
   let h=bar("Giriş dersleri","before unit one · "+nd+" / "+BASLA.length,true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Six short lessons for a complete beginner: how the letters sound, how words are spelt and stressed, how they are built, and how a sentence is put together. Each ends in a few questions. If you can already read Turkish aloud, go straight to unit one. None of this is required.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Six short lessons for a complete beginner: how the letters sound, how words are spelt and stressed, how they are built, and how a sentence is put together. Each ends in a few questions, and each opens when the one before it is passed. Unit one opens when all six are. If you can already read Turkish, take the questions at the end of each lesson straight away, or pass the A1 test in Dersler to skip the lessons and A1 together.</p>';
   h+='<div class="meter" style="margin-bottom:1.2rem"><i style="width:'+Math.round(100*nd/BASLA.length)+'%"></i></div>';
   h+='<div class="card" style="padding:.2rem 1rem">';
   const here=baslaNext();
   BASLA.forEach(function(L,i){
-    const d=baslaDone(L.id);
-    h+='<button class="unit" onclick="go(\'basla\',\''+L.id+'\')">'+
-      '<span class="tick '+(d?"done":(L===here?"here":""))+'">'+(d?IC.check:(i+1))+'</span>'+
+    const d=baslaDone(L.id), open=baslaOpen(L.id);
+    h+='<button class="unit'+(open?'':' locked')+'" onclick="go(\'basla\',\''+L.id+'\')">'+
+      '<span class="tick '+(d?"done":(L===here?"here":""))+'">'+(d?IC.check:(open?(i+1):IC.lock))+'</span>'+
       '<span class="grow"><span class="unit-t">'+esc(L.tr)+'</span>'+
       '<span class="unit-s">'+esc(L.en)+' · '+baslaItems(L).length+' soru</span></span>'+
       '<span class="chev">'+IC.chev+'</span></button>';
   });
   h+='</div>';
-  if(nx)h+='<button class="btn ghost" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
+  if(nx&&unitOpen(nx.id))h+='<button class="btn ghost" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
   h+='</div>';
   paint(h);
 }
@@ -68,6 +89,12 @@ function renderBasla(){
   if(i<0){V={view:"baslarken"};renderBaslarken();return;}
   const L=BASLA[i], nb=BASLA[i+1], items=baslaItems(L);
   let h=bar(L.tr,"Giriş "+(i+1)+" / "+BASLA.length+" · "+L.en,true)+'<div class="wrap">';
+  if(!baslaOpen(L.id)){
+    const pb=BASLA[i-1];
+    paint(h+'<div class="card"><p class="lead">Kilitli</p><p class="sub">The lessons open in order. This one opens when you pass '+esc(pb.tr+" · "+pb.en)+'.</p>'+
+      '<button class="btn" onclick="go(\'basla\',\''+baslaNext().id+'\')">'+esc(baslaNext().tr)+' ile başla</button></div></div>');
+    return;
+  }
   h+=voiceNote();
   h+='<div class="card gram"><p>'+L.intro+'</p></div>';
   L.parts.forEach(function(pt){
@@ -82,8 +109,11 @@ function renderBasla(){
   h+='<div class="card"><p class="lead">'+items.length+' soru</p>'+
     '<p class="sub">Answer '+Math.ceil(items.length*0.8)+' or more correctly to tick this lesson. Nothing here is scheduled for review.</p>'+
     '<button class="btn" onclick="startBasla(\''+L.id+'\')">Başla</button></div>';
-  if(nb)h+='<button class="btn ghost" onclick="go(\'basla\',\''+nb.id+'\')">Sonraki ders →</button>';
-  else{const nx=nextUnit(); if(nx)h+='<button class="btn ghost" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';}
+  /* Onward only once this lesson is passed: the next one is locked until then. */
+  if(baslaDone(L.id)){
+    if(nb)h+='<button class="btn ghost" onclick="go(\'basla\',\''+nb.id+'\')">Sonraki ders →</button>';
+    else{const nx=nextUnit(); if(nx&&unitOpen(nx.id))h+='<button class="btn ghost" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';}
+  }
   h+='</div>';
   paint(h);
 }
@@ -104,7 +134,7 @@ function baslaScore(n,of){
     (pass?(nb?"Lesson ticked. Next: "+esc(nb.en)+".":"That is the whole introduction. Unit one starts with greetings and the endings for I am and you are.")
          :"You need "+Q.pass+" to pass. Read the lesson again and have another go. Nothing here counts against you.")+'</p>';
   if(pass&&nb)h+='<button class="btn" onclick="go(\'basla\',\''+nb.id+'\')">Sonraki ders →</button>';
-  else if(pass&&nx)h+='<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
+  else if(pass&&nx&&unitOpen(nx.id))h+='<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
   else if(!pass)h+='<button class="btn" onclick="startBasla(\''+Q.b+'\')">Tekrar dene</button>';
   h+='<button class="btn ghost" onclick="go(\'basla\',\''+Q.b+'\')">Derse dön</button></div>';
   return h;
