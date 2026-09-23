@@ -18,7 +18,7 @@ function renderHome(){
   });
   road+='</div></div>';
 
-  let h='<div class="bar"><div class="bar-in"><div style="width:34px"></div><div class="bar-title">Türkçe<small>A1 → C2</small></div>'+
+  let h='<div class="bar"><div class="bar-in">'+enBtn()+'<div class="bar-title">Türkçe<small>A1 → C2</small></div>'+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button></div>'+saveWarn()+'</div>';
   h+='<div class="wrap"><div class="hero">'+crest(76)+
    '<h1 class="mark">Türkçe</h1>'+
@@ -32,7 +32,7 @@ function renderHome(){
   if(metUnits().length>0) h+=startCard();
 
   h+='<p class="foot">Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 /* Two doors, and that is the whole menu.
    This page used to carry six level cards and fifteen tool rows in one
@@ -80,7 +80,7 @@ function renderDersler(){
    navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
    navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')");
   h+='<p class="foot">A unit is ticked at four right out of five.<br>Each level also has a test-ahead exam that skips it outright.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* ===================== araçlar · everything else ===================== */
@@ -129,7 +129,7 @@ function renderAraclar(){
    navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')");
 
   h+='<p class="foot">Nothing here has to be done in any order.<br>Reviews draw only on material you have actually met.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* Plain-English orientation, because the interface is Turkish-labelled and
@@ -161,7 +161,7 @@ function startCard(){
   const open=tipsShown();
   let h='<div class="card gram">'+
    '<button class="disc" onclick="tipsToggle()" aria-expanded="'+(open?"true":"false")+'">'+
-    '<span class="grow"><b>Nasıl çalışır</b> · how to use this</span>'+
+    '<span class="grow"><b>Nasıl çalışır</b><span class="gl">how to use this</span></span>'+
     '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
   if(open){
     h+='<p class="sub" style="margin:0 0 .2rem">Every label is Turkish with the English underneath, and you do not need to read the Turkish to use the app. Follow <b>Bugün</b> and you are using the course correctly — everything in Araçlar is optional.</p>'+
@@ -176,7 +176,7 @@ function startCard(){
 function renderNasil(){
   const nx=nextUnit();
   let h=bar("Nasıl çalışır","how to use this",true)+'<div class="wrap"><div class="card gram">'+
-   '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app.</p>'+
+   '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app. The English stays until A2 is complete, then steps aside so the Turkish does the work; the <b>EN</b> button at the top of every screen turns it off or back on whenever you like.</p>'+
    '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
    '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
@@ -187,7 +187,7 @@ function renderNasil(){
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
    (tipsOn()?'<button class="btn ghost" onclick="hideTips()">Ana ekranda gizle · hide on the home screen</button>':'')+
    '</div></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* ready is omitted everywhere except Araçlar's practice rows: true paints
@@ -196,7 +196,7 @@ function renderNasil(){
    readiness is not this row's business, so no pill either way. */
 function navRow(t,s,fn,ready){
   const tag=ready?' <span class="pill turk" style="vertical-align:.1em">hazır</span>':'';
-  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead">'+esc(t)+tag+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
+  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead nav-t">'+esc(t)+tag+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
 }
 
 /* ===================== level ===================== */
@@ -220,7 +220,7 @@ function renderLevel(){
    '<p class="sub">Ten questions drawn from the whole level. Score 8 or more and the level is marked complete — use this to skip material you already know.</p>'+
    '<button class="btn gold" onclick="startLevelExam(\''+l.id+'\')">Test ahead</button></div>';
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* ===================== unit ===================== */
@@ -234,7 +234,7 @@ function renderUnit(){
   h+='<div class="segs">';
   SECS.forEach(s=>{
     const on=s[0]===sec, seen=S.seen[u.id]&&S.seen[u.id][s[0]];
-    h+='<button class="'+(on?"on":"")+'" onclick="go(\'unit\',\''+u.id+'\',\''+s[0]+'\')">'+s[1]+'<i>'+(seen?"✓ ":"")+s[2]+'</i></button>';
+    h+='<button class="'+(on?"on":"")+'" onclick="go(\'unit\',\''+u.id+'\',\''+s[0]+'\')">'+s[1]+'<i>'+(seen?"✓ ":"")+'<span class="gl">'+s[2]+'</span></i></button>';
   });
   h+='</div>';
   if(sec==="v"||sec==="r")h+=voiceNote();
@@ -243,7 +243,7 @@ function renderUnit(){
   if(sec==="r")h+=secRead(u);
   if(sec==="d")h+=secDrill(u);
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
 }
 function toggleStar(i){
   const w=unit(V.u).vocab[i];
@@ -435,7 +435,7 @@ function renderQuiz(){
     h+='<button class="btn" onclick="nextQ()">'+(Q.i+1>=Q.items.length?"Sonuç":"Devam")+'</button>';
   }
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
   const fin=document.getElementById("fin"); if(fin&&Q.sel===null)fin.focus();
   if(fin)fin.addEventListener("keydown",e=>{if(e.key==="Enter")answerFill();});
 }
@@ -498,7 +498,7 @@ function renderScore(){
     h+='</div>';
   }
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* ===================== review screen ===================== */
@@ -512,10 +512,10 @@ function rvFlip(){RV.show=true;render();}
 function rvGrade(g){grade(RV.q[RV.i],g);RV.done++;RV.i++;RV.show=false;window.scrollTo(0,0);render();}
 function renderReview(){
   if(RV.i>=RV.q.length){
-    app().innerHTML=bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score"><div class="big pass">'+RV.done+'</div>'+
+    paint(bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score"><div class="big pass">'+RV.done+'</div>'+
       '<p class="sub">kelime tekrar edildi · words reviewed</p></div>'+
       '<p class="sub" style="text-align:center">'+dueList().length+' kelime bugün hâlâ bekliyor.</p>'+
-      '<button class="btn" onclick="startReview()">Devam</button><button class="btn ghost" onclick="home()">Ana sayfa</button></div>';
+      '<button class="btn" onclick="startReview()">Devam</button><button class="btn ghost" onclick="home()">Ana sayfa</button></div>');
     return;
   }
   const k=RV.q[RV.i], p=k.split("|"), r=(S.srs&&S.srs[k])||{b:0};
@@ -532,7 +532,7 @@ function renderReview(){
     '<button class="btn gold" onclick="rvGrade(2)">Kolay</button></div>'+
     '<p class="tiny" style="text-align:center;margin-top:.6rem">Zor: bugün tekrar · İyi: '+STEPS[Math.min(((S.srs&&S.srs[k]||{b:0}).b)+1,STEPS.length-1)]+' gün sonra</p>';
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* ===================== words ===================== */
@@ -556,7 +556,7 @@ function renderWords(){
     h+='</div>';
   }
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
 }
 function unstar(i){dropStar(S.star[i]);save();render();}
 function startCards(){FC={q:shuffle(S.star),i:0,show:false};V={view:"cards"};window.scrollTo(0,0);render();}
@@ -564,8 +564,8 @@ function flip(){FC.show=!FC.show;render();}
 function nextCard(){FC.i++;FC.show=false;window.scrollTo(0,0);render();}
 function renderCards(){
   if(FC.i>=FC.q.length){
-    app().innerHTML=bar("Kartlar","Bitti",true)+'<div class="wrap"><div class="score"><div class="big pass">'+FC.q.length+'</div><p class="sub">kelime gözden geçirildi</p></div>'+
-      '<button class="btn" onclick="startCards()">Tekrar</button><button class="btn ghost" onclick="go(\'words\')">Sözlüğüm</button></div>';
+    paint(bar("Kartlar","Bitti",true)+'<div class="wrap"><div class="score"><div class="big pass">'+FC.q.length+'</div><p class="sub">kelime gözden geçirildi</p></div>'+
+      '<button class="btn" onclick="startCards()">Tekrar</button><button class="btn ghost" onclick="go(\'words\')">Sözlüğüm</button></div>');
     return;
   }
   const p=FC.q[FC.i].split("|");
@@ -575,7 +575,7 @@ function renderCards(){
     spkBtn(p[0],{style:"margin-top:.6rem",stop:true,text:" dinle"})+
     (FC.show?'<p class="sub" style="margin-top:1rem;font-size:1.05rem">'+esc(p[1])+'</p>':'<p class="tiny" style="margin-top:1rem">tap to reveal</p>')+'</div>';
   h+='<div class="btn-row"><button class="btn ghost" onclick="flip()">Çevir</button><button class="btn" onclick="nextCard()">Sonraki</button></div></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 /* ===================== sözlük · the whole word list ===================== */
@@ -658,7 +658,7 @@ function renderDict(){
     'placeholder="ara · search Turkish or English" oninput="dictSearch(this.value)" value="'+esc(DICT.q)+'">';
   h+='<div class="segs" style="margin:.7rem 0 .4rem">';
   SRCS.forEach(function(s){
-    h+='<button class="'+(DICT.src===s[0]?"on":"")+'" onclick="dictSrc(\''+s[0]+'\')">'+s[1]+'<i>'+s[2]+'</i></button>';
+    h+='<button class="'+(DICT.src===s[0]?"on":"")+'" onclick="dictSrc(\''+s[0]+'\')">'+s[1]+'<i><span class="gl">'+s[2]+'</span></i></button>';
   });
   h+='</div>';
   h+='<div class="pillrow" style="margin:.2rem 0">';
@@ -694,7 +694,7 @@ function renderDict(){
     h+='</div>';
   }
   h+='<p class="foot">Classified by ending where Turkish allows it — anything in -mak or -mek is a verb — and by hand otherwise. A word can belong to more than one class; the list picks the one it is used in here.</p></div>';
-  app().innerHTML=h;
+  paint(h);
   /* Typing re-renders the screen, so put the cursor back where it was. */
   const box=document.getElementById("dq");
   if(box&&DICT.q){try{box.focus();box.setSelectionRange(DICT.q.length,DICT.q.length);}catch(e){}}
@@ -748,7 +748,7 @@ function renderAbout(){
   '<div class="card"><p class="lead">Sıfırla</p><p class="sub">Clear all progress, saved words and bookmarks on this device.</p>'+
   '<button class="btn ghost" onclick="wipe()">Tüm ilerlemeyi sil</button></div>'+
   '<p class="foot">Türkçe '+APP_VERSION+' · '+UNITS.length+' ünite · '+LEVELS.length+' seviye</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function ioMsg(t){const e=document.getElementById("iomsg");if(e)e.textContent=t;}
@@ -784,7 +784,7 @@ function wipe(){
   S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
      prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
      dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{},gram:{},ygap:S.ygap,yrate:S.yrate,err:{},mine:[],
-     num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},tips:S.tips};
+     num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},tips:S.tips,en:S.en};
   save(); home();
 }
 

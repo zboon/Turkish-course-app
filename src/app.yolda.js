@@ -225,7 +225,7 @@ function renderYolda(){
   let h=bar("Yolda","hands-free · eyes up",true)+'<div class="wrap">';
   if(!ttsOK()){
     h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but speech.</p></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   h+=voiceNote();
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">A sitting that runs without you: the English is spoken, you answer out loud into the silence, then the Turkish comes. Nothing to tap until it ends, so it can be done while driving or working. Items come back three, eight and twenty slots later — inside the same sitting, while they are still half remembered.</p>';
@@ -233,7 +233,7 @@ function renderYolda(){
     h+='<div class="card"><p class="lead">Bugünlük bitti</p>'+
      '<p class="sub">Every sentence and prefab is scheduled far enough ahead that none is due today.</p>'+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   const sents=sentenceBank().length;
   h+='<div class="stat"><div><b>'+sents+'</b><span>cümle</span></div>'+
@@ -264,7 +264,7 @@ function renderYolda(){
   h+='</div></div>';
 
   h+='<p class="foot">Keep the screen on: speech stops when a phone locks, so the app asks to hold the screen awake and that is all it can do about it.<br>Marking happens once, at the end — nothing is written while you drive.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderYoldaRun(){
@@ -285,7 +285,7 @@ function renderYoldaRun(){
     h+='</div>';
     h+='<button class="btn" onclick="yolSave()">Kaydet'+(miss?" · "+miss+" kaçtı":"")+'</button>';
     h+='<button class="btn ghost" onclick="YL=null;go(\'yolda\')">Kaydetmeden çık</button></div>';
-    app().innerHTML=h;
+    paint(h);
     return;
   }
   const c=YL.q[YL.i], it=c&&c.it;
@@ -311,5 +311,5 @@ function renderYoldaRun(){
   h+='</div>';
   h+='<p class="tiny" style="text-align:center">'+esc(it.lv+" · "+it.from)+'</p>';
   h+='<button class="btn ghost" onclick="yolFinish()">Bitir · stop and mark</button></div>';
-  app().innerHTML=h;
+  paint(h);
 }

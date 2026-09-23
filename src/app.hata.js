@@ -183,7 +183,7 @@ function renderHata(){
     h+='<div class="card"><p class="lead">Defter boş</p>'+
      '<p class="sub">Nothing has gone wrong yet — or nothing has been attempted. Every wrong answer in a quiz, in Üretim, Dinleme, Tekrar, Dilbilgisi or Yolda lands here with its explanation, and anything that catches you out twice moves to the top.</p>'+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">Every mode already brings a wrong answer back today by itself, so this is not another queue — it is the record. What you said, what was right, why, and how often the same thing has caught you.</p>';
   h+='<div class="stat"><div><b>'+rep.length+'</b><span>tekrarlayan</span></div>'+
@@ -228,5 +228,5 @@ function renderHata(){
    '<p class="sub">Clearing the book changes nothing about the drills — wrong answers still come back on their own schedule.</p>'+
    '<button class="btn ghost" onclick="errWipe()">Hepsini sil</button></div>';
   h+='<p class="foot">Kept to the '+ERR_MAX+' most recent, and a thing missed often outlives a thing missed once.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }

@@ -136,7 +136,7 @@ function renderDinle(){
 
   if(!ttsOK()){
     h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, so there is nothing to listen to. On a phone the app’s other modes still work.</p></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   h+=voiceNote();
 
@@ -171,7 +171,7 @@ function renderDinle(){
 
   h+='<p class="foot">This is the device’s own Turkish voice, not a recording of a person.<br>'+
    'It has no reduction, no accent and no overlapping turns, so treat a clean 1.5× here as a floor rather than a finish.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderDinleRun(){
@@ -179,12 +179,12 @@ function renderDinleRun(){
   const dikte=DK.mode==="d";
   if(DK.phase==="end"){
     const left=dinleDue(DK.mode+":");
-    app().innerHTML=bar("Dinleme","Bitti",true)+'<div class="wrap"><div class="score">'+
+    paint(bar("Dinleme","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(DK.right*2>=DK.q.length?"pass":"fail")+'">'+DK.right+'/'+DK.q.length+'</div>'+
       '<p class="sub">'+(dikte?"kelimesi kelimesine · marked by the app":"kendi değerlendirmen · your own marking")+'</p></div>'+
       '<div class="card"><p class="sub">'+left+' still waiting in this set. The ones you missed come back today.</p>'+
       '<button class="btn" onclick="startDinle(\''+DK.mode+'\')">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'dinle\')">Dinleme</button></div></div>';
+      '<button class="btn ghost" onclick="go(\'dinle\')">Dinleme</button></div></div>');
     return;
   }
   const it=DK.q[DK.i];
@@ -227,7 +227,7 @@ function renderDinleRun(){
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.lv+" · "+it.from)+'</p>';
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("dbox");
   if(box){
     box.focus();

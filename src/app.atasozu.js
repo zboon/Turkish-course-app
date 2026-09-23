@@ -178,18 +178,18 @@ function renderAta(){
    '<p class="sub">Every word, in order, nothing extra. This is the strictest judge in the app and deliberately so: a fixed saying with one word wrong is not a saying slightly misremembered, it is a sentence nobody says. Diacritics are forgiven as everywhere else, and where a saying genuinely has more than one real wording both are accepted — you will see the other after a right answer. If you know a wording this list does not, you can overrule the mark.</p></div>';
 
   h+='<p class="foot">Anonymous folk material — no author, no edition, nothing to attribute.<br>Scheduled by saying, on the same ladder as everything else.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderAtaRun(){
   if(!AT){renderAta();return;}
   if(AT.phase==="end"){
-    app().innerHTML=bar("Söz","Bitti",true)+'<div class="wrap"><div class="score">'+
+    paint(bar("Söz","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(AT.right*2>=AT.q.length?"pass":"fail")+'">'+AT.right+'/'+AT.q.length+'</div>'+
       '<p class="sub">tam çıktı · produced exactly</p></div>'+
       '<div class="card"><p class="sub">Anything missed comes back today, the rest moves out a box. A near miss counts as a miss here — the form is the whole thing.</p>'+
       '<button class="btn" onclick="startAta(\''+AT.mode+'\')">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'ata\')">Atasözleri ve deyimler</button></div></div>';
+      '<button class="btn ghost" onclick="go(\'ata\')">Atasözleri ve deyimler</button></div></div>');
     return;
   }
   const it=AT.q[AT.i];
@@ -234,7 +234,7 @@ function renderAtaRun(){
     h+='<button class="btn" onclick="ataNext()">'+(AT.i+1>=AT.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("abox");
   if(box){
     box.focus();

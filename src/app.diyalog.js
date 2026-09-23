@@ -256,7 +256,7 @@ function diaHub(){
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">A short errand with someone who talks at normal speed and does not know you are learning. You hear them; you never read them. What ends a conversation is not the missing word — it is the pause after it, so the only thing marked here is whether you <b>finished</b>, and asking someone to repeat themselves costs you nothing at all.</p>';
   if(!ttsOK()){
     h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but listening.</p></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   h+=voiceNote();
   const done=DIYALOG.filter(function(s){return S.dia&&S.dia[s.id]&&S.dia[s.id].n;}).length;
@@ -287,7 +287,7 @@ function diaHub(){
   h+='</div>';
 
   h+='<p class="foot">Nothing you say is recorded and nothing but a number is marked.<br>The prices, times and places change every run, so the answer cannot be remembered — only heard.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function diaRun(){
@@ -318,7 +318,7 @@ function diaRun(){
     if(last&&last.num&&!DG.res)
       h+='<div class="fb no"><b>Yanlış duydun</b>The conversation carries on — in a shop you would hand over the wrong note and be corrected, not walk out. It goes in the book under the same shape Sayılar drills.</div>';
     h+='<button class="btn" onclick="diaNext()">Devam</button></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
 
   /* Ask for what was actually said: a time is not a quantity, and a
@@ -349,7 +349,7 @@ function diaRun(){
   });
   h+='<button class="btn ghost" onclick="diaQuit()">Vazgeç · walk away</button>';
   h+='<p class="foot">Asking again is free and always will be.<br>The only thing this mode marks you down for is leaving.</p></div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("dgbox");
   if(box){
     box.focus();
@@ -385,5 +385,5 @@ function diaEnd(){
   h+='</div>';
   h+='<button class="btn" onclick="startDia(\''+DG.id+'\')">Bir daha</button>'+
    '<button class="btn ghost" onclick="DG=null;go(\'diyalog\')">Diyalog</button></div>';
-  app().innerHTML=h;
+  paint(h);
 }

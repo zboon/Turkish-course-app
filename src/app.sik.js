@@ -83,7 +83,7 @@ function renderSik(){
         :'Every word on the list has been met. They live in your reviews now.')+'</p>'+
      (sikRest().length?'<button class="btn ghost" onclick="sikMore()">Bir on daha · ten more</button>':'')+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   h+='<h2 class="sec">Bugün</h2><div class="card" style="padding:.3rem 1rem">';
   b.forEach(function(e){
@@ -94,5 +94,5 @@ function renderSik(){
   h+='</div>';
   h+='<button class="btn" onclick="sikAdd()">Tekrara ekle · add '+(b.length===1?"it":"these "+b.length)+' to my reviews</button>';
   h+='<p class="foot">Tap a word to hear it. <b>biliyorum</b> skips one you already know and brings in the next.<br>First review tomorrow.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }

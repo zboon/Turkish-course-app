@@ -251,7 +251,7 @@ deliberate breakage.
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
  sik:{"zaten":{d}, "ve":{d,k:1}},
- gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips}
+ gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
@@ -270,8 +270,8 @@ rather than a count. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
-`pscope`, `drate`, `dreplay`, `ygap`, `yrate`, `nmax`, `ncap` and `tips` are
-settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
+`pscope`, `drate`, `dreplay`, `ygap`, `yrate`, `nmax`, `ncap`, `tips` and `en`
+are settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
 `num` is keyed by the *shape* a number has rather than by any number —
 `duy:3` is three digits heard, `oku:saat` is a clock face read aloud —
 because the numbers are generated and endless while the shapes are six.
@@ -452,6 +452,60 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
   place, never re-renders (that would empty a half-typed dictation). About
   used to claim a missing Turkish voice meant silence; it means the wrong
   accent, which is worse, and is why this exists.
+
+## İngilizcesi (English under the Turkish)
+
+Built, by request: until A2 is complete every instruction carries its
+English underneath, small and faint — *Başla* over *start*, *Kontrol et*
+over *check* — and an **EN** button in the top bar of every screen turns
+it off or back on. The interface was already Turkish-first with English
+beside some labels, but not all: *Başla*, *Devam*, *Kontrol et*, the tab
+names and every section heading were Turkish only, which is exactly
+what a learner on day one cannot read.
+
+It is **one table and one pass**, not markup at every call site.
+Every full paint goes through `paint(h)` in `app.core.js`, which runs
+`enUnder()` — so a new screen must paint with `paint(h)`, never
+`app().innerHTML=` directly (eight end-of-session screens did, and were
+the ones left in Turkish only). The pass touches only the first run of
+text inside an interface element (a button, `h2.sec`, `.lead`, `.qn`,
+`.sub`, a pill, `.tiny`, `.empty`, `.big`) and only when that text is a
+key: `EN_UI` for bare Turkish labels, `EN_RULES` for ones with a number
+in them, and `EN_INLINE` for labels already written `Türkçe · english`,
+whose English half is moved underneath. Course content never matches
+because it is never looked up, and `EN_SKIP` names the content classes
+(`opt`, `tile`, `vtr`, `gw`, …) the pass must never enter: a glossed
+answer option would give the answer away with the toggle on.
+
+Three decisions:
+
+- **The English half has to be listed, not guessed.** After a `·` the
+  text is sometimes Turkish (*bu oturum*), a count, or content (a
+  vocabulary gloss), and guessing "looks English" is how a vocabulary
+  answer would vanish when the toggle is off. `sim.js` scans every paint
+  and fails on an interface label with an English half `EN_INLINE` does
+  not list, so each new one is decided. The scan covers only elements
+  that never hold content — a sub line or a word pill can carry a
+  generated word, and a check that depends on what a run drew is the
+  flaky kind this file has been bitten by twice.
+- **The toggle is a class, not a redraw.** The English always goes into
+  the page and `.noen` on `<html>` hides it, so switching redraws
+  nothing and cannot empty a half-typed answer. A poke that fills an
+  element outside `paint()` (the late voice note) runs `enUnder()`
+  itself.
+- **The default follows the level; a choice wins.** `S.en` is unset
+  until the learner taps EN; unset means on until A2 is complete —
+  `lvPct("A2")`, the line `tipsOn()` already uses, and which the A2
+  level test fills. It is a setting, so `wipe()` keeps it.
+
+An element that already carries its English — a tab's `<i>`, a title's
+`<small>` — is left alone rather than given a second copy; the unit
+tabs' `<i>` English now sits in a `.gl` span so the toggle reaches it
+too. Nine deliberate breakages — the level default, the content skip,
+a redraw on toggle, `wipe()` dropping the setting, the second copy,
+`paint()` skipping the pass, the late voice note, an unlisted English
+half, and the pass escaping the interface elements — each turned
+`sim.js` red.
 
 ## Üretim (production mode)
 

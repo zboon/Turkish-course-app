@@ -264,7 +264,7 @@ function renderProd(){
   h+='</div>';
 
   h+='<p class="foot">Right answers come back later and later — 1, 2, 4, 8, 16 days — on the same ladder as the word queue. Wrong ones come back today.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderProdRun(){
@@ -272,13 +272,13 @@ function renderProdRun(){
   if(PR.phase==="end"){
     const banked=PR.mode==="s"||PR.mode==="k";
     const left=banked?prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length:0;
-    app().innerHTML=bar(PR.title,"Bitti",true)+'<div class="wrap"><div class="score">'+
+    paint(bar(PR.title,"Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(PR.right*2>=PR.q.length?"pass":"fail")+'">'+PR.right+'/'+PR.q.length+'</div>'+
       '<p class="sub">kendi değerlendirmen · your own marking</p></div>'+
       '<div class="card"><p class="sub">'+(banked?left+' still waiting in this set. The ones you missed come back today.'
         :'These are built fresh every time, so the set never runs out. What comes back is the pattern you missed.')+'</p>'+
       '<button class="btn" onclick="startProd(\''+PR.mode+'\')">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'prod\')">Üretim</button></div></div>';
+      '<button class="btn ghost" onclick="go(\'prod\')">Üretim</button></div></div>');
     return;
   }
   const it=PR.q[PR.i];
@@ -309,7 +309,7 @@ function renderProdRun(){
     if(clauseSplit(it.tr).length>1)h+='<button class="btn ghost" onclick="prodBuild()">Sondan başa kur</button>';
   }else h+='<button class="btn" onclick="prodBuildNext()">'+(PR.bi+1>=PR.build.length?"Bitir":"Sonraki parça")+'</button>';
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderRetell(){
@@ -331,6 +331,6 @@ function renderRetell(){
   else h+='<div class="card"><p class="sub">Not due yet — it comes back on its own in '+left+' day'+(left===1?"":"s")+'. Telling it again today is not what makes it stick.</p>'+
    '<button class="btn ghost" onclick="retellDone(\''+u.id+'\')">Yine de anlattım</button></div>';
   h+='<button class="btn ghost" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Üniteye dön</button></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 

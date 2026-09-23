@@ -95,6 +95,18 @@ a{color:var(--cobalt)}
   background:none;border:1px solid var(--line);border-radius:9px;color:var(--ink2);
 }
 .icon-btn svg{width:17px;height:17px}
+/* English under the Turkish (enUnder in app.core.js): small, faint, and
+   one class away from gone. Inline where a second line would break the
+   shape — a pill, a section heading with its hairline, a small count. */
+.gl{display:block;font:500 .72em/1.25 Karla,system-ui,sans-serif;color:var(--faint);letter-spacing:.01em;margin-top:.1em;text-transform:none}
+.pill .gl,.tiny .gl,h2.sec .gl,.sbtn .gl,.grow>.gl{display:inline;margin:0 0 0 .4em}
+.segs i .gl{display:inline;font:inherit;color:inherit;margin:0;letter-spacing:inherit}
+/* On a filled button or a pill the ground is not the page, so faint would
+   fail contrast there: the label's own colour, a little quieter. */
+.btn .gl,.pill .gl,button.on .gl{color:inherit;opacity:.8}
+.noen .gl{display:none!important}
+.en-btn{font:700 .66rem/1 Karla,system-ui,sans-serif;letter-spacing:.04em}
+.en-btn[aria-pressed="false"]{color:var(--faint);text-decoration:line-through}
 .bar-title{flex:1;min-width:0;text-align:center;font-weight:600;font-size:.95rem;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bar-title small{display:block;font-weight:500;font-size:.72rem;color:var(--faint);letter-spacing:.02em}
