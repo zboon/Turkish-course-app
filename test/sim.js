@@ -26,6 +26,13 @@ const boot = require("./dom.js");
 const env = boot(file);
 const { ev, doc, appEl, bodyEl, documentEl, voice, drain, clock, store } = env;
 let lastPaint = env.lastHTML();             /* the app paints once while booting */
+/* Units and lessons open in order (unitOpen/baslaOpen in the app). Almost
+   every step below is about what a unit or lesson does once it is open,
+   on a fresh state, so the locks are lifted here and put back for the one
+   step that is about them, "the path opens in order", which is also where
+   they are broken on purpose. */
+const LIFT = "unitOpen=function(){return true}; baslaOpen=function(){return true}";
+ev("__unitOpen=unitOpen; __baslaOpen=baslaOpen; " + LIFT);
 
 const UNITS = ev("UNITS"), LEVELS = ev("LEVELS"), PLACEMENT = ev("PLACEMENT");
 const q = s => JSON.stringify(s);
@@ -3007,6 +3014,192 @@ step("sık · ten common words a day, into the ordinary reviews", () => {
   ev("confirm=function(){return true}; wipe()");
   ok(Object.keys(ev("S.sik")).length === 0, "wipe() kept the common-word record");
   ev("home()");
+});
+
+/* Başlarken: six lessons before unit one. Offered first only to someone
+   who has opened nothing, ticked by passing their questions, and never a
+   source of review — nothing reviews what has not been met, and these
+   are orientation rather than material. */
+/* Answer the current intro question, right or wrong, by the key. The
+   tiles are shuffled in the data, so they are built in the answer's
+   order rather than the list's. */
+function introReply(right) {
+  const it = ev("Q.items[Q.i]");
+  if (it.t === "mc") ev("answerMC(" + (right ? it.c : (it.c + 1) % it.a.length) + ")");
+  else if (it.t === "fill") { doc.getElementById("fin").value = right ? it.c : "zzz"; ev("answerFill()"); }
+  else {
+    const pool = ev("Q.pool").slice(), used = [];
+    (right ? it.c.split(" ") : it.w).forEach(w => {
+      const at = pool.findIndex((t, i) => t === w && !used[i]);
+      if (at < 0) { fails.push("intro tile not in the pool: " + w); return; }
+      used[at] = 1; ev("build(" + at + ")");
+    });
+    if (!right) { ev("unbuild(0)"); }
+    ev("answerOrder()");
+  }
+  ok(ev("Q.res[Q.i]") === right, "an intro answer was graded the other way (" + it.t + " · " + it.q + ")");
+  ev("nextQ()");
+}
+step("başlarken · the lessons before unit one", () => {
+  const BASLA = ev("BASLA");
+  const plan = () => ev("planToday()");
+  ev("confirm=function(){return true}; wipe(); home()");
+
+  /* Day one: one instruction, and it is the first lesson. */
+  const p0 = plan();
+  ok(p0.steps.length === 1 && p0.left[0].tr === "Giriş" && p0.left[0].go === "go('basla','alfabe')",
+     "day one's plan does not point at the first intro lesson: " + JSON.stringify(p0.steps));
+  ok(/short lessons before unit one/.test(lastPaint), "day one's plan does not say what the intro is");
+  ev("go('dersler')");
+  ok(lastPaint.indexOf('<h2 class="sec">Başlarken') > -1 && lastPaint.indexOf('<h2 class="sec">Başlarken') < lastPaint.indexOf('<h2 class="sec">Seviyeler'),
+     "on day one Başlarken is not above the levels");
+  ok(lastPaint.includes("go('baslarken')"), "Dersler has no way into the intro lessons");
+
+  /* The list, then every lesson, every part and every row. */
+  ev("go('baslarken')");
+  BASLA.forEach(L => ok(lastPaint.includes("go('basla','" + L.id + "')"), "the intro list does not open " + L.id));
+  ok((lastPaint.match(/class="tick here"/g) || []).length === 1, "the intro list does not mark exactly one lesson as next");
+  ev("back()");
+  ok(ev("V.view") === "dersler", "back from the intro list does not return to Dersler");
+  BASLA.forEach(L => {
+    ev("go('basla'," + q(L.id) + ")");
+    L.parts.forEach(pt => ok(lastPaint.includes('<h2 class="sec">' + esc(pt.h) + '<span class="gl">'), L.id + ' does not show its part "' + pt.h + '"'));
+    const words = [].concat(...L.parts.map(pt => (pt.rows || []).map(r => r[0]).concat((pt.letters || []).map(r => r[1]))));
+    words.forEach(w => ok(lastPaint.includes('<div class="vtr">' + esc(w) + '</div>') && lastPaint.includes("sayWord('" + w.replace(/'/g, "\\'") + "')"),
+      L.id + ': "' + w + '" is not shown with a way to hear it'));
+    ok(lastPaint.includes("startBasla('" + L.id + "')"), L.id + " has no way into its questions");
+  });
+  ev("go('basla','alfabe')");
+  ok((lastPaint.match(/class="bl"/g) || []).length === 29, "the alphabet lesson does not show 29 letters");
+  ev("back()");
+  ok(ev("V.view") === "baslarken", "back from a lesson does not return to the list");
+
+  /* The questions: a heard one plays on arrival, and a right run ticks the
+     lesson without touching a schedule or the mistake book. */
+  const srs = ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err])");
+  ev("startBasla('alfabe')");
+  ok(ev("Q.items[0].say") === "çay" && voice.spoken[voice.spoken.length - 1] === "çay", "a heard question did not play its word on arrival");
+  const said = voice.said;
+  ev("render()");
+  ok(voice.said === said, "a redraw played the heard word again");
+  ok(lastPaint.includes("Bir daha dinle" + GL("listen again")), "a heard question has no way to hear it again");
+  while (ev("Q.i<Q.items.length")) introReply(true);
+  ok(ev("!!S.basla.alfabe"), "passing the alphabet questions did not tick the lesson");
+  ok(lastPaint.includes("go('basla','yazim')"), "the score screen does not lead to the next lesson");
+  ok(plan().left[0].go === "go('basla','yazim')", "the plan did not move on to the second lesson");
+  ok(ev("metUnits().length") === 0, "an intro lesson counted as a unit met");
+
+  /* Failing does not tick, and a wrong answer is not a recorded mistake. */
+  ev("startBasla('vurgu')");
+  ev("back()");
+  ok(ev("V.view") === "basla" && ev("V.u") === "vurgu", "back from intro questions does not return to the lesson");
+  ev("startBasla('vurgu')");
+  while (ev("Q.i<Q.items.length")) introReply(false);
+  ok(!ev("!!S.basla.vurgu"), "failing the questions ticked the lesson");
+  ok(lastPaint.includes("startBasla('vurgu')"), "a failed run does not offer another go");
+  ok(ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err])") === srs, "the intro wrote to a schedule or the mistake book");
+
+  /* All six done: the plan goes on to unit one, and says so. */
+  BASLA.forEach(L => { if (!ev("baslaDone(" + q(L.id) + ")")) { ev("startBasla(" + q(L.id) + ")"); while (ev("Q.i<Q.items.length")) introReply(true); } });
+  ok(ev("baslaCount()") === BASLA.length, "running every lesson right did not tick them all");
+  ok(plan().left[0].go === "go('unit','a1u1','v')", "with the intro done the plan does not go to unit one: " + plan().left[0].go);
+  ok(/a1u1/.test(lastPaint), "the last lesson's score screen does not lead to unit one");
+
+  /* Progress, not a setting: a backup carries it and wipe clears it. */
+  ok(Object.keys(JSON.parse(ev("JSON.stringify(S)")).basla).length === BASLA.length, "the backup does not carry the intro lessons");
+  ev("wipe()");
+  ok(Object.keys(ev("S.basla")).length === 0, "wipe() kept the intro record");
+
+  /* Someone who opens a unit first has chosen where to start: the plan
+     follows the unit, and Başlarken drops below the levels. */
+  ev("go('unit','a1u1','v'); home()");
+  ok(ev("baslaPlan()") === null && plan().steps.some(s => s.k === "new" && s.tr !== "Giriş"), "opening a unit did not take the plan off the intro");
+  ev("go('dersler')");
+  ok(lastPaint.indexOf('<h2 class="sec">Başlarken') > lastPaint.indexOf('<h2 class="sec">Seviyeler'), "once a unit is open Başlarken still sits above the levels");
+
+  /* With no speech at all, a question that has to be heard is left out. */
+  ev("__ss=window.speechSynthesis; delete window.speechSynthesis");
+  ev("startBasla('alfabe')");
+  ok(ev("Q.items.every(function(it){return !it.say})") && ev("Q.items.length") === BASLA[0].check.filter(i => !i.say).length,
+     "with no speech a heard question was still asked");
+  ev("window.speechSynthesis=__ss; wipe(); home()");
+});
+
+/* The path opens in order: each lesson when the one before it is passed,
+   unit one when all six are, each unit when the one before it is. A level
+   test is the way to skip, and nothing already opened is locked again. */
+step("the path opens in order", () => {
+  ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen");
+  const open = id => ev("unitOpen(" + q(id) + ")");
+  ev("confirm=function(){return true}; wipe(); home()");
+  ok(!open("a1u1") && !open("a1u2"), "a fresh install can open a unit before the intro is passed");
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes("Kilitli" + GL("locked")) && !ev("isMet('a1u1')"), "a locked unit opened, or opening it recorded it as met");
+  ok(lastPaint.includes("go('basla','alfabe')") && lastPaint.includes("startLevelExam('A1')"),
+     "a locked unit does not say where to go instead or how to skip ahead");
+  ev("go('level','A1')");
+  ok(lastPaint.includes('class="unit locked"') && lastPaint.includes("Kilitli"), "the A1 list does not show its units locked");
+  ok(ev("baslaOpen('alfabe')") && !ev("baslaOpen('yazim')"), "the intro lessons do not open in order");
+  ev("go('basla','yazim')");
+  ok(lastPaint.includes("Kilitli") && !lastPaint.includes("startBasla('yazim')"), "a locked lesson shows its questions");
+  ev("go('basla','alfabe')");
+  ok(!lastPaint.includes("Sonraki ders"), "an unpassed lesson offers the next one");
+  ev("go('baslarken')");
+  ok((lastPaint.match(/class="unit locked"/g) || []).length === ev("BASLA.length") - 1, "the intro list does not lock every lesson but the first");
+
+  /* Failing leaves the next lesson shut; passing opens it. */
+  ev("startBasla('alfabe')");
+  while (ev("Q.i<Q.items.length")) introReply(false);
+  ok(!ev("baslaOpen('yazim')") && !lastPaint.includes("go('basla','yazim')"), "failing a lesson opened the next one");
+  ev("BASLA").forEach(L => { ev("startBasla(" + q(L.id) + ")"); while (ev("Q.i<Q.items.length")) introReply(true); });
+  ok(open("a1u1") && !open("a1u2"), "passing the intro did not open unit one alone");
+  ok(ev("planToday()").left[0].go === "go('unit','a1u1','v')", "the plan does not go to unit one once it opens");
+
+  /* A unit passed opens the next; failing it does not. */
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(false);
+  ok(!open("a1u2"), "failing unit one opened unit two");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(open("a1u2") && !open("a1u3"), "passing unit one did not open unit two alone");
+  ok(lastPaint.includes("go('unit','a1u2','v')"), "the score screen does not lead to the unit it just opened");
+
+  /* A level test skips its whole level, and only that level. */
+  ev("startLevelExam('B1')"); for (let i = 0; i < 10; i++) answer(true);
+  ok(open("b1u1") && open("b1u10") && open("b2u1"), "passing the B1 test did not open B1 and the unit after it");
+  ok(!open("a2u1"), "passing the B1 test opened A2");
+
+  /* Testing out of the intro altogether: ten questions spanning every
+     lesson, eight to pass, and all six ticked at once. */
+  ev("wipe(); go('unit','a1u1','v')");
+  ok(lastPaint.includes("startBaslaTest()"), "unit one's lock card does not offer the intro test");
+  ev("go('baslarken')");
+  ok(lastPaint.includes("startBaslaTest()"), "the intro list does not offer the intro test");
+  for (let run = 0; run < 20; run++) {
+    ev("startBaslaTest()");
+    const qs = ev("Q.items.map(function(it){return it.q})");
+    const hit = new Set(ev("Q.items").map(it => ev("BASLA").findIndex(L => L.check.some(c => c.q === it.q && JSON.stringify(c.a) === JSON.stringify(it.a) && c.c === it.c))));
+    if (qs.length !== 10 || hit.size !== ev("BASLA.length") || hit.has(-1)) { fails.push("an intro test was not ten questions spanning every lesson: " + qs.length + " questions, lessons " + [...hit].join(",")); break; }
+  }
+  ev("startBaslaTest()");
+  for (let i = 0; i < 3; i++) introReply(false);
+  while (ev("Q.i<Q.items.length")) introReply(true);
+  ok(!ev("introDone()") && !open("a1u1"), "seven out of ten passed the intro test");
+  ev("startBaslaTest()");
+  introReply(false); introReply(false);
+  while (ev("Q.i<Q.items.length")) introReply(true);
+  ok(ev("introDone()") && open("a1u1") && !open("a1u2"), "eight out of ten did not pass the intro, or opened more than unit one");
+  ok(ev("BASLA.every(function(L){return S.basla[L.id].byTest})"), "a lesson passed by the intro test is not marked as tested out");
+  ok(lastPaint.includes("go('unit','a1u1','v')"), "the intro test's score screen does not lead to unit one");
+  ev("go('baslarken')");
+  ok(!lastPaint.includes("startBaslaTest()"), "the intro test is still offered once the intro is passed");
+
+  /* Progress from before the lock is never taken away. */
+  ev("wipe(); S.seen['c1u4']={v:1}; S.done['a2u3']={score:5,of:5,at:1}; save(); home()");
+  ok(open("c1u4") && !open("c1u5"), "a unit already opened was locked again, or opened the next");
+  ok(open("a2u3") && open("a2u4") && !open("a2u5"), "a unit already passed was locked, or did not open the next");
+  ev("go('unit','c1u4','v')");
+  ok(!lastPaint.includes("Kilitli"), "a unit opened before the lock shows as locked");
+
+  ev("wipe(); home(); " + LIFT);
 });
 
 /* ===================== report ===================== */

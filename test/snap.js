@@ -48,6 +48,10 @@ const reseed = n => ev("Math.random=(function(){var s=" + n + ";return function(
 
 const meetAll = () => ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:1}}); save()");
 
+/* Units and lessons open in order. Every screen below is fingerprinted
+   open, which is what it looks like once reached; the locked views are
+   grabbed on their own at the end with the real rule back in place. */
+ev("__unitOpen=unitOpen; __baslaOpen=baslaOpen; unitOpen=function(){return true}; baslaOpen=function(){return true}");
 ev("wipe()");
 reseed(12345);
 ev("home()"); grabx("home");            /* day one: orientation, one step */
@@ -57,6 +61,9 @@ ev("home()"); grabx("home");            /* day one: orientation, one step */
 ev("go('dersler')"); grab("dersler");
 ev("go('araclar')"); grab("araclar");
 ev("go('nasil')"); grab("nasil");
+/* The six lessons before unit one, each lesson and its first question. */
+ev("go('baslarken')"); grab("baslarken");
+ev("BASLA").forEach(L => { ev("go('basla'," + q(L.id) + ")"); grab("basla:" + L.id); ev("startBasla(" + q(L.id) + ")"); grab("basla:" + L.id + ":q"); });
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");
@@ -275,6 +282,16 @@ reseed(4242); ev("startPlacement()"); grab("placement");
 ev("startRetell('a1u2')"); grab("retell");
 
 /* The language engine, hashed as data rather than as a screen. */
+/* The locked views, with the real rule back. */
+ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen; wipe()");
+ev("go('level','A1')"); grab("locked:level:A1");
+ev("go('unit','a1u1','v')"); grab("locked:unit:a1u1");
+ev("go('unit','b2u3','v')"); grab("locked:unit:b2u3");
+ev("go('baslarken')"); grab("locked:baslarken");
+reseed(777); ev("startBaslaTest()"); grab("basla:test:q");
+ev("go('basla','cumle')"); grab("locked:basla:cumle");
+ev("wipe(); home()");
+
 const pure = {};
 ev("UNITS").forEach(u => u.read.lines.forEach((l, i) => {
   pure["split:" + u.id + "#" + i] = ev("clauseSplit(" + q(l[0]) + ")").join("|");

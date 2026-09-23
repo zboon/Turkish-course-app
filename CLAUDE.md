@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity + 266 morphology forms + 872 number forms + 46 contrast pairs + mistake naming
-node test/sim.js        # headless render of all 342 screens + every runtime path
+node test/sim.js        # headless render of all 346 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -43,6 +43,7 @@ src/data/sik.js          const SIK=[…];      // commonest words the units neve
 src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
+src/data/baslarken.js    const BASLA=[…];    // six lessons before unit one
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -57,11 +58,12 @@ src/app.sayilar.js       numbers, times and prices against a clock
 src/app.diyalog.js       branching conversation and the repair kit
 src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.sik.js           the frequency layer: ten common words a day
+src/app.baslarken.js     the lessons before unit one
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is fifteen files rather than one because it grew past the point
+The app is sixteen files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -250,7 +252,7 @@ deliberate breakage.
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
- sik:{"zaten":{d}, "ve":{d,k:1}},
+ sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
@@ -1401,6 +1403,96 @@ agreement gate, so one was removed, and "never the last word" was
 untested until an answer that is only a pronoun (*Sen.*) was added, which
 would otherwise be accepted as an empty string.
 
+## Başlarken (the lessons before unit one)
+
+Built, by request: a complete beginner met unit one's copula table with no
+idea how the letters sound or why the verb comes last. `go('baslarken')`
+is six short lessons, in `src/data/baslarken.js`: the alphabet (29
+letters, each with a word to hear), spelling as sound, stress, words built
+from pieces with a first look at vowel harmony, sentence order against
+English, and sen/siz with a first handful of phrases. Each ends in four to
+seven ordinary quiz questions, run by the quiz engine as `Q.mode:"intro"`.
+
+- **It is not a unit.** Unit ids are permanent and every schedule is keyed
+  to one, so the intro has its own list and its own record: `S.basla` is
+  keyed by lesson id (`alfabe`, `yazim`, `vurgu`, `ekler`, `cumle`,
+  `nezaket`), which is as permanent as a unit id, and `validate.js` fails
+  by name if one goes missing. It is progress: `wipe()` clears it and a
+  backup carries it.
+- **It feeds nothing.** No star, no box, no mistake book: it is
+  orientation, not material, and nothing reviews what has not been met.
+  `quizNote()` finds no key on an intro item and writes nothing. `sim.js`
+  checks every schedule is untouched after a run, wrong answers included.
+- **Offered first only to someone who has opened nothing.** `baslaPlan()`
+  is the next unfinished lesson while `metUnits()` is empty, and Bugün's
+  last step points at it, still one instruction on day one. Since the
+  path locks (below), a new learner cannot open a unit before the intro
+  is passed, so this now means the intro comes first; a learner whose
+  units predate the lock is followed by the plan through the units.
+  Dersler shows Başlarken above the levels on the same rule, and below
+  them afterwards.
+- **A question can be heard.** An item with `say:` plays its word once on
+  arrival (`Q.heard` stops a redraw playing it again), with a button to
+  hear it again, and prints neither the word nor its spelling outside the
+  options. With no speech engine at all those items are left out rather
+  than turned into a guess. A typed answer is still diacritic-folded, the
+  house rule: the c/ç kind of contrast is tested by choosing between
+  spellings, not by punishing a keyboard.
+
+`validate.js` holds the alphabet whole, in order, each letter once, each
+capital the Turkish one (`i → İ`, `ı → I`) and each example word carrying
+its letter, and every heard question's key pointing at the word played.
+Twenty-two guards across the two tests, each confirmed to fail on a
+deliberate breakage.
+
+The pronunciation notes are approximations for an English speaker and the
+stress patterns are the standard ones. This is another place a native
+speaker's pass would be worth having.
+
+### The path opens in order
+
+By request, after the intro shipped: nothing moves on until the thing
+before it is passed. Each intro lesson opens when the one before it is
+passed (`baslaOpen()`), unit one when all six are, and every unit when
+the unit before it is passed (`unitOpen()`, in `app.core.js`). It is the
+model of the courses that lock a path — Duolingo's above all — including
+their escape hatch: **a level's test ahead is the way to skip**, and it
+already existed. Eight out of ten marks every unit in that level done,
+which opens it and the unit after it. The intro has its own:
+`startBaslaTest()`, ten questions with at least one from every lesson,
+eight to pass, and all six marked passed (`byTest`, as a level test marks
+its units) — so someone who already reads Turkish is not made to sit
+through the alphabet, and is not pushed into the A1 test to skip it.
+It is offered on the intro list and on unit one's lock card until the
+intro is passed. The A1 test still skips the lessons and A1 together.
+
+Three decisions:
+
+- **Nothing already reached is locked again.** `unitOpen()` is true for
+  any unit `isMet()` — opened or passed — before it asks about the one
+  before. A learner with progress from before the lock keeps every unit
+  they had opened, and the plan keeps following them. Taking away a unit
+  someone was halfway through would be the lock punishing the learner
+  for the app changing.
+- **A locked row still opens.** Tapping one shows `lockCard()`: what
+  opens it, where to go instead (`startBtn()`, the first open unit not
+  passed, or the next intro lesson) and the level test. A dead row that
+  did nothing would leave the learner guessing why. The locked unit
+  screen is drawn *before* `markSeen()`, or looking at a locked unit
+  would count as meeting it and unlock it.
+- **The guard is in `renderUnit()`, not only in the level list.** Units
+  are reached from Sözlük, the mistake book, the grammar hub and the plan
+  as well, so the list is not the only door.
+
+The tests lift the lock. Almost every step in `sim.js` and every grab in
+`snap.js` is about what an open unit does, on a fresh state, so both
+reassign `unitOpen`/`baslaOpen` to always-true at the top and keep the
+real ones as `__unitOpen`/`__baslaOpen`. One `sim.js` step, **the path
+opens in order**, puts them back and tests the rule; `snap.js` grabs the
+locked views at the end the same way. Sixteen deliberate breakages,
+ten on the lock and six on the intro test, each turned `sim.js` red. A new test that is about the lock has to restore
+the real functions first, or it is testing the stub.
+
 ## Kendi kelimelerim (your own words)
 
 Built. The only way into the review queue used to be a star beside a word
@@ -1458,6 +1550,9 @@ Order is everything perishable first, new material last: reviews decay on a
 schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
 or Yeni, with Anlat inserted before the last step when a retell is due, and
 Kelime — the day's ten common words — after that, once a unit is finished.
+Before any unit has been opened, the last step is **Giriş**, the next of
+the lessons before unit one (see Başlarken below); it is still the only
+step on day one.
 
 **The list folds; the instruction does not.** The card opens collapsed to
 one line — `5 adım · steps left · ~24 dk` — with the start button still

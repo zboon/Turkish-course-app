@@ -68,6 +68,15 @@ function renderDersler(){
   h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>units done</span></div>'+
      '<div><b>'+streak()+'</b><span>day streak</span></div>'+
      '<div><b>'+S.star.length+'</b><span>saved words</span></div></div>';
+  /* Başlarken sits above the levels while nothing has been opened — on
+     day one it is where to start — and below them afterwards, where it
+     is reference. The same rule the orientation card follows. */
+  const start='<h2 class="sec">Başlarken</h2>'+
+   navRow("Giriş dersleri","Before unit one — letters, sounds, word building and sentence order · "+baslaCount()+" / "+BASLA.length,"go('baslarken')")+
+   navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
+   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')");
+  const first=metUnits().length===0;
+  if(first)h+=start;
   h+='<h2 class="sec">Seviyeler</h2>';
   LEVELS.forEach(l=>{
     const p=lvPct(l.id), t=S.tested[l.id];
@@ -76,9 +85,7 @@ function renderDersler(){
       '<div class="grow"><p class="lead">'+esc(l.tr)+'</p><p class="sub">'+esc(l.en)+' · '+lvDone(l.id)+'/'+unitsOf(l.id).length+' ünite</p></div>'+
       '<span class="chev">'+IC.chev+'</span></div><div class="meter"><i style="width:'+p+'%"></i></div></button>';
   });
-  h+='<h2 class="sec">Başlarken</h2>'+
-   navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
-   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')");
+  if(!first)h+=start;
   h+='<p class="foot">A unit is ticked at four right out of five.<br>Each level also has a test-ahead exam that skips it outright.</p></div>';
   paint(h);
 }
@@ -174,16 +181,16 @@ function startCard(){
   return h+'</div>';
 }
 function renderNasil(){
-  const nx=nextUnit();
   let h=bar("Nasıl çalışır","how to use this",true)+'<div class="wrap"><div class="card gram">'+
    '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app. The English stays until A2 is complete, then steps aside so the Turkish does the work; the <b>EN</b> button at the top of every screen turns it off or back on whenever you like.</p>'+
    '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
    '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
-   '<p><b>5 · Already know some Turkish?</b> The placement test puts you at a level in twelve questions, and every level has a <b>test ahead</b> exam that skips it outright if you score 8 of 10.</p>'+
+   '<p><b>5 · Everything opens in order.</b> From nothing, <b>Bugün</b> begins with six short lessons before unit one: the letters and their sounds, how words are spelt, stressed and built, and how a sentence is put together. They are in Dersler under <b>Başlarken</b>. Each lesson opens when the one before it is passed, unit one opens when all six are, and every unit after that opens when the one before it is passed.</p>'+
+   '<p><b>Already know some Turkish?</b> Nothing has to be sat through. The <b>intro test</b> in Başlarken skips all six lessons at once, the placement test suggests a level in twelve questions, and every level has a <b>test ahead</b> exam: eight out of ten marks the whole level complete and opens the next one.</p>'+
    '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required.</p>'+
-   (nx?'<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>':'')+
+   startBtn("btn")+
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
    (tipsOn()?'<button class="btn ghost" onclick="hideTips()">Ana ekranda gizle · hide on the home screen</button>':'')+
    '</div></div>';
@@ -205,11 +212,13 @@ function renderLevel(){
   let h=bar(l.tr,l.id+" · "+l.en,true)+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+esc(l.blurb)+'</p>';
   h+='<div class="meter" style="margin-bottom:1.2rem"><i style="width:'+p+'%"></i></div>';
+  if(!unitOpen(us[0].id))h+=lockCard(us[0]);
   h+='<div class="card" style="padding:.2rem 1rem">';
   us.forEach(u=>{
-    const d=isDone(u.id), t=S.done[u.id]&&S.done[u.id].byTest;
-    h+='<button class="unit" onclick="go(\'unit\',\''+u.id+'\',\'v\')">'+
-      '<span class="tick '+(d?"done":"")+'">'+(d?IC.check:u.n)+'</span>'+
+    const d=isDone(u.id), t=S.done[u.id]&&S.done[u.id].byTest, open=unitOpen(u.id);
+    /* A locked row still opens: the unit screen says what unlocks it. */
+    h+='<button class="unit'+(open?'':' locked')+'" onclick="go(\'unit\',\''+u.id+'\',\'v\')">'+
+      '<span class="tick '+(d?"done":"")+'">'+(d?IC.check:(open?u.n:IC.lock))+'</span>'+
       '<span class="grow"><span class="unit-t">'+esc(u.tr)+'</span>'+
       '<span class="unit-s">'+esc(u.en)+' · '+esc(u.focus)+(t?' · tested out':'')+'</span></span>'+
       '<span class="chev">'+IC.chev+'</span></button>';
@@ -229,6 +238,10 @@ function secName(k){const s=SECS.find(x=>x[0]===k);return s?s[1]+" · "+s[2]:"";
 function markSeen(uid,sec){ if(!S.seen[uid])S.seen[uid]={}; S.seen[uid][sec]=1; S.place={u:uid,s:sec}; touchDay(); save(); }
 function renderUnit(){
   const u=unit(V.u), sec=V.sec||"v";
+  if(!unitOpen(u.id)){
+    paint(bar(u.tr,u.lv+" · Ünite "+u.n,true)+'<div class="wrap">'+lockCard(u)+'</div>');
+    return;
+  }
   markSeen(u.id,sec);
   let h=bar(u.tr,u.lv+" · Ünite "+u.n,true)+'<div class="wrap">';
   h+='<div class="segs">';
@@ -412,6 +425,9 @@ function renderQuiz(){
   h+='</div>';
   h+='<p class="qn">'+(it.t==="mc"?"Seç":it.t==="fill"?"Boşluğu doldur":"Cümleyi kur")+'</p>';
   h+='<p class="q">'+esc(it.q).replace(/___/g,'<span class="blank">____</span>')+'</p>';
+  /* An intro question can be heard rather than read: it plays once on
+     arrival and again on demand, and the word is never printed. */
+  if(it.say)h+='<button class="btn ghost" style="margin:0 0 .8rem" onclick="sayWord(\''+jsq(it.say)+'\')">Bir daha dinle</button>';
   if(it.t==="mc"){
     it.a.forEach((o,i)=>{
       let cls="opt";
@@ -436,6 +452,7 @@ function renderQuiz(){
   }
   h+='</div>';
   paint(h);
+  if(it.say&&Q.sel===null&&Q.heard&&!Q.heard[Q.i]){Q.heard[Q.i]=1;sayWord(it.say);}
   const fin=document.getElementById("fin"); if(fin&&Q.sel===null)fin.focus();
   if(fin)fin.addEventListener("keydown",e=>{if(e.key==="Enter")answerFill();});
 }
@@ -463,7 +480,9 @@ function renderScore(){
   const n=Q.res.filter(Boolean).length, of=Q.items.length;
   touchDay();
   let h=bar(Q.title,"Sonuç",true)+'<div class="wrap">';
-  if(Q.mode==="placement"){
+  if(Q.mode==="intro"||Q.mode==="introtest"){
+    h+=baslaScore(n,of);
+  }else if(Q.mode==="placement"){
     let best=-1;
     const byLv={};
     Q.items.forEach((it,i)=>{byLv[it.lv]=byLv[it.lv]||[0,0];byLv[it.lv][1]++;if(Q.res[i])byLv[it.lv][0]++;});
@@ -471,7 +490,7 @@ function renderScore(){
     const start=LEVELS[Math.max(0,Math.min(best+1,5))].id;
     h+='<div class="score"><div class="big">'+n+'/'+of+'</div><p class="sub">Önerilen başlangıç seviyesi</p>'+
       '<p class="mark" style="font-size:2.4rem;margin:.3rem 0">'+start+'</p></div>';
-    h+='<div class="card"><p class="sub">This is a rough placement, not a certificate. You can start anywhere — and any level can be skipped with its own “test ahead” exam.</p>'+
+    h+='<div class="card"><p class="sub">This is a rough placement, not a certificate. Units open in order, so to start at a later level, pass the test ahead for each level before it: eight out of ten marks that level complete.</p>'+
       '<button class="btn" onclick="go(\'level\',\''+start+'\')">'+start+' ile başla</button>'+
       '<button class="btn ghost" onclick="home()">Ana sayfa</button></div>';
   }else{
@@ -771,9 +790,9 @@ function importBox(){
   S=Object.assign({done:{},seen:{},place:null,star:[],tested:{},days:[],srs:{},theme:S.theme,rate:S.rate,
                    prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
                    dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{},gram:{},ygap:S.ygap,yrate:S.yrate,err:{},mine:[],
-     num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},tips:S.tips},o);
+     num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},basla:{},tips:S.tips},o);
   if(!S.done)S.done={}; if(!S.star)S.star=[]; if(!S.srs)S.srs={}; if(!S.seen)S.seen={};
-  if(!S.tested)S.tested={}; if(!S.days)S.days=[];
+  if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.basla)S.basla={};
   if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
   save();
   if(S.rate)VOICE.rate=S.rate;
@@ -784,7 +803,7 @@ function wipe(){
   S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
      prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
      dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{},gram:{},ygap:S.ygap,yrate:S.yrate,err:{},mine:[],
-     num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},tips:S.tips,en:S.en};
+     num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},basla:{},tips:S.tips,en:S.en};
   save(); home();
 }
 
