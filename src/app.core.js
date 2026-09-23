@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.40";
+const APP_VERSION="v3.50";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -258,6 +258,9 @@ let V={view:"home"};
 let Q=null;
 function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")V={view:"unit",u:a,sec:b||"v"}; window.scrollTo(0,0); render();}
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
+/* The tool screens all hang off Araçlar; Dersler holds the levels. */
+const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
+            "sayilar","diyalog","ata","words","dict","about","nasil"];
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
@@ -271,6 +274,13 @@ function back(){
      a learner expects of a mode whose whole point is not touching it. */
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
   else if(V.view==="retell"){go("unit",V.u,"r");}
+  /* The back arrow retraces the menu you came through. Before the two
+     doors existed every screen fell through to home(), which was right
+     when home() WAS the menu; now it would skip the hub and make the
+     doors feel like a detour rather than a place. */
+  else if(V.view==="level"){go("dersler");}
+  else if(V.view==="cards"||V.view==="review"){go("words");}
+  else if(HUBV.indexOf(V.view)>=0){go("araclar");}
   else home();
 }
 function toggleTheme(){

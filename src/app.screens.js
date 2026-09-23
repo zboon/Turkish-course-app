@@ -10,7 +10,7 @@ function ring(pct){
    '<text x="44" y="50" text-anchor="middle" font-family="Crimson Pro,serif" font-size="22" font-weight="600" fill="var(--ink)">'+pct+'%</text></svg>';
 }
 function renderHome(){
-  const here=currentLevel(), nx=nextUnit();
+  const here=currentLevel();
   let road='<div class="road"><div class="road-line"></div><div class="road-fill" style="width:'+(88*allPct()/100).toFixed(1)+'%"></div><div class="road-stops">';
   LEVELS.forEach(l=>{
     const cls=lvPct(l.id)===100?"done":(l.id===here?"here":"");
@@ -20,24 +20,58 @@ function renderHome(){
 
   let h='<div class="bar"><div class="bar-in"><div style="width:34px"></div><div class="bar-title">Türkçe<small>A1 → C2</small></div>'+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button></div></div>';
-  /* \u062A\u0631\u0643\u062C\u0647 is Türkçe in the Ottoman script, written as
+  /* تركجه is Türkçe in the Ottoman script, written as
      escapes so a right-to-left run does not scramble this line in an editor. */
   h+='<div class="wrap"><div class="hero">'+crest(76)+
    '<h1 class="mark">Türkçe</h1>'+
-   '<p class="osm" dir="rtl" lang="ota" translate="no">\u062A\u0631\u0643\u062C\u0647</p>'+
+   '<p class="osm" dir="rtl" lang="ota" translate="no">تركجه</p>'+
    '<p class="tag">A reading course from first words to literature</p>'+
    clockHero()+'</div>';
 
-  /* Read-then-act on day one; reference-after-action once under way. */
+  /* Read-then-act on day one; the plan is the whole opinion afterwards. */
   if(metUnits().length===0){ h+=startCard(); h+=planCard(); }
-  else { h+=planCard(); h+=startCard(); }
+  else { h+=planCard(); }
   h+=road;
+  h+=homeBlocks();
+  if(metUnits().length>0) h+=startCard();
 
+  h+='<p class="foot">Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.</p></div>';
+  app().innerHTML=h;
+}
+/* Two doors, and that is the whole menu.
+   This page used to carry six level cards and fifteen tool rows in one
+   column under a heading apiece. Every one of them was reachable, which
+   is not the same as findable: a list that long reads as texture rather
+   than as choices, and the plan — the one thing that answers "what now"
+   — sat above a wall the eye slides off.
+
+   The line under each door is deliberately NOT a count of work waiting.
+   Two "N waiting" cards lived on this screen once and were removed for
+   good reason: they duplicated the plan's own steps, and one advertised
+   work on day one that the plan correctly said did not exist. The plan
+   owns "what now". A door only says what is behind it. */
+function homeBlocks(){
+  const done=UNITS.filter(u=>isDone(u.id)).length;
+  const lv=currentLevel();
+  return '<h2 class="sec">Nereye · where to</h2>'+
+   '<button class="block" onclick="go(\'dersler\')">'+
+     '<span class="block-t">Dersler</span>'+
+     '<span class="block-e">LESSONS</span>'+
+     '<span class="block-n">'+done+' / '+UNITS.length+' ünite'+(lv?' · şu an '+lv:'')+'</span>'+
+     '<span class="chev">'+IC.chev+'</span></button>'+
+   '<button class="block" onclick="go(\'araclar\')">'+
+     '<span class="block-t">Araçlar</span>'+
+     '<span class="block-e">PRACTICE AND TOOLS</span>'+
+     '<span class="block-n">Konuşma · Dinleme · Tekrar · Kelimeler</span>'+
+     '<span class="chev">'+IC.chev+'</span></button>';
+}
+
+/* ===================== dersler · the course spine ===================== */
+function renderDersler(){
+  let h=bar("Dersler","lessons · A1 → C2",true)+'<div class="wrap">';
   h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>units done</span></div>'+
      '<div><b>'+streak()+'</b><span>day streak</span></div>'+
      '<div><b>'+S.star.length+'</b><span>saved words</span></div></div>';
-
-
   h+='<h2 class="sec">Seviyeler</h2>';
   LEVELS.forEach(l=>{
     const p=lvPct(l.id), t=S.tested[l.id];
@@ -46,58 +80,92 @@ function renderHome(){
       '<div class="grow"><p class="lead">'+esc(l.tr)+'</p><p class="sub">'+esc(l.en)+' · '+lvDone(l.id)+'/'+unitsOf(l.id).length+' ünite</p></div>'+
       '<span class="chev">'+IC.chev+'</span></div><div class="meter"><i style="width:'+p+'%"></i></div></button>';
   });
-
-  /* Two "N waiting" cards used to live here, from before Bugün existed.
-     They duplicated the plan's own Tekrar and Söyle steps, and the second
-     counted the 50 standalone chunks as due — so on day one it advertised
-     work while the plan correctly said there was none. One place answers
-     "what now", and it is the plan. Direct access stays in Araçlar. */
-  h+='<h2 class="sec">Araçlar</h2>'+
-   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')")+
-   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')")+
-   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')")+
-   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')")+
-   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')")+
-   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')")+
-   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
-   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')")+
-   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')")+
-   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')")+
+  h+='<h2 class="sec">Başlarken</h2>'+
    navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
-   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')")+
-   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')")+
-   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()")+
-   navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')");
-
-  h+='<p class="foot">Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.</p></div>';
+   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')");
+  h+='<p class="foot">A unit is ticked at four right out of five.<br>Each level also has a test-ahead exam that skips it outright.</p></div>';
   app().innerHTML=h;
 }
+
+/* ===================== araçlar · everything else ===================== */
+/* Grouped by what the mode asks of you rather than by when it was built,
+   because that is how one is reached for: you know whether you want to
+   talk, to listen, to bring something back or to look something up. */
+function renderAraclar(){
+  let h=bar("Araçlar","tools · beside the lessons",true)+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything here is optional. If you only follow <b>Bugün</b> on the home screen you are using the course correctly — these are for working on one thing in particular.</p>';
+
+  h+='<h2 class="sec">Konuşma · speaking</h2>'+
+   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')")+
+   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')")+
+   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')")+
+   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')")+
+   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')");
+
+  h+='<h2 class="sec">Dinleme · listening</h2>'+
+   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')")+
+   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')");
+
+  h+='<h2 class="sec">Tekrar · bringing it back</h2>'+
+   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')")+
+   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')")+
+   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')")+
+   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')");
+
+  h+='<h2 class="sec">Kelimeler · words</h2>'+
+   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')")+
+   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()");
+
+  h+='<h2 class="sec">Kurs</h2>'+
+   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')")+
+   navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')");
+
+  h+='<p class="foot">Nothing here has to be done in any order.<br>Reviews draw only on material you have actually met.</p></div>';
+  app().innerHTML=h;
+}
+
 /* Plain-English orientation, because the interface is Turkish-labelled and
    a beginner has no way to know that Tekrar is empty by design rather than
    broken. Shown until A2 is complete, then it retires itself; "Gizle" ends
    it early and About can bring it back. Placed above the plan while nothing
-   has been met — on day one you want to read before acting — and below it
-   afterwards, where it is reference rather than instruction. */
+   has been met — on day one you want to read before acting — and below the
+   doors afterwards, where it is reference rather than instruction. */
 function tipsOn(){return S.tips!==false&&lvPct("A2")<100;}
 function hideTips(){S.tips=false;save();render();}
 function showTips(){S.tips=true;save();home();}
+/* Five paragraphs of it used to sit inline on the landing page. It is the
+   right text and a beginner needs it, but it is reading rather than a
+   control, and it was the largest block of prose on the first screen. The
+   card is now two sentences and a way through to the rest. */
 function startCard(){
   if(!tipsOn())return "";
   const nx=nextUnit();
-  let h='<h2 class="sec">Nasıl çalışır · how to use this</h2><div class="card gram">'+
+  return '<div class="card gram">'+
+   '<p class="lead">Nasıl çalışır · how to use this</p>'+
+   '<p class="sub">Every label is Turkish with the English underneath, and you do not need to read the Turkish to use the app. Follow <b>Bugün</b> and you are using the course correctly — everything in Araçlar is optional.</p>'+
+   (nx?'<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>':'')+
+   '<button class="btn ghost" onclick="go(\'nasil\')">Devamını oku · the rest</button>'+
+   '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button></div>';
+}
+function renderNasil(){
+  const nx=nextUnit();
+  let h=bar("Nasıl çalışır","how to use this",true)+'<div class="wrap"><div class="card gram">'+
    '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app.</p>'+
    '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
    '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
-   '<p><b>5 · Already know some Turkish?</b> The placement test below puts you at a level in twelve questions, and every level has a <b>test ahead</b> exam that skips it outright if you score 8 of 10.</p>'+
+   '<p><b>5 · Already know some Turkish?</b> The placement test puts you at a level in twelve questions, and every level has a <b>test ahead</b> exam that skips it outright if you score 8 of 10.</p>'+
+   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required.</p>'+
    (nx?'<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>':'')+
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
-   '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button></div>';
-  return h;
+   (tipsOn()?'<button class="btn ghost" onclick="hideTips()">Ana ekranda gizle · hide on the home screen</button>':'')+
+   '</div></div>';
+  app().innerHTML=h;
 }
+
 function navRow(t,s,fn){
-  return '<button class="card row" onclick="'+fn+'"><div class="grow"><p class="lead">'+esc(t)+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
+  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead">'+esc(t)+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
 }
 
 /* ===================== level ===================== */

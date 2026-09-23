@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
-node test/sim.js        # headless render of all 339 screens + every runtime path
+node test/sim.js        # headless render of all 342 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -704,7 +704,7 @@ for the same reason. Araçlar has it.
 
 ## Atasözleri ve deyimler (the fixed layer)
 
-Built, and built *because* of what blocked Kütüphane. Proverbs and idioms
+Built, and built *because* of what blocked Kütüphane. 40 proverbs, 49 idioms. Proverbs and idioms
 belong to nobody: there is no author to attribute, no edition to check a
 line against and no copyright to clear, so this is the one shelf of
 inherited Turkish that could be stocked while the library of named
@@ -1128,6 +1128,72 @@ The last step absorbed the old resume card: mid-unit it returns to the exact
 section, and it falls back to the first unfinished unit otherwise. It must
 check `isDone` — a bookmark survives completion, and following it blindly
 pinned the plan to a unit already ticked.
+
+## Ana ekran (the landing page, and the two doors)
+
+The home screen used to carry, in one column: the hero, a five-paragraph
+orientation card, the plan, the progress road, three stats, **six level
+cards** and **fifteen tool rows**, each under its own heading. Every one
+of those was reachable. Reachable is not the same as findable — past a
+certain length a list stops reading as choices and starts reading as
+texture, and the plan, the one thing that answers "what now", sat at the
+top of a wall the eye slides off.
+
+So the landing page is now four things: the hero with the live clock,
+**Bugün**, the progress road, and two doors.
+
+| door | behind it |
+|---|---|
+| **Dersler** | the six levels and their sixty units, the placement test, the stats |
+| **Araçlar** | everything else, grouped: Konuşma · Dinleme · Tekrar · Kelimeler · Kurs |
+
+Four decisions worth keeping:
+
+- **Two doors rather than four.** Grouping the tools by skill was the
+  obvious move and it was the wrong one: it puts a second decision in
+  front of a learner who has not made the first. The course is one thing
+  and everything else is optional, which is exactly two categories, and
+  the Araçlar page carries the finer grouping as headed sections where
+  it costs nothing.
+- **The line under a door is not a count of work waiting.** Two "N
+  waiting" cards lived on this screen once and were removed because they
+  duplicated the plan's own steps and one advertised work on day one
+  that the plan correctly said did not exist. The plan owns "what now";
+  a door only says what is behind it. `Dersler` shows progress, which is
+  orientation rather than a claim about work.
+- **The long orientation moved to its own screen.** `Nasıl çalışır` is
+  the right text and a beginner needs it — nothing else explains that an
+  empty Tekrar is correct rather than broken — but it is reading, not a
+  control, and it was the largest block of prose on the first screen a
+  learner sees. The card on the landing page is two sentences and a way
+  through to the rest.
+- **`back()` retraces the menu.** Every screen used to fall through to
+  `home()`, which was right when home *was* the menu. A level now
+  returns to Dersler, a tool to Araçlar, and the flashcards to Sözlüğüm,
+  or the doors would feel like a detour rather than a place. `HUBV` is
+  the list; a new tool screen needs adding to it.
+
+`.block` is the style, and it is drawn from the same palette as
+everything else: a large target, a Crimson Pro title with the English
+underneath in Karla, and one gold hairline down the leading edge — the
+same single stroke that runs out of `h2.sec`, turned ninety degrees.
+Resist adding a second.
+
+### Two more assertions that could not fail
+
+Both found by the breakage run rather than by reading, and both the same
+mistake as the one recorded under Atasözleri:
+
+- `!lastPaint.includes("go('sayilar')")` as "no tool rows on the landing
+  page" — but the **live clock is a button to Sayılar** and is meant to
+  be, so the assertion failed on correct code. It checks for the row's
+  own class now, which is the actual claim.
+- `lastPaint.includes("Tekrar")` as "Araçlar is grouped" — satisfied by
+  the row *Tekrar motoru*, so renaming every heading left it green. It
+  asserts the heading markup and the heading count now.
+
+Fourteen guards on the navigation, each confirmed to fail on a
+deliberate breakage.
 
 ## Sözlük (the word list)
 

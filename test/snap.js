@@ -50,6 +50,12 @@ const meetAll = () => ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:
 ev("wipe()");
 reseed(12345);
 ev("home()"); grabx("home");            /* day one: orientation, one step */
+/* The two doors, and the hubs behind them. The landing page is the plan,
+   the road and the blocks; everything the page used to list in one
+   column now lives on one of these two. */
+ev("go('dersler')"); grab("dersler");
+ev("go('araclar')"); grab("araclar");
+ev("go('nasil')"); grab("nasil");
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");
@@ -243,6 +249,8 @@ ev("wipe()");
 ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grabx("home:plan");
 ev("go('unit','a1u4','r')"); ev("home()"); grabx("home:plan:resume");
 ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grabx("home:tips-hidden");
+ev("go('dersler')"); grab("dersler:underway");
+ev("go('araclar')"); grab("araclar:underway");
 ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");
 
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");

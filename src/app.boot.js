@@ -33,6 +33,9 @@ function render(){
   else if(v==="diyalogrun")diaRun();
   else if(v==="ata")renderAta();
   else if(v==="atarun")renderAtaRun();
+  else if(v==="dersler")renderDersler();
+  else if(v==="araclar")renderAraclar();
+  else if(v==="nasil")renderNasil();
   else renderHome();
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */

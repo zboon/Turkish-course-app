@@ -2171,9 +2171,85 @@ step("storage and chrome", () => {
   ok(documentEl.getAttribute("data-theme") !== t1, "theme did not toggle back");
 
   ev("home()");
-  ok(/Seviyeler/.test(lastPaint), "home lost the level list");
+  ok(ev("V.view") === "home", "home() did not land on home");
   ev("back()");
   ok(ev("V.view") === "home", "back() from home did not stay home");
+});
+
+/* ===================== the two doors ===================== */
+/* The landing page used to carry six level cards and fifteen tool rows.
+   Everything is still reachable — that is what these check — but it is
+   reachable through a menu now rather than by scrolling past a wall. */
+step("home · the landing page is the plan, the road and two doors", () => {
+  ev("home()");
+  ok(/Dersler/.test(lastPaint), "home has no Dersler door");
+  ok(/Ara\u00e7lar|Araçlar/.test(lastPaint), "home has no Araçlar door");
+  ok(lastPaint.includes("go('dersler')"), "the Dersler door does not open Dersler");
+  ok(lastPaint.includes("go('araclar')"), "the Araçlar door does not open Araçlar");
+  /* The wall is gone: the tool rows and the level cards are behind the
+     doors, not on the page you see first. */
+  ok(!/Seviyeler/.test(lastPaint), "the level list is still on the landing page");
+  /* The claim is "no tool rows", so assert the row itself rather than any
+     one destination: the live clock is a button to Sayılar and is meant
+     to be — checking for go('sayilar') would fail on correct code. */
+  ok(!lastPaint.includes("card nav row"), "the tool rows are still on the landing page");
+  ok(!lastPaint.includes("startPlacement()"), "the placement row is still on the landing page");
+  ok(lastPaint.includes("go('sayilar')"), "the clock stopped opening Sayılar");
+  /* What the user asked to keep. */
+  ok(/Bugün/.test(lastPaint), "the plan card left the landing page");
+  ok(lastPaint.includes("road-stops"), "the progress road left the landing page");
+  ok(lastPaint.includes('id="hclock"'), "the live clock left the landing page");
+});
+
+step("dersler · the course spine, and nothing else", () => {
+  ev("go('dersler')");
+  ok(ev("V.view") === "dersler", "go('dersler') did not reach the hub");
+  ok(/Seviyeler/.test(lastPaint), "Dersler has no level list");
+  ev("LEVELS").forEach(l => ok(lastPaint.includes("go('level','" + l.id + "')"),
+                               "Dersler cannot reach level " + l.id));
+  ok(lastPaint.includes("startPlacement()"), "the placement test is not in Dersler");
+  ok(!lastPaint.includes("go('sayilar')"), "a practice tool leaked into Dersler");
+});
+
+step("araçlar · every tool is still reachable", () => {
+  ev("go('araclar')");
+  ok(ev("V.view") === "araclar", "go('araclar') did not reach the hub");
+  ["prod", "yolda", "sor", "diyalog", "ata", "dinle", "sayilar",
+   "tekrar", "gram", "words", "hata", "dict", "about", "nasil"].forEach(v => {
+    ok(lastPaint.includes("go('" + v + "')"), "Araçlar cannot reach " + v);
+  });
+  ok(lastPaint.includes("mineOpen()"), "Araçlar cannot reach the learner's own words");
+  /* Grouped rather than a flat list — the whole point of the change.
+     Assert the HEADING, not the word: "Tekrar" also appears in the row
+     "Tekrar motoru", so a bare word check held however the headings were
+     renamed. Second time that trap has come up in this file. */
+  ['Konuşma · speaking', 'Dinleme · listening', 'Tekrar · bringing it back',
+   'Kelimeler · words', 'Kurs'].forEach(g => {
+    ok(lastPaint.includes('class="sec">' + g + '</h2>'), "Araçlar has no " + g + " heading");
+  });
+  const heads = (lastPaint.match(/class="sec">/g) || []).length;
+  ok(heads === 5, "Araçlar has " + heads + " groups, wanted 5 — a flat list is what this replaced");
+});
+
+step("back retraces the menu rather than jumping home", () => {
+  ev("go('level','A1')"); ev("back()");
+  ok(ev("V.view") === "dersler", "back() from a level did not return to Dersler");
+  ev("go('sayilar')"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from a tool did not return to Araçlar");
+  ev("go('ata')"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from the sayings did not return to Araçlar");
+  ev("go('words')"); ev("startCards()"); ev("back()");
+  ok(ev("V.view") === "words", "back() from the flashcards did not return to Sözlüğüm");
+});
+
+step("nasıl çalışır · the long orientation moved off the landing page", () => {
+  ev("go('nasil')");
+  ok(ev("V.view") === "nasil", "go('nasil') did not reach the screen");
+  ok(/Turkish letters are optional/.test(lastPaint), "the orientation text did not come with it");
+  ok(/Two doors/.test(lastPaint), "the orientation does not explain the two doors");
+  ev("home()");
+  ok(!/Turkish letters are optional/.test(lastPaint),
+     "the five-paragraph orientation is still inline on the landing page");
 });
 
 /* ===================== atasözleri ve deyimler ===================== */

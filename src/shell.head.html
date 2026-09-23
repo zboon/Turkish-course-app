@@ -160,6 +160,38 @@ h2.sec::after{
 /* continue ribbon */
 .resume{border-left:3px solid var(--gold);background:linear-gradient(90deg,var(--gold-soft),var(--card) 60%)}
 
+/* The two doors. The landing page is the plan, the road and these, and
+   nothing else — fifteen tool rows stacked in one column was a wall, and
+   a wall is read as noise rather than as choices. A block is a big
+   target, which is what a thumb wants, and it carries a live line so the
+   choice is informed rather than blind. The gold rule runs down the edge
+   the way it runs out of a section heading: one stroke, and it stops. */
+.block{
+  display:block;width:100%;text-align:left;color:inherit;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:1.3rem 2.4rem 1.3rem 1.2rem;margin:.7rem 0;
+  position:relative;overflow:hidden;
+}
+.block::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:linear-gradient(180deg,var(--gold),transparent);opacity:.5;
+}
+.block-t{
+  display:block;font-family:'Crimson Pro',Georgia,serif;
+  font-size:1.5rem;font-weight:600;line-height:1.15;
+}
+.block-e{
+  display:block;font-family:'Karla',sans-serif;font-size:.73rem;
+  letter-spacing:.09em;color:var(--faint);margin-top:.2rem;
+}
+.block-n{display:block;color:var(--ink2);font-size:.85rem;margin-top:.6rem}
+.block .chev{position:absolute;right:.95rem;top:50%;transform:translateY(-50%)}
+
+/* Nav rows inside a hub carry the same weight as the blocks that lead to
+   them, so they are a size up from an ordinary card. */
+.card.nav{padding:1.05rem 1rem}
+.card.nav .lead{font-size:1.06rem}
+
 /* level card */
 .lvl-badge{
   flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
