@@ -512,7 +512,7 @@ half, and the pass escaping the interface elements — each turned
 Built. The learner's gap is speaking, and what worked for them was Pimsleur —
 because it forces a sentence out of the mouth *before* the model is heard.
 `go('prod')` is the mode, drawn from the course's own 432 passage lines and
-330 prefabs:
+331 prefabs:
 
 1. **Prompt → gap → model.** The English shows (and is spoken if `prompten`
    is on, in the device's English voice — never the `tr-TR` one). A silent
@@ -529,7 +529,7 @@ because it forces a sentence out of the mouth *before* the model is heard.
    piece that cannot stand on its own. A sentence marked wrong is offered
    this way automatically. `sim.js` checks every one of the 432 lines: each
    piece must be a true tail, each step longer than the last.
-3. **Chunk bank.** `src/data/chunks.js`, 330 conversational prefabs, drilled
+3. **Chunk bank.** `src/data/chunks.js`, 331 conversational prefabs, drilled
    by the same runner with `k:` keys, grouped by what the phrase *does* —
    agreeing, refusing, repairing a conversation that has come apart,
    buying the thing, holding the floor. `dueQueue` takes fresh items in
@@ -599,7 +599,7 @@ drinking the school"*), and `needsObj`/`stative` (English cannot say
 ## Sor (question production)
 
 Built. Every other mode in this app answers. Sixty units of reading, 432
-sentences to produce, 330 prefabs — and almost none of it is a question. A
+sentences to produce, 331 prefabs — and almost none of it is a question. A
 learner who can only answer is one a conversation stops dead with, because
 the other person eventually runs out of things to ask.
 
@@ -1322,12 +1322,16 @@ it**, because the written form is the one the learner will read.
    voice said the written form, and transcribing it is the exercise. The
    Atasözleri judge does not either: a fixed saying is a fixed string.
    It is a short word list (`SP_WORDS`) plus two rules regular enough to
-   trust: the future (*-AcAğIm → -IcAm*, and *-mAyAcAğIm → -mIcAm*) on
-   consonant stems only, because vowel stems (*okuyacağım*) are said
-   several ways and a guess is worse than a miss; and the dropped r of
+   trust: the future (*-AcAğIm → -IcAm*, and *-mAyAcAğIm → -mIcAm*); and
+   the dropped r of
    *-Iyor*, which must follow a vowel so *yorgun* is left alone. Nothing
    in it can make a wrong word right: a spoken form only ever becomes a
    word the answer already has, and the callers require equality.
+   Vowel stems were left out at first, because *okuyacağım* is said
+   several ways and a guess is worse than a miss; the native speaker's
+   pass supplied the forms (*okuycam*, *bekliycem* / *beklicem*,
+   *söyliycem* / *söylicem*, *yiycem*), and they are accepted when typed
+   but never offered, since even he wrote them as approximations.
 3. **A casual group in the chunk bank**, appended as the append-only
    rule requires: *naber, aynen, hadi ya, ne alaka, hayırdır, eyvallah,
    bi dakka, abi bakar mısın*, twenty-three in all, each English prompt
@@ -1351,7 +1355,13 @@ on one without, and the acceptance and its message in both modes.
 Nineteen guards, each confirmed to fail on a deliberate breakage.
 
 This is the part of the app where the author's Turkish is least safe
-to trust unchecked, so it wants a native speaker's pass before it grows.
+to trust unchecked, so it had a native speaker's pass (v3.61): all 95
+items were sent as one review page, and 90 came back natural as written.
+The changes were two glosses (*abi, bakar mısın* is "excuse me,
+brother", not "mate"), a subtler note on *abi / abla / hocam / efendim*,
+*pardon* before *bakar mısınız* — which is less usual alone — and the
+vowel-stem futures above. New spoken material should go the same way
+before it ships.
 
 ### Başka türlü (the other ways to say it)
 

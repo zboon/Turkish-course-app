@@ -519,6 +519,19 @@ function spokenForms(w){
     else if(end==="ksin"){out.push(st+"n");out.push(st+"ksin");}
     else out.push(st+"k");
   }
+  /* On a vowel stem the future is said several ways, and these are the
+     ones a native speaker checked: okuyacağım → okuycam, bekleyeceğim →
+     bekliycem or beklicem, söyleyeceğim → söyliycem or söylicem,
+     yiyeceğim → yiycem. The stem's last a/e rises before the y; a stem
+     ending in a/e may also drop that vowel (beklicem, başlıcam). First
+     person only, where the checked forms are, and accepted when typed
+     but never offered: the spelling of these is approximate even to the
+     people who say them. */
+  else if((m=/^(.*[aeiou])y(e|a)c(e|a)gi(m|z)$/.exec(w))&&m[1].length>=2){
+    const s=m[1], A=m[3], end=m[4];
+    out.push(s.slice(0,-1)+(/[ae]$/.test(s)?"i":s.slice(-1))+"yc"+A+end);
+    if(/[ae]$/.test(s)&&s.length>=3)out.push(s.slice(0,-1)+"ic"+A+end);
+  }
   /* -yor loses its r before a consonant or at the end: geliyom, geliyosun,
      geliyo, geliyodum. -Iyor always follows a vowel, which keeps yorgun out. */
   if((m=/^(.*[aeiou])yor(.*)$/.exec(w))){

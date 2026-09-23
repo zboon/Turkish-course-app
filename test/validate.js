@@ -337,7 +337,11 @@ let spokenChecked = 0;
    ["napıyosun", "ne yapıyorsun"], ["n'oldu", "ne oldu"], ["napcan", "ne yapacaksın"], ["burda", "burada"],
    ["nerde", "nerede"], ["bi dakka", "bir dakika"], ["senle", "seninle"], ["Buyrun", "Buyurun"],
    ["Öğretmen di mi", "Öğretmen, değil mi?"], ["Yarın gidicem", "Yarın gideceğim."],
-   ["bişeyi", "bir şeyi"], ["hiçbişeyi", "hiçbir şeyi"], ["bişeyler", "bir şeyler"]
+   ["bişeyi", "bir şeyi"], ["hiçbişeyi", "hiçbir şeyi"], ["bişeyler", "bir şeyler"],
+   /* vowel stems, as a native speaker wrote them */
+   ["okuycam", "okuyacağım"], ["bekliycem", "bekleyeceğim"], ["beklicem", "bekleyeceğim"],
+   ["söyliycem", "söyleyeceğim"], ["söylicem", "söyleyeceğim"], ["yiycem", "yiyeceğim"],
+   ["başlıcaz", "başlayacağız"]
   ].forEach(([t, a]) => {
     spokenChecked++;
     const r = T(t, a);
@@ -347,7 +351,8 @@ let spokenChecked = 0;
   /* Must stay wrong. */
   [["gidicem", "gittim"], ["gidicem", "gideceksin"], ["gidiyom", "gidiyorsun"], ["geliyo", "gelir"],
    ["bi", "bu"], ["di", "dün"], ["burda", "burası"], ["okuyucam", "okuyacağım"], ["kicak", "kaçak"],
-   ["yorgun", "yorgun"], ["gidicem", "gidecek"], ["yapıcam", "gideceğim"], ["senle", "benimle"]
+   ["yorgun", "yorgun"], ["gidicem", "gidecek"], ["yapıcam", "gideceğim"], ["senle", "benimle"],
+   ["bekliycem", "bekleyeceksin"], ["okuycam", "okuyacak"], ["yiycem", "yiyeceğiz"]
   ].forEach(([t, a]) => {
     spokenChecked++;
     const r = T(t, a);

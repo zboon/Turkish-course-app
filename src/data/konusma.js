@@ -47,15 +47,15 @@ const SPOKEN={
  a2u1:[
   {w:"Ne oldu?",s:"N'oldu?",r:"herkes",re:1,n:"What happened? The two words run together, and in messages it is often written noldu."}],
  a2u2:[
-  {w:"Gideceğim.",s:"Gidicem.",r:"herkes",re:1,n:"The future shrinks in speech: gideceğim becomes gidicem, yapacağım yapıcam, gelmeyeceğim gelmicem. Everyone says it; write it only to friends."},
+  {w:"Gideceğim.",s:"Gidicem.",r:"herkes",re:1,n:"The future shrinks in speech: gideceğim becomes gidicem, yapacağım yapıcam, okuyacağım okuycam, gelmeyeceğim gelmicem. Everyone says it; write it only to friends."},
   {w:"Ne yapacaksın?",s:"Napcan?",r:"samimi",re:1,n:"What are you going to do? Ne yapacaksın at full speed. Very casual."}],
  a2u3:[
   {w:"Nereye gidiyorsun? Eve gidiyorum.",s:"Nereye gidiyorsun? Eve.",r:"herkes",n:"A question is answered with just the part it asked for, with its case ending: Eve. Okula. Ankara'dan. The full sentence sounds recited."}],
  a2u6:[
   {w:"Bilmiyorum.",s:"Bilmem.",r:"herkes",n:"The aorist negative is the casual I don't know. Bilmem ki adds a shrug."},
-  {w:"garson",s:"Bakar mısınız?",r:"herkes",n:"How you call a waiter or a shop assistant: would you look? Calling out garson sounds rude."}],
+  {w:"garson",s:"Pardon, bakar mısınız?",r:"herkes",n:"How you call a waiter or a shop assistant: pardon, then would you look? Bakar mısınız on its own is less usual, and calling out garson sounds rude."}],
  a2u8:[
   {w:"seninle · benimle",s:"senle · benle",r:"samimi",re:1,n:"The genitive falls out before -le in casual speech: Senle geliyorum, I'm coming with you."}],
  a2u10:[
-  {w:"efendim",s:"hocam · abi · abla",r:"herkes",n:"Strangers are addressed as family or as teachers: abi and abla to someone a little older, hocam to almost anyone, especially among the young. Efendim is the formal end."}]
+  {w:"efendim",s:"hocam · abi · abla",r:"herkes",n:"Abi and abla go to someone a little older than you, a shopkeeper included. Hocam is a respectful address that reaches well beyond teachers, depending on the setting. Efendim is the formal, polite end."}]
 };
