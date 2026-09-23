@@ -2201,6 +2201,19 @@ step("home · the landing page is the plan, the road and two doors", () => {
   ok(!lastPaint.includes("card nav row"), "the tool rows are still on the landing page");
   ok(!lastPaint.includes("startPlacement()"), "the placement row is still on the landing page");
   ok(lastPaint.includes("go('sayilar')"), "the clock stopped opening Sayılar");
+  /* The hero: the crest, the wordmark, the tagline and the clock, and
+     nothing in Arabic script. The Ottoman spelling of the app's own name
+     used to sit between the wordmark and the tagline, and the tagline
+     under that. Both went: five stacked elements before anything
+     actionable was what the landing page was being simplified away from.
+     .osm and .tag went with them, so re-adding either markup alone would
+     paint unstyled. */
+  ok(lastPaint.includes('class="crest"') || lastPaint.includes("<svg"), "the crest left the hero");
+  ok(/class="mark"/.test(lastPaint), "the wordmark left the hero");
+  ok(!/class="tag"/.test(lastPaint), "the tagline is back in the hero");
+  ok(!/[\u0600-\u06FF]/.test(lastPaint), "an Arabic-script run is being painted on the landing page");
+  ok(!/class="osm"/.test(lastPaint), "the Ottoman line is back, and its style is gone");
+
   /* What the user asked to keep. */
   ok(/Bugün/.test(lastPaint), "the plan card left the landing page");
   ok(lastPaint.includes("road-stops"), "the progress road left the landing page");
