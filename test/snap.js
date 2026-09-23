@@ -249,6 +249,11 @@ ev("wipe()");
 ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grabx("home:plan");
 ev("go('unit','a1u4','r')"); ev("home()"); grabx("home:plan:resume");
 ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grabx("home:tips-hidden");
+/* The plan folded and unfolded. Only the folded state is the default, so
+   the open one needs its own grab or a change inside the fold would go
+   unfingerprinted. */
+ev("planToggle()"); grabx("home:plan:open");
+ev("planToggle()");
 ev("go('dersler')"); grab("dersler:underway");
 ev("go('araclar')"); grab("araclar:underway");
 ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");

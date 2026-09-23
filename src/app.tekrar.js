@@ -707,6 +707,19 @@ function planToday(){
   return {steps:shown,left:left,all:steps,
           mins:shown.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
 }
+/* The plan folds to its headline until it is asked for.
+   Bugün is still the first thing on the landing page and its button still
+   opens the first step in one tap — what folds away is the LIST, which
+   was five rows of detail answering a question the button already
+   answers. Collapsing the steps is not the same as hiding the
+   instruction, so the button is outside the fold in both states.
+
+   PLANOPEN is a module variable rather than part of S, for the same
+   reason the plan stores nothing else: a fold that survived a restart
+   would be a preference the learner never set. It reopens closed every
+   time the app is opened, which is the state that wants to be default. */
+let PLANOPEN=false;
+function planToggle(){PLANOPEN=!PLANOPEN;render();}
 function planCard(){
   const p=planToday();
   const first=metUnits().length===0;
@@ -716,19 +729,33 @@ function planCard(){
      '<p class="sub">Every queue is empty and the course is finished. Anything you open now is revision by choice.</p></div>';
     return h;
   }
-  h+='<p class="sub" style="margin:0 0 .5rem">'+
-   (first?'Start with the first unit. The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
-        :'In this order: reviews decay on a schedule, new material does not. About '+
-          Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.')+'</p>';
-  p.steps.forEach(function(s,i){
-    const done=s.n===0;
-    h+='<button class="unit" onclick="'+s.go+'">'+
-      '<span class="tick '+(done?"done":(s===p.left[0]?"here":""))+'">'+(done?IC.check:(i+1))+'</span>'+
-      '<span class="grow"><span class="unit-t">'+s.tr+(s.n>1?' · '+s.n:'')+'</span>'+
-      '<span class="unit-s">'+esc(s.en)+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
-      '<span class="chev">'+IC.chev+'</span></button>';
-  });
+  /* One instruction is not a list and does not need folding — which is
+     exactly what day one is, and the beginner still gets the sentence
+     explaining why the review steps are not there yet. */
+  const many=p.steps.length>1;
+  const open=!many||PLANOPEN;
+  if(many){
+    h+='<button class="disc" onclick="planToggle()" aria-expanded="'+(open?"true":"false")+'">'+
+      '<span class="grow"><b>'+p.left.length+' adım</b> · '+
+      (p.left.length===1?"step":"steps")+' left · ~'+Math.max(1,p.mins)+' dk</span>'+
+      '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
+  }
+  if(open){
+    h+='<p class="sub" style="margin:0 0 .5rem">'+
+     (first?'Start with the first unit. The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
+          :'In this order: reviews decay on a schedule, new material does not. About '+
+            Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.')+'</p>';
+    p.steps.forEach(function(s,i){
+      const done=s.n===0;
+      h+='<button class="unit" onclick="'+s.go+'">'+
+        '<span class="tick '+(done?"done":(s===p.left[0]?"here":""))+'">'+(done?IC.check:(i+1))+'</span>'+
+        '<span class="grow"><span class="unit-t">'+s.tr+(s.n>1?' · '+s.n:'')+'</span>'+
+        '<span class="unit-s">'+esc(s.en)+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
+        '<span class="chev">'+IC.chev+'</span></button>';
+    });
+  }
   h+='<button class="btn" onclick="'+p.left[0].go+'">'+
    (first?"Başla":p.left[0].tr+" ile başla")+'</button></div>';
   return h;
 }
+

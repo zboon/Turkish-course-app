@@ -192,6 +192,17 @@ h2.sec::after{
 .card.nav{padding:1.05rem 1rem}
 .card.nav .lead{font-size:1.06rem}
 
+/* A disclosure row: the summary of something folded away, and the way to
+   unfold it. Deliberately not a card — it sits inside one. */
+.disc{
+  display:flex;width:100%;align-items:center;gap:.6rem;
+  background:none;border:0;padding:.1rem 0 .55rem;text-align:left;
+  font-family:'Karla',sans-serif;font-size:.84rem;color:var(--ink2);
+}
+.disc .grow{flex:1;min-width:0}
+.disc b{font-weight:700;color:var(--ink)}
+.disc .ic{flex:0 0 auto;color:var(--faint);display:flex;align-items:center}
+
 /* level card */
 .lvl-badge{
   flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;

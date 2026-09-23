@@ -1101,6 +1101,19 @@ Order is everything perishable first, new material last: reviews decay on a
 schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
 or Yeni, with Anlat inserted before the last step when a retell is due.
 
+**The list folds; the instruction does not.** The card opens collapsed to
+one line — `5 adım · steps left · ~24 dk` — with the start button still
+outside the fold, so the first step is one tap whether or not the list is
+open. What folds away is five rows of detail answering a question the
+button already answers. Two rules keep it honest:
+
+- **One instruction is not a list**, so a single-step plan does not fold
+  at all. Day one still shows its one row and the sentence explaining why
+  the review steps are not there yet — the whole point of `avail`.
+- **`PLANOPEN` is a module variable, not part of `S`.** Same rule as the
+  rest of the plan: a fold that survived a restart would be a preference
+  the learner never set. It opens closed every time.
+
 **Nothing is stored.** A step is done when its own queue is empty, which is
 self-correcting — finish the work and the tick appears, come back tomorrow
 and it clears itself. A per-day completion flag would need its own state and
@@ -1179,11 +1192,19 @@ underneath in Karla, and one gold hairline down the leading edge — the
 same single stroke that runs out of `h2.sec`, turned ninety degrees.
 Resist adding a second.
 
-### Two more assertions that could not fail
+### Assertions that could not fail
 
-Both found by the breakage run rather than by reading, and both the same
-mistake as the one recorded under Atasözleri:
+Found by the breakage runs rather than by reading, and all the same
+mistake as the one recorded under Atasözleri. Three in two sessions is a
+pattern, so: **when a guard is written, break it on purpose before
+believing it.**
 
+- `store["turkce-course-v1"]` to read what was saved — but `store` is a
+  **`Map`**, so bracket access is always `undefined` and every assertion
+  built on it passed whatever the code did. `store.get()` is the
+  accessor, and the pre-existing storage test had it right all along.
+  The check also asserts the key exists now, so an empty read cannot
+  pass quietly.
 - `!lastPaint.includes("go('sayilar')")` as "no tool rows on the landing
   page" — but the **live clock is a button to Sayılar** and is meant to
   be, so the assertion failed on correct code. It checks for the row's
@@ -1192,7 +1213,7 @@ mistake as the one recorded under Atasözleri:
   the row *Tekrar motoru*, so renaming every heading left it green. It
   asserts the heading markup and the heading count now.
 
-Fourteen guards on the navigation, each confirmed to fail on a
+Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
 
 ## Sözlük (the word list)
