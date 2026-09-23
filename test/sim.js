@@ -1051,6 +1051,22 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
   doc.getElementById("tbox").value = "gidicem"; ev("tkCheck()");
   ok(ev("TK.res") === false && !/Konuşma dili/.test(lastPaint), "a spoken form of a different word was accepted");
 
+  /* Whatever form was given, the others are shown: the spoken form of a
+     written answer, the other listed word of a recall. */
+  ev("tkNext()");
+  ev("Object.assign(TK.q[TK.i],{kind:'recall',c:'gideceğim',tr:'gideceğim',alts:[fold('gideceğim')],u:'a2u2'})");
+  doc.getElementById("tbox").value = "gideceğim"; ev("tkCheck()");
+  ok(/Başka türlü/.test(lastPaint) && /in speech/.test(lastPaint) && /gidicem/.test(lastPaint),
+     "a written answer was not shown its spoken form");
+  ev("tkNext()");
+  ev("Object.assign(TK.q[TK.i],{kind:'recall',c:'ad',tr:'ad / isim',alts:['ad','isim'],u:'a1u1'})");
+  doc.getElementById("tbox").value = "ad"; ev("tkCheck()");
+  ok(ev("TK.res") === true && /also right/.test(lastPaint) && /isim/.test(lastPaint), "the other listed word was not shown");
+  ev("tkNext()");
+  ev("Object.assign(TK.q[TK.i],{kind:'recall',c:'gideceğim',tr:'gideceğim',alts:[fold('gideceğim')],u:'c1u1'})");
+  doc.getElementById("tbox").value = "gideceğim"; ev("tkCheck()");
+  ok(!/in speech/.test(lastPaint), "a spoken form was offered in a C1 unit, which teaches the written register");
+
   /* Diacritics are forgiven here as everywhere else. */
   ev("tkNext()");
   const want = ev("TK.q[TK.i].c");
@@ -1183,6 +1199,24 @@ step("grammar comes back, and is produced rather than recognised", () => {
   ok(ev("GR.res.same") === true, "a spoken future was refused in Dilbilgisi");
   ok(/Konuşma dili · spoken form/.test(lastPaint), "Dilbilgisi accepted the spoken form without saying so");
   ok(!/grAccept/.test(lastPaint), "the override is offered on an accepted spoken form");
+
+  /* Short or long: the pronoun the ending already carries may come or go,
+     and whichever was given, the other is shown. The sitting's six items
+     are spent by now, so these re-ask the last one. */
+  ev("GR.phase='ask'; GR.over=false; GR.typed=''; render()");
+  ev("Object.assign(GR.q[GR.i],{c:'Benim adım Deniz.',lv:'A1'})");
+  doc.getElementById("gbox").value = "Adım Deniz"; ev("grCheck()");
+  ok(ev("GR.res.same") === true, "dropping the optional pronoun was marked wrong");
+  ok(/dw may/.test(lastPaint) && !/dw miss/.test(lastPaint), "the optional pronoun was drawn as missing");
+  ok(/the full form/.test(lastPaint) && /pronoun is optional/.test(lastPaint), "the full form was not shown");
+  ev("GR.phase='ask'; GR.over=false; GR.typed=''; render()");      /* a sitting is six; re-ask this one */
+  ev("Object.assign(GR.q[GR.i],{c:'Benim adım Deniz.',lv:'A1'})");
+  doc.getElementById("gbox").value = "Benim adım Deniz"; ev("grCheck()");
+  ok(/shorter, without the pronoun/.test(lastPaint) && /Adım Deniz\./.test(lastPaint), "the short form was not shown");
+  ev("GR.phase='ask'; GR.over=false; GR.typed=''; render()");
+  ev("Object.assign(GR.q[GR.i],{c:'Bu hediye senin için.',lv:'A2'})");
+  doc.getElementById("gbox").value = "Bu hediye için"; ev("grCheck()");
+  ok(ev("GR.res.same") === false, "a pronoun a postposition needs was allowed to go");
 
   /* An override from a high box restores that box, rather than resetting. */
   ev("wipe()"); ev("S.seen={b2u1:{g:1}}; S.gram={'y:b2u1':{b:5,d:0,n:0}}; save()");

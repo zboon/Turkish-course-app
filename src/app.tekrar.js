@@ -412,7 +412,7 @@ function renderTekrarRun(){
     h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?"Doğru":"Yanlış")+'</b>'+
      (TK.res?"It comes back later and later from here."
             :"Wrong answers come back today. Being asked still counts as an encounter.")+
-     (TK.res?spokenBox(TK.spoken,it.c):diagBox(TK.diag?[TK.diag]:[]))+'</div>';
+     (TK.res?spokenBox(TK.spoken,it.c):diagBox(TK.diag?[TK.diag]:[]))+altBox(tkAlts(it))+'</div>';
     h+='<button class="btn" onclick="tkNext()">'+(TK.i+1>=TK.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
@@ -529,12 +529,28 @@ function grCheck(){
   GR.pre=gramBox(it.k);
   GR.over=false;
   GR.res=gramJudge(it.c,GR.typed);
-  GR.spoken=null;
+  GR.spoken=null;GR.pron=null;
   if(!GR.res.same){
     const sp=spokenToward(GR.typed,it.c);
     if(sp.used.length){
       const r2=gramJudge(it.c,sp.text);
       if(r2.same){GR.res=r2;GR.spoken=sp.used;}
+    }
+    /* One subject pronoun more or fewer is still the sentence: the ending
+       already says who. Marked on the line as optional, not as missing. */
+    if(!GR.res.same){
+      const cands=[GR.typed];
+      if(sp.used.length)cands.push(sp.text);
+      for(let i=0;i<cands.length;i++){
+        const ps=pronounSlack(it.c,cands[i]);
+        if(!ps)continue;
+        const r3=gramJudge(it.c,cands[i]);
+        r3.same=true;r3.order=false;
+        r3.ops.forEach(function(o){if((o.t==="miss"||o.t==="extra")&&fold(o.w)===ps.w)o.t="may";});
+        GR.res=r3;GR.pron=ps;
+        if(i>0)GR.spoken=sp.used;
+        break;
+      }
     }
   }
   GR.diag=GR.res.same?[]:diagnoseLine(it.c,GR.typed,2);
@@ -657,7 +673,7 @@ function renderGramRun(){
                       :"It comes back later and later from here.")
              :(r.extra?"Struck-through words are not in the sentence. ":"")+
               "Red is what the model has and you did not. This point comes back today.")+
-     (won?(r.same?spokenBox(GR.spoken,it.c):""):diagBox(GR.diag))+'</div>';
+     (won?(r.same?spokenBox(GR.spoken,it.c):""):diagBox(GR.diag))+altBox(grAlts(it),GR.pron&&r.same?PRON_NOTE:"")+'</div>';
     if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
     h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
     h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
@@ -673,6 +689,44 @@ function renderGramRun(){
 
 /* The rule behind a miss, when diagnose() found one. Inside the feedback
    card, so it reads as part of the answer rather than a new message. */
+/* The other ways to say it. Whatever the learner typed — short or long,
+   spoken or written, one listed word or its alternative — the others are
+   shown, and never the form they typed themselves. The spoken form is
+   offered up to B2 only: C1 and C2 teach the written register on purpose,
+   and "bi" in an academic sentence would be a wrong thing to model. */
+const PRON_NOTE="The pronoun is optional: the ending already says who, so the sentence is right with it or without it. Leaving it out is the everyday form; putting it in stresses it.";
+function spokenLv(lv){return ["A1","A2","B1","B2"].indexOf(lv)>-1;}
+/* Collects alternatives, skipping any already on screen. */
+function altCollector(shown){
+  const lines=[], seen={};
+  shown.forEach(function(x){seen[fold(x||"")]=1;});
+  return {lines:lines,add:function(label,form){
+    if(!form)return;
+    const f=fold(form); if(!f||seen[f])return;
+    seen[f]=1; lines.push([label,form]);
+  }};
+}
+function tkAlts(it){
+  const A=altCollector([TK.typed,it.c]);          /* the card already shows it.c */
+  if(it.kind==="recall")
+    String(it.tr).replace(/\(([^)]*)\)/g,"/$1").split("/").forEach(function(x){A.add("ayrıca · also right",x.trim());});
+  const u=unit(it.u);
+  if(u&&spokenLv(u.lv)&&!TK.spoken)A.add("konuşurken · in speech",spokenOf(it.c));
+  return A.lines;
+}
+function grAlts(it){
+  const A=altCollector([GR.typed]);
+  if(GR.pron)A.add(GR.pron.k==="drop"?"tam hâli · the full form":"kısası · the everyday form",it.c);
+  else A.add("kısası · shorter, without the pronoun",shortOf(it.c));
+  if(spokenLv(it.lv)&&!GR.spoken)A.add("konuşurken · in speech",spokenOf(it.c));
+  return A.lines;
+}
+function altBox(lines,note){
+  if(!lines||!lines.length)return note?'<div class="diag"><p>'+esc(note)+'</p></div>':"";
+  return '<div class="diag"><b>Başka türlü · other ways to say it</b>'+
+    (note?'<p>'+esc(note)+'</p>':'')+
+    lines.map(function(l){return '<p><i>'+esc(l[0])+'</i><br><span class="af">'+esc(l[1])+'</span></p>';}).join("")+'</div>';
+}
 /* A right answer given in its spoken spelling: say so, and show the
    written form, because that is the one the learner will read. */
 function spokenBox(used,written){

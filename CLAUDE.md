@@ -1055,7 +1055,9 @@ not the skill.
   word forgives the point — measured: an 80% bar passes **46 of the 181**
   with a word missing. `sim.js` pins all three invariants across every
   target: a dropped word never passes, an invented word never passes, a
-  reordering always does.
+  reordering always does. One exception, made in `grCheck()` rather than
+  the judge: a subject pronoun the ending already carries may come or go
+  (`pronounSlack()`, see Başka türlü below).
 - **The learner overrules.** A word-level judge can mark words; it cannot
   mark Turkish. Where the English leaves the choice open — a synonym, a
   tense English does not distinguish — `grAccept()` takes the answer as
@@ -1296,6 +1298,44 @@ Nineteen guards, each confirmed to fail on a deliberate breakage.
 
 This is the part of the app where the author's Turkish is least safe
 to trust unchecked, so it wants a native speaker's pass before it grows.
+
+### Başka türlü (the other ways to say it)
+
+By request: whatever form a learner types, short or long, spoken or
+written, the others are shown under **Başka türlü** in Tekrar motoru and
+Dilbilgisi tekrarı, right answer or wrong, and never the form they typed.
+
+- **Spoken ↔ written.** `spokenOf()` renders a sentence as said, using
+  only the forms that are safe with anyone (the future, *bi*, *bişey*,
+  *burda*, *nerde*, *dakka*, *buyrun*, *napıyorsun*, *n'oldu*). The
+  between-friends ones (*geliyom*, *di mi*, *napcan*) are accepted when
+  typed but never offered. The second person keeps its *-sIn* when offered
+  (*kalıcaksın*, not *kalıcan*) for the same reason. Offered up to B2 only:
+  C1 and C2 teach the written register on purpose.
+- **Short ↔ long.** A subject pronoun the ending already carries is
+  optional, so *Adım Deniz* and *Benim adım Deniz* are both right, and
+  Dilbilgisi used to fail the first. `pronounSlack()` allows exactly one
+  pronoun more or fewer than the model and nothing else different;
+  `pronAgrees()` is the one gate on which pronouns may move: *ben* only
+  when the verb ends in *-m*, *benim* only when a later word carries the
+  *-m*, and so on. It rejects *o* and *onlar*, which are also "that" and
+  "those"; a pronoun before *de* or *ki* (*Ben de iyiyim*); a genitive
+  before a postposition (*senin için*); the last word; and a pronoun whose
+  person is not the verb's (*Ben çıkarken o giriyordu*). The line
+  draws the optional word in italic ink as `dw may` — not `opt`, which is
+  the answer-button class and drew it as a bordered box.
+- **Listed alternatives.** *ad / isim* and *ağabey (abi)*: the other one.
+
+`validate.js` holds hand-checked tables for all three, and then the sweep
+that matters: every spoken form the app could offer for any A1–B2
+example, passage line or vocabulary item, and every short form it could
+offer for any grammar example, is run back through the judge. An
+alternative the app offered and then marked wrong would be worse than
+none. Fifteen guards, each confirmed to fail on a deliberate breakage.
+Two did not at first, and both were real: the pronoun list duplicated the
+agreement gate, so one was removed, and "never the last word" was
+untested until an answer that is only a pronoun (*Sen.*) was added, which
+would otherwise be accepted as an empty string.
 
 ## Kendi kelimelerim (your own words)
 

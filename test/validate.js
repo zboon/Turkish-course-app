@@ -77,7 +77,8 @@ try {
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK," +
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
-    "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward};", sandbox, { filename: file });
+    "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward," +
+    "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -383,6 +384,69 @@ let spokenChecked = 0;
       }
     });
   });
+}
+
+/* ---------- başka türlü (the other ways to say it) ---------- */
+/* After an answer the app offers the other ways to say it: the spoken
+   form, the form without the pronoun. An alternative the app offers and
+   then marks wrong would be worse than none, so every one it can offer
+   anywhere in A1–B2 is run back through the judge here. */
+let altChecked = 0;
+{
+  [["Yarın İstanbul'a gideceğim.", "Yarın İstanbul'a gidicem."], ["Ne yapıyorsun?", "Napıyorsun?"],
+   ["Bu bir defter.", "Bu bi defter."], ["Hiçbir şey görmedim.", "Hiçbişey görmedim."], ["Ne oldu?", "N'oldu?"],
+   ["Göreceğiz.", "Görücez."], ["Gelmeyeceğim.", "Gelmicem."], ["Kalacaksın.", "Kalıcaksın."],
+   ["Türkçe öğreniyorum.", null], ["Okuyacağım.", null], ["Bu kitap benim.", null], ["Saat beşte.", null]
+  ].forEach(([w, want]) => {
+    altChecked++;
+    const got = M.spokenOf(w);
+    if (got !== want) err("başka türlü", "spokenOf(" + JSON.stringify(w) + ") is " + JSON.stringify(got) + ", hand-checked " + JSON.stringify(want));
+  });
+  [["Benim adım Deniz.", "Adım Deniz", "drop"], ["Ben Türküm.", "Türküm", "drop"], ["Sen iyisin.", "İyisin", "drop"],
+   ["Türkçe öğreniyorum.", "Ben Türkçe öğreniyorum", "add"], ["Adım Deniz.", "Benim adım Deniz", "add"],
+   ["Gidiyoruz.", "Biz gidiyoruz", "add"], ["Geliyor musunuz?", "Siz geliyor musunuz", "add"],
+   /* must stay wrong */
+   ["Türkçe öğreniyorum.", "Sen Türkçe öğreniyorum", null], ["Gidiyoruz.", "Siz gidiyoruz", null],
+   ["Ben de iyiyim.", "De iyiyim", null], ["Bu kitap benim.", "Bu kitap", null], ["O çalışmıyor.", "Çalışmıyor", null],
+   ["Onlar geldi.", "Geldi", null], ["Adım Deniz.", "Senin adım Deniz", null], ["Ben Türküm.", "Ben", null],
+   ["Benim adım Deniz.", "Adım", null], ["Bu hediye senin için.", "Bu hediye için", null],
+   ["Ben çıkarken o giriyordu.", "Çıkarken o giriyordu", null], ["Benim iki kardeşim var.", "İki kardeşim var", "drop"],
+   /* an answer that is only a pronoun: dropping it leaves nothing */
+   ["Sen.", "", null], ["Onlar.", "", null]
+  ].forEach(([m, t, want]) => {
+    altChecked++;
+    const r = M.pronounSlack(m, t), got = r ? r.k : null;
+    if (got !== want) err("başka türlü", JSON.stringify(t) + " against " + JSON.stringify(m) + " gives " + JSON.stringify(got) + ", hand-checked " + JSON.stringify(want));
+  });
+  [["Benim adım Deniz.", "Adım Deniz."], ["Ben Türküm.", "Türküm."], ["Ben de iyiyim.", null], ["Bu kitap benim.", null], ["Bu hediye senin için.", null],
+   ["Ben çıkarken o giriyordu.", null], ["Benim iki kardeşim var.", "İki kardeşim var."], ["Sen.", null],
+   ["O öğretmen değil.", null]].forEach(([m, want]) => {
+    altChecked++;
+    if (M.shortOf(m) !== want) err("başka türlü", "shortOf(" + JSON.stringify(m) + ") is " + JSON.stringify(M.shortOf(m)) + ", hand-checked " + JSON.stringify(want));
+  });
+  /* The sweep: everything the app can offer, back through the judge. */
+  const early = UNITS.filter(u => ["A1", "A2", "B1", "B2"].includes(u.lv));
+  const texts = [];
+  early.forEach(u => {
+    u.gram.eg.forEach(e => texts.push([u.id + " eg", e[0]]));
+    u.read.lines.forEach(l => texts.push([u.id + " line", l[0]]));
+    u.vocab.forEach(v => texts.push([u.id + " vocab", v[0]]));
+  });
+  texts.forEach(([where, x]) => {
+    const sp = M.spokenOf(x);
+    if (sp !== null) {
+      altChecked++;
+      const r = M.spokenToward(sp, x);
+      if (r.text !== M.fold(x)) err("başka türlü", where + ": offers " + JSON.stringify(sp) + " for " + JSON.stringify(x) + " and the judge refuses it");
+    }
+  });
+  UNITS.forEach(u => u.gram.eg.forEach(e => {
+    const sh = M.shortOf(e[0]);
+    if (sh === null) return;
+    altChecked++;
+    const r = M.pronounSlack(e[0], sh);
+    if (!r || r.k !== "drop") err("başka türlü", u.id + ": offers " + JSON.stringify(sh) + " as the short form of " + JSON.stringify(e[0]) + " and the judge refuses it");
+  }));
 }
 
 /* ---------- sık kelimeler (the frequency layer) ---------- */
@@ -1274,6 +1338,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));
