@@ -149,14 +149,23 @@ the icon and you will hear about it. `src/icon-192.png` and `src/icon-512.png`
 are rendered from the SVG for `manifest.json`; re-render them if the drawing
 changes.
 
-The hero no longer carries the Ottoman spelling of the app's own name. It
-sat between the wordmark and the tagline and was the fourth of five
-stacked elements before anything actionable, which is what the landing
-page was being simplified away from. `.osm` went with it, so re-adding
-the markup alone would paint unstyled — `sim.js` fails on any Arabic
-run in the home paint. The script itself is not gone from the plan:
-**Osmanlıca** is still on the roadmap as a mode, where it is the subject
-rather than an ornament.
+The hero is the crest, the wordmark and the live clock — three things.
+It used to carry two more: the Ottoman spelling of the app's own name
+(`.osm`) under the wordmark, and a tagline (`.tag`) under that. Five
+stacked elements before anything actionable was the thing the landing
+page was being simplified away from, and a hero is the one place this
+app had stopped applying its own rule about ornament being restrained.
+
+Both styles were deleted along with their markup rather than left as
+dead CSS, so re-adding either line alone would paint unstyled, and
+`sim.js` asserts the hero positively — crest, wordmark, clock — and
+fails on an Arabic run or a `.tag` in the home paint.
+
+Nothing was lost that is said nowhere else: the bar above still reads
+`Türkçe · A1 → C2`, and on day one the orientation card sits open
+directly below saying what the app is in plain English. The Ottoman
+script is not gone from the plan either — **Osmanlıca** is still on the
+roadmap as a mode, where it is the subject rather than an ornament.
 
 ## Nothing reviews what has not been met
 

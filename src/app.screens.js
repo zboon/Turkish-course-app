@@ -22,7 +22,6 @@ function renderHome(){
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button></div></div>';
   h+='<div class="wrap"><div class="hero">'+crest(76)+
    '<h1 class="mark">Türkçe</h1>'+
-   '<p class="tag">A reading course from first words to literature</p>'+
    clockHero()+'</div>';
 
   /* Read-then-act on day one; the plan is the whole opinion afterwards. */
