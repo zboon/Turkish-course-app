@@ -87,6 +87,39 @@ function priceText(l,k){
   return numText(l)+" lira"+(k?" "+numText(k)+" kuruş":"");
 }
 
+/* --- the date ----------------------------------------------------------- */
+/* Months are proper nouns in Turkish, and not one of the sixty units
+   teaches them: a1u6 drills weekdays in passing (its "Which is Saturday?"
+   question, and "pazartesi günü" as a -DA example), but Ocak through
+   Aralık appear nowhere in the course at all. The live clock is the only
+   exposure this app gives them, so it gets a second line — the day
+   spelled out, the month named, the weekday named — read the same way
+   the time is: by someone who never decided to study a calendar.
+
+   MONTHS is indexed exactly as Date.getMonth() returns it (0 = Ocak) and
+   WEEKDAYS exactly as Date.getDay() returns it (0 = Pazar) — not the
+   Turkish week, which starts Pazartesi. Matching JS rather than the
+   calendar is what keeps both arrays boring: no +1/-7 arithmetic anywhere
+   near a wall-clock read, which is exactly the kind of arithmetic that is
+   easy to get backwards and hard to notice once it is. */
+const MONTHS=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz",
+              "Ağustos","Eylül","Ekim","Kasım","Aralık"];
+const WEEKDAYS=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+/* The day is read as a cardinal number — "23 Eylül" is "yirmi üç Eylül",
+   never an ordinal — so this reuses numText() rather than a table of its
+   own, which is also why nothing here needed re-testing that numText()
+   already covers: the risk in this function is the two arrays, not the
+   arithmetic. */
+function dateWords(day,monthIdx,weekdayIdx){
+  return numText(day)+" "+MONTHS[monthIdx]+" "+WEEKDAYS[weekdayIdx];
+}
+/* DD.MM.YYYY, the Turkish written order and separator. Digits are the
+   gloss here exactly as 15:15 is the clock's — no English needed, because
+   a date reads the same way in every language. */
+function dateDigits(day,monthIdx,year){
+  return String(day).padStart(2,"0")+"."+String(monthIdx+1).padStart(2,"0")+"."+year;
+}
+
 /* --- reading the learner's answer -------------------------------------- */
 /* Digits, not words: the answer to a heard number is a number, which is
    exactly what makes this markable. Separators are forgiven because a
@@ -464,10 +497,20 @@ function clockDigits(){
   const d=new Date();
   return d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
 }
+/* Read once as [day, month, weekday, year] rather than four separate Date
+   calls, the same shape nowHM() already keeps for the hour and minute. */
+function nowYMD(){
+  const d=new Date();
+  return [d.getDate(),d.getMonth(),d.getDay(),d.getFullYear()];
+}
+function clockDateTR(){const t=nowYMD();return dateWords(t[0],t[1],t[2]);}
+function clockDateDigits(){const t=nowYMD();return dateDigits(t[0],t[1],t[3]);}
 function clockHero(){
   return '<button class="clock" onclick="go(\'sayilar\')" aria-label="Sayılar · saat">'+
    '<span class="tr" id="hclock">'+esc(clockTR())+'</span>'+
-   '<span class="d" id="hclockd">'+esc(clockDigits())+'</span></button>';
+   '<span class="d" id="hclockd">'+esc(clockDigits())+'</span>'+
+   '<span class="date" id="hdate">'+esc(clockDateTR())+'</span>'+
+   '<span class="d" id="hdated">'+esc(clockDateDigits())+'</span></button>';
 }
 /* Armed from render(), which is the one place that knows what is on
    screen: it re-arms where the element exists and stops where it does
@@ -491,6 +534,12 @@ function clockTick(){
   const b=document.getElementById("hclockd");
   a.textContent=clockTR();
   if(b)b.textContent=clockDigits();
+  /* The date changes on the day, not the minute, but it costs nothing to
+     poke on the same tick and a second timer for one extra element would
+     be the wrong kind of caution. */
+  const c=document.getElementById("hdate"), dd=document.getElementById("hdated");
+  if(c)c.textContent=clockDateTR();
+  if(dd)dd.textContent=clockDateDigits();
   /* Wake ON the minute rather than 60s after the last paint, or it drifts
      and changes a beat later every time. It pokes the text rather than
      re-rendering, like the Üretim countdown — a clock must not be able to

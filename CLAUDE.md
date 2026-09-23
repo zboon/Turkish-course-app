@@ -7,7 +7,7 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
+node test/validate.js   # data integrity + 266 morphology forms + 855 number forms
 node test/sim.js        # headless render of all 342 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
@@ -554,9 +554,12 @@ numbers are generated and endless, so "342" is not a thing to be weak at;
 
 The engine is split where its purity ends. Everything up to
 `/* --- what a sitting is made of --- */` is pure, so `validate.js` lifts it
-out of the build exactly as it lifts the morphology engine and holds **827
-hand-checked forms** against it — 99 of them written by hand, the rest the
-sweep of all 720 hour/minute pairs the live clock made reachable; `sim.js` takes the half that needs `S` — the
+out of the build exactly as it lifts the morphology engine and holds **855
+hand-checked forms** against it — 99 of the time-and-price ones written by
+hand, the rest the sweep of all 720 hour/minute pairs the live clock made
+reachable, plus 28 for the date line under it: 19 sweeping every month and
+every weekday at least once, and 9 hand-typed pinning word order and the
+digit form's zero-padding. `sim.js` takes the half that needs `S` — the
 judge, the clock, the screens, the book. Neither file holds a copy of the
 other's table.
 
@@ -595,6 +598,19 @@ the exposure the geçiyor/var construction wants. The digits are the gloss;
 no English is needed, because 15:15 says it in every language, and the
 12-hour words against the 24-hour digits is the whole lesson.
 
+A second line under that does the same thing for the calendar: `yirmi üç
+Eylül Çarşamba`, with `23.09.2026` beneath. It exists because no unit
+teaches the months — a1u6 drills weekdays in passing, but Ocak through
+Aralık appear nowhere else in the course — so passive exposure on a screen
+opened several times a day is the only teaching they get. `MONTHS` is
+indexed as `Date.getMonth()` returns it and `WEEKDAYS` as `Date.getDay()`
+returns it (0 = Pazar, not the Turkish week's Pazartesi), which keeps both
+arrays boring: no `+1`/`-7` arithmetic sits near a wall-clock read, which
+is exactly the kind of arithmetic that is easy to get backwards and hard
+to notice once it is. The day itself is read as a cardinal number — `23
+Eylül` is `yirmi üç Eylül`, never an ordinal — so `dateWords()` reuses
+`numText()` rather than a table of its own.
+
 Three things about it:
 
 - **`render()` arms it, not the screens.** `clockTick()` re-arms where
@@ -614,12 +630,26 @@ Three things about it:
   `textContent` does not write back into `innerHTML`, so comparing the paint
   is not enough to tell the difference.
 
+The date line rides the same `clockTick()` rather than a second timer — a
+date changes on the day, not the minute, but arming a whole second timeout
+for one extra element would be the wrong kind of caution, and `sim.js`
+pins that arming the clock never leaves more than one timer behind however
+many times it fires.
+
 A live clock also means `timeText()` now runs on **all 60 minutes**, where
 the generated drills only ever asked for multiples of five. `validate.js`
 hand-checks the odd ones and sweeps all 720 hour/minute pairs for shape.
-`snap.js` scrubs the two clock elements by id, for the same reason it
-scrubs the elapsed-time readings: a run that straddled a minute would
-otherwise disagree with itself.
+The date gets the equivalent, proportioned to where its risk actually is:
+`dateWords()`/`dateDigits()` do nothing but concatenate two array lookups
+and a number, so `validate.js` sweeps every entry of `MONTHS` and every
+entry of `WEEKDAYS` at least once rather than hand-checking hundreds of
+combinations that would only be re-testing `numText()`. `sim.js` cross-
+checks the digits against a fresh `new Date()` built independently of
+`nowYMD()`, the same reason the time check reads `new Date().getHours()`
+directly rather than trusting `nowHM()` to grade itself.
+`snap.js` scrubs all four clock elements by id, for the same reason it
+scrubs the elapsed-time readings: a run that straddled a minute, or a day,
+would otherwise disagree with itself.
 
 Sayılar is **not** in the daily plan, like Kurma ve Dönüştürme and Sor and
 for the same reason: it needs no material met, so it would be available on

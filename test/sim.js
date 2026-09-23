@@ -1845,14 +1845,38 @@ step("the clock on the home screen tells the time in Turkish", () => {
   ok(ev("document.getElementById('hclockd').textContent").indexOf(h24 + ":") === 0,
      "the digits are not on the 24-hour clock");
 
+  /* The date line, added so the months get read a few times a day the
+     same way the time does — the course teaches none of them otherwise.
+     The word forms are hand-checked in validate.js across every month and
+     weekday; what is checked here is the same thing as the time: that the
+     element carries the engine's own answer for today, not a string that
+     merely looks like one. */
+  const dtr = ev("document.getElementById('hdate').textContent");
+  const dwant = ev("dateWords(nowYMD()[0],nowYMD()[1],nowYMD()[2])");
+  ok(dtr === dwant, "the date reads " + q(dtr) + " but the engine says " + q(dwant));
+  const ddig = ev("document.getElementById('hdated').textContent");
+  const ddwant = ev("dateDigits(nowYMD()[0],nowYMD()[1],nowYMD()[3])");
+  ok(ddig === ddwant, "the date digits read " + q(ddig) + " but the engine says " + q(ddwant));
+  ok(/^\d{2}\.\d{2}\.\d{4}$/.test(ddig), "the date digits are not DD.MM.YYYY: " + q(ddig));
+  /* Rebuilt from a fresh, real Date rather than through nowYMD() — the
+     same reason the hour check above reads new Date().getHours() itself
+     instead of trusting nowHM(): a bug inside the wrapper cannot hide
+     behind a test that only ever asks the wrapper to grade itself. */
+  const realD = new Date();
+  const realDigits = String(realD.getDate()).padStart(2, "0") + "." +
+    String(realD.getMonth() + 1).padStart(2, "0") + "." + realD.getFullYear();
+  ok(ddig === realDigits, "the date digits do not match the real wall-clock date: got " + q(ddig) + ", wanted " + q(realDigits));
+
   /* It must poke the text, not re-render: a clock that redrew the home
      screen every minute would throw away whatever is under it — the same
      rule the Dinleme replay follows, and counted the same way, because
      the paint counter is the only thing that can tell the difference. */
   ev("document.getElementById('hclock').textContent='XXX'");
+  ev("document.getElementById('hdate').textContent='YYY'");
   const paintsBefore = screens;
   ev("clockTick()");
   ok(ev("document.getElementById('hclock').textContent") === want, "the tick did not refresh the clock");
+  ok(ev("document.getElementById('hdate').textContent") === dwant, "the tick did not refresh the date");
   ok(screens === paintsBefore, "the tick re-rendered the screen instead of poking the text");
 
   /* One timer at most, however many times it is armed. */
@@ -1867,6 +1891,7 @@ step("the clock on the home screen tells the time in Turkish", () => {
      word from the home screen. */
   ev("go('about')");
   ok(!ev("!!document.getElementById('hclock')"), "the clock followed us to About");
+  ok(!ev("!!document.getElementById('hdate')"), "the date followed us to About");
   ok(ev("CLK===null"), "navigating away left the clock's timer armed");
   ev("sayWord('merhaba')");
   ev("home()");
@@ -1877,10 +1902,12 @@ step("the clock on the home screen tells the time in Turkish", () => {
   /* Sayılar shows it too, being the clock's own subject. */
   ev("go('sayilar')");
   ok(ev("!!document.getElementById('hclock')"), "the Sayılar hub lost the clock");
+  ok(ev("!!document.getElementById('hdate')"), "the Sayılar hub lost the date");
   ok(ev("CLK!==null"), "the clock did not arm on the Sayılar hub");
   /* Nowhere else. */
   ev("go('level','A1')");
   ok(!ev("!!document.getElementById('hclock')"), "the clock leaked onto the level screen");
+  ok(!ev("!!document.getElementById('hdate')"), "the date leaked onto the level screen");
 });
 
 step("diyalog · a conversation you can always get out of", () => {
@@ -2218,6 +2245,7 @@ step("home · the landing page is the plan, the road and two doors", () => {
   ok(/Bugün/.test(lastPaint), "the plan card left the landing page");
   ok(lastPaint.includes("road-stops"), "the progress road left the landing page");
   ok(lastPaint.includes('id="hclock"'), "the live clock left the landing page");
+  ok(lastPaint.includes('id="hdate"'), "the date under the clock left the landing page");
 });
 
 step("bugün · the step list folds, the instruction does not", () => {
