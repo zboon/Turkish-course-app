@@ -133,19 +133,37 @@ function renderAraclar(){
 function tipsOn(){return S.tips!==false&&lvPct("A2")<100;}
 function hideTips(){S.tips=false;save();render();}
 function showTips(){S.tips=true;save();home();}
-/* Five paragraphs of it used to sit inline on the landing page. It is the
-   right text and a beginner needs it, but it is reading rather than a
-   control, and it was the largest block of prose on the first screen. The
-   card is now two sentences and a way through to the rest. */
+/* Five paragraphs of it used to sit inline on the landing page, then two
+   sentences, and now a line that unfolds. It is the right text and a
+   beginner needs it — nothing else explains that an empty Tekrar is
+   correct rather than broken — but it is reading rather than a control.
+
+   OPEN WHILE IT IS INSTRUCTION, FOLDED ONCE IT IS REFERENCE. That is the
+   same rule that already decides where it sits: above the plan while
+   nothing has been met, below it afterwards. On day one it is the only
+   thing telling a learner what any of this is, so it is open; once
+   something has been met the learner has been told, and it folds.
+   TIPSOPEN starts null meaning "whichever that rule says", and only
+   pins a value once the learner has actually tapped it. */
+let TIPSOPEN=null;
+function tipsToggle(){TIPSOPEN=!tipsShown();render();}
+function tipsShown(){return TIPSOPEN===null?metUnits().length===0:TIPSOPEN;}
 function startCard(){
   if(!tipsOn())return "";
-  const nx=nextUnit();
-  return '<div class="card gram">'+
-   '<p class="lead">Nasıl çalışır · how to use this</p>'+
-   '<p class="sub">Every label is Turkish with the English underneath, and you do not need to read the Turkish to use the app. Follow <b>Bugün</b> and you are using the course correctly — everything in Araçlar is optional.</p>'+
-   (nx?'<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>':'')+
-   '<button class="btn ghost" onclick="go(\'nasil\')">Devamını oku · the rest</button>'+
-   '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button></div>';
+  const open=tipsShown();
+  let h='<div class="card gram">'+
+   '<button class="disc" onclick="tipsToggle()" aria-expanded="'+(open?"true":"false")+'">'+
+    '<span class="grow"><b>Nasıl çalışır</b> · how to use this</span>'+
+    '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
+  if(open){
+    h+='<p class="sub" style="margin:0 0 .2rem">Every label is Turkish with the English underneath, and you do not need to read the Turkish to use the app. Follow <b>Bugün</b> and you are using the course correctly — everything in Araçlar is optional.</p>'+
+     /* No "start the first unit" button here: the plan directly below
+        already has one, pointed at the same unit, and two identical
+        primary actions on one screen is the wall in miniature. */
+     '<button class="btn ghost" onclick="go(\'nasil\')">Devamını oku · the rest</button>'+
+     '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button>';
+  }
+  return h+'</div>';
 }
 function renderNasil(){
   const nx=nextUnit();

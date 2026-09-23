@@ -236,7 +236,10 @@ same reason a unit id is.
 id, and `n` counts completions — it counts nothing else, deliberately; see
 Diyalog below. Because `wipe()` keeps
 `pscope`, a test that wipes still inherits whatever scope ran before it —
-set it explicitly when the default is what is under test.
+set it explicitly when the default is what is under test. `tips` is the
+same hazard and has now bitten once: a step that wiped and expected the
+orientation card inherited `tips:false` from an earlier step that had
+retired it, and every assertion about the card failed at once.
 
 **Unit ids are permanent.** Everything above is keyed to them, so renaming
 `b1u3` silently wipes that unit's progress for every existing learner. Add
@@ -1101,6 +1104,19 @@ Order is everything perishable first, new material last: reviews decay on a
 schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
 or Yeni, with Anlat inserted before the last step when a retell is due.
 
+**The list folds; the instruction does not.** The card opens collapsed to
+one line — `5 adım · steps left · ~24 dk` — with the start button still
+outside the fold, so the first step is one tap whether or not the list is
+open. What folds away is five rows of detail answering a question the
+button already answers. Two rules keep it honest:
+
+- **One instruction is not a list**, so a single-step plan does not fold
+  at all. Day one still shows its one row and the sentence explaining why
+  the review steps are not there yet — the whole point of `avail`.
+- **`PLANOPEN` is a module variable, not part of `S`.** Same rule as the
+  rest of the plan: a fold that survived a restart would be a preference
+  the learner never set. It opens closed every time.
+
 **Nothing is stored.** A step is done when its own queue is empty, which is
 self-correcting — finish the work and the tick appears, come back tomorrow
 and it clears itself. A per-day completion flag would need its own state and
@@ -1122,6 +1138,19 @@ while nothing has been met, below it afterwards. It retires itself once A2
 is complete, `Gizle` ends it early, and About offers it back. It exists
 because the interface is Turkish-labelled and a beginner has no way to know
 that an empty Tekrar is by design rather than broken.
+
+It folds on the same rule that decides where it sits: **open while it is
+instruction, folded once it is reference.** On day one it is the only
+thing telling a learner what any of this is, so it is open; once a single
+unit has been opened they have been told, and it collapses to its own
+line. `TIPSOPEN` starts `null` meaning "whatever that rule says" and only
+pins a value once the learner has actually tapped it — and like the
+plan's fold it is a module variable, never stored. `Gizle` is different
+and *is* stored: retiring the card is a setting, folding it is not.
+
+The card also lost its "start the first unit" button. The plan sits
+directly below it pointing at the same unit, and two identical primary
+actions on one screen is the wall in miniature.
 
 
 The last step absorbed the old resume card: mid-unit it returns to the exact
@@ -1179,11 +1208,19 @@ underneath in Karla, and one gold hairline down the leading edge — the
 same single stroke that runs out of `h2.sec`, turned ninety degrees.
 Resist adding a second.
 
-### Two more assertions that could not fail
+### Assertions that could not fail
 
-Both found by the breakage run rather than by reading, and both the same
-mistake as the one recorded under Atasözleri:
+Found by the breakage runs rather than by reading, and all the same
+mistake as the one recorded under Atasözleri. Three in two sessions is a
+pattern, so: **when a guard is written, break it on purpose before
+believing it.**
 
+- `store["turkce-course-v1"]` to read what was saved — but `store` is a
+  **`Map`**, so bracket access is always `undefined` and every assertion
+  built on it passed whatever the code did. `store.get()` is the
+  accessor, and the pre-existing storage test had it right all along.
+  The check also asserts the key exists now, so an empty read cannot
+  pass quietly.
 - `!lastPaint.includes("go('sayilar')")` as "no tool rows on the landing
   page" — but the **live clock is a button to Sayılar** and is meant to
   be, so the assertion failed on correct code. It checks for the row's
@@ -1192,7 +1229,7 @@ mistake as the one recorded under Atasözleri:
   the row *Tekrar motoru*, so renaming every heading left it green. It
   asserts the heading markup and the heading count now.
 
-Fourteen guards on the navigation, each confirmed to fail on a
+Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
 
 ## Sözlük (the word list)
