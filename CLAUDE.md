@@ -7,7 +7,7 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 morphology forms + 872 number forms + 46 contrast pairs
+node test/validate.js   # data integrity + 266 morphology forms + 872 number forms + 46 contrast pairs + mistake naming
 node test/sim.js        # headless render of all 342 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
@@ -98,8 +98,22 @@ Drill types — exactly five per unit, `validate.js` enforces:
 - `{t:"fill", q:"… ___ .", c:"answer", why}` — the prompt must contain `___`.
   Matching is diacritic-folded (`fold()`), so a learner without a Turkish
   keyboard still passes.
-- `{t:"order", q, w:[tiles], c:"full sentence"}` — `w.join(" ")` must fold-equal
-  `c`. This is the check that breaks most often when editing.
+- `{t:"order", q, w:[tiles], c:"full sentence", why}` — `w.join(" ")` must
+  fold-equal `c`. This is the check that breaks most often when editing.
+
+**Every drill carries a `why`, and it explains.** It is the only
+explanation the learner gets, shown after a wrong answer and a right one
+alike, and the mistake book keeps it. It used to be a median of 33
+characters — often just the answer again ("Evler.") — and the sixty order
+drills had none at all, so a learner who built a sentence wrong was shown
+the right one and nothing about why. All 300 were rewritten to name the
+rule and then apply it to the item: *"The plural is -lar or -ler by
+two-way harmony. The last vowel of pencere is e, a front vowel, so it
+takes -ler: pencereler."* `validate.js` requires one on all five types, at
+least 50 characters, and no exclamation mark. Rewriting them turned up a
+wrong answer key — c1u8's *Kar kapıda* headline was marked with the
+second option when the first is right — which is the argument for
+reading every item rather than bulk-editing them.
 
 Gloss keys are dictionary headwords. `glossify()` wraps the first literal match
 (and tries a capitalised sentence-initial form); unmatched keys still appear in
@@ -1179,6 +1193,51 @@ built sentence are read back by different code.
 Clearing an entry or the whole book changes no schedule, which the
 screen says and `sim.js` checks. `S.err` is progress, not a setting:
 `wipe()` clears it and a backup carries it.
+
+## Teşhis (naming a mistake)
+
+Built. A typed answer marked wrong used to show only the right answer,
+so a learner who wrote *okulde* for *okulda* saw the correct form and had
+to work out for themselves which of Turkish's handful of rules they had
+broken. `diagnose(typed, correct)` in `app.lang.js` names it, under
+**Neden? · why** in the feedback card, in Tekrar motoru (`diagAny`, which
+tries each listed alternative) and in Dilbilgisi tekrarı
+(`diagnoseLine`, which pairs each missed word with the typed word
+sharing its start, up to two). The mistake book keeps the sentence.
+
+It names six things, each only when that one rule turns what was typed
+into what was right:
+
+| `k` | rule | e.g. |
+|---|---|---|
+| `uyum` | vowel harmony, two- or four-way | okulde → okulda |
+| `dt` | d/t after a voiceless consonant (fıstıkçı şahap) | gitdim → gittim |
+| `yumusama` | p ç t k softening before a vowel, and its absence before a consonant | kitapı → kitabı |
+| `kaynastirma` | the buffer y/n/s between two vowels, and one where none belongs | arabaı → arabayı |
+| `hal` | dative, locative and ablative confused, or the case left off | okulda → okula |
+| `ek` | the word right and its ending missing | aile → ailem |
+
+**Silence is the default, and the conservatism is the design.** A wrong
+diagnosis looks exactly like a right one to a learner, and is worse than
+none: it teaches a rule where there was no rule. So every branch has to
+account for *all* the difference, not some of it. Harmony is named only
+when harmony predicts the correct vowel — *saat → saatte* breaks the rule,
+so *saatta* gets nothing rather than a rule it does not obey. Two
+mistakes in one word get nothing. And the accusative and the possessive
+are **never** named: *evi* is both "the house" and "his house", so a
+missing *-i* cannot honestly be called either.
+
+Diacritic-only slips never reach it — `fold()` has already accepted them.
+It is pure and lives in the language engine, so `validate.js` lifts it
+out with the rest and holds a hand-checked table of both halves: every
+rule firing where it should, and the misses it must leave alone (an
+unrelated word, a missed accusative, a loanword, a negation). It also runs
+every written word of every passage against itself, which must name
+nothing. `sim.js` checks the box appears on a rule-explainable miss in
+both modes, never on a right answer or an unrelated miss, disappears when
+the learner overrules the mark, and reaches the book. Thirteen guards
+across the explanations and this, each confirmed to fail on a deliberate
+breakage.
 
 ## Kendi kelimelerim (your own words)
 

@@ -325,3 +325,155 @@ function dictScore(said,typed){
    forgives one word; a ten-word line forgives two. */
 const DICT_PASS=80;
 function dictPass(r){return !!r&&r.pct>=DICT_PASS&&r.extra===0;}
+
+/* ===================== teşhis · naming a mistake ===================== */
+/* A wrong answer used to come back as the right one and nothing else, so
+   the learner saw THAT a form was wrong but never WHY. This names the
+   rule — but only when one known rule turns what was typed into what was
+   right, exactly. Anything it cannot explain that cleanly it leaves
+   alone: a confident wrong diagnosis is worse than none, because the
+   learner cannot tell it from a right one.
+
+   It never claims the accusative or the possessive: "evi" is "the house"
+   and "his house", and a machine that cannot see the sentence's meaning
+   has no business choosing. The three cases it does name (-A, -DA,
+   -DAn — to, at, from) are the ones a learner confuses and the ones a
+   bare ending identifies. Pure: no DOM, no state, so validate.js holds
+   it to a hand-checked table. */
+function trLower(s){return String(s).replace(/İ/g,"i").replace(/I/g,"ı").toLowerCase();}
+function diagWord(s){return trLower(s).replace(/[^a-zçğıöşüâîû]/g,"");}
+function diagV(c){return !!c&&"aeıioöuüâîû".indexOf(c)>-1;}
+function diagEq(a,b){return fold(a)===fold(b);}
+function diagLastV(s,before){for(let i=before-1;i>=0;i--)if(diagV(s[i]))return s[i];return "";}
+/* What harmony predicts after a vowel: two-way for a/e endings, four-way
+   for ı/i/u/ü endings. Returns "" for anything else. */
+function diagHarmony(gov,four){
+  if(!gov)return "";
+  const back="aıouâû".indexOf(gov)>-1;
+  if(!four)return back?"a":"e";
+  if(gov==="a"||gov==="ı"||gov==="â")return "ı";
+  if(gov==="e"||gov==="i"||gov==="î")return "i";
+  if(gov==="o"||gov==="u"||gov==="û")return "u";
+  return "ü";
+}
+const DIAG_SOFT={p:"b",t:"d",k:"ğ",ç:"c"};
+const DIAG_HARD="fstkçşhp";
+const DIAG_CASE={
+  abl:{re:/(n)?(d|t)(a|e)n$/, n:"ablative", f:"-DAn", m:"from"},
+  loc:{re:/(n)?(d|t)(a|e)$/,  n:"locative", f:"-DA",  m:"in, at, on"},
+  dat:{re:/(y|n)?(a|e)$/,     n:"dative",   f:"-(y)A",m:"to, towards"}
+};
+function diagCaseOf(rest){
+  if(rest==="")return "bare";
+  for(const k of ["abl","loc","dat"]){const m=DIAG_CASE[k].re.exec(rest);if(m&&m.index===0&&m[0]===rest)return k;}
+  return null;
+}
+function diagnose(typed,correct){
+  const t=diagWord(typed), c=diagWord(correct);
+  if(!t||!c||diagEq(t,c))return null;
+  /* The answer is shown as written (Ankara'dan, not ankaradan); the
+     rule is worked out on the bare lower-case letters. */
+  const R=String(correct).trim().replace(/^[\s"“(]+|[\s.,;:!?…"”)]+$/g,"")||c;
+  /* A stem quoted from the answer keeps the answer's capital: Kitap → Kitabı. */
+  const St=function(n){const x=c.slice(0,n);return R[0]!==trLower(R[0])?R[0]+x.slice(1):x;};
+
+  if(t.length===c.length){
+    const D=[];for(let i=0;i<c.length;i++)if(!diagEq(t[i],c[i]))D.push(i);
+    /* Vowel harmony: every difference is a vowel of the same harmony set,
+       and harmony really does predict the right one here — a loanword
+       that breaks the rule (saat → saatte) gets no rule it does not obey. */
+    const two=function(x){return "ae".indexOf(fold(x))>-1;}, four=function(x){return "ıiuü".indexOf(x)>-1||"iu".indexOf(fold(x))>-1&&!two(x);};
+    if(D.length&&D.every(function(i){return diagV(t[i])&&diagV(c[i])&&(two(t[i])&&two(c[i])||four(t[i])&&four(c[i]));})){
+      const i=D[0], gov=diagLastV(c,i), isFour=four(c[i]), want=diagHarmony(gov,isFour);
+      if(want&&want===c[i])
+        return {k:"uyum",t:"The last vowel before the ending is "+gov+", so "+(isFour?"four-way":"two-way")+
+          " harmony gives "+c[i]+", not "+t[i]+": "+R+"."};
+      return null;
+    }
+    if(D.length===1){
+      const i=D[0], a=t[i], b=c[i];
+      /* d after a voiceless consonant turns to t, and back again. */
+      if(i>0&&!diagV(c[i-1])&&(a==="d"&&b==="t"||a==="t"&&b==="d")){
+        if(b==="t"&&DIAG_HARD.indexOf(c[i-1])>-1)
+          return {k:"dt",t:St(i)+" ends in "+c[i-1]+", one of the voiceless consonants (fıstıkçı şahap), so the ending starts with t, not d: "+R+"."};
+        if(b==="d"&&DIAG_HARD.indexOf(c[i-1])<0)
+          return {k:"dt",t:St(i)+" ends in "+c[i-1]+", which is voiced, so the ending keeps its d: "+R+"."};
+      }
+      /* Softening: a final p, t, k becomes b, d, ğ before a vowel — and
+         only before a vowel. After n, k becomes g (renk → rengi). */
+      const soft=DIAG_SOFT[a]===b||a==="k"&&b==="g"&&c[i-1]==="n";
+      if(soft&&diagV(c[i+1]))
+        return {k:"yumusama",t:"The final "+a+" softens to "+b+" when a vowel ending follows: "+St(i)+a+" → "+R+"."};
+      const hard=DIAG_SOFT[b]===a||b==="k"&&a==="g";
+      if(hard&&c[i+1]&&!diagV(c[i+1]))
+        return {k:"yumusama",t:"No softening here: "+b+" only changes before a vowel, and this ending starts with a consonant: "+R+"."};
+    }
+  }
+  /* Buffer letters: y, n or s join two vowels, and only two vowels. */
+  if(c.length===t.length+1){
+    for(let i=1;i<c.length-1;i++){
+      if("yns".indexOf(c[i])>-1&&diagV(c[i-1])&&diagV(c[i+1])&&diagEq(c.slice(0,i)+c.slice(i+1),t))
+        return {k:"kaynastirma",t:St(i)+" ends in a vowel and so does the ending, so a buffer "+c[i]+" goes between them: "+R+"."};
+    }
+  }
+  if(t.length===c.length+1){
+    for(let i=1;i<t.length-1;i++){
+      if("yns".indexOf(t[i])>-1&&!diagV(t[i-1])&&diagV(t[i+1])&&diagEq(t.slice(0,i)+t.slice(i+1),c))
+        return {k:"kaynastirma",t:"A buffer "+t[i]+" only joins two vowels. "+St(i)+" ends in a consonant, so the ending attaches directly: "+R+"."};
+    }
+  }
+  /* To, at, from: the right answer carries one of the three, and what
+     was typed is the same stem with another of them, or with none. */
+  const fc=fold(c), ft=fold(t);
+  for(const k of ["abl","loc","dat"]){
+    const m=DIAG_CASE[k].re.exec(fc); if(!m)continue;
+    const stem=fc.slice(0,m.index); if(stem.length<2||!ft.startsWith(stem))continue;
+    const had=diagCaseOf(ft.slice(stem.length)); if(!had||had===k)continue;
+    const want=DIAG_CASE[k];
+    return {k:"hal",t:"This needs the "+want.n+" "+want.f+" ("+want.m+")"+
+      (had==="bare"?"":", not the "+DIAG_CASE[had].n+" "+DIAG_CASE[had].f+" ("+DIAG_CASE[had].m+")")+": "+R+"."};
+  }
+  /* The word is right and the ending is missing. Worth saying plainly,
+     because a learner who typed the dictionary form knows the word. */
+  if(c.length>t.length&&t.length>=2){
+    if(fc.startsWith(ft))
+      return {k:"ek",t:"The word is right, but here it needs its ending: "+R+" ("+t+" + -"+c.slice(t.length)+")."};
+    const last=t[t.length-1], sb=DIAG_SOFT[last];
+    if(sb&&diagEq(c.slice(0,t.length-1)+last,t)&&c[t.length-1]===sb&&diagV(c[t.length]))
+      return {k:"ek",t:"The word is right, but here it needs its ending: "+R+". The final "+last+" of "+t+" softens to "+sb+" before the vowel."};
+  }
+  return null;
+}
+/* A whole sentence: pair each missed word with the typed word nearest to
+   it, and name what went wrong with each pair that one rule explains. */
+function diagnoseLine(model,typed,max){
+  const r=dictScore(model,typed);
+  const miss=r.ops.filter(function(o){return o.t==="miss";}).map(function(o){return o.w;});
+  const extra=r.ops.filter(function(o){return o.t==="extra";}).map(function(o){return o.w;});
+  const out=[], used={};
+  miss.forEach(function(w){
+    if(out.length>=(max||2))return;
+    const fw=fold(w); let best=-1, bl=0;
+    extra.forEach(function(x,j){
+      if(used[j])return;
+      const fx=fold(x); let n=0; while(n<fw.length&&n<fx.length&&fw[n]===fx[n])n++;
+      /* three letters in common, or two when one of them is that short (ev, eve) */
+      if((n>=3||(n>=2&&Math.min(fw.length,fx.length)<=4))&&n>bl){best=j;bl=n;}
+    });
+    if(best<0)return;
+    const d=diagnose(extra[best],w);
+    if(d){used[best]=1;out.push(d);}
+  });
+  return out;
+}
+/* Tekrar's answers can be alternatives ("ad / isim", "ağabey (abi)") or
+   phrases; try each, word by word or line by line as the shape needs. */
+function diagAny(typed,answer){
+  const alts=String(answer).split(/\s*\/\s*|\s*\(|\)/).map(function(s){return s.trim();}).filter(Boolean);
+  for(let i=0;i<alts.length;i++){
+    const a=alts[i], multi=/\s/.test(a)||/\s/.test(String(typed).trim());
+    const d=multi?diagnoseLine(a,typed,1)[0]:diagnose(typed,a);
+    if(d)return d;
+  }
+  return null;
+}

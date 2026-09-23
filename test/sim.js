@@ -1022,6 +1022,21 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
   ok(ev("S.rep[" + q(k2) + "].b") === 0, "a wrong answer did not return to box 0");
   ok(ev("S.rep[" + q(k2) + "].n") === 1, "a wrong answer did not count as an encounter — being asked is the encounter");
 
+  /* A miss one rule explains is explained, by name, inside the feedback;
+     one no rule explains gets nothing rather than a guess. The item is
+     pinned so the check does not depend on which word the sitting drew. */
+  ok(!/Neden\? · why/.test(lastPaint), "an unrelated miss was given a rule: " + ev("TK.diag && TK.diag.t"));
+  ev("tkNext()");
+  ev("TK.q[TK.i].c='okulda'; TK.q[TK.i].alts=[fold('okulda')]");
+  doc.getElementById("tbox").value = "okulde"; ev("tkCheck()");
+  ok(ev("TK.res") === false, "okulde was accepted for okulda");
+  ok(/Neden\? · why/.test(lastPaint) && /harmony/.test(lastPaint), "a harmony slip was not named as one");
+  ok(/harmony/.test(ev("S.err['r:'+TK.q[TK.i].k].w")), "the mistake book did not keep the rule");
+  ev("tkNext()");
+  ev("TK.q[TK.i].c='okulda'; TK.q[TK.i].alts=[fold('okulda')]");
+  doc.getElementById("tbox").value = "okulda"; ev("tkCheck()");
+  ok(ev("TK.res") === true && !/Neden\? · why/.test(lastPaint), "a right answer was given a rule");
+
   /* Diacritics are forgiven here as everywhere else. */
   ev("tkNext()");
   const want = ev("TK.q[TK.i].c");
@@ -1128,6 +1143,15 @@ step("grammar comes back, and is produced rather than recognised", () => {
   ev("grAccept()");
   ok(ev("gramBox(" + q(k4) + ")") === 1 && ev("GR.right") === right4 + 1,
      "tapping the override twice graded twice");
+
+  /* Name the rule behind a missed word; take it away once overruled. */
+  ev("grNext()");
+  ev("GR.q[GR.i].c='Kitabı okudum.'");
+  doc.getElementById("gbox").value = "Kitapı okudum"; ev("grCheck()");
+  ok(/Neden\? · why/.test(lastPaint) && /soft/i.test(lastPaint), "a softening slip was not named in Dilbilgisi");
+  ok(/soft/i.test(ev("S.err[GR.q[GR.i].k].w")), "the book entry does not carry the rule");
+  ev("grAccept()");
+  ok(!/Neden\? · why/.test(lastPaint), "the rule is still shown after the learner overruled the mark");
 
   /* An override from a high box restores that box, rather than resetting. */
   ev("wipe()"); ev("S.seen={b2u1:{g:1}}; S.gram={'y:b2u1':{b:5,d:0,n:0}}; save()");

@@ -75,7 +75,8 @@ try {
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,timeAt:timeAt,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
-    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK};", sandbox, { filename: file });
+    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK," +
+    "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -171,12 +172,10 @@ UNITS.forEach(u => {
         if (!Number.isInteger(d.c) || d.c < 0 || d.c >= d.a.length) err(w, "mc answer key c=" + d.c + " is outside a[0…" + (d.a.length - 1) + "]");
         d.a.forEach((o, j) => { if (d.a.indexOf(o) !== j) err(w, 'mc repeats the option "' + o + '"'); });
       }
-      if (!str(d.why)) err(w, "mc needs why — it is shown on right answers too");
     } else if (d.t === "fill") {
       if (!d.q.includes("___")) err(w, "fill prompt has no ___ blank");
       if (!str(d.c)) err(w, "fill has no answer");
       else if (d.c.includes("___")) err(w, "fill answer is still the blank");
-      if (!str(d.why)) err(w, "fill needs why");
     } else if (d.t === "order") {
       if (!Array.isArray(d.w) || d.w.length < 2 || !d.w.every(str)) err(w, "order needs at least two tiles");
       else if (!str(d.c)) err(w, "order has no target sentence");
@@ -184,6 +183,17 @@ UNITS.forEach(u => {
         err(w, "tiles do not build the answer\n      tiles → " + d.w.join(" ") + "\n      c     → " + d.c);
       }
     } else err(w, "unknown drill type " + JSON.stringify(d.t));
+    /* The why is the explanation a learner gets after every answer, right
+       or wrong, and it is the only grammar feedback the quiz gives. It
+       used to be optional on sentence-building items (sixty had none) and
+       half of the rest were under 33 characters — "Last vowel e → -ler."
+       names a rule without applying it. Fifty characters is roughly the
+       least that can name the rule and apply it to this question's words. */
+    if (!str(d.why)) err(w, d.t + " needs why — it is the only explanation the learner gets");
+    else {
+      if (d.why.trim().length < 50) err(w, "why is " + d.why.trim().length + " characters — say which rule applies and how, not just the answer");
+      if (/!/.test(d.why)) err(w, "why has an exclamation mark — house style is plain, not cheerleading");
+    }
   });
 });
 
@@ -244,6 +254,67 @@ else {
   const topics = [...new Set(CORE.map(e => e.k))];
   if (topics.length < 5) err("CORE", "only " + topics.length + " topics — the list is meant to be grouped");
   topics.forEach(k => { if (CORE.filter(e => e.k === k).length < 5) warn("CORE", 'topic "' + k + '" has very few words'); });
+}
+
+/* ---------- teşhis (naming a mistake) ---------- */
+/* diagnose() names the rule behind a wrong typed form, and only when one
+   rule turns what was typed into what was right. A wrong diagnosis looks
+   exactly like a right one to a learner, so the table holds both halves:
+   every rule it should name, and the misses it must NOT explain — an
+   unrelated word, a missed accusative (ambiguous with the possessive), a
+   loanword that breaks harmony, two mistakes at once. */
+let diagChecked = 0;
+{
+  const D = M.diagnose;
+  [["okulde", "okulda", "uyum"], ["pencerelar", "pencereler", "uyum"], ["kapıyu", "kapıyı", "uyum"],
+   ["evimuz", "evimiz", "uyum"], ["Evlar", "Evler", "uyum"],
+   ["kitapı", "kitabı", "yumusama"], ["gitiyorum", "gidiyorum", "yumusama"], ["renki", "rengi", "yumusama"],
+   ["kitabta", "kitapta", "yumusama"],
+   ["gitdim", "gittim", "dt"], ["sokakda", "sokakta", "dt"], ["okulta", "okulda", "dt"], ["yaptığım", "yaptığım", null],
+   ["arabaı", "arabayı", "kaynastirma"], ["öğrenciim", "öğrenciyim", "kaynastirma"], ["kapıın", "kapının", "kaynastirma"],
+   ["evyi", "evi", "kaynastirma"],
+   ["okulda", "okula", "hal"], ["eve", "evde", "hal"], ["ev", "eve", "hal"], ["masa", "masada", "hal"],
+   ["Ankarada", "Ankara'dan", "hal"], ["okuldan", "okulda", "hal"],
+   ["aile", "ailem", "ek"], ["kitap", "kitabım", "ek"], ["kalem", "kalemler", "ek"],
+   /* must stay silent */
+   ["kedi", "köpek", null], ["gitti", "geldi", null], ["okula", "okulu", null], ["geldim", "gelmedim", null],
+   ["saatda", "saatte", null], ["saatta", "saatte", null], ["ağaçı", "ağacı", null], ["kitabi", "kitabı", null],
+   ["", "okul", null], ["okul", "", null], ["evler", "ev", null]
+  ].forEach(([t, c, want]) => {
+    diagChecked++;
+    const d = D(t, c), got = d ? d.k : null;
+    if (got !== want) err("teşhis", JSON.stringify(t) + " for " + JSON.stringify(c) + " is diagnosed " + JSON.stringify(got) + ", hand-checked answer is " + JSON.stringify(want));
+    else if (d && (!d.t || /undefined|NaN/.test(d.t))) err("teşhis", JSON.stringify(t) + " → " + JSON.stringify(c) + " produced a broken message: " + d.t);
+  });
+  /* The answer is shown as written, not as the lower-case letters the
+     rule was worked out on. */
+  const shown = D("Ankarada", "Ankara'dan");
+  diagChecked++;
+  if (!shown || shown.t.indexOf("Ankara'dan") < 0) err("teşhis", "the answer is not shown as written: " + (shown && shown.t));
+  /* A saatte that harmony does not predict must not be explained by it. */
+  diagChecked++;
+  if (D("saatla", "saatle")) err("teşhis", "saat breaks harmony, and the rule was applied to it anyway");
+  /* Sentences: each missed word paired with the typed word nearest it. */
+  [["Okulda çalışıyorum.", "Okulde çalışıyorum", ["uyum"]],
+   ["Kitabı okudum.", "Kitapı okudum", ["yumusama"]],
+   ["Eve gidiyorum.", "Evde gidiyorum", ["hal"]],
+   ["Eve gidiyorum.", "Eve gidiyorum", []],
+   ["Eve gidiyorum.", "Okula gittim", []]
+  ].forEach(([model, typed, want]) => {
+    diagChecked++;
+    const got = M.diagnoseLine(model, typed, 2).map(d => d.k);
+    if (got.join() !== want.join()) err("teşhis", JSON.stringify(typed) + " against " + JSON.stringify(model) + " gives [" + got + "], expected [" + want + "]");
+  });
+  /* Alternatives and phrases, as Tekrar's answers come. */
+  diagChecked++;
+  if (M.diagAny("kedi", "ad / isim")) err("teşhis", "an unrelated word was diagnosed against an alternative");
+  diagChecked++;
+  if (!M.diagAny("okulde", "ad / okulda")) err("teşhis", "the second alternative of an answer was never tried");
+  /* Every written word in every passage, against itself: nothing to name. */
+  UNITS.forEach(u => u.read.lines.forEach(l => l[0].split(/\s+/).forEach(w => {
+    diagChecked++;
+    if (w && D(w, w)) err("teşhis", u.id + ": " + JSON.stringify(w) + " is diagnosed against itself");
+  })));
 }
 
 /* ---------- sık kelimeler (the frequency layer) ---------- */
@@ -1135,6 +1206,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

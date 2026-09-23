@@ -301,9 +301,11 @@ function tkCheck(){
     return typed===a||flat===a.replace(/ /g,"");
   });
   TK.res=good;
+  /* Name the rule when one rule explains the miss; otherwise say nothing. */
+  TK.diag=good?null:diagAny(TK.typed,it.c);
   repGrade(it.k,good);
   if(good)TK.right++;
-  else errNote("r:"+it.k,{m:"r",q:it.q,c:it.c,a:TK.typed,to:it.u||""});
+  else errNote("r:"+it.k,{m:"r",q:it.q,c:it.c,a:TK.typed,w:TK.diag?TK.diag.t:"",to:it.u||""});
   TK.phase="check";render();
 }
 function tkSay(){
@@ -397,7 +399,8 @@ function renderTekrarRun(){
      '<button class="sbtn" style="margin-top:.4rem" onclick="tkSay()">'+IC.spk+' dinle</button></div>';
     h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?"Doğru":"Yanlış")+'</b>'+
      (TK.res?"It comes back later and later from here."
-            :"Wrong answers come back today. Being asked still counts as an encounter.")+'</div>';
+            :"Wrong answers come back today. Being asked still counts as an encounter.")+
+     (TK.res?"":diagBox(TK.diag?[TK.diag]:[]))+'</div>';
     h+='<button class="btn" onclick="tkNext()">'+(TK.i+1>=TK.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
@@ -514,9 +517,11 @@ function grCheck(){
   GR.pre=gramBox(it.k);
   GR.over=false;
   GR.res=gramJudge(it.c,GR.typed);
+  GR.diag=GR.res.same?[]:diagnoseLine(it.c,GR.typed,2);
   gramGrade(it.k,GR.res.same);
   if(GR.res.same)GR.right++;
-  else errNote(it.k,{m:"y",q:it.t+" · "+it.en,c:it.c,a:GR.typed,w:it.focus,to:it.id});
+  else errNote(it.k,{m:"y",q:it.t+" · "+it.en,c:it.c,a:GR.typed,
+                     w:it.focus+(GR.diag.length?" — "+GR.diag[0].t:""),to:it.id});
   GR.phase="check";render();
 }
 /* A word-level judge can mark words; it cannot mark Turkish. Where the
@@ -631,7 +636,8 @@ function renderGramRun(){
       :r.same?(r.order?"Same words, different order — Turkish allows it, and the model above is the usual one. It comes back later and later from here."
                       :"It comes back later and later from here.")
              :(r.extra?"Struck-through words are not in the sentence. ":"")+
-              "Red is what the model has and you did not. This point comes back today.")+'</div>';
+              "Red is what the model has and you did not. This point comes back today.")+
+     (won?"":diagBox(GR.diag))+'</div>';
     if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
     h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
     h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
@@ -643,6 +649,13 @@ function renderGramRun(){
     box.focus();
     box.addEventListener("keydown",function(e){if(e.key==="Enter")grCheck();});
   }
+}
+
+/* The rule behind a miss, when diagnose() found one. Inside the feedback
+   card, so it reads as part of the answer rather than a new message. */
+function diagBox(ds){
+  if(!ds||!ds.length)return "";
+  return '<div class="diag"><b>Neden? · why</b>'+ds.map(function(d){return '<p>'+esc(d.t)+'</p>';}).join("")+'</div>';
 }
 
 /* ===================== bugün · the daily plan ===================== */
