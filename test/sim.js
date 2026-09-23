@@ -2204,6 +2204,8 @@ step("the plan's last step resumes only a unit that is not finished", () => {
   ev("S.dinle={}; ['d:','a:'].forEach(function(p){listenBank(p).forEach(function(it){S.dinle[it.k]={b:3,d:dayNum()+9}})})");
   ev("S.prod={}; sentenceBank().forEach(function(it){S.prod[it.k]={b:3,d:dayNum()+9}})");
   ev("S.gram={}; gramBank().forEach(function(it){S.gram[it.k]={b:3,d:dayNum()+9,n:1}})");
+  /* Today's ten common words are part of "everything" too. */
+  ev("S.sik={}; SIK.slice(0,SIK_DAY).forEach(function(e){S.sik[e[0]]={d:dayNum()}})");
   ev("save()"); ev("home()");
   ok(ev("planToday().left.length") === 0, "with everything clear the plan still lists work");
   ok(/Bugünlük bitti/.test(lastPaint), "a cleared plan does not say so");
@@ -2472,11 +2474,11 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
   const tagged = (fn) => { const r = rowRaw(fn); return !!r && /hazır/.test(r); };
 
   ev("wipe()"); ev("go('araclar')");
-  /* Eight that never depend on a unit, a starred word or a mistake: a
-     prefab bank, a generator, or the whole dictionary. These carry the
-     tag from the very first paint. */
+  /* Nine that never depend on a unit, a starred word or a mistake: a
+     prefab bank, a generator, the whole dictionary, or the frequency list.
+     These carry the tag from the very first paint. */
   ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
-   "go('sayilar')", "go('dict')", "mineOpen()"].forEach(fn => {
+   "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')"].forEach(fn => {
     ok(tagged(fn), fn + " should be tagged hazır on a fresh install — it needs nothing met");
   });
   /* Five that start empty and are not lying about it. */
@@ -2802,6 +2804,80 @@ step("kayıt · a save that fails is said on every screen until one works", () =
   ev("localStorage.getItem=__gi; save(); home()");
   ok(!lastPaint.includes(STRIP), "the read failure outlived a working save");
   ev("S.star=[];S.srs={};save()");
+});
+
+/* The frequency layer: ten a day, into the queue that already exists, and
+   only once there is a day one behind the learner. */
+step("sık · ten common words a day, into the ordinary reviews", () => {
+  const tagged = fn => { const i = lastPaint.indexOf('onclick="' + fn + '"'); return i > -1 && /hazır/.test(lastPaint.slice(i, lastPaint.indexOf("</button>", i))); };
+  const sikStep = () => ev("planToday()").steps.find(s => s.k === "sik");
+  ev("wipe()"); ev("S.tips=true; S.sik={}; save(); home()");
+  ok(!sikStep(), "day one offers common words — the plan must stay one instruction until a unit is done");
+  ok(ev("SIK.length") >= 1000, "the list is shorter than a thousand words");
+
+  ev("S.done['a1u1']={score:5,of:5,at:Date.now()}; save(); home()");
+  const st = sikStep();
+  ok(st && st.n === 10, "after a finished unit the plan does not offer ten words: " + JSON.stringify(st));
+  const order = ev("planToday()").steps.map(s => s.k);
+  ok(order.indexOf("sik") === order.length - 2, "the words are not the last thing before the new unit: " + order.join(","));
+
+  /* The batch is the list's own order, and nothing past it. */
+  ev("go('sik')");
+  const first = JSON.parse(ev("JSON.stringify(SIK.slice(0,11).map(function(e){return e[0]}))"));
+  const shows = w => lastPaint.indexOf('<div class="vtr">' + w.replace(/'/g, "&#39;") + "</div>") > -1;
+  ok(first.slice(0, 10).every(shows), "today's batch is not the first ten words of the list");
+  ok(!shows(first[10]), "the batch runs past ten");
+
+  /* Known costs nothing: the next word slides in, nothing is starred. */
+  ev("sikKnow(" + q(first[0]) + ")");
+  ok(!shows(first[0]) && shows(first[10]), "a known word stayed, or the next one did not come in");
+  ok(ev("S.sik[" + q(first[0]) + "].k") === 1 && !ev("isStarred(SIK[0][0],SIK[0][1])"), "a known word was starred or not recorded as known");
+  ok(sikStep().n === 10, "marking a word as known used up the day's quota");
+
+  /* Added: starred, first review tomorrow, the plan's Tekrar step untouched. */
+  const dueBefore = ev("dueList().length");
+  ev("sikAdd()");
+  ok(ev("SIK.slice(1,11).every(function(e){return isStarred(e[0],e[1])})"), "the batch did not reach the review queue");
+  ok(ev("SIK.slice(1,11).every(function(e){return S.srs[starKey(e[0],e[1])].d===dayNum()+1})"), "a new word is due today — it must come back tomorrow");
+  ok(ev("dueList().length") === dueBefore, "adding today's words put work into today's Tekrar step");
+  ok(sikStep().n === 0, "the plan's word step did not tick once today's ten were added");
+  ok(/Bugünlük bu kadar/.test(lastPaint), "the screen does not say today's words are done");
+  ev("go('araclar')");
+  ok(!tagged("go('sik')"), "Sık kelimeler is still tagged hazır with today's words done");
+
+  /* More on request, and never stored as a setting. */
+  ev("go('sik')");
+  const saved = store.get("turkce-course-v1");
+  ev("sikMore()");
+  ok(shows(ev("SIK[11][0]")), "ten more did not bring the next batch");
+  ok(store.get("turkce-course-v1") === saved && ev("JSON.stringify(S)") === saved,
+     "asking for ten more changed what is stored — it is a one-day choice, not progress");
+
+  /* The next day starts where the last one stopped, and yesterday's words are due. */
+  ev("SIKX={d:0,n:0}; Object.keys(S.sik).forEach(function(k){S.sik[k].d--}); SIK.slice(1,11).forEach(function(e){S.srs[starKey(e[0],e[1])].d--}); save(); home()");
+  ok(sikStep().n === 10, "a new day did not offer ten more");
+  ok(ev("SIK.slice(1,11).every(function(e){return dueList().indexOf(starKey(e[0],e[1]))>-1})"), "yesterday's words are not in today's reviews");
+  ev("go('sik')");
+  ok(shows(ev("SIK[11][0]")) && !shows(ev("SIK[1][0]")), "the new day did not start after yesterday's batch");
+
+  /* A word starred another way counts as met, and never becomes a second copy. */
+  ev("setStar(SIK[11][0],SIK[11][1],true); save(); render()");
+  ok(!shows(ev("SIK[11][0]")), "a word already starred was offered again");
+  ok(ev("mineTaught(SIK[12][0]).tr") === ev("SIK[12][0]"), "adding a common word as your own would make a second copy");
+
+  /* In Sözlük, under the everyday source, with a class. */
+  ev("DICT={q:SIK[0][0],cat:'all',src:'all',topic:'',sort:'az'}; go('dict')");
+  ok(ev("dictAll().filter(function(w){return w.k==='sık'}).length") === ev("SIK.length"), "Sözlük does not list every common word");
+  ok(lastPaint.indexOf(">sık<") > -1, "a common word's row does not say where it comes from");
+  ok(ev("dictAll().find(function(w){return w.tr==='zaten'}).c") === "z", "a common word lost its class");
+  ev("DICT={q:'',cat:'all',src:'all',topic:'',sort:'az'}");
+
+  /* Progress, not a setting: wipe clears it, a backup carries it. */
+  const dump = ev("JSON.stringify(S)");
+  ok(JSON.parse(dump).sik && Object.keys(JSON.parse(dump).sik).length > 0, "the backup does not carry the common words");
+  ev("confirm=function(){return true}; wipe()");
+  ok(Object.keys(ev("S.sik")).length === 0, "wipe() kept the common-word record");
+  ev("home()");
 });
 
 /* ===================== report ===================== */

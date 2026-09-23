@@ -702,6 +702,14 @@ function planToday(){
   ];
   if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",n:rt,
                           avail:true,mins:rt*3,go:"go('prod')"});
+  /* The commonest words the units never teach. New material, so after
+     every review and before the unit — and only once a unit is finished,
+     or day one would be two instructions. */
+  if(sikAvail()){
+    const sn=sikLeft();
+    steps.splice(steps.length-1,0,{k:"sik",tr:"Kelime",en:"common words the units never teach",n:sn,
+                                   avail:true,mins:Math.max(1,Math.round(sn*30/60)),go:"go('sik')"});
+  }
   const shown=steps.filter(function(s){return s.avail;});
   const left=shown.filter(function(s){return s.n>0;});
   return {steps:shown,left:left,all:steps,

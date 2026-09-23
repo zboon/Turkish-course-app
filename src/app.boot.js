@@ -33,6 +33,7 @@ function render(){
   else if(v==="diyalogrun")diaRun();
   else if(v==="ata")renderAta();
   else if(v==="atarun")renderAtaRun();
+  else if(v==="sik")renderSik();
   else if(v==="dersler")renderDersler();
   else if(v==="araclar")renderAraclar();
   else if(v==="nasil")renderNasil();

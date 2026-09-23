@@ -75,7 +75,7 @@ try {
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,timeAt:timeAt,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
-    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM};", sandbox, { filename: file });
+    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -244,6 +244,44 @@ else {
   const topics = [...new Set(CORE.map(e => e.k))];
   if (topics.length < 5) err("CORE", "only " + topics.length + " topics — the list is meant to be grouped");
   topics.forEach(k => { if (CORE.filter(e => e.k === k).length < 5) warn("CORE", 'topic "' + k + '" has very few words'); });
+}
+
+/* ---------- sık kelimeler (the frequency layer) ---------- */
+/* The commonest spoken words the units never teach, in the order a
+   learner meets them. Additive by the same rule CORE is — and it has to
+   be checked against CORE as well as the course, because the two lists
+   were written at different times by the same hand. Progress is keyed by
+   the word, so a duplicate would be one record serving two rows. */
+const SIK = M.SIK;
+let sikChecked = 0;
+if (!Array.isArray(SIK) || SIK.length < 1000) err("SIK", "expected a thousand or more frequent words, found " + (SIK ? SIK.length : 0));
+else {
+  const seenSik = new Set();
+  const coreSet = new Set((CORE || []).map(e => e.t.toLocaleLowerCase("tr")));
+  const NUMW = /^(bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|yirmi|otuz|kırk|elli|altmış|yetmiş|seksen|doksan|yüz|bin|milyon|milyar)$/;
+  SIK.forEach((e, i) => {
+    sikChecked++;
+    const at = "SIK[" + i + "]" + (Array.isArray(e) && e[0] ? ' "' + e[0] + '"' : "");
+    if (!Array.isArray(e) || e.length < 2 || e.length > 3 || !str(e[0]) || !str(e[1])) { err(at, "must be [word, gloss] or [word, gloss, class]"); return; }
+    const [t, en, c] = e;
+    if (t !== t.trim() || / {2}/.test(t)) err(at, "has stray spaces");
+    if (t !== t.toLocaleLowerCase("tr")) err(at, "headwords are lower case, as a dictionary prints them");
+    if (seenSik.has(t)) err(at, "appears twice");
+    seenSik.add(t);
+    if (taught.has(t)) err(at, "is already taught in the course — this list only adds");
+    if (coreSet.has(t)) err(at, "is already in CORE");
+    if (NUMW.test(t)) err(at, "is a number — numbers belong to Sayılar, which drills them against a clock");
+    if (c !== undefined && !["s", "z", "e", "i"].includes(c)) err(at, "unknown class " + JSON.stringify(c));
+    if (c && /(mak|mek)$/.test(t)) err(at, "is an infinitive — verbs classify themselves");
+    if (/[\u00ad\u200b-\u200d\ufeff]/.test(t) || /[\u00ad\u200b-\u200d\ufeff]/.test(en))
+      err(at, "contains an invisible character (soft hyphen or zero-width space)");
+    if (TAGS.test(t) || TAGS.test(en)) err(at, "carries HTML, which would be escaped on screen");
+  });
+  /* The words that made the case for this list. If an edit ever drops one,
+     the list has stopped doing the job it was built for. */
+  ["çünkü", "zaten", "lazım", "aslında", "kendi", "bütün", "diğer", "bazı", "veya", "umarım"].forEach(w => {
+    if (!seenSik.has(w)) err("SIK", '"' + w + '" is missing — it is one of the gaps this list exists to fill');
+  });
 }
 
 /* ---------- chunk bank (üretim) ---------- */
@@ -1098,5 +1136,5 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
   gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " +
-  taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
+  taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

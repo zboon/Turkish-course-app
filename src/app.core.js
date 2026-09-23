@@ -3,14 +3,14 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.57";
+const APP_VERSION="v3.58";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
-       num:{},nmax:999,ncap:5,dia:{},ata:{},tips:true};
+       num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},tips:true};
 /* Progress lives in this browser and nowhere else, so a save that fails is
    the one silent bug that costs a learner months: every box, every star,
    gone when the tab closes, and nothing said. It used to be swallowed.
@@ -29,6 +29,8 @@ function load(){
   if(!S.gram)S.gram={}; if(!S.err)S.err={}; if(!S.mine)S.mine=[]; if(!S.num)S.num={}; if(!S.dia)S.dia={};
   /* S.ata is keyed by a saying's slug — "a:<id>"/"d:<id>" — not by a position. */
   if(!S.ata)S.ata={};
+  /* S.sik is keyed by the word itself, never its place in SIK. */
+  if(!S.sik)S.sik={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
 function saveWarn(){
@@ -315,7 +317,7 @@ function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
 /* The tool screens all hang off Araçlar; Dersler holds the levels. */
 const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
-            "sayilar","diyalog","ata","words","dict","about","nasil"];
+            "sayilar","diyalog","ata","words","dict","about","nasil","sik"];
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}

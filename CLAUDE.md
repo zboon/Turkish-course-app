@@ -39,6 +39,7 @@ src/data/chunks.js       const CHUNKS=[…];   // üretim prefabs
 src/data/lex.js          const LEX=[…];      // tagged drill stems
 src/data/pos.js          const POS={…};      // word classes for the list
 src/data/core.js         const CORE=[…];     // everyday words by topic
+src/data/sik.js          const SIK=[…];      // commonest words the units never teach
 src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
@@ -54,11 +55,12 @@ src/app.sor.js           question production, wh- and yes/no
 src/app.sayilar.js       numbers, times and prices against a clock
 src/app.diyalog.js       branching conversation and the repair kit
 src/app.atasozu.js       proverbs and idioms, against an exact judge
+src/app.sik.js           the frequency layer: ten common words a day
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is fourteen files rather than one because it grew past the point
+The app is fifteen files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -233,6 +235,7 @@ deliberate breakage.
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
+ sik:{"zaten":{d}, "ve":{d,k:1}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips}
 ```
 
@@ -1232,7 +1235,8 @@ action before orientation.
 
 Order is everything perishable first, new material last: reviews decay on a
 schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
-or Yeni, with Anlat inserted before the last step when a retell is due.
+or Yeni, with Anlat inserted before the last step when a retell is due, and
+Kelime — the day's ten common words — after that, once a unit is finished.
 
 **The list folds; the instruction does not.** The card opens collapsed to
 one line — `5 adım · steps left · ~24 dk` — with the start button still
@@ -1362,7 +1366,11 @@ believing it.**
 Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
 
-### `hazır` — which of Araçlar's fifteen rows have anything to do yet
+### `hazır` — which of Araçlar's sixteen rows have anything to do yet
+
+(Sixteen since Sık kelimeler joined the Kelimeler section; it reads
+`sikBatch().length`, so it is tagged on a fresh install and untagged once
+the day's words are in.)
 
 Eight draw on nothing but themselves — a prefab bank, a generator, the whole
 word list — and are exactly as full on day one as they will ever be. Five
@@ -1384,7 +1392,7 @@ live, so the tag appears on Tekrar motoru the moment `repBank()` first
 returns something and not a render before. Leaving the argument off
 entirely — as Dersler's two `navRow` calls and Araçlar's own Kurs section
 do — is different from passing `false`: it means readiness is not that
-row's business at all, so no pill either way. `sim.js` walks the thirteen
+row's business at all, so no pill either way. `sim.js` walks the fourteen
 rows a readiness claim actually applies to — the two Kurs rows separately
 assert they carry no tag at all — then meets a1u1 one tab at a time and
 checks that exactly the row whose bank that tab feeds picks up the tag,
@@ -1392,8 +1400,9 @@ never the others.
 
 ## Sözlük (the word list)
 
-`go('dict')` shows every word in the app — the 576 the units teach and the
-316 everyday ones in `src/data/core.js` — filterable by source and class,
+`go('dict')` shows every word in the app — the 576 the units teach, the
+316 everyday ones in `src/data/core.js` and the 1,473 commonest ones in
+`src/data/sik.js` (listed under Çekirdek as the topic *sık*) — filterable by source and class,
 searchable on either language (diacritic-folded, like the drills), sorted
 A→Z in Turkish collation or by level and topic. A row hears the word and
 stars it into the review queue; a course row opens its unit, a core row
@@ -1413,6 +1422,67 @@ single ones — `hafta sonu` is a noun, `burnu büyük` an adjective and
 `ara sıra` an adverb, and the space says none of that. `validate.js` fails
 on a POS key the course does not teach, so a typo cannot quietly file a
 word under the wrong heading for ever.
+
+## Sık kelimeler (the frequency layer)
+
+Built, because the vocabulary did not back up the level labels once it
+was measured. Against `tr_50k` — the 50,000 commonest word forms of
+Turkish film subtitles (FrequencyWords, Hermit Dave, CC BY-SA 4.0) —
+the words the app taught covered roughly **59–77%** of running speech,
+strict to generous matching, where comprehension research puts adequate
+understanding at 95%. The units spend their slots on their passages
+(*kaşağı, telve, şefaat*), which is right for a reading course and left
+the everyday core full of holes: *çünkü, lazım, zaten, aslında, kendi,
+bütün, diğer, veya* were never taught as vocabulary at all.
+
+`SIK` is **1,473** words in the order a learner should meet them. With it
+the same measure reads **77–90%**, and everything the app shows **85–93%**.
+The last stretch to 95% is reading, not lists — which is why Kütüphane is
+still first below. The C1 and C2 level blurbs used to promise "real novels"
+and "you read anything"; they now say what the units give (grammar and
+register) and where the rest comes from.
+
+**How the list was made**, so it can be extended the same way: forms
+lemmatised with `zeyrek` (a Python port of Zemberek, from PyPI; it needs
+NLTK's punkt data, fetched with `NLTK_ALLOW_PROXIED_URLOPEN=1` in this
+sandbox) and summed per lemma; everything the app already teaches as a
+headword removed; then **curated by hand**. The analyser is a candidate
+generator, not a source: it returns inflected forms as lemmas (*verdi*),
+wrong lemmas (*bilemek* for *bilmek*, *işemek*), suffix fragments (*nin*),
+and the corpus is film dialogue, so it over-weights *silah, cinayet,
+ajan*. Genre and vulgar words were dropped, numbers left to Sayılar, every
+gloss written for the course. Ordering is by exact-spelling lemma count —
+folding first let *kül* borrow *kul*'s count and *ön* borrow *on*'s — and a
+phrase ranks by its **rarest** content word, or *iyi şanslar* inherits
+*iyi*. Subtitles under-count daily life, so the meal and condolence
+phrases, the weekdays and the months are lifted to fixed ranks.
+
+One measurement error worth not repeating: the first coverage pass claimed
+*istemek* was never taught. It is. A stem-prefix matcher turns *istemek*
+into *iste-*, which does not prefix *istiyor* — Turkish narrows the vowel
+before *-yor* (*iste- → isti-*, *söyle- → söylü-*). Any future count of
+"forms the app covers" needs the narrowed stems too.
+
+The delivery adds **no queue**, the same rule Kendi kelimelerim follows.
+Introducing a word stars it with its first review **tomorrow** — due
+today, it would un-tick the plan's own Tekrar step the moment Kelime was
+done. `S.sik` records only which words have been met, keyed by the word
+itself (`{d}` added, `{d,k:1}` already known), never by position, so the
+list can be reordered or grown freely; a spelling change re-points a
+record, like a renamed unit. *biliyorum* skips a word without spending the
+day's ten. "Bir on daha" is a module variable reset at midnight, never
+stored. It does **not** feed Tekrar motoru: that engine drills what the
+corpus mentions least, and these are by construction words it barely
+mentions. In Sözlük they sit under Çekirdek as the topic *sık*, so the
+source filter stays four segments wide. The plan offers Kelime only once
+a unit is finished, keeping day one to one instruction; Araçlar has it
+from the start.
+
+`validate.js` holds the list additive (nothing the course, CORE or POS
+has), unique, lower case, free of numbers and invisible characters, verbs
+unclassed, and fails by name if one of the gap-words that justified it
+goes missing. Twenty guards across the two tests, each confirmed to fail
+on a deliberate breakage.
 
 ## Next, in order
 
