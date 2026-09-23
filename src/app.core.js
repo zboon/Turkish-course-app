@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.61";
+const APP_VERSION="v3.62";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -31,6 +31,8 @@ function load(){
   if(!S.ata)S.ata={};
   /* S.sik is keyed by the word itself, never its place in SIK. */
   if(!S.sik)S.sik={};
+  /* S.basla is keyed by intro lesson id, as permanent as a unit id. */
+  if(!S.basla)S.basla={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
 function saveWarn(){
@@ -322,6 +324,9 @@ function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
   else if(V.view==="quiz"&&Q&&Q.mode==="level"){go("level",Q.lv);}
+  else if(V.view==="quiz"&&Q&&Q.mode==="intro"){go("basla",Q.b);}
+  else if(V.view==="basla"){go("baslarken");}
+  else if(V.view==="baslarken"){go("dersler");}
   else if(V.view==="prodrun"){go("prod");}
   else if(V.view==="dinlerun"){go("dinle");}
   else if(V.view==="tekrarrun"){go("tekrar");}
@@ -379,7 +384,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",

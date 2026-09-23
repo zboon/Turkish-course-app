@@ -769,6 +769,9 @@ function planToday(){
      already ticked instead of moving on. */
   const resuming=!!at&&!isDone(at.id);
   const nx=resuming?at:nextUnit();
+  /* Before any unit is opened, a complete beginner is pointed at the
+     intro lessons first. Still one instruction on day one. */
+  const intro=baslaPlan();
   /* A step with a zero count means one of two different things, and showing
      a completion tick for both is a lie: either today's queue is cleared,
      or the queue does not exist yet because nothing has been met. The
@@ -791,6 +794,9 @@ function planToday(){
     {k:"prod", tr:"Söyle",   en:"say it before the model", n:pr,
      avail:sentenceBank().length>0,
      mins:Math.round(pr*PLAN_MIN[2]/60), go:"startProd('s')"},
+    intro?
+    {k:"new",  tr:"Giriş", en:"before unit one · "+intro.en,
+     n:1, mins:8, avail:true, go:"go('basla','"+intro.id+"')"}:
     {k:"new",  tr:resuming?"Devam":"Yeni",
      en:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s):""):"every unit is done",
      n:nx?1:0, mins:nx?10:0, avail:!!nx,
@@ -846,7 +852,7 @@ function planCard(){
   }
   if(open){
     h+='<p class="sub" style="margin:0 0 .5rem">'+
-     (first?'Start with the first unit. The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
+     (first?(baslaPlan()?'Start with the short lessons before unit one: the letters, the sounds and how a sentence is built. If you can already read Turkish, go straight to unit one from Dersler. ':'Start with the first unit. ')+'The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
           :'In this order: reviews decay on a schedule, new material does not. About '+
             Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.')+'</p>';
     p.steps.forEach(function(s,i){

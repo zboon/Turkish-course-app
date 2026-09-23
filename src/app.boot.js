@@ -37,6 +37,8 @@ function render(){
   else if(v==="dersler")renderDersler();
   else if(v==="araclar")renderAraclar();
   else if(v==="nasil")renderNasil();
+  else if(v==="baslarken")renderBaslarken();
+  else if(v==="basla")renderBasla();
   else renderHome();
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */

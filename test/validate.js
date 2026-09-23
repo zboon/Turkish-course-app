@@ -75,7 +75,7 @@ try {
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,timeAt:timeAt,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
-    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK," +
+    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK,BASLA:BASLA," +
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf};", sandbox, { filename: file });
@@ -1330,6 +1330,110 @@ let aChecked = 0;
   });
 }
 
+/* ---------- başlarken (the lessons before unit one) ---------- */
+/* Six lessons for someone who has never seen Turkish written down. What
+   can go wrong here and not be seen by reading: an alphabet with a letter
+   missing or listed twice, an example word that does not contain the
+   letter it illustrates, a capital drawn the English way (the dotless ı
+   is I and the dotted i is İ, which is the whole point of that row), a
+   heard question that prints the word it plays, or an answer key that
+   points somewhere else. Lesson ids are permanent: S.basla is keyed by
+   them, so a renamed lesson un-ticks itself for every learner. */
+let basChecked = 0;
+const BASLA = M.BASLA;
+const BASLA_IDS = ["alfabe", "yazim", "vurgu", "ekler", "cumle", "nezaket"];
+const ABC = "abcçdefgğhıijklmnoöprsştuüvyz";
+const INVIS = /[­​-‏⁠﻿]/;
+if (!Array.isArray(BASLA) || BASLA.length < 6) err("BASLA", "expected six or more intro lessons, found " + (BASLA ? BASLA.length : 0));
+else {
+  const ids = BASLA.map(L => L.id);
+  BASLA_IDS.forEach(id => { if (!ids.includes(id)) err("BASLA", 'lesson "' + id + '" is missing — its id is saved progress and must not change'); });
+  ids.forEach((id, i) => {
+    if (ids.indexOf(id) !== i) err("BASLA", 'duplicate lesson id "' + id + '"');
+    if (!/^[a-z]+$/.test(id || "")) err("BASLA", 'lesson id "' + id + '" should be a plain lower-case slug');
+  });
+  const plain = (at, t) => {
+    basChecked++;
+    if (!str(t)) { err(at, "is empty"); return; }
+    if (/!/.test(t)) err(at, "has an exclamation mark — house style is plain, not cheerleading");
+    if (INVIS.test(t)) err(at, "carries an invisible character");
+  };
+  BASLA.forEach(L => {
+    const at = "BASLA " + L.id;
+    ["tr", "en", "intro"].forEach(k => plain(at + " " + k, L[k]));
+    if (!Array.isArray(L.parts) || !L.parts.length) { err(at, "has no parts"); return; }
+    L.parts.forEach((pt, j) => {
+      const w = at + " part " + j;
+      plain(w + " h", pt.h); plain(w + " en", pt.en);
+      (pt.p || []).forEach((x, k) => plain(w + " p[" + k + "]", x));
+      (pt.rows || []).forEach((r, k) => {
+        if (!Array.isArray(r) || r.length !== 3 || !str(r[0]) || typeof r[1] !== "string" || typeof r[2] !== "string") err(w + " row " + k, "must be [turkish, english, hint]");
+        else r.forEach(x => { if (TAGS.test(x)) err(w + " row " + k, "carries HTML, which is escaped on screen"); if (x && (/!/.test(x) || INVIS.test(x))) err(w + " row " + k, "has an exclamation mark or an invisible character"); });
+        basChecked++;
+      });
+      (pt.letters || []).forEach((r, k) => {
+        if (!Array.isArray(r) || r.length !== 4 || !r.slice(0, 3).every(str)) err(w + " letter " + k, "must be [letter, word, english, hint]");
+      });
+      if (!(pt.p || []).length && !(pt.rows || []).length && !(pt.letters || []).length) err(w, "is empty");
+    });
+    /* The questions: the unit drill rules, plus the heard ones. */
+    if (!Array.isArray(L.check) || L.check.length < 4 || L.check.length > 8) { err(at, "expected 4–8 questions, found " + (L.check ? L.check.length : 0)); return; }
+    L.check.forEach((d, i) => {
+      const w = at + " check[" + i + "]";
+      basChecked++;
+      if (!str(d.q)) err(w, "empty question");
+      if (d.t === "mc") {
+        if (!Array.isArray(d.a) || d.a.length < 2 || !d.a.every(str)) err(w, "mc needs at least two non-empty options");
+        else {
+          if (!Number.isInteger(d.c) || d.c < 0 || d.c >= d.a.length) err(w, "answer key c=" + d.c + " is outside the options");
+          d.a.forEach((o, j) => { if (d.a.indexOf(o) !== j) err(w, 'repeats the option "' + o + '"'); });
+        }
+      } else if (d.t === "fill") {
+        if (!d.q.includes("___")) err(w, "fill prompt has no ___ blank");
+        if (!str(d.c)) err(w, "fill has no answer");
+      } else if (d.t === "order") {
+        if (!Array.isArray(d.w) || d.w.length < 2 || !d.w.every(str)) err(w, "order needs at least two tiles");
+        /* The runner shuffles the tiles, so the data may list them in any order. */
+        else if (fold(d.w.slice().sort().join(" ")) !== fold(d.c.split(" ").sort().join(" "))) err(w, "tiles do not build the answer\n      tiles → " + d.w.join(" ") + "\n      c     → " + d.c);
+      } else err(w, "unknown type " + JSON.stringify(d.t));
+      if (!str(d.why)) err(w, "needs why — it is the only explanation the learner gets");
+      else {
+        if (d.why.trim().length < 50) err(w, "why is " + d.why.trim().length + " characters — say which rule applies and how");
+        if (/!/.test(d.why)) err(w, "why has an exclamation mark");
+      }
+      if (d.say !== undefined) {
+        if (!str(d.say)) err(w, "say is empty");
+        /* A spelling question: the options are spellings of what is heard,
+           so the key must be the word played and the prompt must not print it. */
+        else if (d.t === "mc" && d.a.includes(d.say)) {
+          if (d.a[d.c] !== d.say) err(w, 'plays "' + d.say + '" but the answer key points at "' + d.a[d.c] + '"');
+          if (fold(d.q).split(/[^a-z]+/).includes(fold(d.say))) err(w, "prints the word it plays, which answers it");
+        } else if (d.t === "fill") {
+          if (fold(d.say) !== fold(d.c)) err(w, 'plays "' + d.say + '" but expects "' + d.c + '"');
+          if (fold(d.q).includes(fold(d.say))) err(w, "prints the word it plays, which answers it");
+        }
+      }
+    });
+  });
+  /* The alphabet, whole and in order, each letter once, each capital the
+     Turkish one, each example word carrying its letter. */
+  const alf = BASLA.find(L => L.id === "alfabe");
+  if (alf) {
+    const rows = [].concat(...alf.parts.map(pt => pt.letters || []));
+    const low = rows.map(r => (r[0] || "").split(" ")[1] || "");
+    const got = low.slice().sort((x, y) => ABC.indexOf(x) - ABC.indexOf(y)).join("");
+    if (got !== ABC) err("BASLA alfabe", "the letters are not the 29 of the alphabet, each once\n      want → " + ABC + "\n      got  → " + got);
+    rows.forEach(r => {
+      basChecked++;
+      const [cap, lo] = (r[0] || "").split(" ");
+      if (lo && cap !== lo.toLocaleUpperCase("tr")) err("BASLA alfabe " + r[0], "the capital of " + lo + " is " + lo.toLocaleUpperCase("tr"));
+      const word = (r[1] || "").toLocaleLowerCase("tr");
+      if (lo === "ğ") { if (!word.includes("ğ")) err("BASLA alfabe ğ", '"' + r[1] + '" does not contain ğ'); }
+      else if (lo && !word.startsWith(lo)) err("BASLA alfabe " + r[0], '"' + r[1] + '" does not start with ' + lo);
+    });
+  }
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -1346,6 +1450,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

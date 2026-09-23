@@ -3009,6 +3009,115 @@ step("sık · ten common words a day, into the ordinary reviews", () => {
   ev("home()");
 });
 
+/* Başlarken: six lessons before unit one. Offered first only to someone
+   who has opened nothing, ticked by passing their questions, and never a
+   source of review — nothing reviews what has not been met, and these
+   are orientation rather than material. */
+step("başlarken · the lessons before unit one", () => {
+  const BASLA = ev("BASLA");
+  const plan = () => ev("planToday()");
+  /* Answer the current intro question, right or wrong, by the key. The
+     tiles are shuffled in the data, so they are built in the answer's
+     order rather than the list's. */
+  const reply = right => {
+    const it = ev("Q.items[Q.i]");
+    if (it.t === "mc") ev("answerMC(" + (right ? it.c : (it.c + 1) % it.a.length) + ")");
+    else if (it.t === "fill") { doc.getElementById("fin").value = right ? it.c : "zzz"; ev("answerFill()"); }
+    else {
+      const pool = ev("Q.pool").slice(), used = [];
+      (right ? it.c.split(" ") : it.w).forEach(w => {
+        const at = pool.findIndex((t, i) => t === w && !used[i]);
+        if (at < 0) { fails.push("intro tile not in the pool: " + w); return; }
+        used[at] = 1; ev("build(" + at + ")");
+      });
+      if (!right) { ev("unbuild(0)"); }
+      ev("answerOrder()");
+    }
+    ok(ev("Q.res[Q.i]") === right, "an intro answer was graded the other way (" + it.t + " · " + it.q + ")");
+    ev("nextQ()");
+  };
+  ev("confirm=function(){return true}; wipe(); home()");
+
+  /* Day one: one instruction, and it is the first lesson. */
+  const p0 = plan();
+  ok(p0.steps.length === 1 && p0.left[0].tr === "Giriş" && p0.left[0].go === "go('basla','alfabe')",
+     "day one's plan does not point at the first intro lesson: " + JSON.stringify(p0.steps));
+  ok(/short lessons before unit one/.test(lastPaint), "day one's plan does not say what the intro is");
+  ev("go('dersler')");
+  ok(lastPaint.indexOf('<h2 class="sec">Başlarken') > -1 && lastPaint.indexOf('<h2 class="sec">Başlarken') < lastPaint.indexOf('<h2 class="sec">Seviyeler'),
+     "on day one Başlarken is not above the levels");
+  ok(lastPaint.includes("go('baslarken')"), "Dersler has no way into the intro lessons");
+
+  /* The list, then every lesson, every part and every row. */
+  ev("go('baslarken')");
+  BASLA.forEach(L => ok(lastPaint.includes("go('basla','" + L.id + "')"), "the intro list does not open " + L.id));
+  ok((lastPaint.match(/class="tick here"/g) || []).length === 1, "the intro list does not mark exactly one lesson as next");
+  ev("back()");
+  ok(ev("V.view") === "dersler", "back from the intro list does not return to Dersler");
+  BASLA.forEach(L => {
+    ev("go('basla'," + q(L.id) + ")");
+    L.parts.forEach(pt => ok(lastPaint.includes('<h2 class="sec">' + esc(pt.h) + '<span class="gl">'), L.id + ' does not show its part "' + pt.h + '"'));
+    const words = [].concat(...L.parts.map(pt => (pt.rows || []).map(r => r[0]).concat((pt.letters || []).map(r => r[1]))));
+    words.forEach(w => ok(lastPaint.includes('<div class="vtr">' + esc(w) + '</div>') && lastPaint.includes("sayWord('" + w.replace(/'/g, "\\'") + "')"),
+      L.id + ': "' + w + '" is not shown with a way to hear it'));
+    ok(lastPaint.includes("startBasla('" + L.id + "')"), L.id + " has no way into its questions");
+  });
+  ev("go('basla','alfabe')");
+  ok((lastPaint.match(/class="bl"/g) || []).length === 29, "the alphabet lesson does not show 29 letters");
+  ev("back()");
+  ok(ev("V.view") === "baslarken", "back from a lesson does not return to the list");
+
+  /* The questions: a heard one plays on arrival, and a right run ticks the
+     lesson without touching a schedule or the mistake book. */
+  const srs = ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err])");
+  ev("startBasla('alfabe')");
+  ok(ev("Q.items[0].say") === "çay" && voice.spoken[voice.spoken.length - 1] === "çay", "a heard question did not play its word on arrival");
+  const said = voice.said;
+  ev("render()");
+  ok(voice.said === said, "a redraw played the heard word again");
+  ok(lastPaint.includes("Bir daha dinle" + GL("listen again")), "a heard question has no way to hear it again");
+  while (ev("Q.i<Q.items.length")) reply(true);
+  ok(ev("!!S.basla.alfabe"), "passing the alphabet questions did not tick the lesson");
+  ok(lastPaint.includes("go('basla','yazim')"), "the score screen does not lead to the next lesson");
+  ok(plan().left[0].go === "go('basla','yazim')", "the plan did not move on to the second lesson");
+  ok(ev("metUnits().length") === 0, "an intro lesson counted as a unit met");
+
+  /* Failing does not tick, and a wrong answer is not a recorded mistake. */
+  ev("startBasla('vurgu')");
+  ev("back()");
+  ok(ev("V.view") === "basla" && ev("V.u") === "vurgu", "back from intro questions does not return to the lesson");
+  ev("startBasla('vurgu')");
+  while (ev("Q.i<Q.items.length")) reply(false);
+  ok(!ev("!!S.basla.vurgu"), "failing the questions ticked the lesson");
+  ok(lastPaint.includes("startBasla('vurgu')"), "a failed run does not offer another go");
+  ok(ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err])") === srs, "the intro wrote to a schedule or the mistake book");
+
+  /* All six done: the plan goes on to unit one, and says so. */
+  BASLA.forEach(L => { if (!ev("baslaDone(" + q(L.id) + ")")) { ev("startBasla(" + q(L.id) + ")"); while (ev("Q.i<Q.items.length")) reply(true); } });
+  ok(ev("baslaCount()") === BASLA.length, "running every lesson right did not tick them all");
+  ok(plan().left[0].go === "go('unit','a1u1','v')", "with the intro done the plan does not go to unit one: " + plan().left[0].go);
+  ok(/a1u1/.test(lastPaint), "the last lesson's score screen does not lead to unit one");
+
+  /* Progress, not a setting: a backup carries it and wipe clears it. */
+  ok(Object.keys(JSON.parse(ev("JSON.stringify(S)")).basla).length === BASLA.length, "the backup does not carry the intro lessons");
+  ev("wipe()");
+  ok(Object.keys(ev("S.basla")).length === 0, "wipe() kept the intro record");
+
+  /* Someone who opens a unit first has chosen where to start: the plan
+     follows the unit, and Başlarken drops below the levels. */
+  ev("go('unit','a1u1','v'); home()");
+  ok(ev("baslaPlan()") === null && plan().steps.some(s => s.k === "new" && s.tr !== "Giriş"), "opening a unit did not take the plan off the intro");
+  ev("go('dersler')");
+  ok(lastPaint.indexOf('<h2 class="sec">Başlarken') > lastPaint.indexOf('<h2 class="sec">Seviyeler'), "once a unit is open Başlarken still sits above the levels");
+
+  /* With no speech at all, a question that has to be heard is left out. */
+  ev("__ss=window.speechSynthesis; delete window.speechSynthesis");
+  ev("startBasla('alfabe')");
+  ok(ev("Q.items.every(function(it){return !it.say})") && ev("Q.items.length") === BASLA[0].check.filter(i => !i.say).length,
+     "with no speech a heard question was still asked");
+  ev("window.speechSynthesis=__ss; wipe(); home()");
+});
+
 /* ===================== report ===================== */
 console.log("sim: " + seenScreens.size + " distinct screens · " + screens + " paints · " +
   checks + " checks · " + voice.said + " utterances · " + voice.cancels + " stops");

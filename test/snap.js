@@ -57,6 +57,9 @@ ev("home()"); grabx("home");            /* day one: orientation, one step */
 ev("go('dersler')"); grab("dersler");
 ev("go('araclar')"); grab("araclar");
 ev("go('nasil')"); grab("nasil");
+/* The six lessons before unit one, each lesson and its first question. */
+ev("go('baslarken')"); grab("baslarken");
+ev("BASLA").forEach(L => { ev("go('basla'," + q(L.id) + ")"); grab("basla:" + L.id); ev("startBasla(" + q(L.id) + ")"); grab("basla:" + L.id + ":q"); });
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");

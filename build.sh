@@ -23,6 +23,7 @@ cat \
   src/data/diyalog.js \
   src/data/atasozu.js \
   src/data/konusma.js \
+  src/data/baslarken.js \
   src/app.core.js \
   src/app.lang.js \
   src/app.screens.js \
@@ -37,6 +38,7 @@ cat \
   src/app.diyalog.js \
   src/app.atasozu.js \
   src/app.sik.js \
+  src/app.baslarken.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"
