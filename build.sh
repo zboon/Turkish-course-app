@@ -22,6 +22,7 @@ cat \
   src/data/sik.js \
   src/data/diyalog.js \
   src/data/atasozu.js \
+  src/data/konusma.js \
   src/app.core.js \
   src/app.lang.js \
   src/app.screens.js \

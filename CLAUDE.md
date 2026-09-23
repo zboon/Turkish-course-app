@@ -42,6 +42,7 @@ src/data/core.js         const CORE=[…];     // everyday words by topic
 src/data/sik.js          const SIK=[…];      // commonest words the units never teach
 src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
+src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -457,7 +458,7 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 Built. The learner's gap is speaking, and what worked for them was Pimsleur —
 because it forces a sentence out of the mouth *before* the model is heard.
 `go('prod')` is the mode, drawn from the course's own 432 passage lines and
-307 prefabs:
+330 prefabs:
 
 1. **Prompt → gap → model.** The English shows (and is spoken if `prompten`
    is on, in the device's English voice — never the `tr-TR` one). A silent
@@ -474,7 +475,7 @@ because it forces a sentence out of the mouth *before* the model is heard.
    piece that cannot stand on its own. A sentence marked wrong is offered
    this way automatically. `sim.js` checks every one of the 432 lines: each
    piece must be a true tail, each step longer than the last.
-3. **Chunk bank.** `src/data/chunks.js`, 307 conversational prefabs, drilled
+3. **Chunk bank.** `src/data/chunks.js`, 330 conversational prefabs, drilled
    by the same runner with `k:` keys, grouped by what the phrase *does* —
    agreeing, refusing, repairing a conversation that has come apart,
    buying the thing, holding the floor. `dueQueue` takes fresh items in
@@ -544,7 +545,7 @@ drinking the school"*), and `needsObj`/`stative` (English cannot say
 ## Sor (question production)
 
 Built. Every other mode in this app answers. Sixty units of reading, 432
-sentences to produce, 307 prefabs — and almost none of it is a question. A
+sentences to produce, 330 prefabs — and almost none of it is a question. A
 learner who can only answer is one a conversation stops dead with, because
 the other person eventually runs out of things to ask.
 
@@ -1054,7 +1055,9 @@ not the skill.
   word forgives the point — measured: an 80% bar passes **46 of the 181**
   with a word missing. `sim.js` pins all three invariants across every
   target: a dropped word never passes, an invented word never passes, a
-  reordering always does.
+  reordering always does. One exception, made in `grCheck()` rather than
+  the judge: a subject pronoun the ending already carries may come or go
+  (`pronounSlack()`, see Başka türlü below).
 - **The learner overrules.** A word-level judge can mark words; it cannot
   mark Turkish. Where the English leaves the choice open — a synonym, a
   tense English does not distinguish — `grAccept()` takes the answer as
@@ -1238,6 +1241,101 @@ both modes, never on a right answer or an unrelated miss, disappears when
 the learner overrules the mark, and reaches the book. Thirteen guards
 across the explanations and this, each confirmed to fail on a deliberate
 breakage.
+
+## Konuşma dili (how Turkish is said)
+
+Built, because the units teach written Turkish and people do not talk
+the way they write. The spoken forms were taught once, as a reading
+point, in C1 unit 9, forty-eight units in, while a learner hears
+*gidicem* for *gideceğim* in their first week. Four pieces, one rule:
+**the spoken form is added beside the written one, never instead of
+it**, because the written form is the one the learner will read.
+
+1. **Konuşurken cards.** `src/data/konusma.js` keys notes by unit id,
+   and `spokenCard()` draws them under the unit's grammar, dashed like a
+   passage note. Twenty-one notes across fourteen A1–A2 units: the
+   reductions (*bi, bişey, burda, dakka, buyrun, gidicem, geliyom,
+   napıyorsun, di mi*), the short answer (*Nereye gidiyorsun? — Eve.*),
+   the dropped pronoun, *yok* for no, and how strangers are addressed.
+   Each carries `r`, **herkes** (with anyone) or **samimi** (between
+   friends), because a learner who says *napcan* to a clerk has learned
+   the form and not the language.
+2. **The judge accepts a spoken spelling.** `spokenToward(typed, answer)`
+   in `app.lang.js` turns spoken words back into the answer's written
+   words, and Tekrar motoru and Dilbilgisi tekrarı take the result as
+   right when it equals the answer, then say so under **Konuşma dili ·
+   spoken form** and show the written spelling. Dikte does not: the
+   voice said the written form, and transcribing it is the exercise. The
+   Atasözleri judge does not either: a fixed saying is a fixed string.
+   It is a short word list (`SP_WORDS`) plus two rules regular enough to
+   trust: the future (*-AcAğIm → -IcAm*, and *-mAyAcAğIm → -mIcAm*) on
+   consonant stems only, because vowel stems (*okuyacağım*) are said
+   several ways and a guess is worse than a miss; and the dropped r of
+   *-Iyor*, which must follow a vowel so *yorgun* is left alone. Nothing
+   in it can make a wrong word right: a spoken form only ever becomes a
+   word the answer already has, and the callers require equality.
+3. **A casual group in the chunk bank**, appended as the append-only
+   rule requires: *naber, aynen, hadi ya, ne alaka, hayırdır, eyvallah,
+   bi dakka, abi bakar mısın*, twenty-three in all, each English prompt
+   naming who it is for.
+4. **Diyalog talks casually first.** In the A1 and A2 errands the other
+   person says *Buyrun, ne verelim?*, *Başka bişey?*, *Yürüyerek beş
+   dakka*, and the first repair, `slow`, is now the careful standard
+   line, so asking again is also where the written form is heard. B1
+   and up keep their register: a hotel desk and a residence office are
+   formal, and that is part of what they teach.
+
+The forms are the ones said all over Turkey and in ordinary Istanbul
+speech; regional ones stay in C2 unit 7, where they are the subject.
+`validate.js` checks every note (a real unit, a register, a note that
+explains, no exclamation marks) and runs every note marked `re` through
+the judge, so the card can never show a form the marking then refuses.
+It holds a hand-checked table of forms that must be accepted and near
+misses that must not (another tense, another person, *okuyucam*,
+*kaçak*). `sim.js` checks the card on a unit with notes and its absence
+on one without, and the acceptance and its message in both modes.
+Nineteen guards, each confirmed to fail on a deliberate breakage.
+
+This is the part of the app where the author's Turkish is least safe
+to trust unchecked, so it wants a native speaker's pass before it grows.
+
+### Başka türlü (the other ways to say it)
+
+By request: whatever form a learner types, short or long, spoken or
+written, the others are shown under **Başka türlü** in Tekrar motoru and
+Dilbilgisi tekrarı, right answer or wrong, and never the form they typed.
+
+- **Spoken ↔ written.** `spokenOf()` renders a sentence as said, using
+  only the forms that are safe with anyone (the future, *bi*, *bişey*,
+  *burda*, *nerde*, *dakka*, *buyrun*, *napıyorsun*, *n'oldu*). The
+  between-friends ones (*geliyom*, *di mi*, *napcan*) are accepted when
+  typed but never offered. The second person keeps its *-sIn* when offered
+  (*kalıcaksın*, not *kalıcan*) for the same reason. Offered up to B2 only:
+  C1 and C2 teach the written register on purpose.
+- **Short ↔ long.** A subject pronoun the ending already carries is
+  optional, so *Adım Deniz* and *Benim adım Deniz* are both right, and
+  Dilbilgisi used to fail the first. `pronounSlack()` allows exactly one
+  pronoun more or fewer than the model and nothing else different;
+  `pronAgrees()` is the one gate on which pronouns may move: *ben* only
+  when the verb ends in *-m*, *benim* only when a later word carries the
+  *-m*, and so on. It rejects *o* and *onlar*, which are also "that" and
+  "those"; a pronoun before *de* or *ki* (*Ben de iyiyim*); a genitive
+  before a postposition (*senin için*); the last word; and a pronoun whose
+  person is not the verb's (*Ben çıkarken o giriyordu*). The line
+  draws the optional word in italic ink as `dw may` — not `opt`, which is
+  the answer-button class and drew it as a bordered box.
+- **Listed alternatives.** *ad / isim* and *ağabey (abi)*: the other one.
+
+`validate.js` holds hand-checked tables for all three, and then the sweep
+that matters: every spoken form the app could offer for any A1–B2
+example, passage line or vocabulary item, and every short form it could
+offer for any grammar example, is run back through the judge. An
+alternative the app offered and then marked wrong would be worse than
+none. Fifteen guards, each confirmed to fail on a deliberate breakage.
+Two did not at first, and both were real: the pronoun list duplicated the
+agreement gate, so one was removed, and "never the last word" was
+untested until an answer that is only a pronoun (*Sen.*) was added, which
+would otherwise be accepted as an empty string.
 
 ## Kendi kelimelerim (your own words)
 

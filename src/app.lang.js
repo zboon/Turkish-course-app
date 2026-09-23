@@ -477,3 +477,188 @@ function diagAny(typed,answer){
   }
   return null;
 }
+
+/* ===================== konuşma dili · spoken forms ===================== */
+/* Written Turkish and spoken Turkish spell some words differently, and the
+   spoken spelling is also how people text: gidicem for gideceğim, bi for
+   bir, burda for burada. A learner who types what they hear every day is
+   not wrong, and marking them wrong teaches them to distrust their ears.
+
+   So a typed answer may be taken as right when the only difference is a
+   spoken form — but only ever TOWARD the answer: a spoken word counts
+   when it is a spoken rendering of a word the answer actually has. Nothing
+   here can turn a wrong word into a right one; it can only recognise that
+   gidicem and gideceğim are one word. The callers take the result as right
+   only when it equals the answer, which is what keeps it pointed that way.
+
+   Two kinds. A short list of fixed words, and two rules that are regular
+   enough to trust: the future (-AcAğIm → -IcAm) on consonant stems only,
+   because vowel stems (okuyacağım) are said several ways and a guess is
+   worse than a miss; and the dropped r of -yor. Everything works on
+   fold()ed text, so ı and i are one letter here. */
+const SP_WORDS={
+  bi:["bir"], di:["degil"], bisey:["bir","sey"], hicbisey:["hicbir","sey"],
+  naber:["ne","haber"], n:["ne"], noldu:["ne","oldu"],
+  napiyorsun:["ne","yapiyorsun"], napiyosun:["ne","yapiyorsun"], napiyon:["ne","yapiyorsun"],
+  napcan:["ne","yapacaksin"],
+  burda:["burada"], surda:["surada"], orda:["orada"], nerde:["nerede"],
+  dakka:["dakika"], senle:["seninle"], benle:["benimle"], buyrun:["buyurun"]
+};
+/* The spoken forms of one written word, folded. */
+function spokenForms(w){
+  const out=[];
+  let m;
+  /* The future. Negative first: gelmeyeceğim → gelmicem. */
+  if((m=/^(.+)m(e|a)y(e|a)c(e|a)g(i)m$/.exec(w)))out.push(m[1]+"mic"+m[4]+"m");
+  else if((m=/^(.*[^aeiouy])(e|a)c(e|a)(g(i)m|giz|ksin|k)$/.exec(w))&&m[1].length>=2){
+    const v=/[ou][^aeiou]*$/.test(m[1])?"u":"i";           /* four-way, folded */
+    const st=m[1]+v+"c"+m[3];
+    const end=m[4];
+    if(end==="gim")out.push(st+"m");
+    else if(end==="giz")out.push(st+"z");
+    else if(end==="ksin"){out.push(st+"n");out.push(st+"ksin");}
+    else out.push(st+"k");
+  }
+  /* -yor loses its r before a consonant or at the end: geliyom, geliyosun,
+     geliyo, geliyodum. -Iyor always follows a vowel, which keeps yorgun out. */
+  if((m=/^(.*[aeiou])yor(.*)$/.exec(w))){
+    const pre=m[1]+"yo", rest=m[2];
+    if(rest==="um")out.push(pre+"m");
+    else if(rest==="uz")out.push(pre+"z");
+    else if(rest==="")out.push(pre);
+    else if(rest==="sun"){out.push(pre+"sun");out.push(pre+"n");}
+    else if(!/^[aeiou]/.test(rest))out.push(pre+rest);
+  }
+  return out;
+}
+/* The typed answer with its spoken words turned back into the written
+   words of the answer they render. `used` names each one, as typed, so
+   the screen can say which word was a spoken form. */
+function spokenToward(typed,answer){
+  const A=fold(answer).split(" ").filter(Boolean), out=[], used=[];
+  String(typed).split(/\s+/).forEach(function(raw){
+    const fs=fold(raw).split(" ").filter(Boolean);
+    let hit=false;
+    fs.forEach(function(t){
+      if(A.indexOf(t)>-1){out.push(t);return;}
+      const lex=SP_WORDS[t];
+      if(lex){out.push.apply(out,lex);hit=true;return;}
+      const w=A.find(function(a){return spokenForms(a).indexOf(t)>-1;});
+      if(w){out.push(w);hit=true;return;}
+      out.push(t);
+    });
+    if(hit)used.push(raw.replace(/^[^\p{L}]+|[^\p{L}']+$/gu,""));
+  });
+  return {text:out.join(" "),used:used};
+}
+
+/* ===================== başka türlü · the other ways to say it ===================== */
+/* A typed answer is one way of saying the thing, and often not the only
+   one. Whatever the learner gives, the others are shown beside it: the
+   spoken form of a written answer, the written form of a spoken one, the
+   short form without a pronoun the ending already carries, and the long
+   form with it. */
+
+/* How a written sentence is said — the forms that are safe with anyone.
+   The between-friends ones (geliyom, di mi, napcan) are accepted when
+   typed but never offered: an app that volunteers napcan to a learner
+   about to meet a clerk has taught the form and not the language. */
+const SP_SAY={"bir":"bi","burada":"burda","şurada":"şurda","orada":"orda","nerede":"nerde",
+              "dakika":"dakka","buyurun":"buyrun"};
+const SP_SAY2=[["ne","yapıyorsun","napıyorsun"],["bir","şey","bişey"],["hiçbir","şey","hiçbişey"],["ne","oldu","n'oldu"]];
+const TR_VOW="aeıioöuü";
+function spokenWord(w){
+  let m;
+  if((m=/^(.+)m(e|a)y(e|a)c(e|a)ğ(i|ı)m$/.exec(w)))return m[1]+"m"+(m[2]==="e"?"i":"ı")+"c"+m[4]+"m";
+  if((m=/^(.*[^aeıioöuüy])(e|a)c(e|a)(ğim|ğım|ğiz|ğız|ksin|ksın|k)$/.exec(w))&&m[1].length>=2){
+    const lv=(m[1].match(/[aeıioöuü]/g)||["e"]).pop();
+    const v={a:"ı",ı:"ı",e:"i",i:"i",o:"u",u:"u",ö:"ü",ü:"ü"}[lv];
+    const st=m[1]+v+"c"+m[3], e=m[4];
+    /* 2nd person keeps its -sIn when offered: kalıcan is between friends. */
+    return e==="k"?st+"k":e[0]==="k"?st+e:/m$/.test(e)?st+"m":st+"z";
+  }
+  return SP_SAY[w]||null;
+}
+/* The sentence as said, or null when nothing in it changes. Punctuation
+   and a sentence-initial capital are kept where they were. */
+function spokenOf(text){
+  const raw=String(text).split(/\s+/).filter(Boolean);
+  const parts=raw.map(function(r){
+    const m=/^([^\p{L}]*)([\p{L}]+)([^\p{L}]*)$/u.exec(r);
+    return m?{pre:m[1],core:m[2],post:m[3],low:trLower(m[2]),cap:m[2][0]!==trLower(m[2][0])}:{pre:r,core:"",post:"",low:"",cap:false};
+  });
+  const out=[]; let changed=false;
+  for(let i=0;i<parts.length;i++){
+    const p=parts[i], q=parts[i+1];
+    const two=q&&!p.post&&SP_SAY2.find(function(x){return x[0]===p.low&&x[1]===q.low;});
+    if(two){
+      let s=two[2]; if(p.cap)s=capTR(s);
+      out.push(p.pre+s+q.post); changed=true; i++; continue;
+    }
+    const sw=p.low?spokenWord(p.low):null;
+    if(sw){out.push(p.pre+(p.cap?capTR(sw):sw)+p.post);changed=true;}
+    else out.push(raw[i]);
+  }
+  return changed?out.join(" "):null;
+}
+
+/* The subject pronoun is optional — the ending already says who — so a
+   sentence is right with it or without it. Only the personal pronouns
+   whose person the verb shows are allowed to come and go: o and onlar
+   are also "that" and "those", and dropping one of those changes the
+   sentence. Never the last word (Bu kitap benim: mine IS the sentence),
+   and never before de or ki (Ben de iyiyim: me too). Which pronouns may
+   move at all is decided in one place, pronAgrees() below: a word it has
+   no rule for never agrees, so it never comes or goes. */
+const PRON_CLITIC=["de","da","ki","mi","mu"];
+/* A genitive pronoun before a postposition is the postposition's, not an
+   owner's: senin için, benim gibi. Dropping it leaves "for" with nothing. */
+const PRON_POSTPOS=["icin","gibi","kadar","ile","hakkinda","yerine","disinda","yuzunden","sayesinde"];
+function pronOptional(w,seq){
+  const i=seq.indexOf(w);
+  return i>-1&&i<seq.length-1&&
+    PRON_CLITIC.indexOf(seq[i+1])<0&&PRON_POSTPOS.indexOf(seq[i+1])<0&&pronAgrees(w,seq);
+}
+/* Does the pronoun agree with the sentence it sits in? Ben needs the verb,
+   which comes last, to end in -m, sen in -n, and so on; a possessive needs
+   a word after it carrying the matching ending. This is what lets a
+   pronoun come or go: when it agrees, the sentence already says who.
+   When it does not — Ben çıkarken o giriyordu, where the verb is o's —
+   the pronoun is carrying information and stays. */
+function pronAgrees(p,seq){
+  const i=seq.indexOf(p), after=seq.slice(i+1), last=seq[seq.length-1]||"";
+  const any=function(re){return after.some(function(x){return re.test(x);});};
+  const plural2=/(s|n)(i|u)n(i|u)z$/;
+  if(p==="ben")return /m$/.test(last);
+  if(p==="sen")return /n$/.test(last);
+  if(p==="siz")return plural2.test(last);
+  if(p==="biz")return /(z|k)$/.test(last)&&!plural2.test(last);
+  if(p==="benim")return any(/m$/);
+  if(p==="senin")return any(/n$/);
+  if(p==="bizim")return any(/m(i|u)z$/);
+  if(p==="sizin")return any(/n(i|u)z$/);
+  return false;
+}
+/* One pronoun more or fewer than the model, and nothing else different:
+   {k:"drop"} when the learner left it out, {k:"add"} when they put it in. */
+function pronounSlack(model,typed){
+  const M=dictTokens(model).map(function(t){return t.f;}), T=dictTokens(typed).map(function(t){return t.f;});
+  const rest=T.slice(), miss=[];
+  M.forEach(function(w){const i=rest.indexOf(w); if(i>-1)rest.splice(i,1); else miss.push(w);});
+  if(miss.length===1&&!rest.length&&pronOptional(miss[0],M))return {k:"drop",w:miss[0]};
+  if(rest.length===1&&!miss.length&&pronOptional(rest[0],T))return {k:"add",w:rest[0]};
+  return null;
+}
+/* The model without its optional pronoun, as written, or null. */
+function shortOf(model){
+  const raw=String(model).split(/\s+/).filter(Boolean);
+  const f=raw.map(function(r){return fold(r);});
+  for(let i=0;i<raw.length;i++){
+    if(pronOptional(f[i],f)){
+      const out=raw.slice(0,i).concat(raw.slice(i+1));
+      if(i===0&&out.length)out[0]=capTR(out[0]);
+      return out.join(" ");
+    }
+  }
+  return null;
+}

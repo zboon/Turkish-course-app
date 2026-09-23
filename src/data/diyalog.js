@@ -22,9 +22,13 @@
                                                  another time
 
    A BEAT
-     say       what the other person says, with {slots}
-     slow      the same thing, said again for a learner who asked; falls
-               back to `say`. This is the FIRST repair the app offers.
+     say       what the other person says, with {slots} — and in the A1
+               and A2 errands, said the way it is said: buyrun, bişey,
+               dakka, di mi. Nobody at a stall says "Buyurun".
+     slow      the same thing, said again for a learner who asked, in
+               careful standard Turkish; falls back to `say`. This is the
+               FIRST repair the app offers, and it is where the written
+               form of a casual line is heard.
      easy      a plainer rephrase, for the second repair. Optional.
      opts      what the learner may do, as English functions — they say the
                Turkish out loud, then it is shown and spoken
@@ -59,7 +63,7 @@ const DIYALOG=[
         fiyat:{price:[80,450]}, donus:{x2:"fiyat"}, kalkis:{time:1}, peron:{num:[1,40]}},
   start:"a",
   beats:{
-   a:{say:"Buyurun, nereye?", slow:"Buyurun… nereye gidiyorsunuz?",
+   a:{say:"Buyrun, nereye?", slow:"Buyurun… nereye gidiyorsunuz?",
       easy:"Nereye gitmek istiyorsunuz?",
       opts:[{en:"a ticket to {yer}, please",             tr:"{yer.dat} bir bilet lütfen",               to:"b"},
             {en:"what time is the next bus to {yer}?",   tr:"{yer.dat} bir sonraki otobüs saat kaçta?", to:"a2"}]},
@@ -77,7 +81,7 @@ const DIYALOG=[
       easy:"Kart mı, para mı?",
       opts:[{en:"can I pay by card?", tr:"Kartla ödeyebilir miyim?", to:["e","k"]},
             {en:"I'll pay cash",      tr:"Nakit ödeyeceğim",         to:"e"}]},
-   k:{say:"Maalesef kart makinesi çalışmıyor. Nakit var mı?",
+   k:{say:"Maalesef kart makinesi çalışmıyo. Nakit var mı?",
       slow:"Kart makinesi… bozuk. Nakit var mı?",
       easy:"Kart olmuyor. Nakit ödeyebilir misiniz?",
       opts:[{en:"yes, I'll pay cash",               tr:"Var, nakit ödeyeyim",       to:"e"},
@@ -103,11 +107,11 @@ const DIYALOG=[
         kilo:{price:[15,90]}, hepsi:{x2:"kilo"}},
   start:"a",
   beats:{
-   a:{say:"Buyurun, ne istersiniz?", slow:"Buyurun… ne alırsınız?",
+   a:{say:"Buyrun, ne verelim?", slow:"Buyurun… ne alırsınız?",
       easy:"Ne istiyorsunuz?",
       opts:[{en:"how much are the {urun}?",  tr:"{urun} kaç para?",            to:["b","y"]},
             {en:"a kilo of {urun}, please",  tr:"{urun.abl} bir kilo lütfen",  to:["b","y"]}]},
-   y:{say:"{urun} bitti, ama çok güzel {yedek} var.", slow:"{urun}… bitti. {yedek} var.",
+   y:{say:"{urun} bitti, ama bakın, {yedek} çok güzel.", slow:"{urun}… bitti. {yedek} var.",
       easy:"{urun} yok. {yedek} ister misiniz?",
       opts:[{en:"all right, {yedek} then",           tr:"Olur, {yedek} alayım",                   to:"b"},
             {en:"no thanks, I'll look elsewhere",    tr:"Yok, teşekkürler, başka yere bakayım",   to:"z"}]},
@@ -119,14 +123,14 @@ const DIYALOG=[
    n1:{say:"Olmaz, fiyatlar belli.", slow:"Olmaz… fiyat bu.", easy:"İndirim yok.",
        opts:[{en:"fine, one kilo",        tr:"Peki, bir kilo olsun",            to:"c1"},
              {en:"then no, thank you",    tr:"O zaman kalsın, teşekkürler",     to:"z"}]},
-   n2:{say:"İki kilo alırsanız yanına bir de limon koyarım.",
+   n2:{say:"İki kilo alırsanız yanına bi de limon koyarım.",
        slow:"İki kilo alırsanız… bir limon hediye.", easy:"İki kilo alın, limon bedava.",
        opts:[{en:"deal, two kilos",            tr:"Anlaştık, iki kilo olsun",        to:"c2"},
              {en:"just one kilo, thanks",      tr:"Sadece bir kilo, teşekkürler",    to:"c1"}]},
-   c1:{say:"Başka bir şey?", slow:"Başka bir şey ister misiniz?", easy:"Başka?",
+   c1:{say:"Başka bişey?", slow:"Başka bir şey ister misiniz?", easy:"Başka?",
        opts:[{en:"no, that's all",          tr:"Yok, bu kadar",          to:"e"},
              {en:"could I have a bag?",     tr:"Bir poşet verir misiniz?", to:"e"}]},
-   c2:{say:"Başka bir şey?", slow:"Başka bir şey ister misiniz?", easy:"Başka?",
+   c2:{say:"Başka bişey?", slow:"Başka bir şey ister misiniz?", easy:"Başka?",
        opts:[{en:"no, that's all",          tr:"Yok, bu kadar",          to:"d"},
              {en:"could I have a bag?",     tr:"Bir poşet verir misiniz?", to:"d"}]},
    d:{say:"Hepsi {hepsi}.", slow:"Hepsi… {hepsi}.", want:"hepsi", to:"e"},
@@ -149,7 +153,7 @@ const DIYALOG=[
       easy:"Şeker ister misiniz?",
       opts:[{en:"no sugar, please",      tr:"Sade olsun lütfen", to:"c"},
             {en:"medium sugar, please",  tr:"Orta olsun lütfen", to:"c"}]},
-   c:{say:"Yanında bir şey ister misiniz?", slow:"Yanında bir şey… ister misiniz?",
+   c:{say:"Yanında bişey ister misiniz?", slow:"Yanında bir şey… ister misiniz?",
       easy:"Başka bir şey?",
       opts:[{en:"no, thank you",    tr:"Yok, teşekkürler",   to:"d"},
             {en:"a simit as well",  tr:"Bir de simit alayım", to:["d","s"]}]},
@@ -169,7 +173,7 @@ const DIYALOG=[
         dk:{num:[3,20]}},
   start:"a",
   beats:{
-   a:{say:"Efendim, buyurun?", slow:"Efendim? Buyurun.",
+   a:{say:"Efendim, buyrun?", slow:"Efendim? Buyurun.",
       easy:"Evet? Bir şey mi soracaktınız?",
       opts:[{en:"excuse me, where is the {yer}?", tr:"Affedersiniz, {yer} nerede?",   to:["b","x"]},
             {en:"how can I get to the {yer}?",    tr:"{yer.dat} nasıl gidebilirim?",  to:["b","x"]}]},
@@ -188,11 +192,11 @@ const DIYALOG=[
    c:{say:"Sağa. {kac} sokaktan sağa.", slow:"Sağa… sağa dönün.",
       opts:[{en:"how long does it take?", tr:"Ne kadar sürer?",     to:"d"},
             {en:"thank you very much",    tr:"Çok teşekkür ederim", to:"e"}]},
-   d:{say:"Yürüyerek {dk} dakika.", slow:"Yürüyerek… {dk} dakika.", want:"dk", to:"f"},
+   d:{say:"Yürüyerek {dk} dakka.", slow:"Yürüyerek… {dk} dakika.", want:"dk", to:"f"},
    f:{say:"Kolayca bulursunuz.", slow:"Kolay… bulursunuz.", easy:"Zor değil.",
       opts:[{en:"thank you very much",           tr:"Çok teşekkür ederim",             to:"e"},
             {en:"could you show me on the map?", tr:"Haritada gösterebilir misiniz?",  to:"g"}]},
-   g:{say:"Tabii. Bakın, biz buradayız, {yer} şurada.", slow:"Biz… buradayız. {yer}… şurada.",
+   g:{say:"Tabii. Bakın, biz burdayız, {yer} şurda.", slow:"Biz… buradayız. {yer}… şurada.",
       easy:"Biz burada. {yer} şurada.",
       opts:[{en:"I see, thank you",  tr:"Anladım, teşekkür ederim", to:"e"}]},
    e:{say:"Rica ederim, iyi günler.", end:true}}},
@@ -251,19 +255,19 @@ const DIYALOG=[
       opts:[{en:"sure, what time?",        tr:"Olur, saat kaçta?",       to:"b"},
             {en:"I'm not free tomorrow",   tr:"Yarın müsait değilim",    to:"b2"}]},
    b:{say:"{saat.at}, uygun mu?", slow:"{saat.at}… uygun mu?", want:"saat", to:"bq"},
-   bq:{say:"Sana uyar mı?", slow:"Uyar mı… sana?", easy:"Olur mu?",
+   bq:{say:"Uyar mı sana?", slow:"Sana… uyar mı?", easy:"Olur mu?",
        opts:[{en:"that works",               tr:"Olur, uygun",                   to:"c"},
              {en:"could we make it later?",  tr:"Biraz daha geç olabilir mi?",   to:"b3"}]},
    b3:{say:"Tamam, o zaman {gec.at}.", slow:"O zaman… {gec.at}.", want:"gec", to:"c"},
    b2:{say:"Peki, cumartesi {saat2.at} nasıl?", slow:"Cumartesi… {saat2.at}.",
        want:"saat2", to:"c"},
-   c:{say:"Nerede buluşalım?", slow:"Nerede… buluşalım?",
+   c:{say:"Nerde buluşalım?", slow:"Nerede… buluşalım?",
       easy:"Neresi olsun?",
       opts:[{en:"let's meet at the {yer}", tr:"{yer.loc} buluşalım",   to:["d","y"]},
             {en:"wherever suits you",      tr:"Sana neresi uygunsa",   to:"c2"}]},
    c2:{say:"O zaman {yer.loc} buluşalım.", slow:"O zaman… {yer.loc}.", easy:"{yer.loc}, tamam mı?",
        opts:[{en:"okay, see you there",  tr:"Tamam, orada görüşürüz", to:"d"}]},
-   y:{say:"Ama ben biraz geç kalabilirim, beklersin değil mi?",
+   y:{say:"Ama ben biraz geç kalabilirim, beklersin di mi?",
       slow:"Ben biraz… geç kalabilirim. Bekler misin?",
       easy:"Belki geç gelirim. Beklersin, değil mi?",
       opts:[{en:"of course, no problem",  tr:"Tabii, sorun değil",      to:"d"},

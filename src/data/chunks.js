@@ -346,5 +346,35 @@ const CHUNKS=[
  ["mesaj atarım","I'll send a message"],
  ["numaranı alabilir miyim","could I have your number"],
  ["çekmiyor","there's no signal"],
- ["hattı kapatmayın lütfen","please hold the line"]
+ ["hattı kapatmayın lütfen","please hold the line"],
+
+ /* --- samimi · casual, and how friends actually talk ------------------- */
+ /* Appended, like every group after the first fifty, because a chunk's
+    index is its key. The English says who each one is for: "between
+    friends" is said to friends and people your age, "with anyone" is
+    casual but safe with a stranger. Spoken spellings (bi, bişey) are
+    written as they are said, which is also how they are texted. */
+ ["naber","what's up (between friends)"],
+ ["iyidir, sen","fine, and you (the reply to naber)"],
+ ["ne var ne yok","what's new (with anyone)"],
+ ["napıyorsun","what are you up to (between friends)"],
+ ["aynen","yep, exactly (between friends)"],
+ ["hadi ya","no way, really (between friends)"],
+ ["cidden mi","seriously (between friends)"],
+ ["valla mı","honestly, is that so (with anyone)"],
+ ["ne alaka","what has that got to do with it (between friends)"],
+ ["hayırdır","what's up, is something wrong (with anyone)"],
+ ["idare eder","it's all right, so-so (with anyone)"],
+ ["hiç sorma","don't even ask (with anyone)"],
+ ["sağ ol","thanks (the everyday short one)"],
+ ["eyvallah","cheers, thanks (casual, mostly between men)"],
+ ["bişey değil","it's nothing, no worries (with anyone)"],
+ ["kusura bakma","sorry about that (to a friend)"],
+ ["bi dakka","hang on a sec (with anyone)"],
+ ["tamam mı","okay? all right? (checking, with anyone)"],
+ ["di mi","right? isn't it? (between friends)"],
+ ["abi, bakar mısın","excuse me, mate (to a man serving you)"],
+ ["abla, bakar mısın","excuse me (to a woman serving you)"],
+ ["hesabı alalım","let's get the bill (with anyone)"],
+ ["hadi bakalım","off we go then (with anyone)"]
 ];
