@@ -2,7 +2,7 @@
    production against an exact judge. */
 
 /* ===================== söz · sayings ===================== */
-/* The course teaches 600 content words out of literary passages, 307
+/* The course teaches 600 content words out of literary passages, 330
    conversational prefabs, sixty grammar points, the numbers and a
    handful of service encounters. What it has never taught is the layer
    a Turkish speaker reaches for when they want to say something in one

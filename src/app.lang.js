@@ -477,3 +477,77 @@ function diagAny(typed,answer){
   }
   return null;
 }
+
+/* ===================== konuşma dili · spoken forms ===================== */
+/* Written Turkish and spoken Turkish spell some words differently, and the
+   spoken spelling is also how people text: gidicem for gideceğim, bi for
+   bir, burda for burada. A learner who types what they hear every day is
+   not wrong, and marking them wrong teaches them to distrust their ears.
+
+   So a typed answer may be taken as right when the only difference is a
+   spoken form — but only ever TOWARD the answer: a spoken word counts
+   when it is a spoken rendering of a word the answer actually has. Nothing
+   here can turn a wrong word into a right one; it can only recognise that
+   gidicem and gideceğim are one word. The callers take the result as right
+   only when it equals the answer, which is what keeps it pointed that way.
+
+   Two kinds. A short list of fixed words, and two rules that are regular
+   enough to trust: the future (-AcAğIm → -IcAm) on consonant stems only,
+   because vowel stems (okuyacağım) are said several ways and a guess is
+   worse than a miss; and the dropped r of -yor. Everything works on
+   fold()ed text, so ı and i are one letter here. */
+const SP_WORDS={
+  bi:["bir"], di:["degil"], bisey:["bir","sey"], hicbisey:["hicbir","sey"],
+  naber:["ne","haber"], n:["ne"], noldu:["ne","oldu"],
+  napiyorsun:["ne","yapiyorsun"], napiyosun:["ne","yapiyorsun"], napiyon:["ne","yapiyorsun"],
+  napcan:["ne","yapacaksin"],
+  burda:["burada"], surda:["surada"], orda:["orada"], nerde:["nerede"],
+  dakka:["dakika"], senle:["seninle"], benle:["benimle"], buyrun:["buyurun"]
+};
+/* The spoken forms of one written word, folded. */
+function spokenForms(w){
+  const out=[];
+  let m;
+  /* The future. Negative first: gelmeyeceğim → gelmicem. */
+  if((m=/^(.+)m(e|a)y(e|a)c(e|a)g(i)m$/.exec(w)))out.push(m[1]+"mic"+m[4]+"m");
+  else if((m=/^(.*[^aeiouy])(e|a)c(e|a)(g(i)m|giz|ksin|k)$/.exec(w))&&m[1].length>=2){
+    const v=/[ou][^aeiou]*$/.test(m[1])?"u":"i";           /* four-way, folded */
+    const st=m[1]+v+"c"+m[3];
+    const end=m[4];
+    if(end==="gim")out.push(st+"m");
+    else if(end==="giz")out.push(st+"z");
+    else if(end==="ksin"){out.push(st+"n");out.push(st+"ksin");}
+    else out.push(st+"k");
+  }
+  /* -yor loses its r before a consonant or at the end: geliyom, geliyosun,
+     geliyo, geliyodum. -Iyor always follows a vowel, which keeps yorgun out. */
+  if((m=/^(.*[aeiou])yor(.*)$/.exec(w))){
+    const pre=m[1]+"yo", rest=m[2];
+    if(rest==="um")out.push(pre+"m");
+    else if(rest==="uz")out.push(pre+"z");
+    else if(rest==="")out.push(pre);
+    else if(rest==="sun"){out.push(pre+"sun");out.push(pre+"n");}
+    else if(!/^[aeiou]/.test(rest))out.push(pre+rest);
+  }
+  return out;
+}
+/* The typed answer with its spoken words turned back into the written
+   words of the answer they render. `used` names each one, as typed, so
+   the screen can say which word was a spoken form. */
+function spokenToward(typed,answer){
+  const A=fold(answer).split(" ").filter(Boolean), out=[], used=[];
+  String(typed).split(/\s+/).forEach(function(raw){
+    const fs=fold(raw).split(" ").filter(Boolean);
+    let hit=false;
+    fs.forEach(function(t){
+      if(A.indexOf(t)>-1){out.push(t);return;}
+      const lex=SP_WORDS[t];
+      if(lex){out.push.apply(out,lex);hit=true;return;}
+      const w=A.find(function(a){return spokenForms(a).indexOf(t)>-1;});
+      if(w){out.push(w);hit=true;return;}
+      out.push(t);
+    });
+    if(hit)used.push(raw.replace(/^[^\p{L}]+|[^\p{L}']+$/gu,""));
+  });
+  return {text:out.join(" "),used:used};
+}

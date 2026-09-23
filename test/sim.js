@@ -1037,6 +1037,20 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
   doc.getElementById("tbox").value = "okulda"; ev("tkCheck()");
   ok(ev("TK.res") === true && !/Neden\? · why/.test(lastPaint), "a right answer was given a rule");
 
+  /* A spoken spelling of the answer is the answer, and says so; a
+     spoken spelling of some other word is still wrong. */
+  ev("tkNext()");
+  ev("TK.q[TK.i].c='gideceğim'; TK.q[TK.i].alts=[fold('gideceğim')]");
+  const kSp = ev("TK.q[TK.i].k");
+  doc.getElementById("tbox").value = "gidicem"; ev("tkCheck()");
+  ok(ev("TK.res") === true, "gidicem was refused for gideceğim");
+  ok(/Konuşma dili · spoken form/.test(lastPaint) && /gidicem/.test(lastPaint), "the spoken form was accepted silently");
+  ok(!ev("S.err['r:'+" + q(kSp) + "]"), "an accepted spoken form went into the mistake book");
+  ev("tkNext()");
+  ev("TK.q[TK.i].c='gittim'; TK.q[TK.i].alts=[fold('gittim')]");
+  doc.getElementById("tbox").value = "gidicem"; ev("tkCheck()");
+  ok(ev("TK.res") === false && !/Konuşma dili/.test(lastPaint), "a spoken form of a different word was accepted");
+
   /* Diacritics are forgiven here as everywhere else. */
   ev("tkNext()");
   const want = ev("TK.q[TK.i].c");
@@ -1075,6 +1089,15 @@ step("grammar comes back, and is produced rather than recognised", () => {
      the grammar tab. */
   ev("go('unit','b2u1','v')");
   ok(ev("gramBank().length") === 0, "peeking at a word list unlocked that unit's grammar");
+  ev("go('unit','b2u1','g')");
+  /* The grammar tab carries how its Turkish is said, where the unit has
+     notes, and says who each form is for. A unit without notes shows none. */
+  ok(!/Konuşurken/.test(lastPaint), "b2u1 has no spoken notes, and a card was drawn anyway");
+  ev("go('unit','a1u5','g')");
+  ok(/Konuşurken · how it is said/.test(lastPaint), "a1u5's spoken notes are not on its grammar tab");
+  ok(/Napıyorsun/.test(lastPaint) && /between friends/.test(lastPaint) && /with anyone/.test(lastPaint),
+     "the notes do not show the form and who it is for");
+  ev("delete S.seen.a1u5; save()");     /* looking was not meeting, for what follows */
   ev("go('unit','b2u1','g')");
   ok(ev("gramBank().length") === 1 && ev("gramBank()[0].u.id") === "b2u1",
      "reading the grammar tab did not make the point reviewable");
@@ -1152,6 +1175,14 @@ step("grammar comes back, and is produced rather than recognised", () => {
   ok(/soft/i.test(ev("S.err[GR.q[GR.i].k].w")), "the book entry does not carry the rule");
   ev("grAccept()");
   ok(!/Neden\? · why/.test(lastPaint), "the rule is still shown after the learner overruled the mark");
+
+  /* The same in Dilbilgisi, where the judge is order-free. */
+  ev("grNext()");
+  ev("GR.q[GR.i].c='Yarın okula gideceğim.'");
+  doc.getElementById("gbox").value = "okula yarın gidicem"; ev("grCheck()");
+  ok(ev("GR.res.same") === true, "a spoken future was refused in Dilbilgisi");
+  ok(/Konuşma dili · spoken form/.test(lastPaint), "Dilbilgisi accepted the spoken form without saying so");
+  ok(!/grAccept/.test(lastPaint), "the override is offered on an accepted spoken form");
 
   /* An override from a high box restores that box, rather than resetting. */
   ev("wipe()"); ev("S.seen={b2u1:{g:1}}; S.gram={'y:b2u1':{b:5,d:0,n:0}}; save()");

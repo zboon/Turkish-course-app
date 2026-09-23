@@ -274,8 +274,23 @@ function secGram(u){
   if(g.tbl){h+='<table class="table">';g.tbl.forEach(r=>{h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';});h+='</table>';}
   h+='<div class="egs">';
   g.eg.forEach(e=>{h+='<div class="eg"><b>'+esc(e[0])+'</b><span>'+esc(e[1])+'</span></div>';});
-  h+='</div></div><button class="btn" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Okumaya geç →</button>';
+  h+='</div></div>'+spokenCard(u)+'<button class="btn" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Okumaya geç →</button>';
   return h;
+}
+/* How the unit's Turkish is actually said, where that differs from how it
+   is written. Beside the grammar rather than inside it: the written form
+   is still the one the unit teaches, and this is for the ear. */
+const REGISTER={herkes:"herkese · with anyone",samimi:"samimi · between friends"};
+function spokenCard(u){
+  const ns=SPOKEN[u.id]; if(!ns||!ns.length)return "";
+  let h='<div class="card spoken"><p class="lead">Konuşurken · how it is said</p>'+
+   '<p class="tiny" style="margin:.1rem 0 .4rem">What you will hear, and read in messages, alongside what the unit writes. For recognising first; say it once it sounds natural to you.</p>';
+  ns.forEach(function(x){
+    h+='<div class="sp"><p class="sp-pair">'+esc(x.w)+' <span class="sp-arrow">→</span> <b>'+esc(x.s)+'</b> '+
+     spkBtn(x.s,{aria:"Listen"})+'</p>'+
+     '<p class="sub">'+esc(x.n)+'</p><span class="pill '+(x.r==="samimi"?"gold":"turk")+'">'+esc(REGISTER[x.r]||x.r)+'</span></div>';
+  });
+  return h+'</div>';
 }
 function glossify(txt,gl){
   if(!gl)return esc(txt);
@@ -711,6 +726,10 @@ function renderAbout(){
   '<p>The units choose their words for their passages, which is what a reading course should do, and it leaves gaps: measured against a frequency list of spoken Turkish, the words they teach cover only around three quarters of what people actually say. <b>Sık kelimeler</b> fills the gap with the '+SIK.length+' commonest words the units never teach — <i>çünkü</i>, <i>zaten</i>, <i>lazım</i> — in the order they are needed. Once you have finished a unit, <b>Bugün</b> offers ten a day, and they join your reviews like any starred word.</p>'+
   '<p>With them, the words taught here cover roughly nine in ten words of everyday speech. Comprehension wants closer to nineteen in twenty, and the last stretch comes from reading, not from lists. That is also the honest limit of the C1 and C2 units: they teach the grammar and the register of those levels, but the vocabulary of an advanced reader runs to many thousands of words, and no course holds it.</p>'+
   '<p class="tiny">The frequency order comes from FrequencyWords by Hermit Dave (OpenSubtitles 2018), used under CC BY-SA 4.0; the selection, the order derived from it and the glosses are shared on the same terms.</p>'+
+  '<p class="lead" style="margin-top:1.3rem">Konuşurken · how it is said</p>'+
+  '<p>The units teach written Turkish, and people do not talk the way they write. <i>Gideceğim</i> is said <i>gidicem</i>, <i>bir şey</i> is <i>bişey</i>, <i>burada</i> is <i>burda</i>, and the answer to <i>Nereye gidiyorsun?</i> is <i>Eve</i>, not a whole sentence. From the first units, a <b>Konuşurken</b> card under the grammar shows the spoken form beside the written one and says who it is for: <b>with anyone</b>, or <b>between friends</b>.</p>'+
+  '<p>Where you type an answer in Tekrar or Dilbilgisi, a spoken spelling of the right word counts as right, and the app shows you the written spelling, because that is the one you will read. It only recognises spoken forms of the answer\u2019s own words, so it never turns a wrong word into a right one. The Kalıplar bank has a group of casual phrases, <i>naber</i>, <i>aynen</i>, <i>ne alaka</i>, each marked with who you would say it to. In the first Diyalog errands the other person talks casually too, and asking them to say it again gets you the careful version.</p>'+
+  '<p>The forms here are the ones said all over Turkey and in ordinary Istanbul speech. Regional accents are left to the C2 unit on them, where they are the subject.</p>'+
   '<p class="lead" style="margin-top:1.3rem">Metinler · the texts</p>'+
   '<p>The reading difficulty climbs deliberately: invented dialogue at A1, anonymous folk tales at A2–B1, adapted short stories and essays at B2–C1, and Ottoman-era and mystical prose at C2.</p>'+
   '<p>Each passage says what it is. <b>Özgün metin</b> — written for this course. <b>Sadeleştirilmiş / yeniden anlatım</b> — anonymous folklore (Nasreddin Hoca, Keloğlan, Dede Korkut) retold in simplified Turkish. <b>Uyarlama</b> — a public-domain work (Ömer Seyfettin, Evliya Çelebi, Ziya Gökalp, Sabahattin Ali, the Mesnevî) whose situation and argument are retold here in graded modern Turkish rather than quoted.</p>'+

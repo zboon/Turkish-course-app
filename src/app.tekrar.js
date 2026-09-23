@@ -297,9 +297,21 @@ function tkCheck(){
      so a learner without a Turkish keyboard is not punished — and any
      listed alternative counts, because "ad" and "isim" are both right. */
   const typed=fold(TK.typed), flat=typed.replace(/ /g,"");
-  const good=(it.alts||[fold(it.c)]).some(function(a){
+  let good=(it.alts||[fold(it.c)]).some(function(a){
     return typed===a||flat===a.replace(/ /g,"");
   });
+  /* A spoken spelling of the answer is the answer: gidicem is how
+     gideceğim is said, and marking it wrong would teach a learner to
+     distrust what they hear. Only ever toward the answer's own words. */
+  TK.spoken=null;
+  if(!good){
+    (it.alts||[fold(it.c)]).some(function(a){
+      const sp=spokenToward(TK.typed,a);
+      if(sp.used.length&&(sp.text===a||sp.text.replace(/ /g,"")===a.replace(/ /g,""))){TK.spoken=sp.used;return true;}
+      return false;
+    });
+    good=!!TK.spoken;
+  }
   TK.res=good;
   /* Name the rule when one rule explains the miss; otherwise say nothing. */
   TK.diag=good?null:diagAny(TK.typed,it.c);
@@ -400,7 +412,7 @@ function renderTekrarRun(){
     h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?"Doğru":"Yanlış")+'</b>'+
      (TK.res?"It comes back later and later from here."
             :"Wrong answers come back today. Being asked still counts as an encounter.")+
-     (TK.res?"":diagBox(TK.diag?[TK.diag]:[]))+'</div>';
+     (TK.res?spokenBox(TK.spoken,it.c):diagBox(TK.diag?[TK.diag]:[]))+'</div>';
     h+='<button class="btn" onclick="tkNext()">'+(TK.i+1>=TK.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
@@ -517,6 +529,14 @@ function grCheck(){
   GR.pre=gramBox(it.k);
   GR.over=false;
   GR.res=gramJudge(it.c,GR.typed);
+  GR.spoken=null;
+  if(!GR.res.same){
+    const sp=spokenToward(GR.typed,it.c);
+    if(sp.used.length){
+      const r2=gramJudge(it.c,sp.text);
+      if(r2.same){GR.res=r2;GR.spoken=sp.used;}
+    }
+  }
   GR.diag=GR.res.same?[]:diagnoseLine(it.c,GR.typed,2);
   gramGrade(it.k,GR.res.same);
   if(GR.res.same)GR.right++;
@@ -637,7 +657,7 @@ function renderGramRun(){
                       :"It comes back later and later from here.")
              :(r.extra?"Struck-through words are not in the sentence. ":"")+
               "Red is what the model has and you did not. This point comes back today.")+
-     (won?"":diagBox(GR.diag))+'</div>';
+     (won?(r.same?spokenBox(GR.spoken,it.c):""):diagBox(GR.diag))+'</div>';
     if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
     h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
     h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
@@ -653,6 +673,15 @@ function renderGramRun(){
 
 /* The rule behind a miss, when diagnose() found one. Inside the feedback
    card, so it reads as part of the answer rather than a new message. */
+/* A right answer given in its spoken spelling: say so, and show the
+   written form, because that is the one the learner will read. */
+function spokenBox(used,written){
+  if(!used||!used.length)return "";
+  return '<div class="diag"><b>Konuşma dili · spoken form</b><p>'+
+    used.map(function(w){return '“'+esc(w)+'”';}).join(", ")+
+    (used.length===1?' is':' are')+' how it is said, so it counts. Written Turkish spells it “'+
+    esc(String(written).replace(/[.!?]+$/,""))+'”, and that is the form you will read.</p></div>';
+}
 function diagBox(ds){
   if(!ds||!ds.length)return "";
   return '<div class="diag"><b>Neden? · why</b>'+ds.map(function(d){return '<p>'+esc(d.t)+'</p>';}).join("")+'</div>';

@@ -76,7 +76,8 @@ try {
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK," +
-    "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny};", sandbox, { filename: file });
+    "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
+    "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -315,6 +316,73 @@ let diagChecked = 0;
     diagChecked++;
     if (w && D(w, w)) err("teşhis", u.id + ": " + JSON.stringify(w) + " is diagnosed against itself");
   })));
+}
+
+/* ---------- konuşma dili (spoken forms) ---------- */
+/* A typed spoken spelling is taken as the written word it renders — and
+   only toward the answer's own words, so nothing here can make a wrong
+   word right. Both halves are held: every form it should accept, and the
+   near misses it must not (a different tense, a different person, a
+   different word that happens to share a stem). */
+let spokenChecked = 0;
+{
+  const T = (t, a) => M.spokenToward(t, a);
+  [["Gidicem.", "Gideceğim."], ["yapıcam", "yapacağım"], ["görücem", "göreceğim"], ["olucam", "olacağım"],
+   ["gelmicem", "gelmeyeceğim"], ["yapmıcam", "yapmayacağım"], ["gidicek", "gidecek"], ["gidicez", "gideceğiz"],
+   ["gidicen", "gideceksin"], ["gidiceksin", "gideceksin"],
+   ["geliyom", "geliyorum"], ["geliyosun", "geliyorsun"], ["geliyon", "geliyorsun"], ["geliyo", "geliyor"],
+   ["geliyoz", "geliyoruz"], ["geliyodum", "geliyordum"], ["okuyo", "okuyor"],
+   ["Bu bi kitap", "Bu bir kitap."], ["bişey", "bir şey"], ["hiçbişey", "hiçbir şey"], ["Napıyorsun?", "Ne yapıyorsun?"],
+   ["napıyosun", "ne yapıyorsun"], ["n'oldu", "ne oldu"], ["napcan", "ne yapacaksın"], ["burda", "burada"],
+   ["nerde", "nerede"], ["bi dakka", "bir dakika"], ["senle", "seninle"], ["Buyrun", "Buyurun"],
+   ["Öğretmen di mi", "Öğretmen, değil mi?"], ["Yarın gidicem", "Yarın gideceğim."]
+  ].forEach(([t, a]) => {
+    spokenChecked++;
+    const r = T(t, a);
+    if (r.text !== M.fold(a) || !r.used.length)
+      err("konuşma", JSON.stringify(t) + " should be accepted for " + JSON.stringify(a) + ", got " + JSON.stringify(r));
+  });
+  /* Must stay wrong. */
+  [["gidicem", "gittim"], ["gidicem", "gideceksin"], ["gidiyom", "gidiyorsun"], ["geliyo", "gelir"],
+   ["bi", "bu"], ["di", "dün"], ["burda", "burası"], ["okuyucam", "okuyacağım"], ["kicak", "kaçak"],
+   ["yorgun", "yorgun"], ["gidicem", "gidecek"], ["yapıcam", "gideceğim"], ["senle", "benimle"]
+  ].forEach(([t, a]) => {
+    spokenChecked++;
+    const r = T(t, a);
+    if (r.text === M.fold(a) && r.used.length)
+      err("konuşma", JSON.stringify(t) + " was accepted for " + JSON.stringify(a) + " — it is not a spoken form of it");
+  });
+  /* A word that is already right is not a spoken form of itself. */
+  spokenChecked++;
+  if (T("gideceğim", "gideceğim").used.length) err("konuşma", "a correct word was reported as a spoken form");
+  /* -Iyor follows a vowel, so a word that merely starts with yor is left alone. */
+  spokenChecked++;
+  if (M.spokenForms("yorgun").length) err("konuşma", "yorgun was given a spoken form");
+
+  /* The notes. Every one names a real unit, says who it is for, and
+     explains itself; and a note that claims to be a respelling must be
+     one the judge accepts, or the screen teaches a form the marking
+     then refuses. */
+  const unitIds = new Set(UNITS.map(u => u.id));
+  Object.keys(M.SPOKEN).forEach(id => {
+    if (!unitIds.has(id)) err("SPOKEN." + id, "is not a unit id");
+    const ns = M.SPOKEN[id];
+    if (!Array.isArray(ns) || !ns.length) { err("SPOKEN." + id, "has no notes"); return; }
+    ns.forEach((x, i) => {
+      spokenChecked++;
+      const w = "SPOKEN." + id + "[" + i + "]";
+      if (!str(x.w) || !str(x.s) || !str(x.n)) { err(w, "needs w, s and n"); return; }
+      if (x.r !== "herkes" && x.r !== "samimi") err(w, "register is " + JSON.stringify(x.r) + ", not herkes or samimi");
+      if (x.w === x.s) err(w, "the spoken form is the written one");
+      if (x.n.trim().length < 40) err(w, "note is " + x.n.trim().length + " characters — say what changes and when");
+      if (/!/.test(x.n + x.w + x.s)) err(w, "has an exclamation mark — house style");
+      if (x.re) {
+        const r = T(x.s, x.w);
+        if (r.text !== M.fold(x.w) || !r.used.length)
+          err(w, JSON.stringify(x.s) + " is marked as a respelling of " + JSON.stringify(x.w) + " but the judge would refuse it");
+      }
+    });
+  });
 }
 
 /* ---------- sık kelimeler (the frequency layer) ---------- */
@@ -1206,6 +1274,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

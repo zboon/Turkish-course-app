@@ -3,7 +3,7 @@
 
 /* ===================== sor · asking ===================== */
 /* Every mode in this app answers. Sixty units of reading, 432 sentences
-   to produce, 307 prefabs — and almost none of it is a question. A
+   to produce, 330 prefabs — and almost none of it is a question. A
    learner who can only answer is a learner a conversation stops dead
    with, because the other person runs out of things to ask.
 
@@ -125,7 +125,7 @@ const SOR_WORDS=[["ne","what","Ne okuyorsun?"],["kim","who","Kim geldi?"],
                  ["kimin","whose","Kimin arabası?"]];
 function renderSor(){
   let h=bar("Sor","asking · the other half",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything else in this app answers. Sixty units of reading, 432 sentences to produce, 307 prefabs — and almost none of it is a question. A learner who can only answer is one a conversation stops dead with, because the other person runs out of things to ask.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything else in this app answers. Sixty units of reading, 432 sentences to produce, '+CHUNKS.length+' prefabs — and almost none of it is a question. A learner who can only answer is one a conversation stops dead with, because the other person runs out of things to ask.</p>';
 
   h+='<h2 class="sec">Çalış</h2>';
   h+='<div class="card"><p class="lead">Ne sordum · ask the question</p>'+
