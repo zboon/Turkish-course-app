@@ -29,17 +29,18 @@ const hash = s => crypto.createHash("sha256").update(s).digest("hex").slice(0, 1
 
 const snap = {};
 const grab = k => { snap[k] = hash(app.innerHTML); };
-/* Two things on these screens read the wall clock and no seed can make
-   either reproducible: how long the learner took in Sayılar, and the live
-   clock on the home screen, which changes on the minute — so a run that
-   straddles one would disagree with itself. Only those readings are
-   blanked, and everything else stays pinned: the verdict, the answer,
-   which way a pill is coloured, every other word on the page. "N.Ns"
-   appears nowhere else, speeds render with × and durations in dakika or
-   gün, and the clock's two elements hold nothing but text. */
+/* Three things on these screens read the wall clock and no seed can make
+   any of them reproducible: how long the learner took in Sayılar, the
+   live clock on the home screen, which changes on the minute, and the
+   date beside it, which changes on the day — so a run that straddles
+   either would disagree with itself. Only those readings are blanked,
+   and everything else stays pinned: the verdict, the answer, which way a
+   pill is coloured, every other word on the page. "N.Ns" appears nowhere
+   else, speeds render with × and durations in dakika or gün, and the
+   clock's four elements hold nothing but text. */
 const scrub = h => h
   .replace(/\d+\.\d+s/g, "#s")
-  .replace(/(id="hclock(?:d)?"[^>]*>)[^<]*/g, "$1#");
+  .replace(/(id="h(?:clock|date)(?:d)?"[^>]*>)[^<]*/g, "$1#");
 const grabx = k => { snap[k] = hash(scrub(app.innerHTML)); };
 /* Reseeding before each walk keeps one section's randomness from
    shifting the next one's. */

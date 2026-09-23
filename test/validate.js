@@ -74,6 +74,7 @@ try {
     "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS," +
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
+    "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
@@ -593,6 +594,52 @@ let nChecked = 0;
     nChecked++;
     const got = M.priceText(l, k);
     if (got !== want) err("numbers", l + "," + k + ' reads "' + got + '", hand-checked form is "' + want + '"');
+  });
+
+  /* Months are proper nouns and the course teaches none of them; weekdays
+     get only a1u6's drill and one -DA example. The live clock's date line
+     is the only place this app exposes either, so the two arrays are the
+     whole risk — numText() already carries 266+827 hand-checked forms of
+     its own, and dateWords()/dateDigits() do nothing but concatenate. A
+     linear sweep of every month and every weekday covers each string in
+     both arrays at least once; the four hand-typed forms after it pin the
+     word order and the boundary of the digit form's zero-padding. */
+  if (M.MONTHS.length !== 12) err("dates", "MONTHS has " + M.MONTHS.length + " entries, expected 12");
+  if (M.WEEKDAYS.length !== 7) err("dates", "WEEKDAYS has " + M.WEEKDAYS.length + " entries, expected 7");
+  if (new Set(M.MONTHS).size !== M.MONTHS.length) err("dates", "MONTHS has a duplicate");
+  if (new Set(M.WEEKDAYS).size !== M.WEEKDAYS.length) err("dates", "WEEKDAYS has a duplicate");
+  const MONTH_WANT = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  MONTH_WANT.forEach((want, i) => {
+    nChecked++;
+    const got = M.dateWords(1, i, 0);
+    if (got !== "bir " + want + " Pazar")
+      err("dates", "month " + i + ' reads "' + got + '", expected "bir ' + want + ' Pazar"');
+  });
+  const WEEKDAY_WANT = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+  WEEKDAY_WANT.forEach((want, i) => {
+    nChecked++;
+    const got = M.dateWords(1, 0, i);
+    if (got !== "bir Ocak " + want)
+      err("dates", "weekday " + i + ' reads "' + got + '", expected "bir Ocak ' + want + '"');
+  });
+  [[23, 8, 3, "yirmi üç Eylül Çarşamba"], [31, 11, 0, "otuz bir Aralık Pazar"],
+   [9, 4, 6, "dokuz Mayıs Cumartesi"], [29, 1, 4, "yirmi dokuz Şubat Perşembe"]
+  ].forEach(([d, mi, wi, want]) => {
+    nChecked++;
+    const got = M.dateWords(d, mi, wi);
+    if (got !== want) err("dates", d + "/" + mi + "/" + wi + ' reads "' + got + '", hand-checked form is "' + want + '"');
+  });
+  /* DD.MM.YYYY, and the padding is the whole risk: a single-digit day or
+     month must still carry its leading zero, or 3 Ocak reads as "3.1.2026"
+     next to a date that reads "23.09.2026" — inconsistent widths are what
+     a learner half-remembers wrong. */
+  [[1, 0, 2000, "01.01.2000"], [3, 0, 2026, "03.01.2026"], [23, 8, 2026, "23.09.2026"],
+   [31, 11, 2026, "31.12.2026"], [9, 4, 2030, "09.05.2030"]
+  ].forEach(([d, mi, y, want]) => {
+    nChecked++;
+    const got = M.dateDigits(d, mi, y);
+    if (got !== want) err("dates", d + "." + mi + "." + y + ' reads "' + got + '", hand-checked form is "' + want + '"');
   });
 
   /* What the learner may type. A Turkish keyboard writes 1.234 and an

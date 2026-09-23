@@ -7,7 +7,7 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
+node test/validate.js   # data integrity + 266 morphology forms + 855 number forms
 node test/sim.js        # headless render of all 342 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
@@ -103,6 +103,23 @@ Gloss keys are dictionary headwords. `glossify()` wraps the first literal match
 (and tries a capitalised sentence-initial form); unmatched keys still appear in
 the Sözlük list under the passage. That's intended — don't "fix" it by changing
 headwords to inflected forms.
+
+**a1u1's Dilbilgisi tab used to open with two named rules back to back** —
+two-way harmony, then four-way harmony, both stated abstractly before a
+single worked example — because the instinct behind it was reasonable:
+vowel harmony really is foundational and really does want teaching early.
+Foundational is not the same as first, though, and unit one's own vocab,
+reading and drill never once called on two-way harmony; only a1u2's
+plural does. So it now leads with the rule the unit's own copula table
+actually needs (concrete example first — *öğrenci* + "I am" is
+*öğrenciyim* — the abstract statement after), and the rule the unit does
+not need yet is named, defined and explicitly deferred rather than cut:
+`two-way harmony` still has to mean something the moment a1u2 says
+"by two-way harmony" with no re-introduction, so the term stays, just not
+demanding mastery in the same breath as the one lesson one actually
+requires. The general rule for any unit's `gram.body`: worked example
+before the named rule, and nothing stated as urgent that the unit's own
+`tbl`/`eg`/`drill` never asks the learner to use.
 
 ## Text sourcing — the rule that matters
 
@@ -554,9 +571,12 @@ numbers are generated and endless, so "342" is not a thing to be weak at;
 
 The engine is split where its purity ends. Everything up to
 `/* --- what a sitting is made of --- */` is pure, so `validate.js` lifts it
-out of the build exactly as it lifts the morphology engine and holds **827
-hand-checked forms** against it — 99 of them written by hand, the rest the
-sweep of all 720 hour/minute pairs the live clock made reachable; `sim.js` takes the half that needs `S` — the
+out of the build exactly as it lifts the morphology engine and holds **855
+hand-checked forms** against it — 99 of the time-and-price ones written by
+hand, the rest the sweep of all 720 hour/minute pairs the live clock made
+reachable, plus 28 for the date line under it: 19 sweeping every month and
+every weekday at least once, and 9 hand-typed pinning word order and the
+digit form's zero-padding. `sim.js` takes the half that needs `S` — the
 judge, the clock, the screens, the book. Neither file holds a copy of the
 other's table.
 
@@ -595,6 +615,19 @@ the exposure the geçiyor/var construction wants. The digits are the gloss;
 no English is needed, because 15:15 says it in every language, and the
 12-hour words against the 24-hour digits is the whole lesson.
 
+A second line under that does the same thing for the calendar: `yirmi üç
+Eylül Çarşamba`, with `23.09.2026` beneath. It exists because no unit
+teaches the months — a1u6 drills weekdays in passing, but Ocak through
+Aralık appear nowhere else in the course — so passive exposure on a screen
+opened several times a day is the only teaching they get. `MONTHS` is
+indexed as `Date.getMonth()` returns it and `WEEKDAYS` as `Date.getDay()`
+returns it (0 = Pazar, not the Turkish week's Pazartesi), which keeps both
+arrays boring: no `+1`/`-7` arithmetic sits near a wall-clock read, which
+is exactly the kind of arithmetic that is easy to get backwards and hard
+to notice once it is. The day itself is read as a cardinal number — `23
+Eylül` is `yirmi üç Eylül`, never an ordinal — so `dateWords()` reuses
+`numText()` rather than a table of its own.
+
 Three things about it:
 
 - **`render()` arms it, not the screens.** `clockTick()` re-arms where
@@ -614,12 +647,26 @@ Three things about it:
   `textContent` does not write back into `innerHTML`, so comparing the paint
   is not enough to tell the difference.
 
+The date line rides the same `clockTick()` rather than a second timer — a
+date changes on the day, not the minute, but arming a whole second timeout
+for one extra element would be the wrong kind of caution, and `sim.js`
+pins that arming the clock never leaves more than one timer behind however
+many times it fires.
+
 A live clock also means `timeText()` now runs on **all 60 minutes**, where
 the generated drills only ever asked for multiples of five. `validate.js`
 hand-checks the odd ones and sweeps all 720 hour/minute pairs for shape.
-`snap.js` scrubs the two clock elements by id, for the same reason it
-scrubs the elapsed-time readings: a run that straddled a minute would
-otherwise disagree with itself.
+The date gets the equivalent, proportioned to where its risk actually is:
+`dateWords()`/`dateDigits()` do nothing but concatenate two array lookups
+and a number, so `validate.js` sweeps every entry of `MONTHS` and every
+entry of `WEEKDAYS` at least once rather than hand-checking hundreds of
+combinations that would only be re-testing `numText()`. `sim.js` cross-
+checks the digits against a fresh `new Date()` built independently of
+`nowYMD()`, the same reason the time check reads `new Date().getHours()`
+directly rather than trusting `nowHM()` to grade itself.
+`snap.js` scrubs all four clock elements by id, for the same reason it
+scrubs the elapsed-time readings: a run that straddled a minute, or a day,
+would otherwise disagree with itself.
 
 Sayılar is **not** in the daily plan, like Kurma ve Dönüştürme and Sor and
 for the same reason: it needs no material met, so it would be available on
@@ -1245,6 +1292,34 @@ believing it.**
 
 Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
+
+### `hazır` — which of Araçlar's fifteen rows have anything to do yet
+
+Eight draw on nothing but themselves — a prefab bank, a generator, the whole
+word list — and are exactly as full on day one as they will ever be. Five
+start at zero and fill in as units are read, words are starred, mistakes
+are made. A curious beginner who wanders into Araçlar before following
+`Bugün` can open any of the five and land on an honest "not yet" card —
+the same anticlimax `renderGram()`/`renderHata()` already handle
+gracefully one tap in, but one tap too late to have saved the visit.
+
+`hazır` says which is which *before* that tap: a small pill on the row,
+`navRow`'s optional fourth argument, present only where there is
+something to do right now. Nothing here is a hand-typed list, because a
+hand-typed list drifts — each flag is the same boolean the destination
+screen itself would show as empty, computed at the same render:
+`chunkBank()`/`LEX`/`DIYALOG`/`ATASOZU`/`DEYIM`/`dictAll()` never start at
+zero so those six are simply `true`; `listenBank()`, `repBank()`,
+`gramBank()`, `S.star.length` and `Object.keys(S.err).length` are read
+live, so the tag appears on Tekrar motoru the moment `repBank()` first
+returns something and not a render before. Leaving the argument off
+entirely — as Dersler's two `navRow` calls and Araçlar's own Kurs section
+do — is different from passing `false`: it means readiness is not that
+row's business at all, so no pill either way. `sim.js` walks the thirteen
+rows a readiness claim actually applies to — the two Kurs rows separately
+assert they carry no tag at all — then meets a1u1 one tab at a time and
+checks that exactly the row whose bank that tab feeds picks up the tag,
+never the others.
 
 ## Sözlük (the word list)
 

@@ -1845,14 +1845,38 @@ step("the clock on the home screen tells the time in Turkish", () => {
   ok(ev("document.getElementById('hclockd').textContent").indexOf(h24 + ":") === 0,
      "the digits are not on the 24-hour clock");
 
+  /* The date line, added so the months get read a few times a day the
+     same way the time does — the course teaches none of them otherwise.
+     The word forms are hand-checked in validate.js across every month and
+     weekday; what is checked here is the same thing as the time: that the
+     element carries the engine's own answer for today, not a string that
+     merely looks like one. */
+  const dtr = ev("document.getElementById('hdate').textContent");
+  const dwant = ev("dateWords(nowYMD()[0],nowYMD()[1],nowYMD()[2])");
+  ok(dtr === dwant, "the date reads " + q(dtr) + " but the engine says " + q(dwant));
+  const ddig = ev("document.getElementById('hdated').textContent");
+  const ddwant = ev("dateDigits(nowYMD()[0],nowYMD()[1],nowYMD()[3])");
+  ok(ddig === ddwant, "the date digits read " + q(ddig) + " but the engine says " + q(ddwant));
+  ok(/^\d{2}\.\d{2}\.\d{4}$/.test(ddig), "the date digits are not DD.MM.YYYY: " + q(ddig));
+  /* Rebuilt from a fresh, real Date rather than through nowYMD() — the
+     same reason the hour check above reads new Date().getHours() itself
+     instead of trusting nowHM(): a bug inside the wrapper cannot hide
+     behind a test that only ever asks the wrapper to grade itself. */
+  const realD = new Date();
+  const realDigits = String(realD.getDate()).padStart(2, "0") + "." +
+    String(realD.getMonth() + 1).padStart(2, "0") + "." + realD.getFullYear();
+  ok(ddig === realDigits, "the date digits do not match the real wall-clock date: got " + q(ddig) + ", wanted " + q(realDigits));
+
   /* It must poke the text, not re-render: a clock that redrew the home
      screen every minute would throw away whatever is under it — the same
      rule the Dinleme replay follows, and counted the same way, because
      the paint counter is the only thing that can tell the difference. */
   ev("document.getElementById('hclock').textContent='XXX'");
+  ev("document.getElementById('hdate').textContent='YYY'");
   const paintsBefore = screens;
   ev("clockTick()");
   ok(ev("document.getElementById('hclock').textContent") === want, "the tick did not refresh the clock");
+  ok(ev("document.getElementById('hdate').textContent") === dwant, "the tick did not refresh the date");
   ok(screens === paintsBefore, "the tick re-rendered the screen instead of poking the text");
 
   /* One timer at most, however many times it is armed. */
@@ -1867,6 +1891,7 @@ step("the clock on the home screen tells the time in Turkish", () => {
      word from the home screen. */
   ev("go('about')");
   ok(!ev("!!document.getElementById('hclock')"), "the clock followed us to About");
+  ok(!ev("!!document.getElementById('hdate')"), "the date followed us to About");
   ok(ev("CLK===null"), "navigating away left the clock's timer armed");
   ev("sayWord('merhaba')");
   ev("home()");
@@ -1877,10 +1902,12 @@ step("the clock on the home screen tells the time in Turkish", () => {
   /* Sayılar shows it too, being the clock's own subject. */
   ev("go('sayilar')");
   ok(ev("!!document.getElementById('hclock')"), "the Sayılar hub lost the clock");
+  ok(ev("!!document.getElementById('hdate')"), "the Sayılar hub lost the date");
   ok(ev("CLK!==null"), "the clock did not arm on the Sayılar hub");
   /* Nowhere else. */
   ev("go('level','A1')");
   ok(!ev("!!document.getElementById('hclock')"), "the clock leaked onto the level screen");
+  ok(!ev("!!document.getElementById('hdate')"), "the date leaked onto the level screen");
 });
 
 step("diyalog · a conversation you can always get out of", () => {
@@ -2218,6 +2245,7 @@ step("home · the landing page is the plan, the road and two doors", () => {
   ok(/Bugün/.test(lastPaint), "the plan card left the landing page");
   ok(lastPaint.includes("road-stops"), "the progress road left the landing page");
   ok(lastPaint.includes('id="hclock"'), "the live clock left the landing page");
+  ok(lastPaint.includes('id="hdate"'), "the date under the clock left the landing page");
 });
 
 step("bugün · the step list folds, the instruction does not", () => {
@@ -2347,6 +2375,56 @@ step("araçlar · every tool is still reachable", () => {
   });
   const heads = (lastPaint.match(/class="sec">/g) || []).length;
   ok(heads === 5, "Araçlar has " + heads + " groups, wanted 5 — a flat list is what this replaced");
+});
+
+step("araçlar · hazır is honest, and lives, and dies", () => {
+  /* rowRaw pulls exactly one row's own markup — the pill has to be
+     found INSIDE that row, not merely somewhere on a page that also
+     mentions "hazır" in the explainer sentence above the list. */
+  const rowRaw = (fn) => {
+    const i = lastPaint.indexOf('onclick="' + fn + '"');
+    if (i < 0) return null;
+    return lastPaint.slice(i, lastPaint.indexOf("</button>", i));
+  };
+  const tagged = (fn) => { const r = rowRaw(fn); return !!r && /hazır/.test(r); };
+
+  ev("wipe()"); ev("go('araclar')");
+  /* Eight that never depend on a unit, a starred word or a mistake: a
+     prefab bank, a generator, or the whole dictionary. These carry the
+     tag from the very first paint. */
+  ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
+   "go('sayilar')", "go('dict')", "mineOpen()"].forEach(fn => {
+    ok(tagged(fn), fn + " should be tagged hazır on a fresh install — it needs nothing met");
+  });
+  /* Five that start empty and are not lying about it. */
+  ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')"].forEach(fn => {
+    ok(!tagged(fn), fn + " is tagged hazır on a fresh install, but its bank is empty");
+  });
+  /* Reference rows carry no readiness claim either way — "how this
+     works" is not a bank that fills up. */
+  ok(!tagged("go('nasil')") && !tagged("go('about')"),
+     "a reference row picked up a readiness tag it never asked for");
+
+  /* And each of the five flips on, independently, the moment its own
+     bank actually has something — never before, never all at once. */
+  ev("go('unit','a1u1','r')"); ev("go('araclar')");
+  ok(tagged("go('dinle')"), "reading a1u1's passage did not tag Dinleme hazır");
+  ok(!tagged("go('tekrar')"), "reading a passage tagged Tekrar motoru hazır too early");
+
+  ev("go('unit','a1u1','v')"); ev("go('araclar')");
+  ok(tagged("go('tekrar')"), "meeting a1u1's word list did not tag Tekrar motoru hazır");
+  ok(!tagged("go('gram')"), "meeting the word list tagged Dilbilgisi tekrarı hazır too early");
+
+  ev("go('unit','a1u1','g')"); ev("go('araclar')");
+  ok(tagged("go('gram')"), "meeting a1u1's grammar point did not tag Dilbilgisi tekrarı hazır");
+  ok(!tagged("go('words')"), "meeting a grammar point tagged Sözlüğüm hazır too early");
+  ok(!tagged("go('hata')"), "meeting a grammar point tagged Hata defteri hazır too early");
+
+  ev("setStar('merhaba','hello',true)"); ev("go('araclar')");
+  ok(tagged("go('words')"), "starring a word did not tag Sözlüğüm hazır");
+
+  ev("S.err['x:1']={m:'q',q:'?',c:'a',a:'b',w:'',to:'',at:0,n:1};save()"); ev("go('araclar')");
+  ok(tagged("go('hata')"), "a recorded mistake did not tag Hata defteri hazır");
 });
 
 step("back retraces the menu rather than jumping home", () => {
