@@ -8,7 +8,7 @@ is generated. Never hand-edit `dist/`.
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
 node test/validate.js   # data integrity + 266 morphology forms + 827 number forms
-node test/sim.js        # headless render of all 337 screens + every runtime path
+node test/sim.js        # headless render of all 342 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
 
@@ -40,6 +40,7 @@ src/data/lex.js          const LEX=[…];      // tagged drill stems
 src/data/pos.js          const POS={…};      // word classes for the list
 src/data/core.js         const CORE=[…];     // everyday words by topic
 src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
+src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -52,11 +53,12 @@ src/app.benim.js         the learner's own words
 src/app.sor.js           question production, wh- and yes/no
 src/app.sayilar.js       numbers, times and prices against a clock
 src/app.diyalog.js       branching conversation and the repair kit
+src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is twelve files rather than one because it grew past the point
+The app is fourteen files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -199,6 +201,7 @@ deliberate breakage.
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
+ ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips}
 ```
 
@@ -223,6 +226,12 @@ settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
 `num` is keyed by the *shape* a number has rather than by any number —
 `duy:3` is three digits heard, `oku:saat` is a clock face read aloud —
 because the numbers are generated and endless while the shapes are six.
+`ata` is keyed by a saying's own slug — `a:<id>` for a proverb, `d:<id>`
+for an idiom — and **not** by its position. `CHUNKS` keys `k:<index>`
+and is therefore append-only for ever; paying for one extra field here
+buys a bank that can be reordered, regrouped and interleaved without
+re-pointing a single saved box. The slug is still permanent, for the
+same reason a unit id is.
 `dia` is keyed by scenario id, which is therefore as permanent as a unit
 id, and `n` counts completions — it counts nothing else, deliberately; see
 Diyalog below. Because `wipe()` keeps
@@ -693,6 +702,96 @@ someone who has no idea the code is fine.
 Diyalog is **not** in the daily plan, like the other generated modes and
 for the same reason. Araçlar has it.
 
+## Atasözleri ve deyimler (the fixed layer)
+
+Built, and built *because* of what blocked Kütüphane. 40 proverbs, 49 idioms. Proverbs and idioms
+belong to nobody: there is no author to attribute, no edition to check a
+line against and no copyright to clear, so this is the one shelf of
+inherited Turkish that could be stocked while the library of named
+authors is still waiting on a network policy.
+
+It earns its place in a speaking course on its own merits, though, and
+for two reasons:
+
+1. **Fixed means fast.** Everything else the learner produces has to be
+   assembled — person, tense, case, the verb last — and assembly is slow
+   while the grammar is new. A proverb is one stored object. It is the
+   highest fluency per unit of memory in the language, which is exactly
+   what a slow speaker needs.
+2. **An idiom is non-compositional, and nothing else here tests that.**
+   `kafa patlatmak` is not "to burst a head". A learner who knows every
+   word in it still fails, and no amount of the course's own vocabulary
+   drilling would ever surface the problem.
+
+**The prompt is the situation, not the gloss.** For a proverb, knowing
+the words is not the skill — knowing the *moment* is, because one
+produced at the wrong moment is worse than silence. So the learner is
+given the moment (`s:`) and produces the saying. Reversed, it would drill
+recognition, which this app already has plenty of. For an idiom the
+prompt is the meaning and the *literal* sense is withheld until after the
+answer: shown first it gives the answer away, shown after it is the hook
+that makes the phrase stick.
+
+**The judge is exact, and that is the whole mode.** This is the app's
+third objective judge, after Dikte and Sayılar's Duy, and it has the
+strictest bar of any of the three — stricter than Dilbilgisi's, because
+order counts too:
+
+| judge | bar | why |
+|---|---|---|
+| `dictPass` | 80% of the words, nothing invented | a sentence heard once |
+| `gramJudge` | every word, any order | Turkish order is freer than the English prompt |
+| `ataJudge` | every word, **in order** | a fixed saying is a fixed string |
+
+`Damlaya damlaya göl olur` with one word wrong is not a proverb slightly
+misremembered, it is a sentence nobody says, and a self-graded "close
+enough" would wave through precisely what the mode exists to prevent. The
+verdict is `dictScore`'s own `clean`. Diacritics are still forgiven, as
+everywhere else.
+
+Two things keep that from being unfair. **Variants are listed, not chosen
+between** — `işleyen demir pas tutmaz` and `işleyen demir ışıldar` are
+both real, `alt:` carries them, the judge scores against whichever the
+learner was aiming at, and a right answer names the other. And **the
+learner overrules**, exactly as in Dilbilgisi: the variant list is only
+as good as whoever wrote it down, and a wording met in the street is not
+wrong for being missing here. The overrule restores the box the saying
+was on *before* the miss, not box 1.
+
+Not in the daily plan, like Sor, Sayılar and Diyalog and for the same
+reason: it needs no material met, so it would be available on day one and
+push a beginner's plan past one instruction. Araçlar has it.
+
+### What the checks caught, on their first run
+
+Three of these were found by a guard written minutes earlier, which is
+the argument for writing them first.
+
+- **Eight idioms the course already taught.** `göz atmak`, `burnu büyük`,
+  `eli açık` and five more are in `POS` and the units already. The bank
+  is additive by the same rule `CORE` is — which failed eleven times when
+  *that* was written — and the check failed eight times here before a
+  word of the runner existed.
+- **An example that drifted off the form being drilled.** `dile düşmek`
+  was illustrated with *bütün mahallenin diline düştüler*: correct
+  Turkish, and the wrong sentence, because the learner is typing `dile`
+  and the example shows `diline`. `validate.js` matches each example
+  against its idiom by prefix, the way `repSpan()` matches a phrase, and
+  named it immediately.
+- **An assertion of mine that could not fail.** The hub check was
+  `lastPaint.includes("Atasözleri")` — which the page *title* already
+  satisfies, so it held no matter what the cards did. The breakage run is
+  what exposed it. It asserts the way *in* now (`startAta('a')` and
+  `startAta('d')` both present), which is the claim that actually
+  matters. Same family as the two flaky assertions under Diyalog: a test
+  that cannot fail is worse than no test, because it reports safety.
+- **A test that could not distinguish the bug it existed to catch.** The
+  overrule check used a never-asked saying — and for `pre === -1`,
+  "restore the box it was on and advance" and "reset to box 1" give the
+  same answer. It puts the saying on box 3 first now and expects 4.
+
+Twenty-seven guards, each confirmed to fail on a deliberate breakage.
+
 ## Dinleme (harder listening)
 
 Built. Dinle and Gölge leave the passage on screen, so they train reading
@@ -1030,6 +1129,72 @@ section, and it falls back to the first unfinished unit otherwise. It must
 check `isDone` — a bookmark survives completion, and following it blindly
 pinned the plan to a unit already ticked.
 
+## Ana ekran (the landing page, and the two doors)
+
+The home screen used to carry, in one column: the hero, a five-paragraph
+orientation card, the plan, the progress road, three stats, **six level
+cards** and **fifteen tool rows**, each under its own heading. Every one
+of those was reachable. Reachable is not the same as findable — past a
+certain length a list stops reading as choices and starts reading as
+texture, and the plan, the one thing that answers "what now", sat at the
+top of a wall the eye slides off.
+
+So the landing page is now four things: the hero with the live clock,
+**Bugün**, the progress road, and two doors.
+
+| door | behind it |
+|---|---|
+| **Dersler** | the six levels and their sixty units, the placement test, the stats |
+| **Araçlar** | everything else, grouped: Konuşma · Dinleme · Tekrar · Kelimeler · Kurs |
+
+Four decisions worth keeping:
+
+- **Two doors rather than four.** Grouping the tools by skill was the
+  obvious move and it was the wrong one: it puts a second decision in
+  front of a learner who has not made the first. The course is one thing
+  and everything else is optional, which is exactly two categories, and
+  the Araçlar page carries the finer grouping as headed sections where
+  it costs nothing.
+- **The line under a door is not a count of work waiting.** Two "N
+  waiting" cards lived on this screen once and were removed because they
+  duplicated the plan's own steps and one advertised work on day one
+  that the plan correctly said did not exist. The plan owns "what now";
+  a door only says what is behind it. `Dersler` shows progress, which is
+  orientation rather than a claim about work.
+- **The long orientation moved to its own screen.** `Nasıl çalışır` is
+  the right text and a beginner needs it — nothing else explains that an
+  empty Tekrar is correct rather than broken — but it is reading, not a
+  control, and it was the largest block of prose on the first screen a
+  learner sees. The card on the landing page is two sentences and a way
+  through to the rest.
+- **`back()` retraces the menu.** Every screen used to fall through to
+  `home()`, which was right when home *was* the menu. A level now
+  returns to Dersler, a tool to Araçlar, and the flashcards to Sözlüğüm,
+  or the doors would feel like a detour rather than a place. `HUBV` is
+  the list; a new tool screen needs adding to it.
+
+`.block` is the style, and it is drawn from the same palette as
+everything else: a large target, a Crimson Pro title with the English
+underneath in Karla, and one gold hairline down the leading edge — the
+same single stroke that runs out of `h2.sec`, turned ninety degrees.
+Resist adding a second.
+
+### Two more assertions that could not fail
+
+Both found by the breakage run rather than by reading, and both the same
+mistake as the one recorded under Atasözleri:
+
+- `!lastPaint.includes("go('sayilar')")` as "no tool rows on the landing
+  page" — but the **live clock is a button to Sayılar** and is meant to
+  be, so the assertion failed on correct code. It checks for the row's
+  own class now, which is the actual claim.
+- `lastPaint.includes("Tekrar")` as "Araçlar is grouped" — satisfied by
+  the row *Tekrar motoru*, so renaming every heading left it green. It
+  asserts the heading markup and the heading count now.
+
+Fourteen guards on the navigation, each confirmed to fail on a
+deliberate breakage.
+
 ## Sözlük (the word list)
 
 `go('dict')` shows every word in the app — the 576 the units teach and the
@@ -1094,9 +1259,11 @@ as what is most interesting to build.
    rule is a house rule rather than a copyright one and holds whatever
    Wikisource turns out to have.
 
-   The fallback if the shelf is bare: **atasözleri ve deyimler** —
-   anonymous fixed short forms, where a real variant can honestly be
-   listed both ways, and the right register for a speaking course anyway.
+   The shelf that was proposed as the fallback — **atasözleri ve
+   deyimler** — has since been **built** on its own merits rather than as
+   a consolation; see its section above. It does not replace this item.
+   Kütüphane is verbatim authored prose with an orijinal toggle, which is
+   a different thing and still wants the network.
 2. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.

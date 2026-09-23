@@ -2171,9 +2171,249 @@ step("storage and chrome", () => {
   ok(documentEl.getAttribute("data-theme") !== t1, "theme did not toggle back");
 
   ev("home()");
-  ok(/Seviyeler/.test(lastPaint), "home lost the level list");
+  ok(ev("V.view") === "home", "home() did not land on home");
   ev("back()");
   ok(ev("V.view") === "home", "back() from home did not stay home");
+});
+
+/* ===================== the two doors ===================== */
+/* The landing page used to carry six level cards and fifteen tool rows.
+   Everything is still reachable — that is what these check — but it is
+   reachable through a menu now rather than by scrolling past a wall. */
+step("home · the landing page is the plan, the road and two doors", () => {
+  ev("home()");
+  ok(/Dersler/.test(lastPaint), "home has no Dersler door");
+  ok(/Ara\u00e7lar|Araçlar/.test(lastPaint), "home has no Araçlar door");
+  ok(lastPaint.includes("go('dersler')"), "the Dersler door does not open Dersler");
+  ok(lastPaint.includes("go('araclar')"), "the Araçlar door does not open Araçlar");
+  /* The wall is gone: the tool rows and the level cards are behind the
+     doors, not on the page you see first. */
+  ok(!/Seviyeler/.test(lastPaint), "the level list is still on the landing page");
+  /* The claim is "no tool rows", so assert the row itself rather than any
+     one destination: the live clock is a button to Sayılar and is meant
+     to be — checking for go('sayilar') would fail on correct code. */
+  ok(!lastPaint.includes("card nav row"), "the tool rows are still on the landing page");
+  ok(!lastPaint.includes("startPlacement()"), "the placement row is still on the landing page");
+  ok(lastPaint.includes("go('sayilar')"), "the clock stopped opening Sayılar");
+  /* What the user asked to keep. */
+  ok(/Bugün/.test(lastPaint), "the plan card left the landing page");
+  ok(lastPaint.includes("road-stops"), "the progress road left the landing page");
+  ok(lastPaint.includes('id="hclock"'), "the live clock left the landing page");
+});
+
+step("dersler · the course spine, and nothing else", () => {
+  ev("go('dersler')");
+  ok(ev("V.view") === "dersler", "go('dersler') did not reach the hub");
+  ok(/Seviyeler/.test(lastPaint), "Dersler has no level list");
+  ev("LEVELS").forEach(l => ok(lastPaint.includes("go('level','" + l.id + "')"),
+                               "Dersler cannot reach level " + l.id));
+  ok(lastPaint.includes("startPlacement()"), "the placement test is not in Dersler");
+  ok(!lastPaint.includes("go('sayilar')"), "a practice tool leaked into Dersler");
+});
+
+step("araçlar · every tool is still reachable", () => {
+  ev("go('araclar')");
+  ok(ev("V.view") === "araclar", "go('araclar') did not reach the hub");
+  ["prod", "yolda", "sor", "diyalog", "ata", "dinle", "sayilar",
+   "tekrar", "gram", "words", "hata", "dict", "about", "nasil"].forEach(v => {
+    ok(lastPaint.includes("go('" + v + "')"), "Araçlar cannot reach " + v);
+  });
+  ok(lastPaint.includes("mineOpen()"), "Araçlar cannot reach the learner's own words");
+  /* Grouped rather than a flat list — the whole point of the change.
+     Assert the HEADING, not the word: "Tekrar" also appears in the row
+     "Tekrar motoru", so a bare word check held however the headings were
+     renamed. Second time that trap has come up in this file. */
+  ['Konuşma · speaking', 'Dinleme · listening', 'Tekrar · bringing it back',
+   'Kelimeler · words', 'Kurs'].forEach(g => {
+    ok(lastPaint.includes('class="sec">' + g + '</h2>'), "Araçlar has no " + g + " heading");
+  });
+  const heads = (lastPaint.match(/class="sec">/g) || []).length;
+  ok(heads === 5, "Araçlar has " + heads + " groups, wanted 5 — a flat list is what this replaced");
+});
+
+step("back retraces the menu rather than jumping home", () => {
+  ev("go('level','A1')"); ev("back()");
+  ok(ev("V.view") === "dersler", "back() from a level did not return to Dersler");
+  ev("go('sayilar')"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from a tool did not return to Araçlar");
+  ev("go('ata')"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from the sayings did not return to Araçlar");
+  ev("go('words')"); ev("startCards()"); ev("back()");
+  ok(ev("V.view") === "words", "back() from the flashcards did not return to Sözlüğüm");
+});
+
+step("nasıl çalışır · the long orientation moved off the landing page", () => {
+  ev("go('nasil')");
+  ok(ev("V.view") === "nasil", "go('nasil') did not reach the screen");
+  ok(/Turkish letters are optional/.test(lastPaint), "the orientation text did not come with it");
+  ok(/Two doors/.test(lastPaint), "the orientation does not explain the two doors");
+  ev("home()");
+  ok(!/Turkish letters are optional/.test(lastPaint),
+     "the five-paragraph orientation is still inline on the landing page");
+});
+
+/* ===================== atasözleri ve deyimler ===================== */
+/* The strictest judge in the app, so the thing worth pinning is that it
+   is strict in the right direction: every word, IN ORDER, nothing extra.
+   Dilbilgisi deliberately allows a reordering and this deliberately does
+   not, and the two live one file apart. */
+step("söz · the hub reaches both banks", () => {
+  ev("S.ata={};save();go('ata')");
+  ok(ev("V.view") === "ata", "go('ata') did not reach the hub");
+  /* Assert the way IN, not the heading: the first version of this checked
+     for the word "Atasözleri", which the page title already carries — so
+     it held whatever the cards did and could not fail. */
+  ok(lastPaint.includes("startAta('a')"), "no way into the proverbs from the hub");
+  ok(lastPaint.includes("startAta('d')"), "no way into the idioms from the hub");
+  ok(lastPaint.includes(String(ev("ATASOZU.length"))), "the hub does not count the proverbs");
+  ok(lastPaint.includes(String(ev("DEYIM.length"))), "the hub does not count the idioms");
+});
+
+step("söz · available on day one, and not in the plan", () => {
+  ev("S.ata={};S.done={};S.seen={};save()");
+  ok(ev("ataDue('a').length") === ev("ATASOZU.length"),
+     "a fresh install does not have the proverbs available — they belong to no unit, like the prefabs");
+  /* Same reason as Sor, Sayılar and Diyalog: it needs no material met, so
+     putting it in the plan would give a beginner a second instruction on
+     day one. */
+  ok(!ev("planToday().all").some(x => x.k === "ata"),
+     "a sayings step turned up in the daily plan");
+});
+
+step("söz · the answer is not on screen before you answer", () => {
+  ev("S.ata={};save();startAta('a')");
+  ok(ev("V.view") === "atarun", "startAta did not begin a sitting");
+  const want = ev("AT.q[0].c");
+  ok(!lastPaint.includes(want), "the saying is painted before it has been produced");
+  ok(lastPaint.includes(ev("AT.q[0].q")), "the situation prompt is not on screen");
+});
+
+step("söz · an exact answer passes and moves out a box", () => {
+  ev("S.ata={};S.err={};save();startAta('a')");
+  const k = ev("AT.q[0].k"), want = ev("AT.q[0].c");
+  doc.getElementById("abox").value = want; ev("ataCheck()");
+  ok(ev("AT.res.clean") === true, "the model answer did not score clean");
+  ok(ev("ataBox(" + q(k) + ")") === 1, "a right answer did not move the saying out a box");
+  ok(!ev("S.err[" + q(k) + "]"), "a right answer was booked as a mistake");
+});
+
+step("söz · diacritics are forgiven, like everywhere else", () => {
+  ev("S.ata={};save();startAta('a')");
+  const want = ev("AT.q[0].c");
+  doc.getElementById("abox").value = ev("fold(" + q(want) + ")"); ev("ataCheck()");
+  ok(ev("AT.res.clean") === true, "a folded answer was marked wrong — the keyboard is not the lesson");
+});
+
+step("söz · a miss drops to today and reaches the book under its own mode", () => {
+  ev("S.ata={};S.err={};save();startAta('a')");
+  const k = ev("AT.q[0].k");
+  doc.getElementById("abox").value = "böyle bir söz yok"; ev("ataCheck()");
+  ok(ev("AT.res.clean") === false, "a wrong answer passed");
+  ok(ev("ataBox(" + q(k) + ")") === 0, "a miss did not come back to today");
+  ok(ev("S.err[" + q(k) + "] ? S.err[" + q(k) + "].m : null") === "z",
+     "a missed saying was not booked under the sayings mode");
+});
+
+step("söz · the learner overrules, and the book forgets it", () => {
+  /* Put a saying on a KNOWN box first. With a never-asked one, "restore
+     what it was on" and "reset to box 1" give the same answer, so the
+     test could not tell them apart — which is exactly the bug the
+     restore exists to prevent. */
+  const k = "a:" + ev("ATASOZU[0].id");
+  ev("S.ata={};S.ata[" + q(k) + "]={b:3,d:0};S.err={};save();startAta('a')");
+  ok(ev("AT.q[0].k") === k, "the due saying was not first in the queue");
+  doc.getElementById("abox").value = "böyle bir söz yok"; ev("ataCheck()");
+  ok(ev("ataBox(" + q(k) + ")") === 0, "the miss did not drop the box to today");
+  ok(!!ev("S.err[" + q(k) + "]"), "the miss was not booked");
+  ev("ataAccept()");
+  ok(ev("ataBox(" + q(k) + ")") === 4,
+     "overruling did not restore the box it was on before the miss and advance it — box " +
+     ev("ataBox(" + q(k) + ")") + ", wanted 4");
+  ok(!ev("S.err[" + q(k) + "]"), "an overruled mark stayed in the mistake book");
+  ok(ev("AT.over") === true, "the overrule did not stick");
+});
+
+step("söz · a listed variant is accepted, and named after a right answer", () => {
+  const withAlt = ev("ATASOZU.filter(function(p){return p.alt&&p.alt.length})");
+  ok(withAlt.length > 0, "no saying carries a variant — the honesty about wording has gone");
+  withAlt.forEach(p => {
+    p.alt.forEach(v => {
+      ok(ev("ataJudge({c:" + q(p.t) + ",alt:" + q(p.alt).replace(/^"|"$/g, "") + "}," + q(v) + ")") !== null,
+         "variant setup failed for " + p.id);
+    });
+  });
+  /* Drive it through the real runner rather than the judge alone. */
+  ev("S.ata={};save();startAta('a')");
+  let guard = 0;
+  while (ev("AT.q[AT.i] ? (AT.q[AT.i].alt||[]).length : 0") === 0 && guard++ < 40) {
+    doc.getElementById("abox").value = ev("AT.q[AT.i].c"); ev("ataCheck()"); ev("ataNext()");
+    if (ev("AT.phase") === "end") { ev("startAta('a')"); }
+  }
+  if (ev("AT.q[AT.i] && (AT.q[AT.i].alt||[]).length")) {
+    const alt = ev("AT.q[AT.i].alt[0]");
+    doc.getElementById("abox").value = alt; ev("ataCheck()");
+    ok(ev("AT.res.clean") === true, "a listed variant was marked wrong");
+    ok(lastPaint.includes("Also said"), "a right answer did not show the other wording");
+  }
+});
+
+step("söz · the idiom's literal sense is a payoff, not a hint", () => {
+  ev("S.ata={};save();startAta('d')");
+  const it = ev("AT.q[0]");
+  ok(!lastPaint.includes(it.lit), "the literal gloss is shown before the answer — that is the hint that gives it away");
+  ok(!lastPaint.includes(it.ex[0]), "the example sentence is shown before the answer");
+  doc.getElementById("abox").value = it.c; ev("ataCheck()");
+  ok(lastPaint.includes(esc(it.lit)), "the literal gloss never appears");
+  ok(lastPaint.includes(esc(it.ex[0])), "the example sentence never appears");
+});
+
+/* The three invariants, driven through the judge for every entry in both
+   banks. The reordering one is the whole difference from Dilbilgisi. */
+step("söz · every word, in order, nothing extra — across the whole bank", () => {
+  const all = ev("ATASOZU.concat(DEYIM)");
+  let dropped = 0, invented = 0, reordered = 0, exact = 0;
+  all.forEach(it => {
+    const w = it.t.split(/\s+/);
+    if (ev("ataJudge({c:" + q(it.t) + ",alt:[]}," + q(it.t) + ").clean")) exact++;
+    if (w.length < 2) return;
+    if (ev("ataJudge({c:" + q(it.t) + ",alt:[]}," + q(w.slice(0, -1).join(" ")) + ").clean")) dropped++;
+    if (ev("ataJudge({c:" + q(it.t) + ",alt:[]}," + q(it.t + " zürafa") + ").clean")) invented++;
+    const sw = [w[1], w[0]].concat(w.slice(2)).join(" ");
+    if (ev("fold(" + q(sw) + ")") !== ev("fold(" + q(it.t) + ")") &&
+        ev("ataJudge({c:" + q(it.t) + ",alt:[]}," + q(sw) + ").clean")) reordered++;
+  });
+  ok(exact === all.length, (all.length - exact) + " sayings do not pass their own exact wording");
+  ok(dropped === 0, dropped + " sayings still pass with a word dropped");
+  ok(invented === 0, invented + " sayings still pass with a word invented");
+  ok(reordered === 0, reordered + " sayings still pass reordered — this judge is not order-free, unlike Dilbilgisi's");
+});
+
+step("söz · progress is progress: wipe clears it, a backup carries it", () => {
+  ev("S.ata={};save();startAta('a')");
+  doc.getElementById("abox").value = ev("AT.q[0].c"); ev("ataCheck()");
+  ok(Object.keys(ev("S.ata")).length > 0, "nothing was written");
+  const box = ev("exportBox ? 1 : 0");
+  ok(box === 1, "there is no backup path to test against");
+  const dump = ev("JSON.stringify(S)");
+  ev("S.ata={};save()");
+  ok(Object.keys(ev("S.ata")).length === 0, "the store did not clear");
+  ev("S=Object.assign(S,JSON.parse(" + q(dump) + "));save()");
+  ok(Object.keys(ev("S.ata")).length > 0, "a restore did not bring the sayings back");
+  /* wipe() is progress-clearing; settings survive it and this must not. */
+  ev("S.ata={x:{b:3,d:0}};save();confirm=function(){return true};wipe()");
+  ok(Object.keys(ev("S.ata")).length === 0, "wipe() kept the sayings — they are progress, not a setting");
+});
+
+step("söz · a sitting ends and offers another", () => {
+  ev("S.ata={};save();startAta('d')");
+  let guard = 0;
+  while (ev("AT.phase") !== "end" && guard++ < 40) {
+    doc.getElementById("abox").value = ev("AT.q[AT.i].c"); ev("ataCheck()"); ev("ataNext()");
+  }
+  ok(ev("AT.phase") === "end", "the sitting never ended");
+  ok(lastPaint.includes("Devam"), "the end card does not offer another sitting");
+  ev("go('ata')");
+  ok(ev("V.view") === "ata", "could not get back to the hub");
 });
 
 /* ===================== report ===================== */

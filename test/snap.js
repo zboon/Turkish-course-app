@@ -50,6 +50,12 @@ const meetAll = () => ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:
 ev("wipe()");
 reseed(12345);
 ev("home()"); grabx("home");            /* day one: orientation, one step */
+/* The two doors, and the hubs behind them. The landing page is the plan,
+   the road and the blocks; everything the page used to list in one
+   column now lives on one of these two. */
+ev("go('dersler')"); grab("dersler");
+ev("go('araclar')"); grab("araclar");
+ev("go('nasil')"); grab("nasil");
 ev("LEVELS").forEach(l => { ev("go('level'," + q(l.id) + ")"); grab("level:" + l.id); });
 ev("UNITS").forEach(u => ["v", "g", "r", "d"].forEach(s => { ev("go('unit'," + q(u.id) + "," + q(s) + ")"); grab("unit:" + u.id + ":" + s); }));
 ev("go('about')"); grab("about");
@@ -170,6 +176,26 @@ reseed(5201); ev("startDia('eczane')"); ev("diaPick(0)"); ev("diaNext()");
 ev("diaQuit()"); grab("diyalog:left");
 ev("DG=null;"); ev("wipe()");
 
+/* Atasözleri ve deyimler. Both banks, and every verdict the strictest
+   judge in the app can give: exact, marked, and overruled. No seed is
+   needed — the queue is bank order until something has been graded. */
+ev("wipe()"); ev("S.ata={};save()");
+ev("go('ata')"); grab("ata");
+ev("startAta('a')"); grab("ata:say:ask");
+ev("document.getElementById('abox').value=AT.q[0].c"); ev("ataCheck()"); grab("ata:say:exact");
+ev("ataNext()");
+ev("document.getElementById('abox').value='bambaşka bir cümle'"); ev("ataCheck()"); grab("ata:say:marked");
+ev("ataAccept()"); grab("ata:say:overruled");
+ev("S.ata={};save()"); ev("startAta('d')"); grab("ata:deyim:ask");
+ev("document.getElementById('abox').value=AT.q[0].c"); ev("ataCheck()"); grab("ata:deyim:reveal");
+/* The variant card: a right answer that names the other real wording. */
+ev("S.ata={};save()"); ev("startAta('a')");
+ev("while(AT.q[AT.i]&&!(AT.q[AT.i].alt||[]).length)AT.i++;");
+ev("if(AT.q[AT.i]){AT.phase='ask';render();}");
+ev("if(AT.q[AT.i]){document.getElementById('abox').value=AT.q[AT.i].alt[0];ataCheck();}");
+grab("ata:say:variant");
+ev("AT=null;"); ev("wipe()");
+
 /* Sayılar. Both directions at both ends: what is on screen while the
    clock runs, and what the verdict looks like — including the one that
    only this mode can give, right but too late. */
@@ -223,6 +249,8 @@ ev("wipe()");
 ev("wipe()"); ev("go('unit','a1u1','v')"); ev("home()"); grabx("home:plan");
 ev("go('unit','a1u4','r')"); ev("home()"); grabx("home:plan:resume");
 ev("wipe()"); meetAll(); ev("hideTips()"); ev("home()"); grabx("home:tips-hidden");
+ev("go('dersler')"); grab("dersler:underway");
+ev("go('araclar')"); grab("araclar:underway");
 ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");
 
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");

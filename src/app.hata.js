@@ -30,7 +30,8 @@ const ERR_MAX=400;
 const ERR_MODES=[["q","Alıştırma","unit drills"],["s","Üretim","producing"],
                  ["d","Dikte","transcribing"],["a","Ses önce","understanding"],
                  ["r","Tekrar","vocabulary"],["y","Dilbilgisi","grammar"],
-                 ["n","Sayılar","numbers"],["c","Diyalog","walking away"]];
+                 ["n","Sayılar","numbers"],["c","Diyalog","walking away"],
+                 ["z","Söz","sayings"]];
 /* Pattern cards, one per generated mode: heading, what it means, and the
    button that drills exactly those. Split because the three are different
    work — mode, title, blurb, button label. */

@@ -3,14 +3,14 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.30";
+const APP_VERSION="v3.50";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
-       num:{},nmax:999,ncap:5,dia:{},tips:true};
+       num:{},nmax:999,ncap:5,dia:{},ata:{},tips:true};
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}catch(e){}
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
@@ -18,6 +18,8 @@ function load(){
   /* S.gram is the grammar schedule, keyed by unit id — not a unit's own
      gram: block. S.num is keyed by the shape of a number, not a number. */
   if(!S.gram)S.gram={}; if(!S.err)S.err={}; if(!S.mine)S.mine=[]; if(!S.num)S.num={}; if(!S.dia)S.dia={};
+  /* S.ata is keyed by a saying's slug — "a:<id>"/"d:<id>" — not by a position. */
+  if(!S.ata)S.ata={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -256,6 +258,9 @@ let V={view:"home"};
 let Q=null;
 function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")V={view:"unit",u:a,sec:b||"v"}; window.scrollTo(0,0); render();}
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
+/* The tool screens all hang off Araçlar; Dersler holds the levels. */
+const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
+            "sayilar","diyalog","ata","words","dict","about","nasil"];
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
@@ -269,6 +274,13 @@ function back(){
      a learner expects of a mode whose whole point is not touching it. */
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
   else if(V.view==="retell"){go("unit",V.u,"r");}
+  /* The back arrow retraces the menu you came through. Before the two
+     doors existed every screen fell through to home(), which was right
+     when home() WAS the menu; now it would skip the hub and make the
+     doors feel like a detour rather than a place. */
+  else if(V.view==="level"){go("dersler");}
+  else if(V.view==="cards"||V.view==="review"){go("words");}
+  else if(HUBV.indexOf(V.view)>=0){go("araclar");}
   else home();
 }
 function toggleTheme(){
