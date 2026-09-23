@@ -72,7 +72,7 @@ try {
     "\nthis.OUT={LEVELS:LEVELS,UNITS:UNITS,PLACEMENT:PLACEMENT,CHUNKS:CHUNKS,LEX:LEX,POS:POS,CORE:CORE,fold:fold," +
     "nAcc:nAcc,nDat:nDat,nLoc:nLoc,nAbl:nAbl,nGen:nGen,nP1:nP1,nP3:nP3,nPlur:nPlur,conj:conj," +
     "dictScore:dictScore,dictPass:dictPass,DICT_PASS:DICT_PASS," +
-    "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,priceText:priceText," +
+    "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,timeAt:timeAt,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM};", sandbox, { filename: file });
@@ -587,6 +587,20 @@ let nChecked = 0;
     nChecked += shapes;
   }
 
+  /* AT a time — geçe and kala, and the locative on the hour and the half.
+     The hour's locative never softens (dörtte, not *dördde), its
+     accusative and dative do (dördü, dörde); both are in here. */
+  [[3, 0, "saat üçte"], [4, 0, "saat dörtte"], [6, 0, "saat altıda"], [10, 0, "saat onda"],
+   [11, 0, "saat on birde"], [1, 0, "saat birde"], [3, 30, "üç buçukta"], [12, 30, "on iki buçukta"],
+   [3, 15, "üçü çeyrek geçe"], [4, 10, "dördü on geçe"], [6, 20, "altıyı yirmi geçe"],
+   [9, 5, "dokuzu beş geçe"], [3, 45, "dörde çeyrek kala"], [3, 40, "dörde yirmi kala"],
+   [1, 50, "ikiye on kala"], [12, 55, "bire beş kala"], [5, 45, "altıya çeyrek kala"]
+  ].forEach(([h, m, want]) => {
+    nChecked++;
+    const got = M.timeAt(h, m);
+    if (got !== want) err("numbers", "at " + h + ":" + String(m).padStart(2, "0") + ' reads "' + got + '", hand-checked form is "' + want + '"');
+  });
+
   [[45, 0, "kırk beş lira"], [42, 50, "kırk iki lira elli kuruş"], [0, 50, "elli kuruş"],
    [1, 5, "bir lira beş kuruş"], [175, 25, "yüz yetmiş beş lira yirmi beş kuruş"],
    [1250, 75, "bin iki yüz elli lira yetmiş beş kuruş"]
@@ -692,6 +706,16 @@ let gChecked = 0;
     /* Walk every branch from the start. Anything unreachable is dead
        weight; anything with nowhere to go is a learner with nowhere to
        go. */
+    /* A destination is a key, or a list of keys the OTHER person chooses
+       between at random. A list must be a real choice: two or more, all
+       different, all there. */
+    let surprises = 0;
+    const dests = (to, where) => {
+      if (!Array.isArray(to)) return to ? [to] : [];
+      surprises++;
+      if (to.length < 2 || new Set(to).size !== to.length) err("diyalog", sc.id + "." + where + ": a list destination must name two or more different beats");
+      return to;
+    };
     const seen = {}, stack = [sc.start];
     let ends = 0;
     while (stack.length) {
@@ -706,21 +730,41 @@ let gChecked = 0;
       if (!b.opts && !b.want) err("diyalog", sc.id + "." + k + ": neither a choice nor a number, and not an end");
       if (b.want) {
         if (!sc.vars || !sc.vars[b.want]) err("diyalog", sc.id + "." + k + ": wants " + b.want + ", which is not a slot");
-        if (!b.to) err("diyalog", sc.id + "." + k + ": a typed beat with nowhere to go");
-        else stack.push(b.to);
+        const ds = dests(b.to, k);
+        if (!ds.length) err("diyalog", sc.id + "." + k + ": a typed beat with nowhere to go");
+        ds.forEach(t => { if (!sc.beats[t]) err("diyalog", sc.id + "." + k + ": goes to " + t + ", which does not exist"); else stack.push(t); });
       }
       (b.opts || []).forEach((o, i) => {
         gChecked++;
         if (!str(o.en) || !str(o.tr)) err("diyalog", sc.id + "." + k + " option " + i + ": missing en or tr");
-        if (!o.to) err("diyalog", sc.id + "." + k + " option " + i + ": no destination");
-        else if (!sc.beats[o.to]) err("diyalog", sc.id + "." + k + " option " + i + ": goes to " + o.to + ", which does not exist");
-        else stack.push(o.to);
+        const ds = dests(o.to, k + " option " + i);
+        if (!ds.length) err("diyalog", sc.id + "." + k + " option " + i + ": no destination");
+        ds.forEach(t => {
+          if (!sc.beats[t]) err("diyalog", sc.id + "." + k + " option " + i + ": goes to " + t + ", which does not exist");
+          else stack.push(t);
+        });
       });
     }
     Object.keys(sc.beats).forEach(k => {
       if (!seen[k]) err("diyalog", sc.id + ": beat " + k + " can never be reached");
     });
     if (!ends) err("diyalog", sc.id + ": no beat ends the conversation");
+
+    /* The mode's thesis, held in the data: what comes back depends on what
+       you said, and sometimes on nothing you said. The first version had
+       fifteen choices of which eleven led to the same next line, three
+       scenarios with a single route, and no surprise anywhere. */
+    const next = b => b.end ? [] : b.opts ? [].concat(...b.opts.map(o => [].concat(o.to))) : [].concat(b.to);
+    let routes = 0;
+    const walk = (k, on) => {
+      const b = sc.beats[k];
+      if (!b || on.has(k) || routes > 999) return;
+      if (b.end) { routes++; return; }
+      on.add(k); new Set(next(b)).forEach(t => walk(t, on)); on.delete(k);
+    };
+    walk(sc.start, new Set());
+    if (routes < 3) err("diyalog", sc.id + ": only " + routes + " route" + (routes === 1 ? "" : "s") + " through it — a conversation that cannot go differently is a script");
+    if (!surprises) err("diyalog", sc.id + ": the other person never does anything the learner did not choose — give one beat a list destination");
 
     /* Every {slot} must exist, and every {slot.field} must exist on EVERY
        option of a pick — "Bursa'ya" and "İzmir'e" differ by a vowel the
@@ -740,7 +784,9 @@ let gChecked = 0;
         const parts = tok.slice(1, -1).split(".");
         const v = sc.vars && sc.vars[parts[0]];
         if (!v) { err("diyalog", sc.id + " " + where + ": no slot named " + parts[0]); return; }
-        if (parts[1]) {
+        if (parts[1] && (v.time || v.later)) {
+          if (parts[1] !== "at") err("diyalog", sc.id + " " + where + ": a time has {" + parts[0] + "} and {" + parts[0] + ".at}, not " + tok);
+        } else if (parts[1]) {
           if (!v.pick) err("diyalog", sc.id + " " + where + ": " + tok + " asks for a form of a slot that is not a pick");
           else v.pick.forEach(o => {
             if (o[parts[1]] === undefined) err("diyalog", sc.id + " " + where + ": " + JSON.stringify(o.t) + " has no " + parts[1] + " form");
@@ -753,6 +799,11 @@ let gChecked = 0;
     Object.keys(sc.vars || {}).forEach(k => {
       const v = sc.vars[k];
       if (v.x2 && !sc.vars[v.x2]) err("diyalog", sc.id + ": slot " + k + " doubles " + v.x2 + ", which does not exist");
+      if (v.later && !(sc.vars[v.later] && sc.vars[v.later].time)) err("diyalog", sc.id + ": slot " + k + " is later than " + v.later + ", which is not a time");
+      if (Array.isArray(v.time) && !(v.time[0] >= 1 && v.time[1] <= 12 && v.time[0] <= v.time[1]))
+        err("diyalog", sc.id + ": slot " + k + " has an hour range outside 1–12");
+      if (v.price && v.step && (v.price[0] % v.step || v.price[1] % v.step))
+        err("diyalog", sc.id + ": slot " + k + " is rounded to " + v.step + " but its range is not");
       if (v.pick && !v.pick.every(o => str(o.t))) err("diyalog", sc.id + ": slot " + k + " has a pick with no t");
       /* An option's English label renders the slot's OWN English. Without
          one it falls back to the Turkish and the label reads "how much is
@@ -835,6 +886,62 @@ if (fs.existsSync(svgFile)) {                       // absent when run on a lone
     err("icon", "crest() draws different circles (" + appNums.split(",").slice(0, 6).join(",") +
       ") from src/icon.svg (" + svgNums + ")");
   }
+}
+
+/* ---------- contrast ---------- */
+/* Every pair the stylesheet actually paints text in, held to WCAG AA in
+   both themes. Eleven failed when this was written — the clock digits at
+   2.6:1, every dark-mode primary button at 2.3:1, and the glossed word in
+   the reading tooltip at 1.6:1 in dark mode — and all eleven were
+   invisible to every other check here, because nothing else reads colour.
+   The dark palette is written out twice (the media query and the explicit
+   toggle), so the two copies are also held to each other. */
+let contrastPairs = 0;
+{
+  const block = re => { const m = re.exec(html); return m ? m[1] : null; };
+  const toks = b => { const o = {}; (b || "").replace(/--([a-z0-9-]+)\s*:\s*(#[0-9A-Fa-f]{6})/g, (_, k, v) => o[k] = v.toUpperCase()); return o; };
+  const light = toks(block(/:root\{([^}]*)\}/));
+  const darkMq = toks(block(/:root:not\(\[data-theme="light"\]\)\{([^}]*)\}/));
+  const darkEx = toks(block(/:root\[data-theme="dark"\]\{([^}]*)\}/));
+  if (!Object.keys(light).length || !Object.keys(darkMq).length || !Object.keys(darkEx).length) {
+    err("contrast", "could not find the light palette and both dark palettes in the build");
+  }
+  new Set(Object.keys(darkMq).concat(Object.keys(darkEx))).forEach(k => {
+    if (darkMq[k] !== darkEx[k]) err("contrast", "the two dark palettes disagree on --" + k + ": " + darkMq[k] + " (media query) vs " + darkEx[k] + " (toggle)");
+  });
+
+  const lin = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
+  const lum = h => { const n = parseInt(h.slice(1), 16); return 0.2126 * lin(n >> 16 & 255) + 0.7152 * lin(n >> 8 & 255) + 0.0722 * lin(n & 255); };
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+
+  /* [text, background, minimum, where]. 4.5 is AA for body-size text;
+     3 is AA for an icon, which is what .star.on is. Add a row whenever a
+     rule starts painting a new colour on a new ground. */
+  const PAIRS = [
+    ["ink", "paper", 4.5, "body text"], ["ink2", "paper", 4.5, ".sub"], ["ink2", "card", 4.5, ".sub in a card"],
+    ["ink2", "sunk", 4.5, "segmented control"],
+    ["faint", "paper", 4.5, "clock digits, .tiny, the road"], ["faint", "card", 4.5, ".src, .qn, .tiny in a card"],
+    ["turk", "paper", 4.5, "the clock"], ["turk", "card", 4.5, ".q .blank, .spd.on"], ["turk", "turk-soft", 4.5, ".pill.turk"],
+    ["cobalt", "paper", 4.5, "links"], ["cobalt", "card", 4.5, ".btn.ghost"], ["cobalt", "cobalt-soft", 4.5, ".pill.cob"],
+    ["cobalt", "sunk", 4.5, "code"],
+    ["bole", "card", 4.5, "a wrong answer"], ["bole", "bole-soft", 4.5, ".dw.miss"],
+    ["gold-ink", "card", 4.5, ".tick.here"], ["gold-ink", "gold-soft", 4.5, ".pill.gold, .savewarn button"],
+    ["ink", "gold-soft", 4.5, ".savewarn"], ["gold", "card", 3, ".star.on (icon)"],
+    ["paper", "ink", 4.5, "the gloss tooltip"], ["gold-inv", "ink", 4.5, "the glossed word in the tooltip"],
+    ["on-accent", "cobalt", 4.5, ".btn, .lvl-badge.on"], ["on-accent", "turk", 4.5, ".tick.done, .vb.on"]
+  ];
+  [["light", light], ["dark", Object.assign({}, light, darkMq)]].forEach(([theme, T]) => {
+    PAIRS.forEach(([fg, bg, min, where]) => {
+      if (!T[fg] || !T[bg]) { err("contrast", theme + ": --" + (T[fg] ? bg : fg) + " is not defined"); return; }
+      const r = ratio(T[fg], T[bg]);
+      contrastPairs++;
+      if (r < min) err("contrast", theme + " --" + fg + " on --" + bg + " is " + r.toFixed(2) + ":1, needs " + min + " (" + where + ")");
+    });
+  });
+  /* White text on an accent is the one colour a token cannot catch, and
+     it was how the dark buttons broke: the accents there are pale. */
+  const rules = html.slice(html.indexOf("<style>"), html.indexOf("</style>"));
+  if (/color:\s*(#fff\b|#ffffff\b|white\b)/i.test(rules)) err("contrast", "a rule paints literal white text — use var(--on-accent), which flips in dark mode");
 }
 
 /* ---------- atasözleri ve deyimler ---------- */
@@ -990,6 +1097,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + contrastPairs + " contrast pairs · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

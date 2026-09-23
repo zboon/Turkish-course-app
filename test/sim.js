@@ -2057,6 +2057,89 @@ step("diyalog · a conversation you can always get out of", () => {
   ok(ev("Object.keys(S.dia).length") === 0, "wipe() kept the conversation record");
 });
 
+/* validate.js counts the routes; this plays them. Every route of every
+   scenario, through the real runner, with the other person's random
+   choices forced by construction — a route reached only by luck is a route
+   that one day is not reached, which is the lesson Sor and Sayılar taught. */
+step("diyalog · every route of every scenario plays to its end", () => {
+  ev("__rnd=Math.random");
+  const force = (j, n) => ev("Math.random=function(){return " + ((j + 0.5) / n) + "}");
+  const ids = JSON.parse(ev("JSON.stringify(DIYALOG.map(function(s){return s.id}))"));
+  let played = 0;
+  const broken = [];
+  ids.forEach(id => {
+    const sc = JSON.parse(ev("JSON.stringify(diaScenario(" + q(id) + "))"));
+    const routes = [];
+    const walk = (k, on, path) => {
+      const b = sc.beats[k];
+      if (!b || on.has(k) || routes.length > 500) return;
+      if (b.end) { routes.push(path.concat([{ k }])); return; }
+      on.add(k);
+      (b.opts ? b.opts.map((o, i) => ({ i, to: o.to })) : [{ i: -1, to: b.to }]).forEach(m => {
+        const tos = [].concat(m.to);
+        tos.forEach((t, j) => walk(t, on, path.concat([{ k, i: m.i, j: Array.isArray(m.to) ? j : -1, n: tos.length }])));
+      });
+      on.delete(k);
+    };
+    walk(sc.start, new Set(), []);
+    routes.forEach(r => {
+      ev("wipe()"); ev("startDia(" + q(id) + ")");
+      const trail = [];
+      for (const st of r) {
+        trail.push(st.k);
+        if (ev("DG.at") !== st.k) { broken.push(id + ": expected " + st.k + " after " + trail.slice(0, -1).join("→") + ", got " + ev("DG.at")); return; }
+        if (st.i === undefined) break;
+        if (st.i < 0) {
+          ev("document.getElementById('dgbox').value=String(DG.V[diaBeat().want].show||DG.V[diaBeat().want].t)");
+          ev("diaCheck()");
+          if (ev("DG.res") !== true) { broken.push(id + ": the right number was marked wrong at " + st.k); return; }
+        } else ev("diaPick(" + st.i + ")");
+        if (st.j >= 0) force(st.j, st.n);
+        ev("diaNext()");
+        ev("Math.random=__rnd");
+      }
+      if (ev("DG.phase") !== "end" || ev("DG.done") !== true) broken.push(id + ": " + trail.join("→") + " did not finish");
+      else played++;
+    });
+    /* The overcharge this rewrite found: one kilo was billed as two. */
+    if (id === "pazar") ok(routes.every(r => !(r.some(s => s.k === "c1") && r.some(s => s.k === "d"))),
+      "pazar: a one-kilo route still reaches the two-kilo total");
+  });
+  ev("Math.random=__rnd");
+  ok(broken.length === 0, broken.length + " dialogue routes broke, e.g. " + broken.slice(0, 3).join(" · "));
+  ok(played >= 100, "only " + played + " routes played — the trees have gone back to being scripts");
+
+  /* Proposing a meeting uses AT a time — geçe, kala, the locative — and
+     never the answer to "what time is it". Every hour and every minute
+     the slot can draw, not a sample of them. */
+  const wrongForm = [];
+  for (let h = 1; h <= 12; h++) [0, 5, 10, 15, 20, 30, 40, 45, 50].forEach(m => {
+    const t = ev("SC=diaScenario('randevu'); VV={saat:diaTime(" + h + "," + m + ")}; diaText(SC.beats.b.say,VV)");
+    if (/geçiyor|\bvar\b/.test(t) || !/(geçe|kala|[dt][ae]|buçukta), uygun mu\?$/.test(t)) wrongForm.push(t);
+  });
+  ok(wrongForm.length === 0, wrongForm.length + " proposed times use the wrong form, e.g. " + q(wrongForm[0] || ""));
+
+  /* "Could we make it later?" is answered with a later time. */
+  const notLater = [];
+  [0.02, 0.2, 0.45, 0.6, 0.85, 0.98].forEach(r => {
+    ev("Math.random=function(){return " + r + "}");
+    const v = JSON.parse(ev("JSON.stringify(diaVars(diaScenario('randevu')))"));
+    ev("Math.random=__rnd");
+    const d = (v.gec.val[0] - v.saat.val[0] + 12) % 12;
+    if (!(d === 1 || d === 2) || v.gec.val[1] !== v.saat.val[1]) notLater.push(v.saat.show + " → " + v.gec.show);
+  });
+  ok(notLater.length === 0, "a 'later' time was not later: " + notLater.join(", "));
+
+  /* A rounded price is round: a rent is never 23 847 lira 50. */
+  [0.02, 0.5, 0.98].forEach(r => {
+    ev("Math.random=function(){return " + r + "}");
+    const v = JSON.parse(ev("JSON.stringify(diaVars(diaScenario('kira')))"));
+    ev("Math.random=__rnd");
+    ok(v.kira.val[0] % 1000 === 0 && v.kira.val[1] === 0 && v.depo.val[0] === 2 * v.kira.val[0],
+      "a rent came out unrounded or the deposit is not two rents: " + v.kira.show + " / " + v.depo.show);
+  });
+});
+
 step("the plan says what to do, in the order it should be done", () => {
   ev("wipe()"); meetAll(); ev("setScope('done')"); ev("home()");
   ok(/Bugün/.test(lastPaint), "home does not show a plan");
@@ -2610,6 +2693,115 @@ step("söz · a sitting ends and offers another", () => {
   ok(lastPaint.includes("Devam"), "the end card does not offer another sitting");
   ev("go('ata')");
   ok(ev("V.view") === "ata", "could not get back to the hub");
+});
+
+/* A device that can speak but has no Turkish voice is not silent — it reads
+   Turkish in an English accent — and until this step existed nothing in the
+   app said so, and nothing here had ever run the app without speech at all.
+   The stub normally offers a tr-TR voice, so each state is made by hand. */
+step("ses · the three voice states, each said where it matters", () => {
+  const TR = "[{lang:'en-GB',name:'Daniel'},{lang:'tr-TR',name:'Yelda'}]";
+  const setVoices = list => ev("speechSynthesis.getVoices=function(){return " + list + "}");
+  /* The stub keeps innerHTML only on elements it was set on, so a note
+     painted with the screen is read from the paint, and the element is
+     read only where the app pokes it. */
+  const NOTR = "Türkçe ses yok · no Turkish voice", NONE = "Ses yok · no speech";
+  const empty = () => lastPaint.includes('<div id="vnote"></div>');
+  ev("S.done={};S.seen={};save()");
+
+  setVoices(TR);
+  ev("go('unit','a1u1','v')");
+  ok(empty(), "a device with a Turkish voice was warned anyway");
+  ev("go('about')");
+  ok(/Yelda/.test(lastPaint), "About does not name the Turkish voice in use");
+  ok(!/If nothing is heard/.test(lastPaint), "About still claims a missing voice means silence — it means the wrong accent");
+
+  setVoices("[{lang:'en-GB',name:'Daniel',default:true}]");
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes(NOTR), "Kelimeler does not warn when there is no Turkish voice");
+  ev("go('unit','a1u1','r')");
+  ok(lastPaint.includes(NOTR), "Okuma does not warn when there is no Turkish voice");
+  ev("go('unit','a1u1','d')");
+  ok(!lastPaint.includes('id="vnote"'), "the drill tab carries the voice note, and nothing there speaks");
+  ["prod", "dinle", "diyalog", "yolda", "sayilar"].forEach(v => {
+    ev("go('" + v + "')");
+    ok(lastPaint.includes(NOTR), v + " does not warn when there is no Turkish voice");
+  });
+  const before = voice.said;
+  ev("sayWord('merhaba')");
+  ok(voice.said === before + 1, "no Turkish voice should still speak — a rough guide, and the learner has been told");
+  ev("go('unit','a1u1','v')");
+  ev("voiceHelp()");
+  ok(ev("V.view") === "about" && /id="ses"/.test(lastPaint), "the note's button does not reach the instructions");
+  ok(/no Turkish voice/.test(lastPaint) && /Spoken Content/.test(lastPaint), "About does not say what is wrong and how to fix it");
+
+  /* A list not loaded yet says nothing, then fills in place when it
+     arrives — a re-render there would empty a half-typed dictation. */
+  setVoices("[]");
+  ev("go('unit','a1u1','r')");
+  ok(empty(), "an unloaded voice list was reported as a problem");
+  const paints = screens;
+  setVoices("[{lang:'en-US',name:'Samantha'}]");
+  ev("speechSynthesis.onvoiceschanged()");
+  ok((doc.getElementById("vnote").innerHTML || "").includes(NOTR), "a voice list arriving late did not fill the note");
+  ok(screens === paints, "a late voice list re-rendered the screen instead of filling the note in place");
+
+  /* No speech at all: the unit says so once, and the hubs that already
+     explained it keep one card rather than gaining a second. */
+  ev("__ss=window.speechSynthesis; delete window.speechSynthesis");
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes(NONE), "the unit does not say this browser cannot speak");
+  [["dinle", /Ses yok/g], ["diyalog", /Ses yok/g], ["yolda", /Ses yok/g], ["sayilar", /no speech synthesis/g]].forEach(([v, re]) => {
+    ev("go('" + v + "')");
+    ok((lastPaint.match(re) || []).length === 1 && !lastPaint.includes(NOTR) && !lastPaint.includes(NONE),
+      v + " should explain missing speech exactly once");
+  });
+  ev("go('prod')");
+  ok(lastPaint.includes(NONE), "Üretim works without speech and should say the model will not be heard");
+  ev("window.speechSynthesis=__ss");
+  setVoices(TR);
+  ev("home()");
+});
+
+/* save() used to swallow every error, so a browser refusing to store left a
+   learner working for weeks toward nothing. A warning that scrolls away
+   or sits on one screen would be missed, so it lives in the top bar. */
+step("kayıt · a save that fails is said on every screen until one works", () => {
+  const STRIP = "Kaydedilmiyor";
+  const inBar = () => { const i = lastPaint.indexOf(STRIP), w = lastPaint.indexOf('<div class="wrap">');
+    return i > -1 && w > -1 && i < w; };
+  ev("S.star=[];S.srs={};save();home()");
+  ok(!lastPaint.includes(STRIP), "a working browser was told it is not saving");
+
+  ev("__si=localStorage.setItem; localStorage.setItem=function(){throw new Error('QuotaExceededError')}");
+  ev("go('araclar')");
+  ok(!lastPaint.includes(STRIP), "warned before any save had actually failed");
+  /* Opening a tab records it as seen, which is a save. */
+  ev("go('unit','a1u1','v')");
+  ok(inBar(), "a failed save is not said in the top bar of the screen it happened on");
+  ev("toggleStar(0)");
+  ev("home()");
+  ok(inBar(), "the home screen, which draws its own bar, does not carry the warning");
+  ev("go('araclar')");
+  ok(inBar(), "the warning did not follow the learner to the next screen");
+  ev("saveHelp()");
+  ok(ev("V.view") === "about" && /id="yedek"/.test(lastPaint), "the strip's button does not reach the backup");
+  ok(/not saving right now/.test(lastPaint), "the backup card does not say what to do while nothing saves");
+  /* The rescue has to work from memory: storage is the thing that broke. */
+  ev("exportBox()");
+  const dumped = doc.getElementById("iobox").value || "";
+  ok(dumped.includes('"star"') && JSON.parse(dumped).star.length === 1,
+    "a backup taken while saving fails lost the work done since — it must read the live state");
+
+  ev("localStorage.setItem=__si; save(); render()");
+  ok(!lastPaint.includes(STRIP), "a save that went through again did not clear the warning");
+
+  ev("__gi=localStorage.getItem; localStorage.getItem=function(){throw new Error('SecurityError')}");
+  ev("load(); home()");
+  ok(inBar(), "storage that cannot even be read is not reported");
+  ev("localStorage.getItem=__gi; save(); home()");
+  ok(!lastPaint.includes(STRIP), "the read failure outlived a working save");
+  ev("S.star=[];S.srs={};save()");
 });
 
 /* ===================== report ===================== */

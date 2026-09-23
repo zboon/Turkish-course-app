@@ -7,7 +7,7 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 morphology forms + 855 number forms
+node test/validate.js   # data integrity + 266 morphology forms + 872 number forms + 46 contrast pairs
 node test/sim.js        # headless render of all 342 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 ```
@@ -281,6 +281,18 @@ Starred words are the SRS queue: `star` is the membership list, `srs` the
 schedule (`STEPS` in days). `toggleStar`/`starAll`/`unstar` must keep the two in
 step.
 
+**A save that fails is said, on every screen, until one works.** `save()`
+used to swallow every error, so a browser refusing storage (blocked site
+data, some private windows) let a learner work for weeks toward nothing.
+Now it sets `SAVEFAIL`, and `saveWarn()` puts a strip *inside* the sticky
+top bar — both `bar()` and home's own — because a warning that scrolls
+away or sits on one screen would be missed, and every tap under it is
+being lost. Its button goes to the backup, which reads `S` from memory,
+so the session's work can still be rescued. A later save that goes
+through clears it. A browser that accepts the write and discards it at
+the end of a private session cannot be told apart from one that keeps
+it, so the strip claims only what it can see.
+
 The artifact link and a GitHub Pages copy are different origins, so progress
 does not travel between them. That's why About has backup/restore
 (`exportBox`/`importBox`) — keep it working.
@@ -374,9 +386,24 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 - Interface language is Turkish with English underneath (`Kelimeler · words`).
   Learner-facing prose is plain English, no exclamation marks, no cheerleading.
 - Palette is İznik, at tile-glaze strength: cobalt `--cobalt` #173A6B,
-  turquoise `--turk` #1F7D79, bole red `--bole` #9E3327, gold `--gold`
+  turquoise `--turk` #1C716E, bole red `--bole` #9E3327, gold `--gold`
   #AF7F32, ivory paper #EFEADC. Red is for wrong answers only. Gold is for
-  bookmarks, glosses, "test ahead" and the ornament.
+  bookmarks, glosses, "test ahead", help, and the ornament.
+- **Every text colour is held to WCAG AA in both themes**, and `validate.js`
+  enforces it: it parses the tokens out of the build and checks every pair
+  the stylesheet actually paints text in (the `PAIRS` table — add a row
+  when a rule paints a new colour on a new ground). Eleven pairs failed
+  when this was written, and none were subtle once measured: the clock
+  digits at 2.6:1, every dark-mode primary button white-on-pale-blue at
+  2.3:1, and the glossed word in the dark-mode reading tooltip at 1.6:1.
+  So: `--faint` is darker than it looks like it should be (#606977), and
+  `--turk` was nudged from #1F7D79 to #1C716E (the crest keeps the old
+  glaze through `--crest-petal`). `--gold` stays the glaze because it is
+  ornament; gold that must be *read* is `--gold-ink`, gold on the inverse
+  tooltip is `--gold-inv`, and text on a filled accent is `--on-accent`,
+  which flips to dark in dark mode because the accents there are pale.
+  Literal white text fails the check. The dark palette is written twice
+  (media query and toggle); the check fails if the copies drift.
 - Ornament is Ottoman and restrained — illumination framed the text rather
   than crowding it. One gold hairline runs out of each section heading
   (`h2.sec::after`) and stops. Resist adding more.
@@ -393,6 +420,20 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
   timer needs its own stop called from `stopPlay()` for the same reason.
   Yolda matters most here: it holds the speaker for minutes, so a leak is
   louder there than anywhere else in the app.
+- **The voice has three states, and the middle one is the dangerous one.**
+  `voiceState()` is `ok`, `none` (no speech engine), `notr` (speech but no
+  Turkish voice) or `unknown` (list not loaded yet). `notr` does not fall
+  silent — the browser reads Turkish in its default voice, so a beginner
+  hears *Merhaba* in an English accent from lesson one. It is common:
+  Windows without the Turkish speech pack, desktop Chrome's own voices.
+  `voiceNote()` says so on the Kelimeler and Okuma tabs and on the five
+  audio hubs, and About names the voice in use and how to add one on each
+  platform. It still speaks in `notr` — a rough guide, and the learner has
+  been told. `unknown` says nothing rather than warn a device that is
+  fine; the note sits in `#vnote` so a late `voiceschanged` fills it in
+  place, never re-renders (that would empty a half-typed dictation). About
+  used to claim a missing Turkish voice meant silence; it means the wrong
+  accent, which is worse, and is why this exists.
 
 ## Üretim (production mode)
 
@@ -571,8 +612,9 @@ numbers are generated and endless, so "342" is not a thing to be weak at;
 
 The engine is split where its purity ends. Everything up to
 `/* --- what a sitting is made of --- */` is pure, so `validate.js` lifts it
-out of the build exactly as it lifts the morphology engine and holds **855
-hand-checked forms** against it — 99 of the time-and-price ones written by
+out of the build exactly as it lifts the morphology engine and holds **872
+hand-checked forms** against it (17 of them `timeAt()`, the *at*-a-time
+form Diyalog needed — see there) — 99 of the time-and-price ones written by
 hand, the rest the sweep of all 720 hour/minute pairs the live clock made
 reachable, plus 28 for the date line under it: 19 sweeping every month and
 every weekday at least once, and 9 hand-typed pinning word order and the
@@ -738,6 +780,33 @@ loose in public, so the data lists what is not derivable — the same rule
 nowhere, a beat nothing reaches, a path with no end. A dead end in a
 dialogue tree is not a wrong answer on a screen — it is a learner stuck in
 a mode whose whole thesis is that you never get stuck.
+
+**The other person can surprise you, and the data is held to it.** The
+first six scenarios were thinner than "branching" claimed once measured:
+of fifteen choices, eleven led to the same next line, three scenarios had
+exactly one route, and every reply was fixed by the learner's own choice —
+so once the tree was known nothing could go off-script, which is the one
+thing the mode exists to practise. Now a destination may be a **list**,
+resolved at random by `diaTo()` when the conversation gets there: the
+card machine is down, the tomatoes ran out, the bigger size is out of
+stock, the notary stamp is missing. `validate.js` fails any scenario with
+fewer than three routes or no list, and `sim.js` plays **every route** of
+every scenario through the real runner — 132 of them across ten scenarios,
+A1 to C1 — forcing each random branch by pinning `Math.random` rather than
+hoping to land on it. An end reached politely ("no thanks, I'll look
+elsewhere") is a completion; only walking out is not.
+
+Measuring the routes turned up two content bugs that had shipped:
+`pazar` billed one kilo as two (every route reached `Hepsi {hepsi}`, the
+doubled price), and `randevu` proposed meetings in the telling-the-time
+form — *Üçü çeyrek geçiyor, uygun mu?* is "it is quarter past three,
+suitable?". Proposing a time needs *geçe*/*kala* and the locative, so
+`timeAt()` now sits beside `timeText()` in the number engine, hand-checked
+in `validate.js`, and a time slot offers both as `{t}` and `{t.at}`. Slots
+also gained an hour range (breakfast is not at three), a `step` for round
+prices (a rent is *yirmi üç bin*), and `later` for a time an hour or two
+after another, because two independent draws answered "could we make it
+later?" with an earlier time half the time.
 
 ### Two flaky assertions, found here and worth not repeating
 

@@ -217,6 +217,7 @@ function renderProd(){
   const rd=retellDue().length, open=retellOpen(), g=prodGap();
   let h=bar("Üretim","production · speak first",true)+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">The prompt is English. You say the Turkish out loud in the silence, <b>before</b> the model plays — then mark yourself. Nothing is recorded and no microphone is used.</p>';
+  h+=voiceNote();
   h+='<div class="stat"><div><b>'+sd+'</b><span>cümle</span></div>'+
      '<div><b>'+Math.min(kd,SESSION)+'</b><span>kalıp</span></div>'+
      '<div><b>'+rd+'</b><span>anlatım</span></div></div>';

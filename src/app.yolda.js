@@ -227,6 +227,7 @@ function renderYolda(){
     h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but speech.</p></div></div>';
     app().innerHTML=h;return;
   }
+  h+=voiceNote();
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">A sitting that runs without you: the English is spoken, you answer out loud into the silence, then the Turkish comes. Nothing to tap until it ends, so it can be done while driving or working. Items come back three, eight and twenty slots later — inside the same sitting, while they are still half remembered.</p>';
   if(!bank.length){
     h+='<div class="card"><p class="lead">Bugünlük bitti</p>'+
