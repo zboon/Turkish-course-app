@@ -416,7 +416,7 @@ function renderSayilar(){
   h+='</div>';
 
   h+='<p class="foot">Yüz is “yüz”, never “bir yüz” — and bin is “bin”, but a million keeps its bir.<br>Every prompt is built on the spot, so the set never runs out.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderSayilarRun(){
@@ -424,7 +424,7 @@ function renderSayilarRun(){
   const duy=NM.mode==="duy";
   if(NM.phase==="end"){
     const med=numMedian(), cap=ncap();
-    app().innerHTML=bar("Sayılar","Bitti",true)+'<div class="wrap"><div class="score">'+
+    paint(bar("Sayılar","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(NM.fast*2>=NM.q.length?"pass":"fail")+'">'+NM.fast+'/'+NM.q.length+'</div>'+
       '<p class="sub">'+(cap?"doğru ve zamanında · right and in time":"doğru · right")+'</p></div>'+
       '<div class="stat"><div><b>'+NM.right+'</b><span>doğru</span></div>'+
@@ -434,7 +434,7 @@ function renderSayilarRun(){
       (cap?'The median is the number to watch: accuracy climbs long before speed does, and a shop gives you about two seconds. Anything right but over '+cap+'s stays where it was.'
           :'The clock is off, so this was marked on accuracy alone.')+'</p>'+
       '<button class="btn" onclick="startNum(\''+NM.mode+'\')">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'sayilar\')">Sayılar</button></div></div>';
+      '<button class="btn ghost" onclick="go(\'sayilar\')">Sayılar</button></div></div>');
     return;
   }
   const it=NM.q[NM.i];
@@ -479,7 +479,7 @@ function renderSayilarRun(){
     }
   }
   h+='</div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("nbox");
   if(box){
     box.focus();

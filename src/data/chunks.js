@@ -373,8 +373,13 @@ const CHUNKS=[
  ["bi dakka","hang on a sec (with anyone)"],
  ["tamam mı","okay? all right? (checking, with anyone)"],
  ["di mi","right? isn't it? (between friends)"],
- ["abi, bakar mısın","excuse me, mate (to a man serving you)"],
- ["abla, bakar mısın","excuse me (to a woman serving you)"],
+ ["abi, bakar mısın","excuse me, brother (to a man serving you)"],
+ ["abla, bakar mısın","excuse me, sister (to a woman serving you)"],
  ["hesabı alalım","let's get the bill (with anyone)"],
- ["hadi bakalım","off we go then (with anyone)"]
+ ["hadi bakalım","off we go then (with anyone)"],
+
+ /* --- after a native speaker's pass --------------------------------------
+    Pardon comes first when calling someone over; bakar mısınız on its
+    own is less usual. */
+ ["pardon, bakar mısınız","excuse me, could you come over (calling a waiter)"]
 ];

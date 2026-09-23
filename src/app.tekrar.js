@@ -370,19 +370,19 @@ function renderTekrar(){
   h+='<p class="tiny" style="margin-top:.6rem">Red is a word the course mentions and abandons. The aim is to empty the top two rows into the bottom two.</p></div>';
 
   h+='<p class="foot">Encounters are counted by stem, so <i>kitaplar</i> counts for <i>kitap</i> but <i>kitabın</i> does not.<br>That undercounts, which is the safe direction for a floor.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderTekrarRun(){
   if(!TK){renderTekrar();return;}
   if(TK.phase==="end"){
-    app().innerHTML=bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score">'+
+    paint(bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(TK.right*2>=TK.q.length?"pass":"fail")+'">'+TK.right+'/'+TK.q.length+'</div>'+
       '<p class="sub">kelime hatırlandı · recalled</p></div>'+
       '<div class="card"><p class="sub">'+repShort().length+' words are still under '+REP_TARGET+
       ' encounters. Every drill here counts as one, right or wrong — being asked is the encounter.</p>'+
       '<button class="btn" onclick="startTekrar()">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'tekrar\')">Tekrar motoru</button></div></div>';
+      '<button class="btn ghost" onclick="go(\'tekrar\')">Tekrar motoru</button></div></div>');
     return;
   }
   const it=TK.q[TK.i];
@@ -416,7 +416,7 @@ function renderTekrarRun(){
     h+='<button class="btn" onclick="tkNext()">'+(TK.i+1>=TK.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("tbox");
   if(box){
     box.focus();
@@ -592,7 +592,7 @@ function renderGram(){
     h+='<div class="card"><p class="lead">Henüz dilbilgisi yok</p>'+
      '<p class="sub">This drills the grammar points you have read. Open a unit’s Dilbilgisi tab and its point starts coming back here.</p>'+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
-    app().innerHTML=h;return;
+    paint(h);return;
   }
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">The course explains each grammar point once, in one tab, and then moves on. '+
    'This brings the point back on a widening schedule and asks you to <i>build</i> a sentence with it from English — '+
@@ -622,19 +622,19 @@ function renderGram(){
   if(weak.length>10)h+='<p class="tiny" style="margin-top:.5rem">and '+(weak.length-10)+' more, further out.</p>';
   h+='</div>';
   h+='<p class="foot">The target sentences are the units’ own worked examples.<br>Nothing here is generated, so nothing here is approximate.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }
 
 function renderGramRun(){
   if(!GR){renderGram();return;}
   if(GR.phase==="end"){
-    app().innerHTML=bar("Dilbilgisi","Bitti",true)+'<div class="wrap"><div class="score">'+
+    paint(bar("Dilbilgisi","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(GR.right*2>=GR.q.length?"pass":"fail")+'">'+GR.right+'/'+GR.q.length+'</div>'+
       '<p class="sub">doğru üretildi · produced</p></div>'+
       '<div class="card"><p class="sub">Anything missed comes back today, the rest moves out a box. '+
       'A near miss counts as a miss here — the point is the form, and the marked line showed you which word carried it.</p>'+
       '<button class="btn" onclick="startGram()">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'gram\')">Dilbilgisi tekrarı</button></div></div>';
+      '<button class="btn ghost" onclick="go(\'gram\')">Dilbilgisi tekrarı</button></div></div>');
     return;
   }
   const it=GR.q[GR.i];
@@ -679,7 +679,7 @@ function renderGramRun(){
     h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("gbox");
   if(box){
     box.focus();

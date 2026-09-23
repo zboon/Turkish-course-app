@@ -251,7 +251,7 @@ deliberate breakage.
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
  sik:{"zaten":{d}, "ve":{d,k:1}},
- gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips}
+ gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
@@ -270,8 +270,8 @@ rather than a count. Editing a vocabulary entry's spelling re-points
 its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
-`pscope`, `drate`, `dreplay`, `ygap`, `yrate`, `nmax`, `ncap` and `tips` are
-settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
+`pscope`, `drate`, `dreplay`, `ygap`, `yrate`, `nmax`, `ncap`, `tips` and `en`
+are settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
 `num` is keyed by the *shape* a number has rather than by any number —
 `duy:3` is three digits heard, `oku:saat` is a clock face read aloud —
 because the numbers are generated and endless while the shapes are six.
@@ -453,12 +453,66 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
   used to claim a missing Turkish voice meant silence; it means the wrong
   accent, which is worse, and is why this exists.
 
+## İngilizcesi (English under the Turkish)
+
+Built, by request: until A2 is complete every instruction carries its
+English underneath, small and faint — *Başla* over *start*, *Kontrol et*
+over *check* — and an **EN** button in the top bar of every screen turns
+it off or back on. The interface was already Turkish-first with English
+beside some labels, but not all: *Başla*, *Devam*, *Kontrol et*, the tab
+names and every section heading were Turkish only, which is exactly
+what a learner on day one cannot read.
+
+It is **one table and one pass**, not markup at every call site.
+Every full paint goes through `paint(h)` in `app.core.js`, which runs
+`enUnder()` — so a new screen must paint with `paint(h)`, never
+`app().innerHTML=` directly (eight end-of-session screens did, and were
+the ones left in Turkish only). The pass touches only the first run of
+text inside an interface element (a button, `h2.sec`, `.lead`, `.qn`,
+`.sub`, a pill, `.tiny`, `.empty`, `.big`) and only when that text is a
+key: `EN_UI` for bare Turkish labels, `EN_RULES` for ones with a number
+in them, and `EN_INLINE` for labels already written `Türkçe · english`,
+whose English half is moved underneath. Course content never matches
+because it is never looked up, and `EN_SKIP` names the content classes
+(`opt`, `tile`, `vtr`, `gw`, …) the pass must never enter: a glossed
+answer option would give the answer away with the toggle on.
+
+Three decisions:
+
+- **The English half has to be listed, not guessed.** After a `·` the
+  text is sometimes Turkish (*bu oturum*), a count, or content (a
+  vocabulary gloss), and guessing "looks English" is how a vocabulary
+  answer would vanish when the toggle is off. `sim.js` scans every paint
+  and fails on an interface label with an English half `EN_INLINE` does
+  not list, so each new one is decided. The scan covers only elements
+  that never hold content — a sub line or a word pill can carry a
+  generated word, and a check that depends on what a run drew is the
+  flaky kind this file has been bitten by twice.
+- **The toggle is a class, not a redraw.** The English always goes into
+  the page and `.noen` on `<html>` hides it, so switching redraws
+  nothing and cannot empty a half-typed answer. A poke that fills an
+  element outside `paint()` (the late voice note) runs `enUnder()`
+  itself.
+- **The default follows the level; a choice wins.** `S.en` is unset
+  until the learner taps EN; unset means on until A2 is complete —
+  `lvPct("A2")`, the line `tipsOn()` already uses, and which the A2
+  level test fills. It is a setting, so `wipe()` keeps it.
+
+An element that already carries its English — a tab's `<i>`, a title's
+`<small>` — is left alone rather than given a second copy; the unit
+tabs' `<i>` English now sits in a `.gl` span so the toggle reaches it
+too. Nine deliberate breakages — the level default, the content skip,
+a redraw on toggle, `wipe()` dropping the setting, the second copy,
+`paint()` skipping the pass, the late voice note, an unlisted English
+half, and the pass escaping the interface elements — each turned
+`sim.js` red.
+
 ## Üretim (production mode)
 
 Built. The learner's gap is speaking, and what worked for them was Pimsleur —
 because it forces a sentence out of the mouth *before* the model is heard.
 `go('prod')` is the mode, drawn from the course's own 432 passage lines and
-330 prefabs:
+331 prefabs:
 
 1. **Prompt → gap → model.** The English shows (and is spoken if `prompten`
    is on, in the device's English voice — never the `tr-TR` one). A silent
@@ -475,7 +529,7 @@ because it forces a sentence out of the mouth *before* the model is heard.
    piece that cannot stand on its own. A sentence marked wrong is offered
    this way automatically. `sim.js` checks every one of the 432 lines: each
    piece must be a true tail, each step longer than the last.
-3. **Chunk bank.** `src/data/chunks.js`, 330 conversational prefabs, drilled
+3. **Chunk bank.** `src/data/chunks.js`, 331 conversational prefabs, drilled
    by the same runner with `k:` keys, grouped by what the phrase *does* —
    agreeing, refusing, repairing a conversation that has come apart,
    buying the thing, holding the floor. `dueQueue` takes fresh items in
@@ -545,7 +599,7 @@ drinking the school"*), and `needsObj`/`stative` (English cannot say
 ## Sor (question production)
 
 Built. Every other mode in this app answers. Sixty units of reading, 432
-sentences to produce, 330 prefabs — and almost none of it is a question. A
+sentences to produce, 331 prefabs — and almost none of it is a question. A
 learner who can only answer is one a conversation stops dead with, because
 the other person eventually runs out of things to ask.
 
@@ -1268,12 +1322,16 @@ it**, because the written form is the one the learner will read.
    voice said the written form, and transcribing it is the exercise. The
    Atasözleri judge does not either: a fixed saying is a fixed string.
    It is a short word list (`SP_WORDS`) plus two rules regular enough to
-   trust: the future (*-AcAğIm → -IcAm*, and *-mAyAcAğIm → -mIcAm*) on
-   consonant stems only, because vowel stems (*okuyacağım*) are said
-   several ways and a guess is worse than a miss; and the dropped r of
+   trust: the future (*-AcAğIm → -IcAm*, and *-mAyAcAğIm → -mIcAm*); and
+   the dropped r of
    *-Iyor*, which must follow a vowel so *yorgun* is left alone. Nothing
    in it can make a wrong word right: a spoken form only ever becomes a
    word the answer already has, and the callers require equality.
+   Vowel stems were left out at first, because *okuyacağım* is said
+   several ways and a guess is worse than a miss; the native speaker's
+   pass supplied the forms (*okuycam*, *bekliycem* / *beklicem*,
+   *söyliycem* / *söylicem*, *yiycem*), and they are accepted when typed
+   but never offered, since even he wrote them as approximations.
 3. **A casual group in the chunk bank**, appended as the append-only
    rule requires: *naber, aynen, hadi ya, ne alaka, hayırdır, eyvallah,
    bi dakka, abi bakar mısın*, twenty-three in all, each English prompt
@@ -1297,7 +1355,13 @@ on one without, and the acceptance and its message in both modes.
 Nineteen guards, each confirmed to fail on a deliberate breakage.
 
 This is the part of the app where the author's Turkish is least safe
-to trust unchecked, so it wants a native speaker's pass before it grows.
+to trust unchecked, so it had a native speaker's pass (v3.61): all 95
+items were sent as one review page, and 90 came back natural as written.
+The changes were two glosses (*abi, bakar mısın* is "excuse me,
+brother", not "mate"), a subtler note on *abi / abla / hocam / efendim*,
+*pardon* before *bakar mısınız* — which is less usual alone — and the
+vowel-stem futures above. New spoken material should go the same way
+before it ships.
 
 ### Başka türlü (the other ways to say it)
 

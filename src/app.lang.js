@@ -519,6 +519,19 @@ function spokenForms(w){
     else if(end==="ksin"){out.push(st+"n");out.push(st+"ksin");}
     else out.push(st+"k");
   }
+  /* On a vowel stem the future is said several ways, and these are the
+     ones a native speaker checked: okuyacağım → okuycam, bekleyeceğim →
+     bekliycem or beklicem, söyleyeceğim → söyliycem or söylicem,
+     yiyeceğim → yiycem. The stem's last a/e rises before the y; a stem
+     ending in a/e may also drop that vowel (beklicem, başlıcam). First
+     person only, where the checked forms are, and accepted when typed
+     but never offered: the spelling of these is approximate even to the
+     people who say them. */
+  else if((m=/^(.*[aeiou])y(e|a)c(e|a)gi(m|z)$/.exec(w))&&m[1].length>=2){
+    const s=m[1], A=m[3], end=m[4];
+    out.push(s.slice(0,-1)+(/[ae]$/.test(s)?"i":s.slice(-1))+"yc"+A+end);
+    if(/[ae]$/.test(s)&&s.length>=3)out.push(s.slice(0,-1)+"ic"+A+end);
+  }
   /* -yor loses its r before a consonant or at the end: geliyom, geliyosun,
      geliyo, geliyodum. -Iyor always follows a vowel, which keeps yorgun out. */
   if((m=/^(.*[aeiou])yor(.*)$/.exec(w))){
@@ -543,6 +556,8 @@ function spokenToward(typed,answer){
       if(A.indexOf(t)>-1){out.push(t);return;}
       const lex=SP_WORDS[t];
       if(lex){out.push.apply(out,lex);hit=true;return;}
+      const bs=/^(hic)?bisey(.+)$/.exec(t);
+      if(bs){out.push(bs[1]?"hicbir":"bir","sey"+bs[2]);hit=true;return;}
       const w=A.find(function(a){return spokenForms(a).indexOf(t)>-1;});
       if(w){out.push(w);hit=true;return;}
       out.push(t);
@@ -574,8 +589,10 @@ function spokenWord(w){
     const lv=(m[1].match(/[aeıioöuü]/g)||["e"]).pop();
     const v={a:"ı",ı:"ı",e:"i",i:"i",o:"u",u:"u",ö:"ü",ü:"ü"}[lv];
     const st=m[1]+v+"c"+m[3], e=m[4];
-    /* 2nd person keeps its -sIn when offered: kalıcan is between friends. */
-    return e==="k"?st+"k":e[0]==="k"?st+e:/m$/.test(e)?st+"m":st+"z";
+    /* 2nd person keeps its -sIn when offered: kalıcan is between friends.
+       Bare -AcAk is never offered: it is also the participle and the noun,
+       and gelecek ay (next month) is not said gelicek ay. */
+    return e==="k"?null:e[0]==="k"?st+e:/m$/.test(e)?st+"m":st+"z";
   }
   return SP_SAY[w]||null;
 }
@@ -590,9 +607,11 @@ function spokenOf(text){
   const out=[]; let changed=false;
   for(let i=0;i<parts.length;i++){
     const p=parts[i], q=parts[i+1];
-    const two=q&&!p.post&&SP_SAY2.find(function(x){return x[0]===p.low&&x[1]===q.low;});
+    /* şey keeps its endings: bir şeyi is bişeyi, bir şeyler bişeyler. */
+    const two=q&&!p.post&&SP_SAY2.find(function(x){
+      return x[0]===p.low&&(x[1]===q.low||(x[1]==="şey"&&q.low.indexOf("şey")===0));});
     if(two){
-      let s=two[2]; if(p.cap)s=capTR(s);
+      let s=two[2]+q.low.slice(two[1].length); if(p.cap)s=capTR(s);
       out.push(p.pre+s+q.post); changed=true; i++; continue;
     }
     const sw=p.low?spokenWord(p.low):null;

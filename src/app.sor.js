@@ -143,5 +143,5 @@ function renderSor(){
   });
   h+='</div>';
   h+='<p class="foot">Questions are built fresh every time, so they cannot be recalled — only formed.<br>What comes back is the question word you were weak at, not a sentence you happened to miss.</p></div>';
-  app().innerHTML=h;
+  paint(h);
 }

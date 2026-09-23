@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.60";
+const APP_VERSION="v3.61";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -185,7 +185,7 @@ function voiceHelp(){
 if(ttsOK()){try{
   speechSynthesis.onvoiceschanged=function(){
     VOICE.ready=true;
-    const e=document.getElementById("vnote"); if(e)e.innerHTML=voiceNoteInner();
+    const e=document.getElementById("vnote"); if(e)e.innerHTML=enUnder(voiceNoteInner());
   };
   speechSynthesis.getVoices();   /* Chrome loads the list lazily, on first ask */
 }catch(e){}}
@@ -351,11 +351,151 @@ function themeIcon(){
   const dark=cur?cur==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;
   return dark?IC.sun:IC.moon;
 }
+/* ===================== İngilizcesi · English under the Turkish ===================== */
+/* The interface is Turkish, which is right for the learner the course is
+   making and hard on the one it starts with: Başla, Devam and Kontrol et
+   mean nothing on day one. Until A2 is complete every instruction carries
+   its English underneath, small and faint, and the EN button in the top
+   bar turns it off or back on. The learner's choice is stored (S.en); with
+   no choice made it follows the level, the same line tipsOn() uses.
+
+   It is one table and one pass, not markup at every call site: paint()
+   runs each screen through enUnder() on its way to the page, and the pass
+   touches only the first run of text inside an interface element (a
+   button, a section heading, a prompt, a lead line), and only when that
+   text is a key below. Course content never matches because it is never
+   looked up — a passage word that happened to equal a key would have to
+   sit in one of those elements to be glossed, and passages do not. The
+   English always goes into the page; the toggle is a class on <html>, so
+   switching it redraws nothing and cannot lose a half-typed answer.
+
+   Two kinds of label. A bare Turkish one (Başla) is looked up in EN_UI.
+   One already written "Türkçe · english" keeps its Turkish and has the
+   English moved underneath, but only when the English half is listed in
+   EN_INLINE — the half after a · is sometimes Turkish (bu oturum) or
+   content (a vocabulary gloss), and guessing which is how a vocabulary
+   answer would vanish when the toggle is off. sim.js fails on an
+   interface label with an unlisted English half, so a new one gets
+   decided rather than left to chance. */
+const EN_UI={
+ "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
+ "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
+ "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",
+ "Tekrara başla":"start reviewing","Kartlarla çalış":"study with flashcards","Çevir":"turn the card",
+ "Göster":"show","Şimdi göster":"show it now","Zor":"hard","İyi":"good","Kolay":"easy","Doğru":"right","Yanlış":"wrong",
+ "İngilizceyi de seslendir":"read the English aloud too","Sondan başa kur":"build it from the end",
+ "Anlattım":"I told it","Yine de anlattım":"I told it anyway","Anladım":"I understood","Anlamadım":"I didn’t understand",
+ "Bir daha":"once more","Vazgeç":"cancel","Kaydet":"save","Kaydetmeden çık":"leave without saving",
+ "Hepsini sil":"delete them all","Ekle ve tekrara al":"add it and review it","Yedeği al":"download a backup",
+ "Geri yükle":"restore a backup","Tüm ilerlemeyi sil":"delete all progress","Yedekle":"back up","Sıfırla":"reset",
+ "Defteri temizle":"clear the book",
+ /* tabs, filters and settings */
+ "Kelimeler":"words","Dilbilgisi":"grammar","Okuma":"reading","Alıştırma":"exercises",
+ "Bu ünite":"this unit","Tümü":"all","Tamamlanan":"finished","Ders":"course","Çekirdek":"core","Benim":"mine",
+ "İsim":"noun","Fiil":"verb","Sıfat":"adjective","Zarf":"adverb","Edat":"postposition","İfade":"expression",
+ "seviyeye göre":"by level","üniteye git":"go to the unit","artık biliyorum ×":"I know it now","düzenle":"edit","biliyorum":"I know it",
+ /* the modes, where a name is also an instruction */
+ "Üretim":"production","Dinleme":"listening","Diyalog":"conversation","Tekrar":"again","Tekrar motoru":"repetition engine",
+ "Kendi kelimelerim":"my own words","Sözlüğüm":"my saved words","Atasözleri ve deyimler":"proverbs and idioms",
+ "Kurma ve Dönüştürme":"build and change",
+ /* section headings */
+ "Bugün":"today","Çalış":"study","Ayarlar":"settings","Konular":"topics","Seviyeler":"levels","Başlarken":"getting started",
+ "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","İleri test":"test ahead","Üç kez anlat":"say it three times",
+ "Karşılaşma sayısı":"times met","Nerede zayıfsın":"where you are weak","Son hatalar":"recent mistakes","Ekle":"add",
+ "Listem":"my list","Düzenle":"edit","Soru kelimeleri":"question words","Şekiller":"shapes","Durumlar":"situations",
+ "Tamir çantası":"repair kit","Anlamadıysan":"if you did not catch it","Ne konuşuldu":"what was said",
+ "Nasıl işaretlenir":"how it is marked","Cümleler":"sentences","Kalıplar":"set phrases",
+ /* prompts and states */
+ "Seç":"choose","Boşluğu doldur":"fill the gap","Cümleyi kur":"build the sentence","Duy":"listen",
+ "Evet / hayır":"yes / no","Seviye sınavı":"placement test","Geçtiniz":"you passed",
+ "Biraz daha çalışmak gerek":"a little more work needed","Önerilen başlangıç seviyesi":"suggested starting level",
+ "Tamamlandı":"completed","Yarıda kaldı":"left unfinished","Bugünlük bitti":"done for today","Bugünlük bu kadar":"that is all for today",
+ "Defter boş":"the book is empty","Henüz dilbilgisi yok":"no grammar yet","Ses yok":"no sound",
+ "Üç kez anlatıldı ✓":"told three times","Bu aramaya uygun kelime yok.":"no word matches this search",
+ "Henüz kendi kelimen yok.":"you have not added a word yet","5 dakika":"5 minutes","10 dakika":"10 minutes",
+ "Sor · soru sözcükleri":"ask · question words","Sor · evet/hayır":"ask · yes or no",
+ "kelime gözden geçirildi":"words gone over","Kalıp · günlük konuşma":"set phrase · everyday speech",
+ "senin cevabın":"your answer","Ses önce":"audio first","Söz":"sayings","Sayılar":"numbers","hazır":"ready"
+};
+/* Labels with a number or a name in them. */
+const EN_RULES=[
+ [/^(.+) ile başla$/,m=>"start with "+m[1]],
+ [/^(\d+) soru$/,m=>m[1]==="1"?"1 question":m[1]+" questions"],
+ [/^(\d+) basamak$/,m=>m[1]+" digits"],
+ [/^(\d+) kelime$/,()=>"words"],
+ [/^(\d+) kelime · bu oturum$/,()=>"words this sitting"],
+ [/^(\d+) konu · bu oturum$/,()=>"grammar points this sitting"],
+ [/^(\d+) kelime gözden geçirildi$/,()=>"words gone over"],
+ [/^(\d+) kelime bugün hâlâ bekliyor\.$/,()=>"still waiting today"],
+ [/^(A1|A2|B1|B2|C1|C2) seviye sınavı$/,m=>m[1]+" level test"],
+ [/^Atasözleri · (\d+) hazır$/,m=>"proverbs · "+m[1]+" ready"],
+ [/^Deyimler · (\d+) hazır$/,m=>"idioms · "+m[1]+" ready"],
+ [/^Kaydet · (\d+) kaçtı$/,m=>"save · "+m[1]+" got away"],
+ [/^(\d+) kelime · (\d+) bugün$/,()=>"words · today"],
+ [/^Zor: bugün tekrar · İyi: (\d+) gün sonra$/,m=>"hard: again today · good: in "+m[1]+(m[1]==="1"?" day":" days")],
+ [/^(Tümü|İsim|Fiil|Sıfat|Zarf|Edat|İfade) (\d+)$/,m=>EN_UI[m[1]]]
+];
+/* English halves already written inline after a ·, moved underneath. */
+const EN_INLINE=[
+ "say it three times","the rest","hide this","show the pattern","read the point again","mine was right too",
+ "stop and mark","drill these","review them","walk away","place me","hide on the home screen","mine is said too",
+ "how to add one","ten more","where to","caught you twice or more","speaking","listening","bringing it back","words",
+ "how it is said","listening and shadowing","the review queue","what the course teaches once","produce the pattern",
+ "listening without the text","saying it first","asking","keeping it alive","said whole","numbers at speed",
+ "your own words","the mistake book","hands-free","how many words","the texts","back up",
+ "build it","change it","the gap","where sentences come from","write what you hear","audio first","listening speed",
+ "replays allowed","the model’s speed","ask the question","write the digits","read it out","how high","the bar",
+ "no Turkish voice","no speech","out loud now","say it out loud now","the speaking task","your own marking",
+ "marked by the app","recalled","covered","words reviewed","produced","produced exactly","listen","spoken form",
+ "other ways to say it","why",
+ "make it negative","change it to “he”","turn it into a question","change it to “we”","put it in the future",
+ "put it in the past","ask the question this answers","make it a yes-no question",
+ "say it","backward buildup","then say whether it landed","recall it","type what you hear","read it out loud",
+ "say it, then tap it","type what they said","what do you say?","which idiom?","show the answer",
+ "between friends","with anyone","make it positive","proverb","idiom"
+];
+const EN_EL=/^(button|h2|p|div|span)$/, EN_CLS=/\b(btn|sec|lead|qn|sub|pill|big|empty|tiny|sbtn|tab)\b/,
+      EN_SKIP=/\b(opt|tile|icon-btn|spd|vtr|ven|gw|dw|mark|tr|nav-t|lvl-badge|bar-title|block-t|block-e|unit-s|unit-t|gl)\b/;
+function enOf(t){
+  if(EN_UI[t])return {tr:t,en:EN_UI[t]};
+  for(const r of EN_RULES){const m=r[0].exec(t); if(m){const e=r[1](m); if(e)return {tr:t,en:e};}}
+  const i=t.lastIndexOf(" · ");
+  if(i>0){const en=t.slice(i+3);
+    if(EN_INLINE.indexOf(en)>=0||/^add (it|these \d+) to my reviews$/.test(en))return {tr:t.slice(0,i),en:en};}
+  return null;
+}
+/* Entities are decoded for the lookup and the text written back escaped,
+   so a key never has to be spelt in HTML. */
+function enUnder(h){
+  return h.replace(/<(button|h2|p|div|span)\b([^>]*)>([^<]+)(?=<)/g,function(all,tag,attr,text,at){
+    /* Already carries its English — a tab's <i>, a title's <small>. */
+    const next=h.substr(at+all.length,7);
+    if(next.indexOf("<i>")===0||next.indexOf("<small>")===0)return all;
+    const c=/class="([^"]*)"/.exec(attr); const cls=c?c[1]:"";
+    if(tag!=="button"&&!EN_CLS.test(cls))return all;
+    if(EN_SKIP.test(cls))return all;
+    const t=text.trim(); if(!t)return all;
+    const raw=t.replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+    const g=enOf(raw); if(!g)return all;
+    const lead=text.slice(0,text.indexOf(t[0]));
+    return '<'+tag+attr+'>'+lead+esc(g.tr)+'<span class="gl">'+esc(g.en)+'</span>';
+  });
+}
+function enOn(){return S.en===undefined?lvPct("A2")<100:!!S.en;}
+function enApply(){try{document.documentElement.classList.toggle("noen",!enOn());}catch(e){}}
+function toggleEN(){S.en=!enOn(); save(); enApply();
+  document.querySelectorAll(".en-btn").forEach(function(b){b.setAttribute("aria-pressed",String(enOn()));});}
+function enBtn(){return '<button class="icon-btn en-btn" onclick="toggleEN()" aria-pressed="'+enOn()+'" aria-label="English under the Turkish">EN</button>';}
+function paint(h){enApply(); app().innerHTML=enUnder(h);}
+
 function bar(title,sub,showHome){
   return '<div class="bar"><div class="bar-in">'+
    '<button class="icon-btn" onclick="back()" aria-label="Back">'+IC.back+'</button>'+
    (showHome?'<button class="icon-btn" onclick="home()" aria-label="Home">'+IC.home+'</button>':'')+
    '<div class="bar-title">'+esc(title)+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'+
+   enBtn()+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button>'+
    '</div>'+saveWarn()+'</div>';
 }

@@ -149,7 +149,7 @@ function renderMine(){
     h+='<div class="empty">Henüz kendi kelimen yok.<br>Add the first one above.</div>';
   }
   h+='<p class="foot">These ride the starred-word queue, not Tekrar motoru.<br>That engine counts how often the course itself uses a word, and a word you brought has no count to improve.</p></div>';
-  app().innerHTML=h;
+  paint(h);
   const box=document.getElementById("mtr");
   if(box){
     box.addEventListener("keydown",function(ev){if(ev.key==="Enter")ed?mineSave(MW):mineAdd();});

@@ -29,6 +29,8 @@ let lastPaint = env.lastHTML();             /* the app paints once while booting
 
 const UNITS = ev("UNITS"), LEVELS = ev("LEVELS"), PLACEMENT = ev("PLACEMENT");
 const q = s => JSON.stringify(s);
+/* A label's English as enUnder() writes it, under the Turkish. */
+const GL = en => '<span class="gl">' + en + '</span>';
 
 /* Every paint is inspected as it happens. */
 const BAD = /undefined|\bNaN\b|\[object Object\]/;
@@ -40,9 +42,46 @@ function screenKey() {
   if (v.view === "quiz") { const Q = ev("Q") || {}; return "quiz:" + Q.mode + ":" + (Q.u || Q.lv || ""); }
   return v.view || "?";
 }
+/* The English layer (enUnder in app.core.js). Two things hold on every
+   paint. Content is never glossed: an answer option, a tile, a vocabulary
+   pair or a passage word that carried the English underneath would give
+   the answer away with the toggle on, and lose it with the toggle off.
+   And no interface label is left written "Türkçe · english" with an
+   English half the table does not list: each one is a decision about
+   whether the half after the · is English at all, so a new label has to
+   be decided rather than left inline. EN_TAIL_OK is the reviewed list of
+   halves that stay where they are — Turkish, a count, or content. */
+const GLOSSED_CONTENT = /<(?:button|span|div|p) class="(?:opt|tile|vtr|ven|gw|dw)\b[^"]*"[^>]*>[^<]*<span class="gl">/;
+const EN_TAIL_OK = new Set([
+  "soru", "gibi"   /* Turkish: two A1–A2 grammar titles, Bu, şu, o · çoğul · soru and daha · en · kadar · gibi */
+]);
+const enLoose = new Map();
+let EN_CLS_RE = null, EN_SKIP_RE = null;
+function enScan(h) {
+  if (!EN_CLS_RE) { EN_CLS_RE = new RegExp(ev("EN_CLS.source")); EN_SKIP_RE = new RegExp(ev("EN_SKIP.source")); }
+  if (GLOSSED_CONTENT.test(h)) fails.push("content carries the English layer: " + h.slice(Math.max(0, h.search(GLOSSED_CONTENT)), h.search(GLOSSED_CONTENT) + 90));
+  for (const m of h.matchAll(/<(button|h2|p|div|span)\b([^>]*)>([^<]+)(?=<)/g)) {
+    const c = /class="([^"]*)"/.exec(m[2]), cls = c ? c[1] : "";
+    if (m[1] !== "button" && !EN_CLS_RE.test(cls)) continue;
+    if (EN_SKIP_RE.test(cls)) continue;
+    /* Only elements that never hold course content: a sub line, a tiny
+       tag or a word pill can carry a vocabulary gloss or a generated
+       word, which would make this depend on what the run happened to
+       draw. Those are still glossed; they are just not policed here. */
+    if (m[1] !== "button" && m[1] !== "h2" && !/\b(lead|pill|empty|big)\b/.test(cls)) continue;
+    if (/\bpill\b/.test(cls) && m[1] === "span") continue;
+    if (h.substr(m.index + m[0].length, 17) === '<span class="gl">') continue;
+    const t = m[3].trim(), i = t.lastIndexOf(" · ");
+    if (i < 0) continue;
+    const tail = t.slice(i + 3);
+    if (!/^[a-z][a-z0-9 ,’'“”?()\/-]*$/.test(tail) || /[çğıöşü]/.test(tail) || EN_TAIL_OK.has(tail)) continue;
+    enLoose.set(tail, t);
+  }
+}
 appEl._onpaint = h => {
   screens++; lastPaint = h;
   seenScreens.add(screenKey());
+  if (h) enScan(h);
   if (!h || h.length < 40) { if (paintErrors++ < 6) fails.push("empty screen painted: " + q(ev("V")).slice(0, 80)); }
   else if (BAD.test(h)) { if (paintErrors++ < 6) fails.push("screen leaks " + BAD.exec(h)[0] + " at " + q(ev("V")).slice(0, 80) + " · " + h.slice(Math.max(0, h.search(BAD) - 60), h.search(BAD) + 40)); }
 };
@@ -476,7 +515,7 @@ step("üretim · chunks", () => {
      correct once. */
   ok(ev("CHUNKS.length") >= 300, "the chunk bank is only " + ev("CHUNKS.length") + " deep");
   ev("wipe()"); ev("go('prod')");
-  const card = /Kalıplar<\/p><p class="sub">([^<]*)/.exec(lastPaint);
+  const card = /Kalıplar(?:<span class="gl">[^<]*<\/span>)?<\/p><p class="sub">([^<]*)/.exec(lastPaint);
   ok(!!card, "the Kalıplar card is gone");
   ok(card && card[1].indexOf(ev("SESSION") + " in this sitting") > -1,
      "the chunk card offers the backlog rather than the sitting: " + (card ? card[1].slice(-70) : ""));
@@ -559,7 +598,8 @@ step("dönüştürme · transformations", () => {
   ok(ev("PR.q.every(function(i){return !!i.given&&!!i.instr})"), "a transformation has no sentence to transform");
   ok(ev("PR.q.every(function(i){return i.given!==i.tr})"), "a transformation does not change the sentence");
   ok(lastPaint.includes(esc(ev("PR.q[0].given"))), "the sentence to transform is not on screen");
-  ok(lastPaint.includes(esc(ev("PR.q[0].instr"))), "the instruction is not on screen");
+  { const [itr, ien] = ev("PR.q[0].instr").split(" · ");
+    ok(lastPaint.includes(esc(itr) + GL(ien)), "the instruction is not on screen"); }
   for (let i = 0; i < n; i++) produce(true);
   ok(phase() === "end", "transformation session did not finish");
   ok(ev("Object.keys(S.prod).every(function(k){return k.indexOf('t:')===0})"), "transformation grading wrote a non-move key");
@@ -1110,7 +1150,7 @@ step("grammar comes back, and is produced rather than recognised", () => {
      notes, and says who each form is for. A unit without notes shows none. */
   ok(!/Konuşurken/.test(lastPaint), "b2u1 has no spoken notes, and a card was drawn anyway");
   ev("go('unit','a1u5','g')");
-  ok(/Konuşurken · how it is said/.test(lastPaint), "a1u5's spoken notes are not on its grammar tab");
+  ok(lastPaint.includes("Konuşurken" + GL("how it is said")), "a1u5's spoken notes are not on its grammar tab");
   ok(/Napıyorsun/.test(lastPaint) && /between friends/.test(lastPaint) && /with anyone/.test(lastPaint),
      "the notes do not show the form and who it is for");
   ev("delete S.seen.a1u5; save()");     /* looking was not meeting, for what follows */
@@ -2543,8 +2583,8 @@ step("araçlar · every tool is still reachable", () => {
      Assert the HEADING, not the word: "Tekrar" also appears in the row
      "Tekrar motoru", so a bare word check held however the headings were
      renamed. Second time that trap has come up in this file. */
-  ['Konuşma · speaking', 'Dinleme · listening', 'Tekrar · bringing it back',
-   'Kelimeler · words', 'Kurs'].forEach(g => {
+  ['Konuşma' + GL('speaking'), 'Dinleme' + GL('listening'), 'Tekrar' + GL('bringing it back'),
+   'Kelimeler' + GL('words'), 'Kurs' + GL('the course')].forEach(g => {
     ok(lastPaint.includes('class="sec">' + g + '</h2>'), "Araçlar has no " + g + " heading");
   });
   const heads = (lastPaint.match(/class="sec">/g) || []).length;
@@ -2796,7 +2836,7 @@ step("ses · the three voice states, each said where it matters", () => {
   /* The stub keeps innerHTML only on elements it was set on, so a note
      painted with the screen is read from the paint, and the element is
      read only where the app pokes it. */
-  const NOTR = "Türkçe ses yok · no Turkish voice", NONE = "Ses yok · no speech";
+  const NOTR = "Türkçe ses yok" + GL("no Turkish voice"), NONE = "Ses yok" + GL("no speech");
   const empty = () => lastPaint.includes('<div id="vnote"></div>');
   ev("S.done={};S.seen={};save()");
 
@@ -2972,6 +3012,56 @@ step("sık · ten common words a day, into the ordinary reviews", () => {
 /* ===================== report ===================== */
 console.log("sim: " + seenScreens.size + " distinct screens · " + screens + " paints · " +
   checks + " checks · " + voice.said + " utterances · " + voice.cancels + " stops");
+/* ===================== İngilizcesi · English under the Turkish ===================== */
+step("english layer", () => {
+  const html = () => ev("document.documentElement.classList.contains('noen')");
+  /* Day one: on, with no choice made. wipe() keeps S.en like any setting,
+     so it is cleared by hand first or this inherits an earlier step. */
+  ev("delete S.en; wipe(); home()");
+  ok(ev("S.en") === undefined && ev("enOn()") === true, "a fresh install does not start with the English on");
+  ok(!html(), "the English is hidden on day one");
+  ok(lastPaint.includes('Başla' + GL('start')), "day one's Başla has no English under it");
+  ok(lastPaint.includes('class="icon-btn en-btn"'), "the home bar has no EN toggle");
+  ev("go('araclar')");
+  ok(lastPaint.includes('class="icon-btn en-btn"'), "a screen bar has no EN toggle");
+  /* The toggle is a class, not a redraw: a redraw would empty a half-typed answer. */
+  const before = screens;
+  ev("toggleEN()");
+  ok(screens === before, "turning the English off redrew the screen");
+  ok(html() && ev("S.en") === false, "turning the English off did not hide it");
+  ok(store.get("turkce-course-v1").indexOf('"en":false') >= 0, "turning the English off was not saved");
+  ev("wipe()");
+  ok(ev("S.en") === false && ev("enOn()") === false, "wiping progress threw away the English setting");
+  ev("toggleEN()");
+  ok(!html() && ev("S.en") === true, "turning the English back on did not show it");
+  /* With no choice made it follows the level: gone once A2 is complete, the
+     tipsOn() line — and a choice made after that still wins. */
+  ev("delete S.en; unitsOf('A1').concat(unitsOf('A2')).forEach(function(u){S.done[u.id]={score:5,of:5,at:1}}); home()");
+  ok(ev("enOn()") === false && html(), "the English is still on after A2 is complete");
+  ev("toggleEN()");
+  ok(ev("enOn()") === true && !html(), "the learner cannot bring the English back after A2");
+  ev("delete S.en; wipe(); home()");
+  /* The pass itself, by construction rather than by whatever a run drew. */
+  const EU = x => ev("enUnder(" + q(x) + ")");
+  ok(EU('<h2 class="sec">Konuşma · speaking</h2>') === '<h2 class="sec">Konuşma' + GL('speaking') + '</h2>',
+     "an inline English half is not moved underneath");
+  ok(EU('<h2 class="sec">Kurs · the kitchen</h2>') === '<h2 class="sec">Kurs · the kitchen</h2>',
+     "an English half the table does not list was moved");
+  ok(EU('<p class="lead">3 soru</p>') === '<p class="lead">3 soru' + GL('3 questions') + '</p>', "a counted label is not glossed");
+  ok(EU('<button class="btn">Tekrara ekle · add these 7 to my reviews</button>') ===
+     '<button class="btn">Tekrara ekle' + GL('add these 7 to my reviews') + '</button>', "a counted inline half is not moved");
+  ok(EU('<button>Kelimeler<i>words</i></button>') === '<button>Kelimeler<i>words</i></button>',
+     "a label that already carries its English got a second copy");
+  ok(EU('<p class="sub">Doğru</p><p>Başla</p>') === '<p class="sub">Doğru' + GL('right') + '</p><p>Başla</p>',
+     "the pass reaches beyond the interface elements");
+  ["opt", "tile", "vtr", "ven", "gw", "dw", "mark", "nav-t"].forEach(c => {
+    const x = '<span class="' + c + ' lead">Başla</span>';
+    ok(EU(x) === x, "content of class " + c + " was glossed");
+  });
+});
+
+ok(enLoose.size === 0, "interface labels with an English half EN_INLINE does not list — add it there, or to EN_TAIL_OK if it is not English: " +
+   [...enLoose.keys()].map(q).join(", "));
 if (fails.length) {
   fails.slice(0, 40).forEach(f => console.error("  FAIL " + f));
   if (fails.length > 40) console.error("  … and " + (fails.length - 40) + " more");
