@@ -2235,6 +2235,51 @@ step("bugün · the step list folds, the instruction does not", () => {
   ok(!lastPaint.includes('class="unit"'), "the plan did not fold back");
 });
 
+step("nasıl çalışır · open while it is instruction, folded once it is reference", () => {
+  /* Same rule that already decides WHERE the card sits: above the plan
+     while nothing has been met, below it afterwards. On day one it is
+     the only thing telling a learner what any of this is. */
+  /* wipe() keeps settings, and S.tips is one — an earlier step in this
+     file retires the card, so it has to be set back explicitly. Same
+     trap CLAUDE.md records for pscope. */
+  ev("wipe()"); ev("S.tips=true;save()"); ev("TIPSOPEN=null"); ev("home()");
+  ok(/Every label is Turkish/.test(lastPaint),
+     "day one folded away the only thing explaining the app to a beginner");
+  ok(lastPaint.includes("tipsToggle()"), "the orientation card has no fold control");
+
+  /* One unit opened is "you have been told" — it folds to its own line. */
+  ev("go('unit','a1u1','v')"); ev("S.tips=true;save()"); ev("TIPSOPEN=null"); ev("home()");
+  ok(!/Every label is Turkish/.test(lastPaint),
+     "the orientation card is still unfolded after something has been met");
+  ok(/Nasıl çalışır/.test(lastPaint), "the orientation card vanished rather than folding");
+  ok(lastPaint.includes("tipsToggle()"), "the folded card offers no way to open it");
+
+  /* And a tap opens it, from either side. */
+  ev("tipsToggle()");
+  ok(/Every label is Turkish/.test(lastPaint), "tapping did not unfold the card");
+  ok(lastPaint.includes("go('nasil')"), "the unfolded card cannot reach the full text");
+  ok(lastPaint.includes("hideTips()"), "the unfolded card cannot be dismissed for good");
+  ev("tipsToggle()");
+  ok(!/Every label is Turkish/.test(lastPaint), "the card did not fold back");
+
+  /* Gizle still retires it outright, and that IS stored — it is a
+     setting, unlike the fold. */
+  ev("hideTips()");
+  ok(!/Nasıl çalışır/.test(lastPaint), "Gizle did not retire the card");
+  ok(store.get("turkce-course-v1").indexOf('"tips":false') >= 0,
+     "Gizle did not persist — it is a setting, not a fold");
+});
+
+step("nasıl çalışır · the fold is not stored, and does not duplicate the plan", () => {
+  ev("wipe()"); ev("go('unit','a1u1','v')"); ev("TIPSOPEN=null"); ev("S.tips=true;save()");
+  ev("home()"); ev("tipsToggle()");
+  ok(store.get("turkce-course-v1").indexOf("TIPSOPEN") < 0, "the fold state reached localStorage");
+  /* Two identical primary actions on one screen is the wall in
+     miniature: the plan directly below already starts the same unit. */
+  const starts = (lastPaint.match(/ile başla/g) || []).length;
+  ok(starts <= 1, "the landing page offers " + starts + " identical start buttons");
+});
+
 step("bugün · one instruction is not a list, so day one does not fold", () => {
   ev("wipe()"); ev("PLANOPEN=false"); ev("home()");
   ok(ev("planToday().steps.length") === 1, "day one should be a single step");

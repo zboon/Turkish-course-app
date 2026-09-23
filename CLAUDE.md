@@ -236,7 +236,10 @@ same reason a unit id is.
 id, and `n` counts completions — it counts nothing else, deliberately; see
 Diyalog below. Because `wipe()` keeps
 `pscope`, a test that wipes still inherits whatever scope ran before it —
-set it explicitly when the default is what is under test.
+set it explicitly when the default is what is under test. `tips` is the
+same hazard and has now bitten once: a step that wiped and expected the
+orientation card inherited `tips:false` from an earlier step that had
+retired it, and every assertion about the card failed at once.
 
 **Unit ids are permanent.** Everything above is keyed to them, so renaming
 `b1u3` silently wipes that unit's progress for every existing learner. Add
@@ -1135,6 +1138,19 @@ while nothing has been met, below it afterwards. It retires itself once A2
 is complete, `Gizle` ends it early, and About offers it back. It exists
 because the interface is Turkish-labelled and a beginner has no way to know
 that an empty Tekrar is by design rather than broken.
+
+It folds on the same rule that decides where it sits: **open while it is
+instruction, folded once it is reference.** On day one it is the only
+thing telling a learner what any of this is, so it is open; once a single
+unit has been opened they have been told, and it collapses to its own
+line. `TIPSOPEN` starts `null` meaning "whatever that rule says" and only
+pins a value once the learner has actually tapped it — and like the
+plan's fold it is a module variable, never stored. `Gizle` is different
+and *is* stored: retiring the card is a setting, folding it is not.
+
+The card also lost its "start the first unit" button. The plan sits
+directly below it pointing at the same unit, and two identical primary
+actions on one screen is the wall in miniature.
 
 
 The last step absorbed the old resume card: mid-unit it returns to the exact

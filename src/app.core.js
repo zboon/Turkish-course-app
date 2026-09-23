@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.51";
+const APP_VERSION="v3.52";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";

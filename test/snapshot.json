@@ -1,5 +1,5 @@
 {
- "home": "5c2ac565dd490436",
+ "home": "b83d28a3b29ddd12",
  "dersler": "58c2f39d4a3542c4",
  "araclar": "8f9897988e51a126",
  "nasil": "0d8ba01db232c2bf",
@@ -249,7 +249,7 @@
  "unit:c2u10:g": "065f66bc8771f0ad",
  "unit:c2u10:r": "d5ecb975f359a326",
  "unit:c2u10:d": "ad4f8d04a8c7b5d4",
- "about": "90aa8e4fd911784a",
+ "about": "e683a410843591b8",
  "words:empty": "29637dd080de7b22",
  "dict": "b8e4f5f3a6526304",
  "dict:n": "21b1b484c5ca4911",
@@ -340,13 +340,15 @@
  "mine": "e21358387d2e9db9",
  "mine:editing": "93a35e1ff5a608ac",
  "dict:src:mine": "2b0f146d7c45ef8c",
- "home:plan": "f3bb6a621fec6759",
- "home:plan:resume": "498bb6fb895ccaff",
+ "home:plan": "e8cb1abc89f99722",
+ "home:tips-folded": "e8cb1abc89f99722",
+ "home:tips-open": "16db0b4159bd135e",
+ "home:plan:resume": "cdb798ba3642bdcf",
  "home:tips-hidden": "798556ae51d9e5f9",
  "home:plan:open": "af5b2b2077419d14",
  "dersler:underway": "58c2f39d4a3542c4",
  "araclar:underway": "8f9897988e51a126",
- "about:tips-hidden": "9e3c32543907608d",
+ "about:tips-hidden": "b528d056b083b8d2",
  "words:full": "7fcd7929e483c294",
  "cards": "f45c9d8b31c853e8",
  "cards:flip": "0f71e44731bb8c19",
@@ -357,5 +359,5 @@
  "retell": "166a324284abd246",
  "__pure": "4d3303857e21e992",
  "__pureForms": 2432,
- "__screens": 356
+ "__screens": 358
 }
