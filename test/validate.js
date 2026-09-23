@@ -336,7 +336,8 @@ let spokenChecked = 0;
    ["Bu bi kitap", "Bu bir kitap."], ["bişey", "bir şey"], ["hiçbişey", "hiçbir şey"], ["Napıyorsun?", "Ne yapıyorsun?"],
    ["napıyosun", "ne yapıyorsun"], ["n'oldu", "ne oldu"], ["napcan", "ne yapacaksın"], ["burda", "burada"],
    ["nerde", "nerede"], ["bi dakka", "bir dakika"], ["senle", "seninle"], ["Buyrun", "Buyurun"],
-   ["Öğretmen di mi", "Öğretmen, değil mi?"], ["Yarın gidicem", "Yarın gideceğim."]
+   ["Öğretmen di mi", "Öğretmen, değil mi?"], ["Yarın gidicem", "Yarın gideceğim."],
+   ["bişeyi", "bir şeyi"], ["hiçbişeyi", "hiçbir şeyi"], ["bişeyler", "bir şeyler"]
   ].forEach(([t, a]) => {
     spokenChecked++;
     const r = T(t, a);
@@ -396,7 +397,9 @@ let altChecked = 0;
   [["Yarın İstanbul'a gideceğim.", "Yarın İstanbul'a gidicem."], ["Ne yapıyorsun?", "Napıyorsun?"],
    ["Bu bir defter.", "Bu bi defter."], ["Hiçbir şey görmedim.", "Hiçbişey görmedim."], ["Ne oldu?", "N'oldu?"],
    ["Göreceğiz.", "Görücez."], ["Gelmeyeceğim.", "Gelmicem."], ["Kalacaksın.", "Kalıcaksın."],
-   ["Türkçe öğreniyorum.", null], ["Okuyacağım.", null], ["Bu kitap benim.", null], ["Saat beşte.", null]
+   ["Türkçe öğreniyorum.", null], ["Okuyacağım.", null], ["Bu kitap benim.", null], ["Saat beşte.", null],
+   ["Bir şeyi unuttum.", "Bişeyi unuttum."], ["Kazanılan bir şeymiş.", "Kazanılan bişeymiş."],
+   ["Gelecek ay geleceğim.", "Gelecek ay gelicem."], ["Yarın gidecek.", null], ["Bir şeker.", "Bi şeker."]
   ].forEach(([w, want]) => {
     altChecked++;
     const got = M.spokenOf(w);
