@@ -202,7 +202,13 @@ function retellDone(uid){
   const r=(S.retell&&S.retell[uid])||{n:0,d:dayNum()};
   r.n=Math.min(r.n+1,3);
   r.d=dayNum()+RETELL_NEXT[r.n];
-  S.retell[uid]=r;save();touchDay();render();
+  S.retell[uid]=r;save();touchDay();
+  /* Told: the short end, and the way on to the rest of Bugün. */
+  V={view:"retelldone",u:uid};window.scrollTo(0,0);render();
+}
+function renderRetellDone(){
+  const r=(S.retell&&S.retell[V.u])||{n:0};
+  endScreen({title:"Anlat",n:r.n,of:3,label:"anlatıldı · told",plan:true});
 }
 function retellReset(uid){S.retell[uid]={n:0,d:dayNum()};save();render();}
 
@@ -273,17 +279,14 @@ function renderProd(){
 function renderProdRun(){
   if(!PR){renderProd();return;}
   if(PR.phase==="end"){
+    /* A banked set can run dry; a generated one never does. Söyle, the
+       passage lines, is the Bugün step; the rest come from Araçlar. */
     const banked=PR.mode==="s"||PR.mode==="k";
-    const left=banked?prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length:0;
-    paint(bar(PR.title,"Bitti",true)+'<div class="wrap"><div class="score">'+
-      '<div class="big '+(PR.right*2>=PR.q.length?"pass":"fail")+'">'+PR.right+'/'+PR.q.length+'</div>'+
-      '<p class="sub">kendi değerlendirmen · your own marking</p></div>'+
-      '<div class="card"><p class="sub">'+(banked?tx(left+' still waiting in this set. The ones you missed come back today.',
-                                                    'Bu grupta '+left+' tane daha bekliyor. Yanlış yaptıkların bugün yeniden gelir.')
-        :tx('These are built fresh every time, so the set never runs out. What comes back is the pattern you missed.',
-            'Bunlar her seferinde yeniden kurulur, yani hiç bitmez. Geri gelen, yanlış yaptığın kalıptır.'))+'</p>'+
-      '<button class="btn" onclick="startProd(\''+PR.mode+'\')">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'prod\')">Üretim</button></div></div>');
+    const left=banked?prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length:1;
+    const sor=PR.mode==="q"||PR.mode==="e";
+    endScreen({title:PR.title,n:PR.right,of:PR.q.length,label:"kendi değerlendirmen · your own marking",
+               plan:PR.mode==="s",again:left?"startProd('"+PR.mode+"')":"",
+               hub:sor?"go('sor')":"go('prod')",hubName:sor?"Sor":"Üretim"});
     return;
   }
   const it=PR.q[PR.i];

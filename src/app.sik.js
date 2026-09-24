@@ -84,7 +84,7 @@ function renderSik(){
             'Bugünün kelimeleri tekrarlarında; yarın geri gelecekler. Günde on tane akılda tutmaya yeter; istersen daha fazlası var.')
         :tx('Every word on the list has been met. They live in your reviews now.','Listedeki her kelimeyi gördün. Artık tekrarlarında yaşıyorlar.'))+'</p>'+
      (sikRest().length?'<button class="btn ghost" onclick="sikMore()">Bir on daha · ten more</button>':'')+
-     '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
+     '</div>'+planNext()+'</div>';
     paint(h);return;
   }
   h+='<h2 class="sec">Bugün</h2><div class="card" style="padding:.3rem 1rem">';

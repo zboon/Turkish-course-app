@@ -344,10 +344,8 @@ function tkNext(){
 
 /* --- screens ---------------------------------------------------------- */
 function renderTekrar(){
-  const short=repShort().length, due=repDue().length, b=repBands();
+  const short=repShort().length, due=repDue().length;
   const total=repBank().length;
-  const bands=[["1","met once"],["2–3","thin"],["4–7","getting there"],
-               ["8–20","durable"],["21+","embedded"]];
   let h=bar("Tekrar motoru","repetition · the words the course forgets",true,"kursun unuttuğu kelimeler")+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('The course teaches '+total+
    ' words and then mostly moves on. This counts how often each one actually turns up anywhere in the app, and drills whatever it will not bring back by itself — worst served first.',
@@ -369,21 +367,9 @@ function renderTekrar(){
    (due?'<button class="btn" onclick="startTekrar()">Başla</button>'
        :'<p class="tiny">'+tx('Nothing due. The queue refills as boxes come round.','Şimdilik bekleyen yok. Sırası gelen kelimeler yeniden eklenir.')+'</p>')+'</div>';
 
-  h+='<h2 class="sec">Karşılaşma sayısı</h2><div class="card">';
-  h+='<p class="sub" style="margin-bottom:.6rem">'+tx('How many times each taught word is met — counting the app’s own material plus the drills below. Eight is roughly where a word starts to stay.',
-    'Öğretilen her kelimeyle kaç kez karşılaşıldığı: uygulamanın kendi metinleri ve buradaki alıştırmalar birlikte. Bir kelime aşağı yukarı sekizinci karşılaşmada akılda kalmaya başlar.')+'</p>';
-  const max=Math.max.apply(null,b)||1;
-  bands.forEach(function(band,i){
-    const pct=Math.round(100*b[i]/max);
-    h+='<div style="display:flex;align-items:center;gap:.6rem;margin:.35rem 0">'+
-      '<span class="tiny" style="width:3.2rem;text-align:right;flex:0 0 auto">'+band[0]+'</span>'+
-      '<span style="flex:1;height:14px;background:var(--sunk);border-radius:99px;overflow:hidden">'+
-      '<span style="display:block;height:100%;width:'+pct+'%;border-radius:99px;background:'+
-      (i>=3?"var(--turk)":i===2?"var(--gold)":"var(--bole)")+'"></span></span>'+
-      '<span class="tiny" style="width:5.5rem;flex:0 0 auto">'+b[i]+' · '+band[1]+'</span></div>';
-  });
-  h+='<p class="tiny" style="margin-top:.6rem">'+tx('Red is a word the course mentions and abandons. The aim is to empty the top two rows into the bottom two.',
-    'Kırmızı, kursun bir kez anıp bıraktığı kelimedir. Amaç üstteki iki satırı alttaki ikisine taşımak.')+'</p></div>';
+  /* The distribution this engine exists to move is progress rather than a
+     way in, so it is drawn on İlerleme (repChart there). */
+  h+='<button class="btn ghost" onclick="go(\'ilerleme\')">İlerleme</button>';
 
   h+='<p class="foot">'+tx('Encounters are counted by stem, so <i>kitaplar</i> counts for <i>kitap</i> but <i>kitabın</i> does not.<br>That undercounts, which is the safe direction for a floor.',
     'Karşılaşmalar kökten sayılır: <i>kitaplar</i>, <i>kitap</i> için sayılır ama <i>kitabın</i> sayılmaz.<br>Bu yüzden sayı olduğundan az çıkar; güvenli olan da budur.')+'</p></div>';
@@ -393,14 +379,8 @@ function renderTekrar(){
 function renderTekrarRun(){
   if(!TK){renderTekrar();return;}
   if(TK.phase==="end"){
-    paint(bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score">'+
-      '<div class="big '+(TK.right*2>=TK.q.length?"pass":"fail")+'">'+TK.right+'/'+TK.q.length+'</div>'+
-      '<p class="sub">kelime hatırlandı · recalled</p></div>'+
-      '<div class="card"><p class="sub">'+tx(repShort().length+' words are still under '+REP_TARGET+
-      ' encounters. Every drill here counts as one, right or wrong — being asked is the encounter.',
-      repShort().length+' kelime henüz '+REP_TARGET+' karşılaşmaya ulaşmadı. Buradaki her soru, doğru da olsa yanlış da olsa, bir karşılaşma sayılır.')+'</p>'+
-      '<button class="btn" onclick="startTekrar()">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'tekrar\')">Tekrar motoru</button></div></div>');
+    endScreen({title:"Tekrar",n:TK.right,of:TK.q.length,label:"kelime hatırlandı · recalled",
+               plan:true,again:repDue().length?"startTekrar()":""});
     return;
   }
   const it=TK.q[TK.i];
@@ -669,15 +649,8 @@ function renderGram(){
 function renderGramRun(){
   if(!GR){renderGram();return;}
   if(GR.phase==="end"){
-    paint(bar("Dilbilgisi","Bitti",true)+'<div class="wrap"><div class="score">'+
-      '<div class="big '+(GR.right*2>=GR.q.length?"pass":"fail")+'">'+GR.right+'/'+GR.q.length+'</div>'+
-      '<p class="sub">doğru üretildi · produced</p></div>'+
-      '<div class="card"><p class="sub">'+tx('Anything missed comes back today, the rest moves out a box. '+
-      'A near miss counts as a miss here — the point is the form, and the marked line showed you which word carried it.',
-      'Yanlış yapılanlar bugün yeniden gelir, ötekiler bir kutu ileri gider. Burada “az kaldı” da yanlış sayılır: '+
-      'sorulan şey biçimdir ve işaretli satır hangi kelimenin taşıdığını gösterdi.')+'</p>'+
-      '<button class="btn" onclick="startGram()">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'gram\')">Dilbilgisi tekrarı</button></div></div>');
+    endScreen({title:"Dilbilgisi",n:GR.right,of:GR.q.length,label:"doğru üretildi · produced",
+               plan:true,again:gramDue().length?"startGram()":""});
     return;
   }
   const it=GR.q[GR.i];
@@ -855,7 +828,7 @@ function planToday(){
      go:nx?"go('unit','"+nx.id+"','"+(resuming?S.place.s:"v")+"')":"home()"}
   ];
   if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",tt:"aklından yeniden anlat",n:rt,
-                          avail:true,mins:rt*3,go:"go('prod')"});
+                          avail:true,mins:rt*3,go:"startRetell('"+retellDue()[0].id+"')"});
   /* The commonest words the units never teach. New material, so after
      every review and before the unit — and only once a unit is finished,
      or day one would be two instructions. */
@@ -921,5 +894,48 @@ function planCard(){
   h+='<button class="btn" onclick="'+p.left[0].go+'">'+
    (first?"Başla":p.left[0].tr+" ile başla")+'</button></div>';
   return h;
+}
+
+/* ===================== bitti · the end of a sitting ===================== */
+/* A sitting ends on its score and the way on, and nothing else. It used
+   to end on the state of the whole mode as well — how many words were
+   still under eight encounters, how many lines were left in the set —
+   and on two buttons, one restarting the same mode and one opening its
+   hub. So a learner working through Bugün finished Tekrar, read a
+   paragraph they had read the day before, and then had to go home to
+   find out what came next. The paragraph lives on İlerleme now, and the
+   main button here is the plan's next step: the first one with work
+   left, which is the same step again only while it still has some.
+
+   planToday() is read at the moment the screen is drawn, after the
+   sitting's grades are saved, so the step just finished has already
+   ticked itself off or not. Nothing is stored. */
+function planNext(){
+  const nx=planToday().left[0];
+  if(!nx)return '<div class="card"><p class="lead">Bugünlük bitti</p><p class="sub">'+
+    tx('Everything in today’s plan is done. Anything more is extra.','Bugünün planındaki her şey bitti. Bundan sonrası fazladan.')+'</p>'+
+    '<button class="btn" onclick="home()">Ana sayfa</button></div>';
+  return '<button class="btn" onclick="'+nx.go+'">Devam</button>'+
+    '<p class="tiny next-step">'+tx('Next: '+esc(nx.tr)+' · '+esc(nx.en),'Sıradaki: '+esc(nx.tr)+' · '+esc(nx.tt||nx.en))+'</p>';
+}
+/* o: {title, n, of, label, plan, again, hub, hubName}. `plan` is true for
+   the modes Bugün sends a learner to; the rest are reached from Araçlar,
+   so their first button is another sitting and the second their hub.
+   `again` is left out when the mode has nothing more due, and in a plan
+   mode it is also left out when it is the plan's own next step, or the
+   screen would offer the same thing twice. */
+function endScreen(o){
+  const nx=planToday().left[0];
+  let h=bar(o.title,"Bitti",true)+'<div class="wrap"><div class="score">'+
+    '<div class="big '+(o.of&&o.n*2<o.of?"fail":"pass")+'">'+o.n+(o.of?'/'+o.of:'')+'</div>'+
+    '<p class="sub">'+o.label+'</p></div>';
+  if(o.plan){
+    h+=planNext();
+    if(o.again&&!(nx&&nx.go===o.again))h+='<button class="btn ghost" onclick="'+o.again+'">Bir oturum daha</button>';
+  }else{
+    if(o.again)h+='<button class="btn" onclick="'+o.again+'">Bir daha</button>';
+    if(o.hub)h+='<button class="btn'+(o.again?' ghost':'')+'" onclick="'+o.hub+'">'+o.hubName+'</button>';
+  }
+  paint(h+'</div>');
 }
 

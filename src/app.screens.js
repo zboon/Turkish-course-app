@@ -60,15 +60,20 @@ function homeBlocks(){
      '<span class="block-t">Araçlar</span>'+
      '<span class="block-e">PRACTICE AND TOOLS</span>'+
      '<span class="block-n">Konuşma · Dinleme · Tekrar · Kelimeler</span>'+
+     '<span class="chev">'+IC.chev+'</span></button>'+
+   /* Not a third door: nothing behind it is something to do. It is where
+      the state of every mode is read, which used to be repeated at the
+      end of every sitting. Quieter than the doors for that reason. */
+   '<button class="block quiet" onclick="go(\'ilerleme\')">'+
+     '<span class="block-t">İlerleme</span>'+
+     '<span class="block-e">PROGRESS</span>'+
+     '<span class="block-n">'+streak()+' '+tx("day streak","gün üst üste")+' · '+S.star.length+' '+tx("saved words","kayıtlı kelime")+'</span>'+
      '<span class="chev">'+IC.chev+'</span></button>';
 }
 
 /* ===================== dersler · the course spine ===================== */
 function renderDersler(){
   let h=bar("Dersler","lessons · A1 → C2",true,"A1 → C2")+'<div class="wrap">';
-  h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>'+tx("units done","biten ünite")+'</span></div>'+
-     '<div><b>'+streak()+'</b><span>'+tx("day streak","gün üst üste")+'</span></div>'+
-     '<div><b>'+S.star.length+'</b><span>'+tx("saved words","kayıtlı kelime")+'</span></div></div>';
   /* Başlarken sits above the levels while nothing has been opened — on
      day one it is where to start — and below them afterwards, where it
      is reference. The same rule the orientation card follows. */
@@ -202,7 +207,7 @@ function renderNasil(){
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
    '<p><b>5 · Everything opens in order.</b> From nothing, <b>Bugün</b> begins with six short lessons before unit one: the letters and their sounds, how words are spelt, stressed and built, and how a sentence is put together. They are in Dersler under <b>Başlarken</b>. Each lesson opens when the one before it is passed, unit one opens when all six are, and every unit after that opens when the one before it is passed.</p>'+
    '<p><b>Already know some Turkish?</b> Nothing has to be sat through. The <b>intro test</b> in Başlarken skips all six lessons at once, the placement test suggests a level in twelve questions, and every level has a <b>test ahead</b> exam: eight out of ten marks the whole level complete and opens the next one.</p>'+
-   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required.</p>'+
+   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required. <b>İlerleme</b>, under them, is where you see how far you have come in each part — a sitting itself ends on its score and a <b>Devam</b> button to the next step of Bugün.</p>'+
    startBtn("btn")+
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
    (tipsOn()?'<button class="btn ghost" onclick="hideTips()">Ana ekranda gizle · hide on the home screen</button>':'')+
@@ -570,10 +575,8 @@ function rvFlip(){RV.show=true;render();}
 function rvGrade(g){grade(RV.q[RV.i],g);RV.done++;RV.i++;RV.show=false;window.scrollTo(0,0);render();}
 function renderReview(){
   if(RV.i>=RV.q.length){
-    paint(bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score"><div class="big pass">'+RV.done+'</div>'+
-      '<p class="sub">kelime tekrar edildi · words reviewed</p></div>'+
-      '<p class="sub" style="text-align:center">'+dueList().length+' kelime bugün hâlâ bekliyor.</p>'+
-      '<button class="btn" onclick="startReview()">Devam</button><button class="btn ghost" onclick="home()">Ana sayfa</button></div>');
+    endScreen({title:"Tekrar",n:RV.done,of:0,label:"kelime tekrar edildi · words reviewed",
+               plan:true,again:dueList().length?"startReview()":""});
     return;
   }
   const k=RV.q[RV.i], p=k.split("|"), r=(S.srs&&S.srs[k])||{b:0};

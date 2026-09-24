@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.64";
+const APP_VERSION="v3.65";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -297,6 +297,7 @@ function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
 /* The tool screens all hang off Araçlar; Dersler holds the levels. */
 const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
             "sayilar","diyalog","ata","words","dict","about","nasil","sik","uyku"];
+/* İlerleme is reached from the home screen, so back() from it goes home. */
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
@@ -315,7 +316,7 @@ function back(){
   else if(V.view==="uykurun"){uyStop();UY=null;go("uyku");}
   else if(V.view==="adim"){go("unit",AD?AD.u:V.u,"v");}
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
-  else if(V.view==="retell"){go("unit",V.u,"r");}
+  else if(V.view==="retell"||V.view==="retelldone"){go("unit",V.u,"r");}
   /* The back arrow retraces the menu you came through. Before the two
      doors existed every screen fell through to home(), which was right
      when home() WAS the menu; now it would skip the hub and make the
@@ -365,6 +366,7 @@ function themeIcon(){
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
  "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Derse başla":"start the lesson","Sınava gir":"take the test","Dersi tekrarla":"go over the lesson again","Türkçesini yaz":"type the Turkish","Sen de dene":"now you try","Metni göster":"show the text","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "İlerleme":"progress","Bir oturum daha":"one more sitting","Hatalar":"mistakes","Hata defterini aç":"open the mistake book",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",
@@ -440,7 +442,7 @@ const EN_INLINE=[
  "put it in the past","ask the question this answers","make it a yes-no question",
  "say it","backward buildup","then say whether it landed","recall it","type what you hear","read it out loud",
  "say it, then tap it","type what they said","what do you say?","which idiom?","show the answer",
- "between friends","with anyone","make it positive","proverb","idiom"
+ "between friends","with anyone","told","make it positive","proverb","idiom"
 ];
 const EN_EL=/^(button|h2|p|div|span)$/, EN_CLS=/\b(btn|sec|lead|qn|sub|pill|big|empty|tiny|sbtn|tab)\b/,
       EN_SKIP=/\b(opt|tile|icon-btn|spd|vtr|ven|gw|dw|mark|tr|nav-t|lvl-badge|bar-title|block-t|block-e|unit-s|unit-t|gl)\b/;

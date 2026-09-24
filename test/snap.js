@@ -59,6 +59,7 @@ ev("home()"); grabx("home");            /* day one: orientation, one step */
    the road and the blocks; everything the page used to list in one
    column now lives on one of these two. */
 ev("go('dersler')"); grab("dersler");
+ev("go('ilerleme')"); grab("ilerleme");
 ev("go('araclar')"); grab("araclar");
 ev("go('nasil')"); grab("nasil");
 /* The six lessons before unit one, each lesson and its first question. */
@@ -122,6 +123,8 @@ ev("TK = {q:[TKX], i:0, phase:'ask', typed:'', res:null, right:0}");
 ev("V = {view:'tekrarrun'}"); ev("render()"); grab("tekrar:cloze");
 env.doc.getElementById("tbox").value = ev("TK.q[0].c");
 ev("tkCheck()"); grab("tekrar:cloze:right");
+/* The end of a sitting: its score and the plan's next step. */
+ev("tkNext()"); grab("tekrar:end");
 
 /* Dilbilgisi. The marked line is worth a fingerprint for the same reason
    dikte's is — it is where a change to the judge shows up — and the
@@ -268,6 +271,7 @@ ev("planToggle()"); grabx("home:plan:open");
 ev("planToggle()");
 ev("go('dersler')"); grab("dersler:underway");
 ev("go('araclar')"); grab("araclar:underway");
+ev("go('ilerleme')"); grab("ilerleme:underway");
 ev("go('about')"); grab("about:tips-hidden"); ev("showTips()");
 
 ev("go('unit','a1u1','v')"); ev("starAll('a1u1')");
