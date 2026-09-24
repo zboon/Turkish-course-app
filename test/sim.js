@@ -2743,7 +2743,7 @@ step("araçlar · every tool is still reachable", () => {
   ok(heads === 4, "Araçlar has " + heads + " groups, wanted 4 — a flat list is what this replaced");
   /* Reported: the page was sixteen rows of text under two paragraphs.
      Every tool is a tile now, and the page carries no prose. */
-  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 17, "Araçlar should have seventeen tool tiles");
+  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 18, "Araçlar should have eighteen tool tiles");
   ok(!lastPaint.includes("card nav row"), "a text row is back on Araçlar");
   ok(!/Everything here is optional|tag means|class="foot"/.test(lastPaint), "the explanatory paragraphs are back on Araçlar");
   /* The two reference pages are links, not tools. */
@@ -2764,11 +2764,12 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
   const tagged = (fn) => { const r = rowRaw(fn); return !!r && /class="tool"/.test(lastPaint.slice(lastPaint.lastIndexOf("<button", lastPaint.indexOf('onclick="' + fn + '"')), lastPaint.indexOf('onclick="' + fn + '"'))) && !/Şimdilik boş/.test(r); };
 
   ev("wipe()"); ev("go('araclar')");
-  /* Nine that never depend on a unit, a starred word or a mistake: a
-     prefab bank, a generator, the whole dictionary, or the frequency list.
-     These carry the tag from the very first paint. */
+  /* Ten that never depend on a unit, a starred word or a mistake: a
+     prefab bank, a generator, the whole dictionary, the frequency list,
+     or the log of listening done elsewhere. These carry the tag from the
+     very first paint. */
   ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
-   "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')"].forEach(fn => {
+   "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')", "logOpen()"].forEach(fn => {
     ok(tagged(fn), fn + " should be ready on a fresh install — it needs nothing met");
   });
   /* The fade and the words go together: a tile drawn faded says why, and
@@ -3906,6 +3907,64 @@ step("adacıklar · your own sentences, checked by a person, then drilled", () =
   ok(ev("V.view") === "araclar", "back() from Adacıklar did not return to Araçlar");
   ev("wipe()");
   ok(ev("S.ada.s.length") === 0 && ev("S.ada.n") === 0, "wipe() kept the learner's sentences");
+});
+
+step("dinleme günlüğü · hours outside the app, counted honestly", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  const put = (id, v) => ev("document.getElementById(" + q(id) + ").value=" + q(v));
+  ev("logOpen()");
+  ok(ev("V.view") === "gunluk" && lastPaint.includes("logNew()") && ev("logTotal()") === 0, "the log does not open empty with a way to add");
+  ev("logNew()");
+  ok(lastPaint.includes('id="logmin"') && lastPaint.includes('id="logname"'), "the first entry does not ask for a source");
+  /* Refusals leave the form alone. */
+  /* A name is given, so it is the minutes that refuse, not the source. */
+  put("logmin", "0"); put("logname", "Bir podcast"); let before = screens; ev("logSave()");
+  ok(screens === before && ev("S.log.e.length") === 0, "zero minutes was logged, or the refusal redrew the form");
+  put("logmin", "25"); put("logname", ""); before = screens; ev("logSave()");
+  ok(screens === before && ev("S.log.e.length") === 0, "an entry with no source was logged, or the refusal redrew the form");
+  /* A choice redraws, and keeps what was typed. */
+  put("logname", "Bir podcast­"); put("logurl", "javascript:alert(1)");
+  ev("logSet('kind','d')");
+  ok(ev("document.getElementById('logname').value") === "Bir podcast­" && ev("document.getElementById('logmin').value") === "25", "a choice emptied what was typed");
+  ev("logSet('und','2')"); ev("logSave()");
+  const e1 = ev("S.log.e[0]"), s1 = ev("S.log.src[0]");
+  ok(e1 && e1.min === 25 && e1.kind === "d" && e1.und === 2 && e1.day === ev("dayNum()") && e1.nm === "Bir podcast",
+     "the entry was not saved as typed: " + JSON.stringify(e1));
+  ok(s1 && s1.name === "Bir podcast" && s1.url === "", "the source kept an invisible character or a link that is not a web address: " + JSON.stringify(s1));
+  ok(!lastPaint.includes("javascript:"), "a javascript: link reached the page");
+  /* The same source again, found by name; a real link kept. */
+  ev("logNew()");
+  ok(ev("LOGF.src") === s1.id, "a new entry does not start on the last source");
+  ev("logSet('src','new')"); put("logname", "bir PODCAST"); put("logmin", "35"); ev("logSave()");
+  ok(ev("S.log.src.length") === 1 && ev("S.log.e[1].src") === s1.id, "the same source typed again was made twice");
+  ev("logNew(); logSet('src','new')"); put("logname", "Bir kanal"); put("logurl", "https://example.com/kanal"); put("logmin", "40");
+  ev("logSet('ago','1')"); ev("logSave()");
+  ok(ev("S.log.src[1].url") === "https://example.com/kanal" && ev("S.log.e[2].day") === ev("dayNum()") - 1, "a link or yesterday's date was lost");
+  ok(lastPaint.includes('href="https://example.com/kanal"') && lastPaint.includes('rel="noopener noreferrer"'), "the source's link is not drawn safely");
+  /* With two sources, "the last one used" and "the first one" differ. */
+  ev("logNew()");
+  ok(ev("LOGF.src") === ev("S.log.src[1].id"), "a new entry does not start on the source used last");
+  ev("logCancel()");
+  /* The counts. */
+  ok(ev("logTotal()") === 100 && ev("logSince(7)") === 100 && ev("logDay(dayNum())") === 60, "the totals are wrong");
+  ok(ev("logStreak()") === 2, "today and yesterday are not two days in a row: " + ev("logStreak()"));
+  ev("S.log.e=S.log.e.filter(function(x){return x.day!==dayNum()}); save()");
+  ok(ev("logStreak()") === 1, "an empty today broke yesterday's run");
+  ok(ev("logHM(100)") === "1 sa 40 dk" && ev("logHM(60)") === "1 sa" && ev("logHM(5)") === "5 dk", "hours and minutes are written wrongly");
+  ok(ev("logNextMark()") === 10, "the next round number is not ten hours");
+  /* Deleting a source keeps the time spent with it. */
+  const kept = ev("logTotal()");
+  ev("logSrcDel(" + q(ev("S.log.src[1].id")) + ")");
+  ok(ev("S.log.src.length") === 1 && ev("logTotal()") === kept && lastPaint.includes("Bir kanal"), "removing a source took its logged time or its name");
+  ev("logDel(" + q(ev("S.log.e[0].id")) + ")");
+  ok(ev("S.log.e.length") === 0, "an entry was not deleted");
+  /* İlerleme reports it; the tile goes to the log; wipe clears it. */
+  ev("S.log.e.push({id:'e99',day:dayNum(),min:90,src:'s1',nm:'x',kind:'o',und:3}); go('ilerleme')");
+  ok(lastPaint.includes("1 sa 30 dk"), "İlerleme does not show the hours logged");
+  ev("logOpen()"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from the log did not return to Araçlar");
+  ev("wipe()");
+  ok(ev("S.log.e.length") === 0 && ev("S.log.src.length") === 0, "wipe() kept the log");
 });
 
 step("english layer", () => {

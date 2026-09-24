@@ -323,6 +323,15 @@ ev("document.getElementById('adatr').value='Sabah yedide kalkıyorum.'; adaSave(
 ev("adaGo('adaisl','gun')"); grab("ada:isl:checked");
 ev("wipe()");
 
+/* Dinleme günlüğü: empty, the form, and a log with sources. */
+ev("logOpen()"); grab("gunluk:empty");
+ev("logNew()"); grab("gunluk:form");
+ev("document.getElementById('logname').value='Bir podcast'; document.getElementById('logurl').value='https://example.com/p'; document.getElementById('logmin').value='35'; logSave()");
+ev("logNew(); logSet('kind','i'); logSet('und','1'); logSet('ago','2'); logSave()");
+grab("gunluk");
+ev("go('ilerleme')"); grab("ilerleme:log");
+ev("wipe()");
+
 /* The locked views, with the real rule back. */
 ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen; wipe()");
 ev("go('level','A1')"); grab("locked:level:A1");

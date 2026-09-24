@@ -71,11 +71,12 @@ src/app.adim.js          Derse başla: a unit taught in three lessons, one scree
 src/app.ilerleme.js      İlerleme: the state of every mode, on one page
 src/app.coz.js           Çöz: a word taken apart into its endings
 src/app.ada.js           Adacıklar: the learner's own sentences, checked, then drilled
+src/app.gunluk.js        Dinleme günlüğü: hours of Turkish outside the app, logged
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is twenty-one files rather than one because it grew past the point
+The app is twenty-two files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -329,6 +330,7 @@ deliberate breakage.
  sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
  ders:{unitId:[d1,d2,d3]}, coz:{"fut":{b,d,f}},
  ada:{n, s:[{id,isl,q,tr,en,day,chk,was}]},
+ log:{n, e:[{id,day,min,src,nm,kind,und}], src:[{id,name,kind,url}]},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
@@ -344,6 +346,9 @@ for the same reason `num` is keyed by a shape; see Çöz. Progress too.
 the counter `ada.n` and filed under island `isl` and question `q` (ids
 from `ADA`, as permanent as unit ids). Its drill schedule is `i:<id>` in
 `prod`, so a correction keeps the sentence's key; see Adacıklar.
+`log` is the outside-input record (see Dinleme günlüğü): entries and
+sources share the counter `log.n`, and an entry keeps its source's name
+in `nm`, so removing a source orphans nothing. Progress, like the rest.
 
 Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
 `num`, `ata`, `dia` — carries `f`, the day it was first practised, which
@@ -807,8 +812,8 @@ push the plan past one instruction. Direct access is in Araçlar.
 
 Built, by request, as the first of three things a polyglot would do with
 Turkish that this app did not (the second, writing about your own life,
-is Adacıklar below; the third, logging outside listening, is proposed
-but not built). A
+is Adacıklar below; the third is Dinleme günlüğü, the log of listening
+done outside the app). A
 Turkish word is a stem and a queue of endings, each doing one job in a
 fixed order: *gel-ebil-ir-im* is come · can · as a rule · I. Read the
 endings and a word never met reads itself. Everything else here builds
@@ -970,6 +975,70 @@ island's; one moved an island's first A2 question and left it a second;
 and one could not find the cleaner, because the file held the invisible
 characters themselves rather than their `\u` escapes. That last one was
 worth finding: it now uses escapes, like `cleanWord()`.
+
+## Dinleme günlüğü (the hours outside)
+
+Built, by request, the third of the polyglot moves. This app is a few
+thousand sentences in one synthetic voice. What turns a course into a
+language is hours of real Turkish a little above the learner's level:
+podcasts, videos, television, reading, people. The app cannot supply
+that input and does not pretend to; it **counts** it. People who learn
+languages well track those hours, because the count keeps them coming
+back and is more honest than a feeling of progress.
+
+`logOpen()` is the page. A sitting is logged with its minutes (quick
+choices or typed, 1 to 600), what kind it was (Dinleme, İzleme, Okuma,
+Konuşma), where it came from, how much was understood (az, yarısı,
+çoğu, hepsi) and when (today, yesterday, the day before: an evening's
+listening logged at breakfast). The page shows the total, the last
+seven days, days in a row, a bar for each of the last fourteen days,
+the next round number of hours (`LOG_MARKS`), the recent entries and the
+learner's sources with their totals. *Bir kelime mi yakaladın?* goes to
+Kendi kelimelerim, which is the sentence-mining half: a word caught in
+a podcast goes into the same review queue as any other.
+
+Decisions worth keeping:
+
+- **No sources are built in.** Channel and podcast names go stale, and
+  none could be checked from this sandbox, where video sites are not
+  reachable. The learner adds their own, with a link if they like. A
+  link is kept only if it is an `http(s)` address (`logUrl()`), so
+  nothing else can end up behind an `href`, and it opens with
+  `rel="noopener noreferrer"`.
+- **"Most" is the band to aim for, and the page says so.** "A little"
+  for long is mostly noise and "nearly all" is review. The level of
+  understanding is recorded rather than scored.
+- **The round numbers are only round numbers.** No hour count is tied
+  to a level: the figures that circulate for that are for other
+  languages and other methods, and the page says hours are a rough
+  measure and understanding matters more.
+- **A run of days forgives an empty today.** `logStreak()` counts back
+  from yesterday when today has nothing yet, or an evening's listening
+  not yet logged would read as a broken run at breakfast.
+- **A choice redraws the form, so `logKeep()` reads what was typed
+  first**; a refusal (minutes out of range, no source named) pokes a
+  message into `#logmsg` and does not redraw. The same trap as Dinleme's
+  replay and Kendi kelimelerim's form.
+- **The same source typed again is found by name** (folded), not made
+  twice, and a new entry starts on the last source used.
+
+Nothing is scheduled or marked. It is always available, since it needs
+nothing met, so its tile is never faded, and it is not in the daily
+plan. İlerleme shows the hours under Dinleme, and Adacıklar's checked
+sentences under Konuşma.
+
+`sim.js` walks it: an empty log; both refusals leaving the form alone;
+a choice keeping what was typed; an entry saved as typed, with the
+source cleaned of invisible characters and a `javascript:` link
+dropped; the same source found again; a real link and a backdated
+entry kept and drawn safely; the totals, the run of days (and today
+empty), hours written out; removing a source keeping its time and
+name; delete; İlerleme; `back()`; `wipe()`. Seventeen
+deliberate breakages each turned it red. Two did not at first, and both
+were the test: the zero-minutes refusal was tried with no source named,
+so the missing-source refusal fired first and hid it; and "a new entry
+starts on the last source" was checked with one source, where the last
+and the first are the same.
 
 ## Sayılar (numbers at speed)
 
@@ -2297,7 +2366,7 @@ deliberate breakage.
 ### Araçlar as tiles, and "Şimdilik boş"
 
 By request, after the landing page: Araçlar was sixteen rows of text under
-two explanatory paragraphs, and is now seventeen tiles in a two-column grid
+two explanatory paragraphs, and is now eighteen tiles in a two-column grid
 under the same four headings (Konuşma, Dinleme, Tekrar, Kelimeler), each
 an icon (`TOOL_IC`), a name and a few words of English, built by
 `toolTile()`. The two paragraphs and the footer are gone; Nasıl çalışır
@@ -2314,8 +2383,9 @@ the modes check themselves (`listenBank()`, `uyBank()`, `repBank()`,
 "For now" rather than "yet" because Sık kelimeler empties once the day's
 ten are in, as well as before anything has been met.
 
-`sim.js` checks the four headings, seventeen tiles and no text row or
-paragraph; the nine tools ready on a fresh install and the seven that are
+`sim.js` checks the four headings, eighteen tiles and no text row or
+paragraph; the ten tools ready on a fresh install (the log is the tenth)
+and the seven that are
 not (Çöz and Adacıklar, added later, are the last two); each of those seven turning ready when exactly the tab that feeds it
 is met; that a tile's fade and its label never disagree; and the two
 reference pages being links. Nine deliberate breakages each turned it

@@ -115,12 +115,14 @@ function renderIlerleme(){
     ilRow("Kalıplar","set phrases worked through",ilCount(S.prod,"k:"),CHUNKS.length)+
     ilRow("Üç kez anlatılan","speaking tasks told three times",told)+
     ilRow("Diyaloglar","conversations finished",talked,DIYALOG.length)+
-    ilRow("Atasözleri ve deyimler","sayings holding",ilCount(S.ata,"",IL_FIRM),ATASOZU.length+DEYIM.length)+'</div>';
+    ilRow("Atasözleri ve deyimler","sayings holding",ilCount(S.ata,"",IL_FIRM),ATASOZU.length+DEYIM.length)+
+    ilRow("Kendi cümlelerin","your own sentences, checked",adaStore().s.filter(function(x){return x.chk;}).length,adaStore().s.length)+'</div>';
 
   h+='<h2 class="sec">Dinleme</h2><div class="card">'+
     ilRow("Dikte","lines written from hearing",ilCount(S.dinle,"d:"),lines)+
     ilRow("Ses önce","lines understood with no text",ilCount(S.dinle,"a:"),lines)+
-    ilRow("Sayılar","number shapes holding",ilCount(S.num,"",IL_FIRM),NUM_BANDS.length*2)+'</div>';
+    ilRow("Sayılar","number shapes holding",ilCount(S.num,"",IL_FIRM),NUM_BANDS.length*2)+
+    ilRow("Dışarıda","Turkish outside the app, logged",esc(logHM(logTotal())))+'</div>';
 
   const errs=Object.keys(S.err||{}).length, rep=errRepeat().length;
   h+='<h2 class="sec">Hatalar</h2><div class="card">'+
