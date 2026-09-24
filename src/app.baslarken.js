@@ -35,8 +35,8 @@ function baslaTestScore(n,of){
   let h='<div class="score"><div class="big '+(pass?"pass":"fail")+'">'+n+'/'+of+'</div>'+
     '<p class="sub">'+(pass?"Geçtiniz":"Biraz daha çalışmak gerek")+'</p></div>';
   h+='<div class="card"><p class="sub">'+
-    (pass?"All six lessons are marked passed, and unit one is open. You can still read any of them."
-         :"You need "+Q.pass+" to pass. The lessons are short, and each one's questions can be taken on its own.")+'</p>';
+    (pass?tx("All six lessons are marked passed, and unit one is open. You can still read any of them.","Altı dersin hepsi geçildi ve birinci ünite açıldı. Yine de istediğini okuyabilirsin.")
+         :tx("You need "+Q.pass+" to pass. The lessons are short, and each one's questions can be taken on its own.","Geçmek için "+Q.pass+" doğru gerekiyor. Dersler kısa; her dersin soruları ayrı ayrı da çözülebilir."))+'</p>';
   if(pass)h+='<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
   else h+='<button class="btn" onclick="startBaslaTest()">Tekrar dene</button>';
   h+='<button class="btn ghost" onclick="go(\'baslarken\')">Giriş dersleri</button></div>';
@@ -47,8 +47,12 @@ function lockCard(u){
   const k=unitKey(u.id);
   const why=k?"Units open in order, so each one builds on the last. This one opens when you pass the unit before it, "+esc(k.lv+" · "+k.tr)+" (unit "+k.n+")."
              :"Unit one opens once the six lessons in Başlarken are passed: the letters, the sounds and how a sentence is built.";
+  const whyTr=k?"Üniteler sırayla açılır; her biri bir öncekinin üstüne kurulur. Bu ünite, ondan önceki "+esc(k.lv+" · "+k.tr)+" ("+k.n+". ünite) geçilince açılır."
+             :"Birinci ünite, Başlarken’deki altı ders geçilince açılır: harfler, sesler ve cümlenin nasıl kurulduğu.";
+  const intro=!k&&!introDone();
   return '<div class="card"><p class="lead">Kilitli</p>'+
-    '<p class="sub">'+why+' To skip ahead, pass '+(!k&&!introDone()?'the intro test, which opens unit one, or ':'')+'the '+u.lv+' level test: eight out of ten marks every unit in '+u.lv+' complete.</p>'+
+    '<p class="sub">'+tx(why+' To skip ahead, pass '+(intro?'the intro test, which opens unit one, or ':'')+'the '+u.lv+' level test: eight out of ten marks every unit in '+u.lv+' complete.',
+      whyTr+' Atlamak için '+(intro?'birinci üniteyi açan giriş sınavını ya da ':'')+u.lv+' seviye sınavını geç: ondan sekiz doğru, '+u.lv+' seviyesindeki bütün üniteleri tamamlar.')+'</p>'+
     startBtn("btn")+
     (!k&&!introDone()?'<button class="btn ghost" onclick="startBaslaTest()">Giriş sınavı</button>':'')+
     '<button class="btn ghost" onclick="startLevelExam(\''+u.lv+'\')">İleri test</button></div>';
@@ -70,7 +74,8 @@ function baslaItems(L){
 function renderBaslarken(){
   const nd=baslaCount(), nx=nextUnit();
   let h=bar("Giriş dersleri","before unit one · "+nd+" / "+BASLA.length,true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Six short lessons for a complete beginner: how the letters sound, how words are spelt and stressed, how they are built, and how a sentence is put together. Each ends in a few questions, and each opens when the one before it is passed. Unit one opens when all six are. If you can already read Turkish, take the intro test below to skip all six at once.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('Six short lessons for a complete beginner: how the letters sound, how words are spelt and stressed, how they are built, and how a sentence is put together. Each ends in a few questions, and each opens when the one before it is passed. Unit one opens when all six are. If you can already read Turkish, take the intro test below to skip all six at once.',
+    'Hiç bilmeyenler için altı kısa ders: harflerin sesleri, kelimelerin yazılışı ve vurgusu, nasıl yapıldıkları ve cümlenin nasıl kurulduğu. Her biri birkaç soruyla biter ve bir öncekini geçince açılır. Altısı da geçilince birinci ünite açılır. Türkçe okuyabiliyorsan aşağıdaki giriş sınavıyla altısını birden atlayabilirsin.')+'</p>';
   h+='<div class="meter" style="margin-bottom:1.2rem"><i style="width:'+Math.round(100*nd/BASLA.length)+'%"></i></div>';
   h+='<div class="card" style="padding:.2rem 1rem">';
   const here=baslaNext();
@@ -84,8 +89,9 @@ function renderBaslarken(){
   });
   h+='</div>';
   if(!introDone())h+='<h2 class="sec">İleri test</h2><div class="card"><p class="lead">Giriş sınavı</p>'+
-    '<p class="sub">Already read Turkish? '+BASLA_TEST+' questions drawn from all six lessons. Score '+BASLA_TEST_PASS+' or more and every lesson is marked passed, which opens unit one.</p>'+
-    '<button class="btn gold" onclick="startBaslaTest()">Test ahead</button></div>';
+    '<p class="sub">'+tx('Already read Turkish? '+BASLA_TEST+' questions drawn from all six lessons. Score '+BASLA_TEST_PASS+' or more and every lesson is marked passed, which opens unit one.',
+      'Türkçe okuyabiliyor musun? Altı dersin hepsinden '+BASLA_TEST+' soru. '+BASLA_TEST_PASS+' ya da daha fazlasını bilirsen bütün dersler geçilmiş sayılır ve birinci ünite açılır.')+'</p>'+
+    '<button class="btn gold" onclick="startBaslaTest()">Sınava gir</button></div>';
   if(nx&&unitOpen(nx.id))h+='<button class="btn ghost" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
   h+='</div>';
   paint(h);
@@ -108,7 +114,7 @@ function renderBasla(){
   let h=bar(L.tr,"Giriş "+(i+1)+" / "+BASLA.length+" · "+L.en,true)+'<div class="wrap">';
   if(!baslaOpen(L.id)){
     const pb=BASLA[i-1];
-    paint(h+'<div class="card"><p class="lead">Kilitli</p><p class="sub">The lessons open in order. This one opens when you pass '+esc(pb.tr+" · "+pb.en)+'.</p>'+
+    paint(h+'<div class="card"><p class="lead">Kilitli</p><p class="sub">'+tx('The lessons open in order. This one opens when you pass '+esc(pb.tr+" · "+pb.en)+'.','Dersler sırayla açılır. Bu ders, '+esc(pb.tr)+' dersini geçince açılır.')+'</p>'+
       '<button class="btn" onclick="go(\'basla\',\''+baslaNext().id+'\')">'+esc(baslaNext().tr)+' ile başla</button></div></div>');
     return;
   }
@@ -122,9 +128,10 @@ function renderBasla(){
     h+='</div>';
   });
   h+='<h2 class="sec">Alıştırma</h2>';
-  if(baslaDone(L.id))h+='<div class="card" style="border-color:var(--turk)"><p class="lead">Tamamlandı</p><p class="sub">You can run the questions again any time.</p></div>';
+  if(baslaDone(L.id))h+='<div class="card" style="border-color:var(--turk)"><p class="lead">Tamamlandı</p><p class="sub">'+tx('You can run the questions again any time.','Soruları istediğin zaman yeniden çözebilirsin.')+'</p></div>';
   h+='<div class="card"><p class="lead">'+items.length+' soru</p>'+
-    '<p class="sub">Answer '+Math.ceil(items.length*0.8)+' or more correctly to tick this lesson. Nothing here is scheduled for review.</p>'+
+    '<p class="sub">'+tx('Answer '+Math.ceil(items.length*0.8)+' or more correctly to tick this lesson. Nothing here is scheduled for review.',
+      'Bu dersi geçmek için en az '+Math.ceil(items.length*0.8)+' doğru gerekir. Buradakiler tekrar sırasına girmez.')+'</p>'+
     '<button class="btn" onclick="startBasla(\''+L.id+'\')">Başla</button></div>';
   /* Onward only once this lesson is passed: the next one is locked until then. */
   if(baslaDone(L.id)){
@@ -162,8 +169,9 @@ function baslaScore(n,of){
   let h='<div class="score"><div class="big '+(pass?"pass":"fail")+'">'+n+'/'+of+'</div>'+
     '<p class="sub">'+(pass?"Geçtiniz":"Biraz daha çalışmak gerek")+'</p></div>';
   h+='<div class="card"><p class="sub">'+
-    (pass?(nb?"Lesson ticked. Next: "+esc(nb.en)+".":"That is the whole introduction. Unit one starts with greetings and the endings for I am and you are.")
-         :"You need "+Q.pass+" to pass. Read the lesson again and have another go. Nothing here counts against you.")+'</p>';
+    (pass?(nb?tx("Lesson ticked. Next: "+esc(nb.en)+".","Ders geçildi. Sıradaki: "+esc(nb.tr)+".")
+             :tx("That is the whole introduction. Unit one starts with greetings and the endings for I am and you are.","Girişin hepsi bu kadar. Birinci ünite selamlaşmayla ve “ben …-im”, “sen …-sin” ekleriyle başlar."))
+         :tx("You need "+Q.pass+" to pass. Read the lesson again and have another go. Nothing here counts against you.","Geçmek için "+Q.pass+" doğru gerekiyor. Dersi yeniden oku ve bir daha dene. Burada hiçbir şey aleyhine sayılmaz."))+'</p>';
   if(pass&&nb)h+='<button class="btn" onclick="go(\'basla\',\''+nb.id+'\')">Sonraki ders →</button>';
   else if(pass&&nx&&unitOpen(nx.id))h+='<button class="btn" onclick="go(\'unit\',\''+nx.id+'\',\'v\')">'+esc(nx.lv+" · "+nx.tr)+' ile başla</button>';
   else if(!pass)h+='<button class="btn" onclick="startBasla(\''+Q.b+'\')">Tekrar dene</button>';

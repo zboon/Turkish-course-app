@@ -136,26 +136,30 @@ function uyFinish(){
 
 /* --- screens ---------------------------------------------------------- */
 function renderUyku(){
-  let h=bar("Uyumadan önce","before sleep · today, once more",true)+'<div class="wrap">';
+  let h=bar("Uyumadan önce","before sleep · today, once more",true,"bugün, bir kez daha")+'<div class="wrap">';
   if(!ttsOK()){
-    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but speech.</p></div></div>';
+    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">'+tx('This browser has no speech synthesis, and this mode is nothing but speech.','Bu tarayıcıda konuşma sentezi yok, bu bölüm ise baştan sona sesten ibaret.')+'</p></div></div>';
     paint(h);return;
   }
   h+=voiceNote();
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">What you studied today, said slowly and quietly in Turkish, each twice, getting quieter as it goes. It stops by itself after five or ten minutes.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('What you studied today, said slowly and quietly in Turkish, each twice, getting quieter as it goes. It stops by itself after five or ten minutes.',
+    'Bugün çalıştıkların, Türkçe olarak yavaşça ve alçak sesle, her biri iki kez; ses gittikçe kısılır. Beş ya da on dakika sonra kendiliğinden durur.')+'</p>';
   const b=uyBank();
   if(!b.items.length){
-    h+='<div class="card"><p class="lead">Henüz bir şey yok</p><p class="sub">This plays only what you have already studied, and nothing has been studied yet. Open a lesson first, and tonight it will be here.</p></div></div>';
+    h+='<div class="card"><p class="lead">Henüz bir şey yok</p><p class="sub">'+tx('This plays only what you have already studied, and nothing has been studied yet. Open a lesson first, and tonight it will be here.',
+      'Burada yalnızca çalıştıkların çalar, henüz bir şey çalışılmadı. Önce bir ders aç; bu gece burada olacak.')+'</p></div></div>';
     paint(h);return;
   }
   h+='<div class="card"><p class="lead">'+b.items.length+' kelime ve cümle</p>'+
-    '<p class="sub">'+(b.today?"Studied in the last "+UY_HOURS+" hours":"Nothing studied today, so this is your last lesson")+
+    '<p class="sub">'+tx(b.today?"Studied in the last "+UY_HOURS+" hours":"Nothing studied today, so this is your last lesson",
+                         b.today?"Son "+UY_HOURS+" saatte çalışılanlar":"Bugün bir şey çalışılmadı; bu son dersin")+
     (b.from.length?": "+esc(b.from.join(", ")):"")+'.</p></div>';
   h+='<h2 class="sec">Başla</h2>';
   UY_MINS.forEach(function(m){
     h+='<button class="card row" onclick="startUyku('+m+')"><div class="grow">'+
      '<p class="lead">'+m+' dakika</p>'+
-     '<p class="sub">'+(m===5?"Enough to go over today once or twice.":"Longer, for a longer day. It still stops by itself.")+'</p></div>'+
+     '<p class="sub">'+(m===5?tx("Enough to go over today once or twice.","Bugünü bir iki kez geçmeye yeter.")
+                              :tx("Longer, for a longer day. It still stops by itself.","Uzun bir gün için daha uzun. Yine kendiliğinden durur."))+'</p></div>'+
      '<span class="chev">'+IC.chev+'</span></button>';
   });
   h+='<div class="card gram"><p><b>What it can and cannot do.</b> Nothing new is learned while you are asleep. What sleep does is keep what you studied in the hours before it, and this goes over that once more while you are still awake and drifting off. So it plays only today’s material, and it stops before deep sleep, where sound would only disturb the sleep doing the work. Count it as a gentle extra, not as study time.</p>'+
@@ -168,7 +172,7 @@ function renderUykuRun(){
   let h=bar("Uyumadan önce",UY.done?"Bitti":UY.mins+" dk",true)+'<div class="wrap">';
   if(UY.done){
     h+='<div class="score"><div class="big pass">'+UY.n+'</div><p class="sub">kelime ve cümle</p></div>'+
-      '<div class="card"><p class="lead">İyi geceler</p><p class="sub">That is all for tonight. Nothing was marked or scheduled.</p>'+
+      '<div class="card"><p class="lead">İyi geceler</p><p class="sub">'+tx('That is all for tonight. Nothing was marked or scheduled.','Bu gecelik bu kadar. Hiçbir şey değerlendirilmedi ya da sıraya konmadı.')+'</p>'+
       '<button class="btn ghost" onclick="UY=null;go(\'uyku\')">Tamam</button></div></div>';
     paint(h);return;
   }

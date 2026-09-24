@@ -365,8 +365,9 @@ function secs(ms){return (ms/1000).toFixed(1);}
 /* --- screens ----------------------------------------------------------- */
 function renderSayilar(){
   const cap=ncap(), top=nmax();
-  let h=bar("Sayılar","numbers · at speed",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Turkish numbers are perfectly regular, so knowing them is not the problem — getting them in time is. Someone says a price and you have a second or two, not ten. These are generated, so there is nothing to memorise: what comes back is the <b>shape</b> you are slow at.</p>';
+  let h=bar("Sayılar","numbers · at speed",true,"hızlı sayılar")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('Turkish numbers are perfectly regular, so knowing them is not the problem — getting them in time is. Someone says a price and you have a second or two, not ten. These are generated, so there is nothing to memorise: what comes back is the <b>shape</b> you are slow at.',
+    'Türkçe sayılar tamamen düzenlidir; sorun onları bilmek değil, zamanında anlamak. Biri bir fiyat söyler ve on saniyen değil, bir iki saniyen vardır. Sayılar üretilir, ezberlenecek bir şey yok: geri gelen, yavaş kaldığın <b>şekildir</b>.')+'</p>';
 
   h+=clockHero();
   if(ttsOK())h+=voiceNote();
@@ -377,25 +378,28 @@ function renderSayilar(){
   h+='<h2 class="sec">Çalış</h2>';
   if(ttsOK()){
     h+='<div class="card"><p class="lead">Duy · write the digits</p>'+
-     '<p class="sub">A number, a time or a price is said once and you type it. This is the shop: <i>altmış</i> and <i>yetmiş</i> sound alike at speed, and self-grading cannot catch a number you misheard — so the app marks this one, like Dikte.</p>'+
+     '<p class="sub">'+tx('A number, a time or a price is said once and you type it. This is the shop: <i>altmış</i> and <i>yetmiş</i> sound alike at speed, and self-grading cannot catch a number you misheard — so the app marks this one, like Dikte.',
+       'Bir sayı, bir saat ya da bir fiyat bir kez söylenir, sen yazarsın. Tıpkı dükkândaki gibi: hızlı söylenince <i>altmış</i> ile <i>yetmiş</i> birbirine benzer ve yanlış duyduğunu kendin fark edemezsin; bu yüzden bunu Dikte gibi uygulama değerlendirir.')+'</p>'+
      '<button class="btn" onclick="startNum(\'duy\')">Başla</button></div>';
   }else{
-    h+='<div class="card"><p class="lead">Duy</p><p class="sub">This browser has no speech synthesis, so there is nothing to hear. The other direction still works.</p></div>';
+    h+='<div class="card"><p class="lead">Duy</p><p class="sub">'+tx('This browser has no speech synthesis, so there is nothing to hear. The other direction still works.','Bu tarayıcıda konuşma sentezi yok, duyulacak bir şey yok. Öteki yön yine çalışır.')+'</p></div>';
   }
   h+='<div class="card"><p class="lead">Söyle · read it out</p>'+
-   '<p class="sub">The digits are on screen and you say the Turkish out loud before the model plays — the Üretim shape, with a clock on it. You mark yourself, but the clock is not yours to argue with.</p>'+
+   '<p class="sub">'+tx('The digits are on screen and you say the Turkish out loud before the model plays — the Üretim shape, with a clock on it. You mark yourself, but the clock is not yours to argue with.',
+     'Rakamlar ekrandadır; örnek çalmadan önce Türkçesini yüksek sesle söylersin. Üretim gibi, ama saatli. Kendini sen değerlendirirsin, saate ise itiraz edemezsin.')+'</p>'+
    '<button class="btn" onclick="startNum(\'oku\')">Başla</button></div>';
 
   h+='<h2 class="sec">Ayarlar</h2><div class="card">';
   h+='<p class="lead" style="font-size:.95rem">Ne kadar büyük · how high</p>'+
-   '<p class="sub">The clock and prices are always in play; this sets the ceiling on plain numbers.</p><div class="segs">';
+   '<p class="sub">'+tx('The clock and prices are always in play; this sets the ceiling on plain numbers.','Saatler ve fiyatlar hep var; bu ayar düz sayıların üst sınırını belirler.')+'</p><div class="segs">';
   NUM_MAX.forEach(function(n,i){
     h+='<button class="'+(n===top?"on":"")+'" onclick="setNmax('+n+')">'+
      NUM_MAX_LAB[i][0]+' basamak<i>'+NUM_MAX_LAB[i][1]+'</i></button>';
   });
   h+='</div>';
   h+='<p class="lead" style="font-size:.95rem">Hedef süre · the bar</p>'+
-   '<p class="sub">Right but slow does not move a box out. That is the whole mode — a number you worked out in nine seconds is one you cannot use. Turn it off and this becomes an ordinary drill.</p><div class="segs">';
+   '<p class="sub">'+tx('Right but slow does not move a box out. That is the whole mode — a number you worked out in nine seconds is one you cannot use. Turn it off and this becomes an ordinary drill.',
+     'Doğru ama yavaş cevap kutuyu ilerletmez. Bölümün bütün amacı bu: dokuz saniyede çözdüğün bir sayıyı kullanamazsın. Kapatırsan sıradan bir alıştırma olur.')+'</p><div class="segs">';
   NUM_CAPS.forEach(function(n){
     h+='<button class="'+(n===cap?"on":"")+'" onclick="setNcap('+n+')">'+(n===0?"—":n+"s")+
      '<i>'+(n===0?"kapalı":n<=3?"zor":n<=5?"normal":"rahat")+'</i></button>';
@@ -403,7 +407,7 @@ function renderSayilar(){
   h+='</div></div>';
 
   h+='<h2 class="sec">Şekiller</h2><div class="card">';
-  h+='<p class="sub" style="margin-bottom:.6rem">Weakest first. A shape missed — or got right too slowly — comes back today.</p>';
+  h+='<p class="sub" style="margin-bottom:.6rem">'+tx('Weakest first. A shape missed — or got right too slowly — comes back today.','En zayıf olan önce. Kaçırılan ya da doğru ama geç bilinen şekil bugün yeniden gelir.')+'</p>';
   numBands().slice().sort(function(a,b){
     const x=(S.num&&S.num[numKey("duy",a.k)]||{b:-1}).b, y=(S.num&&S.num[numKey("duy",b.k)]||{b:-1}).b;
     return x-y;
@@ -415,7 +419,8 @@ function renderSayilar(){
   });
   h+='</div>';
 
-  h+='<p class="foot">Yüz is “yüz”, never “bir yüz” — and bin is “bin”, but a million keeps its bir.<br>Every prompt is built on the spot, so the set never runs out.</p></div>';
+  h+='<p class="foot">'+tx('Yüz is “yüz”, never “bir yüz” — and bin is “bin”, but a million keeps its bir.<br>Every prompt is built on the spot, so the set never runs out.',
+    'Yüz “yüz” diye söylenir, asla “bir yüz” değil; bin de “bin”dir, ama milyon “bir”ini korur: bir milyon.<br>Her soru o anda üretilir, yani hiç bitmez.')+'</p></div>';
   paint(h);
 }
 
@@ -431,8 +436,9 @@ function renderSayilarRun(){
       '<div><b>'+secs(med)+'s</b><span>ortanca</span></div>'+
       '<div><b>'+(cap?cap+"s":"—")+'</b><span>hedef</span></div></div>'+
       '<div class="card"><p class="sub">'+
-      (cap?'The median is the number to watch: accuracy climbs long before speed does, and a shop gives you about two seconds. Anything right but over '+cap+'s stays where it was.'
-          :'The clock is off, so this was marked on accuracy alone.')+'</p>'+
+      (cap?tx('The median is the number to watch: accuracy climbs long before speed does, and a shop gives you about two seconds. Anything right but over '+cap+'s stays where it was.',
+              'Asıl bakılacak sayı ortanca: doğruluk hızdan çok önce gelişir, dükkânda ise iki saniye kadar vaktin olur. Doğru ama '+cap+' saniyeyi geçen cevaplar yerinde kalır.')
+          :tx('The clock is off, so this was marked on accuracy alone.','Saat kapalı; yalnızca doğruluğa göre değerlendirildi.'))+'</p>'+
       '<button class="btn" onclick="startNum(\''+NM.mode+'\')">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'sayilar\')">Sayılar</button></div></div>');
     return;
@@ -446,7 +452,7 @@ function renderSayilarRun(){
     if(duy){
       h+='<div class="card" style="text-align:center;padding:1.6rem 1rem">'+
        '<button class="sbtn" style="font-size:1rem" onclick="numSay(false)">'+IC.spk+' tekrar dinle</button>'+
-       '<p class="tiny" style="margin:.5rem 0 0">nothing is shown — the clock is running</p></div>';
+       '<p class="tiny" style="margin:.5rem 0 0">'+tx('nothing is shown — the clock is running','hiçbir şey gösterilmez, süre işliyor')+'</p></div>';
       h+='<input class="inp" id="nbox" inputmode="decimal" autocapitalize="off" autocomplete="off" '+
        'autocorrect="off" spellcheck="false" placeholder="'+
        (it.kind==="saat"?"3:15":it.kind==="fiyat"?"42,50":"342")+'" value="'+esc(NM.typed||"")+'">'+
@@ -468,14 +474,15 @@ function renderSayilarRun(){
     if(duy){
       h+='<div class="fb '+(r.ok&&r.quick?"ok":"no")+'"><b>'+
        (r.ok?(r.quick?"Doğru":"Doğru, ama geç"):"Yanlış")+'</b>'+
-       (r.ok?(r.quick?"It comes back later and later from here."
-                    :"The digits were right and the clock was not, so this shape comes back today. Speed is the skill here.")
-            :"You typed "+esc(NM.typed||"—")+". Wrong numbers come back today.")+'</div>';
+       (r.ok?(r.quick?tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek.")
+                    :tx("The digits were right and the clock was not, so this shape comes back today. Speed is the skill here.",
+                        "Rakamlar doğru, süre değil; bu şekil bugün yeniden gelecek. Burada beceri hızdır."))
+            :tx("You typed "+esc(NM.typed||"—")+". Wrong numbers come back today.",esc(NM.typed||"—")+" yazdın. Yanlış sayılar bugün yeniden gelir."))+'</div>';
       h+='<button class="btn" onclick="numNext()">'+(NM.i+1>=NM.q.length?"Sonuç":"Devam")+'</button>';
     }else{
       h+='<div class="btn-row"><button class="btn ghost" onclick="numMark(false)">Yanlış</button>'+
        '<button class="btn" onclick="numMark(true)">Doğru</button></div>';
-      if(!r.quick)h+='<p class="tiny" style="text-align:center;margin-top:.5rem">Over the bar, so even a right answer leaves this shape where it is.</p>';
+      if(!r.quick)h+='<p class="tiny" style="text-align:center;margin-top:.5rem">'+tx('Over the bar, so even a right answer leaves this shape where it is.','Süre aşıldı; doğru cevap da olsa bu şekil yerinde kalır.')+'</p>';
     }
   }
   h+='</div>';

@@ -84,7 +84,16 @@ function enScan(h) {
     if (!/^[a-z][a-z0-9 ,’'“”?()\/-]*$/.test(tail) || /[çğıöşü]/.test(tail) || EN_TAIL_OK.has(tail)) continue;
     enLoose.set(tail, t);
   }
+  /* Instructions carry both languages (tx()), and the Turkish half is the
+     one a B2 learner sees alone: empty, identical to the English, or
+     still English is the half a copy-paste leaves behind. */
+  for (const m of h.matchAll(/<span class="t-tr">([\s\S]*?)<\/span><span class="t-en">([\s\S]*?)<\/span>/g)) {
+    const tr = m[1].replace(/<[^>]+>/g, "").trim(), en = m[2].replace(/<[^>]+>/g, "").trim();
+    if (!tr || tr === en || /\b(the|you|your|is|are|and|this|when|what)\b/.test(tr.replace(/<i>[^<]*<\/i>/g, "")))
+      txBad.set(tr.slice(0, 60), en.slice(0, 60));
+  }
 }
+const txBad = new Map();
 appEl._onpaint = h => {
   screens++; lastPaint = h;
   seenScreens.add(screenKey());
@@ -107,7 +116,7 @@ ok(ev("V.view") === "home", "boot did not land on home");
 LEVELS.forEach(l => step("level " + l.id, () => {
   ev("go('level'," + q(l.id) + ")");
   ok(lastPaint.includes(l.tr), "level " + l.id + " does not show its name");
-  ok(lastPaint.includes("Test ahead"), "level " + l.id + " has no test-ahead card");
+  ok(lastPaint.includes("startLevelExam('" + l.id + "')"), "level " + l.id + " has no test-ahead card");
 }));
 
 /* ===================== 3 · every unit, every section ===================== */
@@ -523,7 +532,7 @@ step("üretim · chunks", () => {
      correct once. */
   ok(ev("CHUNKS.length") >= 300, "the chunk bank is only " + ev("CHUNKS.length") + " deep");
   ev("wipe()"); ev("go('prod')");
-  const card = /Kalıplar(?:<span class="gl">[^<]*<\/span>)?<\/p><p class="sub">([^<]*)/.exec(lastPaint);
+  const card = /Kalıplar(?:<span class="gl">[^<]*<\/span>)?<\/p><p class="sub">(?:<span class="t-tr">[^<]*<\/span><span class="t-en">)?([^<]*)/.exec(lastPaint);
   ok(!!card, "the Kalıplar card is gone");
   ok(card && card[1].indexOf(ev("SESSION") + " in this sitting") > -1,
      "the chunk card offers the backlog rather than the sitting: " + (card ? card[1].slice(-70) : ""));
@@ -706,7 +715,7 @@ step("sözlük · the whole word list", () => {
   ev("dictSearch('ogrenci')");
   ok(ev("dictRows().length") >= 1, "search is not diacritic-folded — a learner without a Turkish keyboard cannot use it");
   ev("dictSearch('zzzznothing')");
-  ok(ev("dictRows().length") === 0 && /No word matches/.test(lastPaint), "a search with no hits has no empty state");
+  ok(ev("dictRows().length") === 0 && /Bu aramaya uygun kelime yok/.test(lastPaint), "a search with no hits has no empty state");
   ev("dictSearch('')");
 
   /* Sorting */
@@ -3193,6 +3202,149 @@ step("reported · the other you counts where the sentence does not say which", (
   ev("wipe(); home()");
 });
 
+/* Adım adım: an A1 unit one screen at a time, then its own exercises.
+   It marks what it shows exactly as the tabs would, and writes nothing
+   else: the checks are practice, not marks. */
+step("derse başla · a unit one screen at a time, checks by level", () => {
+  drain(60000); ev("stopPlay()");
+  ev("confirm=function(){return true}; wipe(); home()");
+  /* Answer whatever the current step asks, right or (once) wrong. */
+  const answerStep = (s, right) => {
+    if (s.t === "hear") ev("adPick(" + (right ? s.w.i : s.opts.find(o => o.i !== s.w.i).i) + ")");
+    else if (s.t === "spell") {
+      const used = [];
+      s.w.say.split("").forEach(l => { const i = s.tiles.findIndex((t, j) => t === l && !used.includes(j)); used.push(i); ev("adAdd(" + i + ")"); });
+      if (!right) { ev("AD.built=AD.built.slice().reverse()"); if (s.w.say.split("").reverse().join("") === s.w.say) ev("AD.built=[AD.built[0]]"); }
+      ev("adSpell()");
+    } else if (s.t === "type" || s.t === "cloze" || s.t === "gex") {
+      doc.getElementById("abox").value = right ? s.c : "qqq zzz";
+      ev("adType()");
+    } else return false;
+    return true;
+  };
+  const F = x => ev("fold(" + q(x) + ")");
+  const CHECKS = ["hear", "spell", "type", "cloze", "gex"];
+  /* Every unit offers the lesson at the top; a finished one offers it again. */
+  ev("go('unit','b2u3','v')");
+  ok(lastPaint.includes("startAdim('b2u3')") && lastPaint.includes("Derse başla"), "a B2 unit does not open on its lesson");
+  ok(lastPaint.indexOf("startAdim(") < lastPaint.indexOf('class="segs"'), "the lesson is not above the tabs");
+  ok(!lastPaint.includes("Adım adım"), "the old name is still on the unit page");
+  ev("S.done.a1u1={score:5,of:5,at:1}; go('unit','a1u1','v')");
+  ok(lastPaint.includes("Dersi tekrarla"), "a finished unit does not offer the lesson again");
+  ev("wipe(); home()");
+  const before = ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done])");
+  ev("startAdim('a1u1')");
+  const u = UNITS[0];
+  ok(ev("V.view") === "adim" && ev("AD.q[0].t") === "word", "the lesson does not open on the first word");
+  ok(voice.spoken[voice.spoken.length - 1] === ev("AD.q[0].w.say"), "the first word is not said as it arrives");
+  const said = voice.said; ev("render()");
+  ok(voice.said === said, "a redraw said the word again");
+  ok(lastPaint.includes(ev("RESIM[" + q(u.vocab[0][0]) + "]")), "a pictured word shows no picture");
+  ok(ev("!!(S.seen.a1u1&&S.seen.a1u1.v)") && !ev("!!S.seen.a1u1.g") && !ev("!!S.seen.a1u1.r"),
+     "the words marked more than the word list as seen");
+  /* Walk A1: miss the first check once, get everything else right. */
+  let missed = false, guard = 0;
+  const n0 = ev("AD.q.length");
+  while (ev("adCur().t") !== "end" && guard++ < 80) {
+    const s = ev("adCur()");
+    if (CHECKS.includes(s.t)) {
+      const right = missed || !(missed = true);
+      answerStep(s, right);
+      ok(ev("AD.ok") === right, "a " + s.t + " check was marked the other way");
+      ev("adNext()");
+    } else {
+      if (s.t === "gram") ok(lastPaint.includes(esc(u.gram.t)) && ev("!!S.seen.a1u1.g"), "the grammar step did not show the point, or mark it read");
+      if (s.t === "line") {
+        ok(voice.spoken[voice.spoken.length - 1] === u.read.lines[s.i][0], "a passage line was not read aloud as it arrived");
+        ok(lastPaint.includes('<p class="adtr">'), "an A1 line was not shown as it arrived");
+        ok(!lastPaint.includes(esc(u.read.lines[s.i][1])), "a line's English was shown before it was asked for");
+        ev("adShow()");
+        ok(lastPaint.includes(esc(u.read.lines[s.i][1])), "asking for the English did not show it");
+      }
+      ev("adNext()");
+    }
+  }
+  ok(ev("adCur().t") === "end", "the lesson did not reach its end");
+  ok(ev("AD.q.length") === n0 + 1, "a missed check did not come back exactly once");
+  ok(ev("!!S.seen.a1u1.r"), "the reading was not marked read");
+  ok(lastPaint.includes("startUnitQuiz('a1u1')"), "the end does not lead to the unit's exercises");
+  ok(ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done])") === before, "the lesson scheduled, marked or ticked something");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("isDone('a1u1')"), "the exercises after the lesson did not tick the unit");
+
+  /* Every unit walks to its end, and its checks are the ones its level
+     asks for, in the order its level puts them. */
+  const shape = { A1: ["hear", "spell"], A2: ["type", "gex"], B1: ["gex"] };
+  let clozes = 0, unitsWithCloze = 0;
+  UNITS.forEach(v => {
+    ev("startAdim(" + q(v.id) + ")");
+    const Q = ev("AD.q"), kinds = Q.map(x => x.t);
+    const tier = v.lv === "A1" ? "A1" : v.lv === "A2" ? "A2" : "B1";
+    shape[tier].forEach(t => ok(kinds.includes(t), v.id + " has no " + t + " step"));
+    if (tier === "A1") ok(!kinds.some(t => t === "type" || t === "cloze" || t === "gex"), v.id + " asks an A1 learner to type");
+    if (tier !== "A1") ok(!kinds.some(t => t === "hear" || t === "spell"), v.id + " still asks beginner checks");
+    const checks = Q.filter(x => x.t === "type" || x.t === "cloze").length;
+    if (tier !== "A1") ok(checks === 4, v.id + " has " + checks + " word checks, not four");
+    if (tier === "B1") ok(kinds.lastIndexOf("line") < kinds.indexOf(kinds.find(t => t === "type" || t === "cloze")) || !kinds.some(t => t === "type" || t === "cloze"),
+                          v.id + " checks the words before the passage is read");
+    Q.filter(x => x.t === "cloze").forEach(c => {
+      clozes++;
+      ok(c.q.includes("___") && F(c.q.replace("___", c.c)) === F(c.full), v.id + ": a blank does not fill back to its line");
+      ok(!F(c.q).split(" ").includes(F(c.c)), v.id + ": the answer is still in the blanked line");
+    });
+    if (Q.some(x => x.t === "cloze")) unitsWithCloze++;
+    let g = 0;
+    while (ev("adCur().t") !== "end" && g++ < 90) {
+      const s = ev("adCur()");
+      if (answerStep(s, true)) ok(ev("AD.ok") === true, v.id + ": a right " + s.t + " answer was marked wrong: " + s.c);
+      ev("adNext()");
+    }
+    ok(ev("adCur().t") === "end", v.id + " did not walk to its end");
+  });
+  console.log("    " + unitsWithCloze + " of 40 B1+ units ask words in their sentences, " + clozes + " blanks");
+  ok(unitsWithCloze >= 30, "only " + unitsWithCloze + " of the B1+ units ask a word in its sentence");
+
+  /* B1 and up: the line is heard before it is shown. */
+  ev("startAdim('b1u3'); AD.i=AD.q.findIndex(function(s){return s.t==='line'}); AD.heard={}; render()");
+  const b1 = UNITS.find(x => x.id === "b1u3");
+  ok(voice.spoken[voice.spoken.length - 1] === b1.read.lines[0][0], "a B1 line was not played as it arrived");
+  ok(!lastPaint.includes('<p class="adtr">') && lastPaint.includes("adhid") && lastPaint.includes("adText()"), "a B1 line was shown before it was heard");
+  ok(!lastPaint.includes("adShow()"), "a B1 line offers its English before its Turkish");
+  ev("adText()");
+  ok(lastPaint.includes('<p class="adtr">') && lastPaint.includes("adShow()") && !lastPaint.includes("adText()"), "showing a B1 line did not show it");
+
+  /* From B1 a missed check comes back before the end, not before the
+     grammar, which by then is behind the learner. */
+  ev("startAdim('b1u3'); AD.i=AD.q.findIndex(function(s){return s.t==='cloze'||s.t==='type'}); render()");
+  const missId = ev("adCur().id");
+  doc.getElementById("abox").value = "qqq zzz"; ev("adType()");
+  const Qb = ev("AD.q"), at = Qb.findIndex((x, k) => k > ev("AD.i") && x.id === missId);
+  ok(at > -1 && Qb[at + 1] && Qb[at + 1].t === "end", "a missed B1 check did not come back just before the end");
+  ok(lastPaint.includes("adNext()") && /class="fb no"/.test(lastPaint), "a missed B1 check showed no answer");
+
+  /* Typed answers are marked by the course's own judges: the other you,
+     a spoken form, and a dropped pronoun in a grammar example. */
+  ev("startAdim('a2u1'); AD.q.splice(AD.i,0,{t:'type',id:99,w:{i:0,tr:'nasılsın',say:'nasılsın',en:'how are you',em:''},c:'nasılsın',alts:['nasilsin']}); render()");
+  doc.getElementById("abox").value = "nasılsınız"; ev("adType()");
+  ok(ev("AD.ok") === true && lastPaint.includes("Sen · siz"), "the lesson refused the other you");
+  ev("AD.q.splice(AD.i+1,0,{t:'gex',id:98,c:'Ben yarın gideceğim.',en:'I will go tomorrow.'}); adNext()");
+  doc.getElementById("abox").value = "yarın gidicem"; ev("adType()");
+  ok(ev("AD.ok") === true, "the lesson refused a spoken form without its pronoun");
+  ev("AD.q.splice(AD.i+1,0,{t:'gex',id:97,c:'Ben yarın gideceğim.',en:'I will go tomorrow.'}); adNext()");
+  doc.getElementById("abox").value = "ben dün gittim"; ev("adType()");
+  ok(ev("AD.ok") === false && lastPaint.includes('class="dline"'), "a wrong example was not marked word by word");
+  const nq = ev("AD.q.length"); ev("adNext()"); doc.getElementById("abox") && (doc.getElementById("abox").value = "");
+  ev("adType()");
+  ok(ev("AD.phase") === "ask" && ev("AD.q.length") === nq, "an empty answer was marked");
+
+  /* Leaving goes back to the unit; a locked unit cannot be walked. */
+  ev("startAdim('a1u2')"); ev("back()");
+  ok(ev("V.view") === "unit" && ev("V.u") === "a1u2", "back from the lesson does not return to the unit");
+  ev("unitOpen=__unitOpen; wipe(); startAdim('a1u3')");
+  ok(ev("V.view") !== "adim", "a locked unit was walked as a lesson");
+  ev(LIFT + "; wipe(); home()");
+});
+
 /* Uyumadan önce: only what was studied today, Turkish only, each said
    twice, quieter as it goes, and it stops by itself, in silence. */
 step("uyumadan önce · today, once more, then quiet", () => {
@@ -3363,22 +3515,49 @@ step("english layer", () => {
   ok(lastPaint.includes('class="icon-btn en-btn"'), "the home bar has no EN toggle");
   ev("go('araclar')");
   ok(lastPaint.includes('class="icon-btn en-btn"'), "a screen bar has no EN toggle");
+  const has = x => ev("document.documentElement.classList.contains(" + q(x) + ")");
+  const mode = () => ["en", "both", "tr"].filter(x => has("ins-" + x)).join();
+  ok(mode() === "en", "day one's instructions are not in English");
   /* The toggle is a class, not a redraw: a redraw would empty a half-typed answer. */
   const before = screens;
   ev("toggleEN()");
   ok(screens === before, "turning the English off redrew the screen");
-  ok(html() && ev("S.en") === false, "turning the English off did not hide it");
-  ok(store.get("turkce-course-v1").indexOf('"en":false') >= 0, "turning the English off was not saved");
+  ok(html() && mode() === "tr" && JSON.stringify(ev("S.en")) === '{"st":0,"on":false}', "turning the English off did not hide it");
+  ok(store.get("turkce-course-v1").indexOf('"en":{"st":0,"on":false}') >= 0, "turning the English off was not saved");
   ev("wipe()");
-  ok(ev("S.en") === false && ev("enOn()") === false, "wiping progress threw away the English setting");
+  ok(ev("enOn()") === false, "wiping progress threw away the English setting");
   ev("toggleEN()");
-  ok(!html() && ev("S.en") === true, "turning the English back on did not show it");
-  /* With no choice made it follows the level: gone once A2 is complete, the
-     tipsOn() line — and a choice made after that still wins. */
-  ev("delete S.en; unitsOf('A1').concat(unitsOf('A2')).forEach(function(u){S.done[u.id]={score:5,of:5,at:1}}); home()");
-  ok(ev("enOn()") === false && html(), "the English is still on after A2 is complete");
+  ok(!html() && mode() === "en" && ev("S.en.on") === true, "turning the English back on did not show it");
+  /* A choice saved before the stages existed is a stage-0 choice. */
+  ev("S.en=false; enApply()");
+  ok(ev("enOn()") === false && html() && mode() === "tr", "an old saved choice was ignored");
+  /* The stage is the level being worked in: the unit after the furthest
+     passed. Passing the A2 test is B1 even with A1 untouched. */
+  ev("delete S.en; unitsOf('A2').forEach(function(u){S.done[u.id]={score:5,of:5,at:1}}); home()");
+  ok(ev("curLv()") === "B1" && ev("enStage()") === 1, "passing A2 did not put the learner in B1");
+  ok(html() && mode() === "both", "B1 does not show labels in Turkish and instructions in both");
+  ev("S.en=false; home()");
+  ok(ev("enStage()") === 1 && mode() === "both", "a stage-0 choice held on into B1");
+  ev("delete S.en; toggleEN()");
+  ok(ev("enOn()") === false && html() && mode() === "tr", "turning the English off at B1 left some showing");
   ev("toggleEN()");
-  ok(ev("enOn()") === true && !html(), "the learner cannot bring the English back after A2");
+  ok(ev("enOn()") === true && !html() && mode() === "both", "turning the English on at B1 did not bring the labels back");
+  ev("delete S.en; unitsOf('B1').forEach(function(u){S.done[u.id]={score:5,of:5,at:1}}); home()");
+  ok(ev("enStage()") === 2 && html() && mode() === "tr" && ev("enOn()") === false, "B2 still shows English by default");
+  ev("S.en={st:1,on:true}; home()");
+  ok(mode() === "tr", "a B1 choice held on into B2");
+  ev("toggleEN()");
+  ok(mode() === "both" && !html(), "the learner cannot bring the English back at B2");
+  ev("S.done={}; S.done.a1u1={score:5,of:5,at:1}; S.done.b2u1={score:5,of:5,at:1}");
+  ok(ev("curLv()") === "B2", "the stage follows the first unit passed rather than the furthest");
+  ev("S.done.c2u10={score:5,of:5,at:1}");
+  ok(ev("curLv()") === "C2", "the last unit passed ran off the end of the course");
+  ok(ev("tx('Look.','Bak.')") === '<span class="t-tr">Bak.</span><span class="t-en">Look.</span>', "tx() does not carry both languages");
+  ev("go('araclar')");
+  ok(lastPaint.includes('<small><span class="t-tr">derslerin yanında</span><span class="t-en">tools · beside the lessons</span></small>'), "a hub's bar subtitle has no Turkish");
+  ok(ev("(S.en={st:enStage(),on:false},enMode())") === "tr" && ev("txt('Look.','Bak.')") === "Bak.", "plain-text instructions ignore the stage");
+  ev("S.en={st:enStage(),on:true}");
+  ok(ev("txt('Look.','Bak.')") === (ev("enStage()") === 0 ? "Look." : "Bak. (Look.)"), "plain-text instructions do not carry the English when asked");
   ev("delete S.en; wipe(); home()");
   /* The pass itself, by construction rather than by whatever a run drew. */
   const EU = x => ev("enUnder(" + q(x) + ")");
@@ -3399,6 +3578,8 @@ step("english layer", () => {
   });
 });
 
+ok(txBad.size === 0, "instructions whose Turkish half is empty, the same as the English, or English: " +
+   [...txBad.entries()].slice(0, 5).map(e => q(e[0]) + " / " + q(e[1])).join("; "));
 ok(enLoose.size === 0, "interface labels with an English half EN_INLINE does not list — add it there, or to EN_TAIL_OK if it is not English: " +
    [...enLoose.keys()].map(q).join(", "));
 if (fails.length) {

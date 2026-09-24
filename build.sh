@@ -24,6 +24,10 @@ cat \
   src/data/atasozu.js \
   src/data/konusma.js \
   src/data/baslarken.js \
+  src/data/resim.js \
+  src/shared/text.js \
+  src/shared/voice.js \
+  src/shared/srs.js \
   src/app.core.js \
   src/app.lang.js \
   src/app.screens.js \
@@ -40,6 +44,7 @@ cat \
   src/app.sik.js \
   src/app.baslarken.js \
   src/app.uyku.js \
+  src/app.adim.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"
@@ -52,3 +57,6 @@ cp -f src/icon.svg src/icon-192.png src/icon-512.png dist/
 # Smoke test: does the inlined script parse at all?
 node test/parse.js "$OUT"
 echo "built $OUT ($(wc -c < "$OUT") bytes)"
+
+# The children's app, Türkçe Macera, served at /kids/ beside the course.
+./kids/build.sh

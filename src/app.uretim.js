@@ -210,30 +210,36 @@ function retellReset(uid){S.retell[uid]={n:0,d:dayNum()};save();render();}
 function renderProd(){
   const sb=sentenceBank(), sd=prodDue(sb).length, kd=prodDue(chunkBank()).length;
   const rd=retellDue().length, open=retellOpen(), g=prodGap();
-  let h=bar("Üretim","production · speak first",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">The prompt is English. You say the Turkish out loud in the silence, <b>before</b> the model plays — then mark yourself. Nothing is recorded and no microphone is used.</p>';
+  let h=bar("Üretim","production · speak first",true,"önce sen söyle")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('The prompt is English. You say the Turkish out loud in the silence, <b>before</b> the model plays — then mark yourself. Nothing is recorded and no microphone is used.',
+    'İngilizcesi gelir. Örnek çalmadan <b>önce</b>, sessizlikte Türkçesini yüksek sesle söylersin; sonra kendini değerlendirirsin. Hiçbir şey kaydedilmez, mikrofon kullanılmaz.')+'</p>';
   h+=voiceNote();
   h+='<div class="stat"><div><b>'+sd+'</b><span>cümle</span></div>'+
      '<div><b>'+Math.min(kd,SESSION)+'</b><span>kalıp</span></div>'+
      '<div><b>'+rd+'</b><span>anlatım</span></div></div>';
 
   h+='<h2 class="sec">Çalış</h2>';
-  h+='<div class="card"><p class="lead">Cümleler</p><p class="sub">'+sb.length+' sentence'+(sb.length===1?"":"s")+' in range · '+sd+' due today. Up to '+SESSION+' in a sitting.</p>'+
+  h+='<div class="card"><p class="lead">Cümleler</p><p class="sub">'+tx(sb.length+' sentence'+(sb.length===1?"":"s")+' in range · '+sd+' due today. Up to '+SESSION+' in a sitting.',
+     'Kapsamda '+sb.length+' cümle · bugün '+sd+' tane. Bir oturumda en fazla '+SESSION+'.')+'</p>'+
    '<button class="btn" onclick="startProd(\'s\')">Başla</button></div>';
   /* The actionable number is the sitting, not the bank. At fifty prefabs
      "50 due today" was merely odd; at three hundred it reads as a debt
      nobody will clear, when it really means "not started yet, twelve of
      them now" — the same correction the Tekrar hub needed. */
-  h+='<div class="card"><p class="lead">Kalıplar</p><p class="sub">'+CHUNKS.length+' conversational prefabs — the ready-made pieces a speaker reaches for before composing anything, grouped by what the phrase does. '+Math.min(kd,SESSION)+' in this sitting, '+kd+' not yet worked through.</p>'+
+  h+='<div class="card"><p class="lead">Kalıplar</p><p class="sub">'+tx(CHUNKS.length+' conversational prefabs — the ready-made pieces a speaker reaches for before composing anything, grouped by what the phrase does. '+Math.min(kd,SESSION)+' in this sitting, '+kd+' not yet worked through.',
+     'Konuşmada hazır kullanılan '+CHUNKS.length+' kalıp; ne işe yaradıklarına göre gruplanmış. Bu oturumda '+Math.min(kd,SESSION)+', henüz çalışılmamış '+kd+'.')+'</p>'+
    '<button class="btn" onclick="startProd(\'k\')">Başla</button></div>';
 
-  h+='<div class="card"><p class="lead">Kurma · build it</p><p class="sub">Sentences assembled on the spot from '+LEX.length+' words — you will not have seen them before, so they cannot be recalled, only built.</p>'+
+  h+='<div class="card"><p class="lead">Kurma · build it</p><p class="sub">'+tx('Sentences assembled on the spot from '+LEX.length+' words — you will not have seen them before, so they cannot be recalled, only built.',
+     LEX.length+' kelimeden o anda kurulan cümleler. Daha önce görmediğin için ezberden gelmez, kurman gerekir.')+'</p>'+
    '<button class="btn" onclick="startProd(\'g\')">Başla</button></div>';
-  h+='<div class="card"><p class="lead">Dönüştürme · change it</p><p class="sub">A sentence arrives and one thing about it has to change: negative, past, future, question, person.</p>'+
+  h+='<div class="card"><p class="lead">Dönüştürme · change it</p><p class="sub">'+tx('A sentence arrives and one thing about it has to change: negative, past, future, question, person.',
+     'Bir cümle gelir ve bir yönünü değiştirirsin: olumsuz, geçmiş, gelecek, soru, kişi.')+'</p>'+
    '<button class="btn" onclick="startProd(\'t\')">Başla</button></div>';
 
   h+='<h2 class="sec">Üç kez anlat</h2><div class="card">';
-  h+='<p class="sub">A unit\'s speaking task, told from memory three times: today, in two days, and in a week. Start one from any unit\'s Konuşma card.</p>';
+  h+='<p class="sub">'+tx('A unit\'s speaking task, told from memory three times: today, in two days, and in a week. Start one from any unit\'s Konuşma card.',
+    'Bir ünitenin konuşma görevi, aklından üç kez anlatılır: bugün, iki gün sonra ve bir hafta sonra. Herhangi bir ünitenin Konuşma kartından başlat.')+'</p>';
   if(open.length){
     open.forEach(function(u){
       const r=S.retell[u.id], left=r.d-dayNum();
@@ -241,12 +247,12 @@ function renderProd(){
         '<span class="grow"><span class="unit-t">'+esc(u.tr)+'</span><span class="unit-s">'+esc(u.lv)+' · '+
         (left<=0?"bugün":left+" gün sonra")+' · '+r.n+'/3</span></span><span class="chev">'+IC.chev+'</span></button>';
     });
-  }else h+='<p class="tiny">Nothing started yet.</p>';
+  }else h+='<p class="tiny">'+tx('Nothing started yet.','Henüz başlanmadı.')+'</p>';
   h+='</div>';
 
   h+='<h2 class="sec">Ayarlar</h2><div class="card">';
   h+='<p class="lead" style="font-size:.95rem">Sessizlik · the gap</p>'+
-   '<p class="sub">How long you get before the model plays.</p><div class="segs">';
+   '<p class="sub">'+tx('How long you get before the model plays.','Örnek çalmadan önce ne kadar süren var.')+'</p><div class="segs">';
   GAPS.forEach(function(n){h+='<button class="'+(n===g?"on":"")+'" onclick="setGap('+n+')">'+n+'<i>saniye</i></button>';});
   h+='</div>';
   h+='<p class="lead" style="font-size:.95rem">Kaynak · where sentences come from</p><div class="segs">';
@@ -255,10 +261,12 @@ function renderProd(){
   });
   h+='</div>';
   h+='<button class="btn ghost" onclick="togglePrompt()">'+(S.prompten?"İngilizce sesli ✓":"İngilizceyi de seslendir")+'</button>';
-  h+='<p class="tiny" style="margin-top:.5rem">The English prompt is read by whatever English voice the device has. Leave it off to read it yourself and keep the silence longer.</p>';
+  h+='<p class="tiny" style="margin-top:.5rem">'+tx('The English prompt is read by whatever English voice the device has. Leave it off to read it yourself and keep the silence longer.',
+    'İngilizce cümleyi cihazın İngilizce sesi okur. Kendin okumak ve sessizliği uzun tutmak için kapalı bırak.')+'</p>';
   h+='</div>';
 
-  h+='<p class="foot">Right answers come back later and later — 1, 2, 4, 8, 16 days — on the same ladder as the word queue. Wrong ones come back today.</p></div>';
+  h+='<p class="foot">'+tx('Right answers come back later and later — 1, 2, 4, 8, 16 days — on the same ladder as the word queue. Wrong ones come back today.',
+    'Doğrular gittikçe daha geç gelir: 1, 2, 4, 8, 16 gün sonra, kelime sırasıyla aynı merdivende. Yanlışlar bugün yeniden gelir.')+'</p></div>';
   paint(h);
 }
 
@@ -270,8 +278,10 @@ function renderProdRun(){
     paint(bar(PR.title,"Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(PR.right*2>=PR.q.length?"pass":"fail")+'">'+PR.right+'/'+PR.q.length+'</div>'+
       '<p class="sub">kendi değerlendirmen · your own marking</p></div>'+
-      '<div class="card"><p class="sub">'+(banked?left+' still waiting in this set. The ones you missed come back today.'
-        :'These are built fresh every time, so the set never runs out. What comes back is the pattern you missed.')+'</p>'+
+      '<div class="card"><p class="sub">'+(banked?tx(left+' still waiting in this set. The ones you missed come back today.',
+                                                    'Bu grupta '+left+' tane daha bekliyor. Yanlış yaptıkların bugün yeniden gelir.')
+        :tx('These are built fresh every time, so the set never runs out. What comes back is the pattern you missed.',
+            'Bunlar her seferinde yeniden kurulur, yani hiç bitmez. Geri gelen, yanlış yaptığın kalıptır.'))+'</p>'+
       '<button class="btn" onclick="startProd(\''+PR.mode+'\')">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'prod\')">Üretim</button></div></div>');
     return;
@@ -293,7 +303,7 @@ function renderProdRun(){
      '<button class="sbtn" style="margin-top:.6rem" onclick="prodSay()">'+IC.spk+' tekrar</button>';
   }else{
     h+='<p style="font-family:\'Crimson Pro\',serif;font-size:1.5rem;line-height:1.35;margin:.8rem 0 0">'+esc(PR.build[PR.bi])+'</p>'+
-     '<p class="tiny" style="margin-top:.5rem">'+(PR.bi+1)+' / '+PR.build.length+' · repeat this piece, then take the next</p>';
+     '<p class="tiny" style="margin-top:.5rem">'+(PR.bi+1)+' / '+PR.build.length+' · '+tx('repeat this piece, then take the next','bu parçayı tekrar et, sonra sıradakine geç')+'</p>';
   }
   h+='</div>';
   h+='<p class="tiny" style="text-align:center">'+esc(it.lv+" · "+it.from)+'</p>';
@@ -315,15 +325,17 @@ function renderRetell(){
    '<p class="lead" style="margin-top:.2rem">'+esc(u.speak)+'</p></div>';
   h+='<div class="stat"><div><b>'+r.n+'/3</b><span>anlatıldı</span></div>'+
    '<div><b>'+(all?"✓":(now?"bugün":left+" gün"))+'</b><span>'+(all?"tamam":"sıradaki")+'</span></div></div>';
-  h+='<div class="card"><p class="sub">Say the whole thing out loud, from memory, without reading the passage. These are the ten words the unit gave you.</p>'+
+  h+='<div class="card"><p class="sub">'+tx('Say the whole thing out loud, from memory, without reading the passage. These are the ten words the unit gave you.',
+    'Metne bakmadan, aklından, hepsini yüksek sesle anlat. Ünitenin sana verdiği on kelime şunlar.')+'</p>'+
    '<div class="pillrow">';
   u.vocab.forEach(function(w){h+='<span class="pill">'+esc(w[0])+'</span>';});
   h+='</div></div>';
   if(all)h+='<div class="card"><p class="lead">Üç kez anlatıldı ✓</p>'+
-   '<p class="sub">Told on day one, day three and day seven. Start it again whenever you like.</p>'+
+   '<p class="sub">'+tx('Told on day one, day three and day seven. Start it again whenever you like.','Birinci, üçüncü ve yedinci gün anlatıldı. İstediğin zaman yeniden başlayabilirsin.')+'</p>'+
    '<button class="btn ghost" onclick="retellReset(\''+u.id+'\')">Baştan</button></div>';
   else if(now)h+='<button class="btn" onclick="retellDone(\''+u.id+'\')">Anlattım</button>';
-  else h+='<div class="card"><p class="sub">Not due yet — it comes back on its own in '+left+' day'+(left===1?"":"s")+'. Telling it again today is not what makes it stick.</p>'+
+  else h+='<div class="card"><p class="sub">'+tx('Not due yet — it comes back on its own in '+left+' day'+(left===1?"":"s")+'. Telling it again today is not what makes it stick.',
+    'Henüz sırası gelmedi; '+left+' gün sonra kendiliğinden gelecek. Akılda kalmasını sağlayan bugün yeniden anlatmak değil.')+'</p>'+
    '<button class="btn ghost" onclick="retellDone(\''+u.id+'\')">Yine de anlattım</button></div>';
   h+='<button class="btn ghost" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Üniteye dön</button></div>';
   paint(h);

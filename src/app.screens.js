@@ -31,7 +31,8 @@ function renderHome(){
   h+=homeBlocks();
   if(metUnits().length>0) h+=startCard();
 
-  h+='<p class="foot">Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.</p></div>';
+  h+='<p class="foot">'+tx("Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.",
+    "İlerlemen yalnızca bu cihazda saklanır.<br>Metinler özgün, uyarlama ya da telifsizdir; ayrıntısı Hakkında sayfasında.")+'</p></div>';
   paint(h);
 }
 /* Two doors, and that is the whole menu.
@@ -64,17 +65,18 @@ function homeBlocks(){
 
 /* ===================== dersler · the course spine ===================== */
 function renderDersler(){
-  let h=bar("Dersler","lessons · A1 → C2",true)+'<div class="wrap">';
-  h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>units done</span></div>'+
-     '<div><b>'+streak()+'</b><span>day streak</span></div>'+
-     '<div><b>'+S.star.length+'</b><span>saved words</span></div></div>';
+  let h=bar("Dersler","lessons · A1 → C2",true,"A1 → C2")+'<div class="wrap">';
+  h+='<div class="stat"><div><b>'+UNITS.filter(u=>isDone(u.id)).length+'</b><span>'+tx("units done","biten ünite")+'</span></div>'+
+     '<div><b>'+streak()+'</b><span>'+tx("day streak","gün üst üste")+'</span></div>'+
+     '<div><b>'+S.star.length+'</b><span>'+tx("saved words","kayıtlı kelime")+'</span></div></div>';
   /* Başlarken sits above the levels while nothing has been opened — on
      day one it is where to start — and below them afterwards, where it
      is reference. The same rule the orientation card follows. */
   const start='<h2 class="sec">Başlarken</h2>'+
-   navRow("Giriş dersleri","Before unit one — letters, sounds, word building and sentence order · "+baslaCount()+" / "+BASLA.length,"go('baslarken')")+
-   navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()")+
-   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')");
+   navRow("Giriş dersleri","Before unit one — letters, sounds, word building and sentence order · "+baslaCount()+" / "+BASLA.length,"go('baslarken')",undefined,
+          "Birinci üniteden önce: harfler, sesler, kelime yapımı, cümle düzeni · "+baslaCount()+" / "+BASLA.length)+
+   navRow("Seviye sınavı","Placement test — find your level in 12 questions","startPlacement()",undefined,"12 soruda seviyeni bul")+
+   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')",undefined,"Uygulama nasıl çalışır (İngilizce)");
   const first=metUnits().length===0;
   if(first)h+=start;
   h+='<h2 class="sec">Seviyeler</h2>';
@@ -86,7 +88,8 @@ function renderDersler(){
       '<span class="chev">'+IC.chev+'</span></div><div class="meter"><i style="width:'+p+'%"></i></div></button>';
   });
   if(!first)h+=start;
-  h+='<p class="foot">A unit is ticked at four right out of five.<br>Each level also has a test-ahead exam that skips it outright.</p></div>';
+  h+='<p class="foot">'+tx("A unit is ticked at four right out of five.<br>Each level also has a test-ahead exam that skips it outright.",
+    "Bir ünite beşte dört doğruyla biter.<br>Her seviyenin bir de ileri sınavı var: geçersen seviyeyi atlarsın.")+'</p></div>';
   paint(h);
 }
 
@@ -95,8 +98,9 @@ function renderDersler(){
    because that is how one is reached for: you know whether you want to
    talk, to listen, to bring something back or to look something up. */
 function renderAraclar(){
-  let h=bar("Araçlar","tools · beside the lessons",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything here is optional. If you only follow <b>Bugün</b> on the home screen you are using the course correctly — these are for working on one thing in particular.</p>';
+  let h=bar("Araçlar","tools · beside the lessons",true,"derslerin yanında")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx("Everything here is optional. If you only follow <b>Bugün</b> on the home screen you are using the course correctly — these are for working on one thing in particular.",
+    "Buradakilerin hiçbiri zorunlu değil. Ana ekrandaki <b>Bugün</b> listesini izlemen yeterli; bunlar tek bir beceri üzerinde çalışmak için.")+'</p>';
   /* Six of these thirteen draw on nothing but themselves — a bank of
      prefabs, a generator, the whole word list — and are exactly as full
      on day one as they ever are. The other five start at zero and fill in
@@ -107,36 +111,44 @@ function renderAraclar(){
      hazır says which is which before that tap, computed live off the same
      banks the hubs themselves check — never a fixed list, so it keeps
      telling the truth as the five fill in. */
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">A <span class="pill turk">hazır</span> tag means there is something to do here right now, with nothing read yet. The rest fill in on their own as you work through the course.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx("A <span class=\"pill turk\">hazır</span> tag means there is something to do here right now, with nothing read yet. The rest fill in on their own as you work through the course.",
+    "<span class=\"pill turk\">hazır</span> etiketi, orada şimdi yapacak bir şey olduğunu gösterir. Ötekiler sen ilerledikçe kendiliğinden dolar.")+'</p>';
 
   h+='<h2 class="sec">Konuşma · speaking</h2>'+
-   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')",true)+
-   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')",true)+
-   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')",true)+
-   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')",true)+
-   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')",true);
+   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')",true,
+          "Örneği duymadan önce cümleyi sen söyle · "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" cümle")+
+   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')",true,"Eller serbest: sesli sorular, dokunmak yok, 5 ya da 10 dakika")+
+   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')",true,"Yalnızca cevap verme, soruyu da sen sor")+
+   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')",true,"Sana cevap veren bir konuşma ve tamir çantası")+
+   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')",true,"Parça parça değil, bütün olarak söylenir · "+(ATASOZU.length+DEYIM.length)+" söz");
 
   h+='<h2 class="sec">Dinleme · listening</h2>'+
-   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0)+
-   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true)+
-   navRow("Uyumadan önce","Today's words and sentences, said quietly, then it stops — 5 or 10 minutes","go('uyku')",uyBank().items.length>0);
+   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0,
+          "Duyduğunu yaz ya da metin olmadan anla, hızlı")+
+   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true,"Sayılar, saatler ve fiyatlar, saate karşı")+
+   navRow("Uyumadan önce","Today's words and sentences, said quietly, then it stops — 5 or 10 minutes","go('uyku')",uyBank().items.length>0,
+          "Bugünün kelimeleri ve cümleleri, alçak sesle; sonra kendiliğinden durur · 5 ya da 10 dakika");
 
   h+='<h2 class="sec">Tekrar · bringing it back</h2>'+
-   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')",repBank().length>0)+
-   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')",gramBank().length>0)+
-   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')",S.star.length>0)+
-   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')",Object.keys(S.err).length>0);
+   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')",repBank().length>0,"Kursun bir kez öğrettiği kelimeler, akılda kalana kadar")+
+   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')",gramBank().length>0,
+          UNITS.length+" dilbilgisi konusu geri gelir; İngilizceden Türkçeye sen kurarsın")+
+   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')",S.star.length>0,"Kayıtlı kelimeler ("+S.star.length+") · tekrar sırası ve kartlar")+
+   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')",Object.keys(S.err).length>0,
+          "Neyi yanlış yaptın, neden, ve hangileri tekrar ediyor"+(errRepeat().length?" · "+errRepeat().length+" tekrar eden":""));
 
   h+='<h2 class="sec">Kelimeler · words</h2>'+
-   navRow("Sık kelimeler","The commonest words the units never teach — ten a day, into your reviews","go('sik')",sikBatch().length>0)+
-   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')",true)+
-   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()",true);
+   navRow("Sık kelimeler","The commonest words the units never teach — ten a day, into your reviews","go('sik')",sikBatch().length>0,"Ünitelerin öğretmediği en sık kelimeler; günde on tane, tekrarına eklenir")+
+   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')",true,"Bütün kelimeler, kurs ve gündelik ("+dictAll().length+"), türüne göre")+
+   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()",true,
+          "Dışarıda karşılaştığın bir kelimeyi ekle; aynı sıraya girer"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""));
 
   h+='<h2 class="sec">Kurs</h2>'+
-   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')")+
-   navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')");
+   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')",undefined,"Uygulama nasıl çalışır (İngilizce)")+
+   navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')",undefined,"Kurs nasıl işler, metinler nereden gelir (İngilizce)");
 
-  h+='<p class="foot">Nothing here has to be done in any order.<br>Reviews draw only on material you have actually met.</p></div>';
+  h+='<p class="foot">'+tx("Nothing here has to be done in any order.<br>Reviews draw only on material you have actually met.",
+    "Buradakilerin bir sırası yok.<br>Tekrarlar yalnızca gördüğün konulardan gelir.")+'</p></div>';
   paint(h);
 }
 
@@ -182,7 +194,7 @@ function startCard(){
   return h+'</div>';
 }
 function renderNasil(){
-  let h=bar("Nasıl çalışır","how to use this",true)+'<div class="wrap"><div class="card gram">'+
+  let h=bar("Nasıl çalışır","how to use this",true,"nasıl kullanılır")+'<div class="wrap"><div class="card gram">'+
    '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app. The English stays until A2 is complete, then steps aside so the Turkish does the work; the <b>EN</b> button at the top of every screen turns it off or back on whenever you like.</p>'+
    '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
    '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
@@ -202,9 +214,9 @@ function renderNasil(){
    the "hazır" tag, false paints nothing, and leaving it out entirely (as
    Dersler's two calls do) is a different thing from false — it means
    readiness is not this row's business, so no pill either way. */
-function navRow(t,s,fn,ready){
+function navRow(t,s,fn,ready,tr){
   const tag=ready?' <span class="pill turk" style="vertical-align:.1em">hazır</span>':'';
-  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead nav-t">'+esc(t)+tag+'</p><p class="sub">'+esc(s)+'</p></div><span class="chev">'+IC.chev+'</span></button>';
+  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead nav-t">'+esc(t)+tag+'</p><p class="sub">'+(tr?tx(esc(s),esc(tr)):esc(s))+'</p></div><span class="chev">'+IC.chev+'</span></button>';
 }
 
 /* ===================== level ===================== */
@@ -227,8 +239,9 @@ function renderLevel(){
   h+='</div>';
   h+='<h2 class="sec">İleri test</h2>'+
    '<div class="card"><p class="lead">'+esc(l.id)+' seviye sınavı</p>'+
-   '<p class="sub">Ten questions drawn from the whole level. Score 8 or more and the level is marked complete — use this to skip material you already know.</p>'+
-   '<button class="btn gold" onclick="startLevelExam(\''+l.id+'\')">Test ahead</button></div>';
+   '<p class="sub">'+tx("Ten questions drawn from the whole level. Score 8 or more and the level is marked complete — use this to skip material you already know.",
+     "Seviyenin tamamından on soru. Sekiz ya da daha fazlasını bilirsen seviye tamamlanmış sayılır; bildiğin konuları böyle atlarsın.")+'</p>'+
+   '<button class="btn gold" onclick="startLevelExam(\''+l.id+'\')">Sınava gir</button></div>';
   h+='</div>';
   paint(h);
 }
@@ -246,6 +259,9 @@ function renderUnit(){
   }
   markSeen(u.id,sec);
   let h=bar(u.tr,u.lv+" · Ünite "+u.n,true)+'<div class="wrap">';
+  /* The lesson is the way in; the tabs are for looking through it. */
+  h+='<button class="btn adim-go" onclick="startAdim(\''+u.id+'\')">'+(isDone(u.id)?"Dersi tekrarla":"Derse başla")+'</button>'+
+     '<p class="src adim-or">'+tx("Or look through the unit yourself:","Ya da üniteye kendin göz at:")+'</p>';
   h+='<div class="segs">';
   SECS.forEach(s=>{
     const on=s[0]===sec, seen=S.seen[u.id]&&S.seen[u.id][s[0]];
@@ -267,7 +283,7 @@ function toggleStar(i){
 }
 function secVocab(u){
   const allIn=u.vocab.every(w=>isStarred(w[0],w[1]));
-  let h='<p class="src">Tap a word to hear it. Tap the star to send it to your review queue.</p><div class="card" style="padding:.3rem 1rem">';
+  let h='<p class="src">'+tx("Tap a word to hear it. Tap the star to send it to your review queue.","Dinlemek için kelimeye dokun. Tekrar listene eklemek için yıldıza dokun.")+'</p><div class="card" style="padding:.3rem 1rem">';
   u.vocab.forEach((w,i)=>{
     const on=isStarred(w[0],w[1]);
     h+='<div class="vrow">'+spkBtn(w[0],{aria:"Listen"})+
@@ -283,14 +299,17 @@ function starAll(uid){
   save(); render();
 }
 function secGram(u){
+  return gramCard(u)+spokenCard(u)+'<button class="btn" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Okumaya geç →</button>';
+}
+/* The grammar point itself, shared by the tab and by the lesson. */
+function gramCard(u){
   const g=u.gram;
   let h='<div class="card gram"><p class="lead">'+esc(g.t)+'</p><p class="tiny" style="margin:.1rem 0 .6rem">'+esc(g.en)+'</p>';
   g.body.forEach(p=>{h+='<p>'+p+'</p>';});
   if(g.tbl){h+='<table class="table">';g.tbl.forEach(r=>{h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';});h+='</table>';}
   h+='<div class="egs">';
   g.eg.forEach(e=>{h+='<div class="eg"><b>'+esc(e[0])+'</b><span>'+esc(e[1])+'</span></div>';});
-  h+='</div></div>'+spokenCard(u)+'<button class="btn" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Okumaya geç →</button>';
-  return h;
+  return h+'</div></div>';
 }
 /* How the unit's Turkish is actually said, where that differs from how it
    is written. Beside the grammar rather than inside it: the written form
@@ -299,7 +318,8 @@ const REGISTER={herkes:"herkese · with anyone",samimi:"samimi · between friend
 function spokenCard(u){
   const ns=SPOKEN[u.id]; if(!ns||!ns.length)return "";
   let h='<div class="card spoken"><p class="lead">Konuşurken · how it is said</p>'+
-   '<p class="tiny" style="margin:.1rem 0 .4rem">What you will hear, and read in messages, alongside what the unit writes. For recognising first; say it once it sounds natural to you.</p>';
+   '<p class="tiny" style="margin:.1rem 0 .4rem">'+tx("What you will hear, and read in messages, alongside what the unit writes. For recognising first; say it once it sounds natural to you.",
+     "Ünitenin yazdığının yanında, duyacağın ve mesajlarda okuyacağın biçimler. Önce tanımak için; kulağına doğal gelince sen de söyle.")+'</p>';
   ns.forEach(function(x){
     h+='<div class="sp"><p class="sp-pair">'+esc(x.w)+' <span class="sp-arrow">→</span> <b>'+esc(x.s)+'</b> '+
      spkBtn(x.s,{aria:"Listen"})+'</p>'+
@@ -327,7 +347,8 @@ function secRead(u){
    '<p class="src"><b>'+esc(r.kind)+'</b><br>'+esc(r.src)+'</p>';
   if(r.note)h+='<div class="card" style="background:var(--sunk);border-style:dashed"><p class="sub" style="margin:0">'+esc(r.note)+'</p></div>';
   h+=voiceBar();
-  h+='<p class="tiny" style="margin:.9rem .2rem .5rem">Tap a line for the English, or the speaker to hear it. Dotted words carry a gloss.</p><div class="passage" id="passage">';
+  h+='<p class="tiny" style="margin:.9rem .2rem .5rem">'+tx("Tap a line for the English, or the speaker to hear it. Dotted words carry a gloss.",
+     "İngilizcesi için satıra, dinlemek için hoparlöre dokun. Altı noktalı kelimelerin açıklaması var.")+'</p><div class="passage" id="passage">';
   r.lines.forEach((ln,i)=>{
     h+='<p class="ln" id="ln'+i+'" onclick="lineTap(event,'+i+')">'+
       '<button class="sbtn ln-spk" onclick="event.stopPropagation();sayLine('+i+')" aria-label="Listen">'+IC.spk+'</button>'+
@@ -361,7 +382,8 @@ function voiceBar(){
     h+='</div>';
   });
   h+='<p class="tiny" id="vstat" style="margin:.45rem 0 0;min-height:1.1em"></p>'+
-   '<p class="tiny" style="margin:.3rem 0 0">Gölge: each line plays, then waits the same length for you to repeat it aloud. Speeds above 1× are the listening training — see Dinleme.</p></div>';
+   '<p class="tiny" style="margin:.3rem 0 0">'+tx("Gölge: each line plays, then waits the same length for you to repeat it aloud. Speeds above 1× are the listening training — see Dinleme.",
+     "Gölge: her satır çalar, sonra sen yüksek sesle tekrar edesin diye aynı süre bekler. 1×’in üstündeki hızlar dinleme alıştırması içindir; bkz. Dinleme.")+'</p></div>';
   return h;
 }
 function lineTap(ev,i){
@@ -391,8 +413,12 @@ window.addEventListener("scroll",hideBubble,{passive:true});
 function secDrill(u){
   const d=S.done[u.id];
   let h='';
-  if(d)h+='<div class="card" style="border-color:var(--turk)"><p class="lead">Tamamlandı ✓</p><p class="sub">Best score '+d.score+'/'+(d.of||u.drill.length)+(d.byTest?" · passed by level test":"")+'. Run it again any time.</p></div>';
-  h+='<div class="card"><p class="lead">'+u.drill.length+' soru</p><p class="sub">Multiple choice, gap-fill and sentence building. Answer '+Math.ceil(u.drill.length*0.8)+' or more correctly to complete the unit.</p>'+
+  if(d)h+='<div class="card" style="border-color:var(--turk)"><p class="lead">Tamamlandı ✓</p><p class="sub">'+
+    tx('Best score '+d.score+'/'+(d.of||u.drill.length)+(d.byTest?" · passed by level test":"")+'. Run it again any time.',
+       'En iyi puan '+d.score+'/'+(d.of||u.drill.length)+(d.byTest?" · seviye sınavıyla geçildi":"")+'. İstediğin zaman yeniden çözebilirsin.')+'</p></div>';
+  h+='<div class="card"><p class="lead">'+u.drill.length+' soru</p><p class="sub">'+
+    tx('Multiple choice, gap-fill and sentence building. Answer '+Math.ceil(u.drill.length*0.8)+' or more correctly to complete the unit.',
+       'Çoktan seçmeli, boşluk doldurma ve cümle kurma. Üniteyi bitirmek için en az '+Math.ceil(u.drill.length*0.8)+' doğru gerekir.')+'</p>'+
    '<button class="btn" onclick="startUnitQuiz(\''+u.id+'\')">Başla</button></div>';
   return h;
 }
@@ -499,7 +525,8 @@ function renderScore(){
     const start=LEVELS[Math.max(0,Math.min(best+1,5))].id;
     h+='<div class="score"><div class="big">'+n+'/'+of+'</div><p class="sub">Önerilen başlangıç seviyesi</p>'+
       '<p class="mark" style="font-size:2.4rem;margin:.3rem 0">'+start+'</p></div>';
-    h+='<div class="card"><p class="sub">This is a rough placement, not a certificate. Units open in order, so to start at a later level, pass the test ahead for each level before it: eight out of ten marks that level complete.</p>'+
+    h+='<div class="card"><p class="sub">'+tx("This is a rough placement, not a certificate. Units open in order, so to start at a later level, pass the test ahead for each level before it: eight out of ten marks that level complete.",
+      "Bu kaba bir yerleştirme, belge değil. Üniteler sırayla açılır; daha ileri bir seviyeden başlamak için ondan önceki her seviyenin sınavını geç: ondan sekiz doğru o seviyeyi tamamlar.")+'</p>'+
       '<button class="btn" onclick="go(\'level\',\''+start+'\')">'+start+' ile başla</button>'+
       '<button class="btn ghost" onclick="home()">Ana sayfa</button></div>';
   }else{
@@ -512,8 +539,11 @@ function renderScore(){
       save();
     }else if(Q.mode==="unit"&&S.done[Q.u]&&n>S.done[Q.u].score){S.done[Q.u].score=n;save();}
     h+='<div class="card"><p class="sub">'+
-      (pass? (Q.mode==="unit"?"Unit marked complete.":"Level marked complete — every unit in "+Q.lv+" is now ticked. You can still open any unit and read it.")
-           : "You need "+Q.pass+" to pass. Review the section and try again — wrong answers are worth more than right ones.")+'</p>';
+      (pass? (Q.mode==="unit"?tx("Unit marked complete.","Ünite tamamlandı.")
+                             :tx("Level marked complete — every unit in "+Q.lv+" is now ticked. You can still open any unit and read it.",
+                                 "Seviye tamamlandı: "+Q.lv+" seviyesindeki bütün üniteler işaretlendi. Yine de istediğin üniteyi açıp okuyabilirsin."))
+           : tx("You need "+Q.pass+" to pass. Review the section and try again — wrong answers are worth more than right ones.",
+                "Geçmek için "+Q.pass+" doğru gerekiyor. Konuyu gözden geçir ve yeniden dene; yanlışlar doğrulardan daha çok şey öğretir."))+'</p>';
     if(Q.mode==="unit"){
       const u=unit(Q.u), us=unitsOf(u.lv), i=us.findIndex(x=>x.id===u.id);
       h+='<button class="btn" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>';
@@ -566,12 +596,13 @@ function renderReview(){
 /* ===================== words ===================== */
 let FC=null;
 function renderWords(){
-  let h=bar("Sözlüğüm","Saved words",true)+'<div class="wrap">';
+  let h=bar("Sözlüğüm","kayıtlı kelimeler",true)+'<div class="wrap">';
   if(!S.star.length){
-    h+='<div class="empty">No saved words yet.<br>Open any unit’s Kelimeler tab and tap a star.</div>';
+    h+='<div class="empty">'+tx("No saved words yet.<br>Open any unit’s Kelimeler tab and tap a star.","Henüz kayıtlı kelimen yok.<br>Bir ünitenin Kelimeler sekmesini aç ve bir yıldıza dokun.")+'</div>';
   }else{
     h+='<div class="card"><p class="lead">'+S.star.length+' kelime · '+dueList().length+' bugün</p>'+
-      '<p class="sub">Review sends each word away for longer every time you get it right. Flashcards just run the lot in random order.</p>'+
+      '<p class="sub">'+tx("Review sends each word away for longer every time you get it right. Flashcards just run the lot in random order.",
+        "Tekrarda bildiğin her kelime daha uzun bir süre sonra geri gelir. Kartlar hepsini karışık sırayla gösterir.")+'</p>'+
       '<button class="btn" onclick="startReview()">Tekrara başla</button>'+
       '<button class="btn ghost" onclick="mineOpen()">Kendi kelimelerim</button>'+
       '<button class="btn ghost" onclick="startCards()">Kartlarla çalış</button></div><div class="card" style="padding:.3rem 1rem">';
@@ -601,7 +632,7 @@ function renderCards(){
   h+='<div class="card" style="text-align:center;padding:2.6rem 1rem;min-height:190px" onclick="flip()">'+
     '<p class="mark" style="font-size:2rem;margin:0">'+esc(p[0])+'</p>'+
     spkBtn(p[0],{style:"margin-top:.6rem",stop:true,text:" dinle"})+
-    (FC.show?'<p class="sub" style="margin-top:1rem;font-size:1.05rem">'+esc(p[1])+'</p>':'<p class="tiny" style="margin-top:1rem">tap to reveal</p>')+'</div>';
+    (FC.show?'<p class="sub" style="margin-top:1rem;font-size:1.05rem">'+esc(p[1])+'</p>':'<p class="tiny" style="margin-top:1rem">'+tx("tap to reveal","görmek için dokun")+'</p>')+'</div>';
   h+='<div class="btn-row"><button class="btn ghost" onclick="flip()">Çevir</button><button class="btn" onclick="nextCard()">Sonraki</button></div></div>';
   paint(h);
 }
@@ -678,12 +709,15 @@ function renderDict(){
   const rows=dictRows(), all=dictAll();
   const inSrc=all.filter(w=>(DICT.src==="all"||w.src===DICT.src)&&(!DICT.topic||w.k===DICT.topic));
   const count=c=>c==="all"?inSrc.length:inSrc.filter(w=>w.c===c).length;
-  let h=bar("Sözlük","ders ve çekirdek · every word",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem .8rem">'+all.length+' words: the '+all.filter(w=>w.src==="course").length+
-   ' the sixty units teach, '+all.filter(w=>w.src==="core"&&w.k!=="sık").length+' everyday ones by topic, and the '+
-   all.filter(w=>w.k==="sık").length+' commonest words of spoken Turkish they never reach (<i>sık</i>). Tap a word to hear it, the star to save it, or the row for its unit or topic.</p>';
+  let h=bar("Sözlük","ders ve çekirdek · every word",true,"bütün kelimeler")+'<div class="wrap">';
+  const nC=all.filter(w=>w.src==="course").length, nK=all.filter(w=>w.src==="core"&&w.k!=="sık").length, nS=all.filter(w=>w.k==="sık").length;
+  h+='<p class="sub" style="margin:.2rem .2rem .8rem">'+tx(all.length+' words: the '+nC+
+   ' the sixty units teach, '+nK+' everyday ones by topic, and the '+
+   nS+' commonest words of spoken Turkish they never reach (<i>sık</i>). Tap a word to hear it, the star to save it, or the row for its unit or topic.',
+   all.length+' kelime: altmış ünitenin öğrettiği '+nC+', konulara göre '+nK+' gündelik kelime ve ünitelerin hiç değinmediği, konuşma dilinin en sık '+nS+' kelimesi (<i>sık</i>). '+
+   'Dinlemek için kelimeye, kaydetmek için yıldıza, ünitesi ya da konusu için satıra dokun.')+'</p>';
   h+='<input class="inp" id="dq" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" '+
-    'placeholder="ara · search Turkish or English" oninput="dictSearch(this.value)" value="'+esc(DICT.q)+'">';
+    'placeholder="'+txt("search Turkish or English","ara: Türkçe ya da İngilizce")+'" oninput="dictSearch(this.value)" value="'+esc(DICT.q)+'">';
   h+='<div class="segs" style="margin:.7rem 0 .4rem">';
   SRCS.forEach(function(s){
     h+='<button class="'+(DICT.src===s[0]?"on":"")+'" onclick="dictSrc(\''+s[0]+'\')">'+s[1]+'<i><span class="gl">'+s[2]+'</span></i></button>';
@@ -699,7 +733,7 @@ function renderDict(){
   h+='<div class="row" style="margin:.5rem .2rem"><span class="tiny grow">'+rows.length+' kelime'+
    (DICT.cat==="all"?"":" · "+CATS.find(c=>c[0]===DICT.cat)[2])+'</span>'+
    '<button class="sbtn" onclick="dictSort()">'+(DICT.sort==="az"?"A→Z":"seviyeye göre")+'</button></div>';
-  if(!rows.length)h+='<div class="empty">Bu aramaya uygun kelime yok.<br>No word matches that search.</div>';
+  if(!rows.length)h+='<div class="empty">Bu aramaya uygun kelime yok.</div>';
   else{
     h+='<div class="card" style="padding:.3rem 1rem">';
     rows.forEach(function(w){
@@ -721,7 +755,8 @@ function renderDict(){
     });
     h+='</div>';
   }
-  h+='<p class="foot">Classified by ending where Turkish allows it — anything in -mak or -mek is a verb — and by hand otherwise. A word can belong to more than one class; the list picks the one it is used in here.</p></div>';
+  h+='<p class="foot">'+tx('Classified by ending where Turkish allows it — anything in -mak or -mek is a verb — and by hand otherwise. A word can belong to more than one class; the list picks the one it is used in here.',
+    'Türkçe izin verdiğinde türü ekinden anlaşılır: -mak ya da -mek ile biten her şey fiildir; ötekiler elle sınıflandı. Bir kelime birden çok türe girebilir; liste burada kullanıldığı türü seçer.')+'</p></div>';
   paint(h);
   /* Typing re-renders the screen, so put the cursor back where it was. */
   const box=document.getElementById("dq");
@@ -745,7 +780,7 @@ function voiceAbout(){
     '<b>Mac:</b> System Settings → Accessibility → Spoken Content → System voice → Manage Voices → Turkish. The names move a little between versions.</p>';
 }
 function renderAbout(){
-  let h=bar("Bu kurs hakkında","About",true)+'<div class="wrap"><div class="card gram">'+
+  let h=bar("Bu kurs hakkında","About",true,"hakkında")+'<div class="wrap"><div class="card gram">'+
   '<p class="lead">Nasıl çalışır</p>'+
   '<p>Six CEFR levels, ten units each — sixty in all. Every unit has four parts: <b>Kelimeler</b> (ten words you can save), <b>Dilbilgisi</b> (one grammar point with a table and examples), <b>Okuma</b> (a graded passage, tap any line for the English), and <b>Alıştırma</b> (five questions).</p>'+
   '<p class="lead" style="margin-top:1.3rem">Ses · listening and shadowing</p>'+'<p>Every reading passage has a <b>Dinle</b> button (it reads the whole text aloud, line by line, at the speed you choose) and a <b>Gölge</b> button for shadowing: each line plays, then the app waits exactly as long again for you to repeat it out loud. Tap any single line’s speaker to hear just that line, and any vocabulary word to hear it alone.</p>'+voiceAbout()+'<p class="lead" style="margin-top:1.3rem">Tekrar · the review queue</p>'+'<p>Starred words enter a spaced queue. Grade a word <b>Zor</b> and it returns today; <b>İyi</b> and it returns later each time — 1, 2, 4, 8, 16 days and on. The home screen shows what is due.</p>'+'<p class="lead" style="margin-top:1.3rem">Tekrar motoru · what the course teaches once</p>'+'<p>Across everything this app can show you, the median taught word turns up <b>three</b> times, and a word needs something like eight before it stays. <b>Tekrar motoru</b> counts the encounters and drills whatever the course will not bring back by itself, worst served first. Where the word appears in a passage you have read, that line returns with it blanked, and the answer is the form the sentence uses. Where it appears nowhere, the English comes first and you type the Turkish.</p>'+'<p class="lead" style="margin-top:1.3rem">Dilbilgisi tekrarı · produce the pattern</p>'+'<p>The same gap, one level up: each unit explains one grammar point, in one tab, and then the course moves on. <b>Dilbilgisi tekrarı</b> brings the point back on the same widening schedule and asks you to build a sentence with it from English. What is scheduled is the point, not the sentence — its worked examples rotate, so the passive keeps coming back and a different sentence carries it each time.</p>'+'<p>Every word has to be there, unlike Dikte, which forgives one word in five — except a subject pronoun such as <i>ben</i> or <i>benim</i>, which the ending already carries, so <i>Adım Deniz</i> and <i>Benim adım Deniz</i> are both right: the sentences are four words long at the median and the form is the whole question, so forgiving a word would forgive the point. The <b>order</b> is yours, though — Turkish is freer than the English prompt, and “Ona mektubu yazdırdım” is as right as “Mektubu ona yazdırdım”. Diacritics are ignored, and the marked line names the word whose ending went wrong.</p>'+'<p>Where the English genuinely leaves the choice open — a synonym, a tense English does not distinguish — you can mark your own answer right. A word-level check can mark words; it cannot mark Turkish, and everything in Üretim is self-graded for the same reason.</p>'+'<p>Both engines only ever draw on what you have actually met: the word bank waits until you have opened a unit’s word list, the sentences wait until you have read its passage, and the grammar waits until you have read the point. An empty review screen on a new install is the app being correct, not broken.</p>'+'<p class="lead" style="margin-top:1.3rem">Dinleme · listening without the text</p>'+'<p>Dinle and Gölge leave the passage on screen, which trains reading with a soundtrack. <b>Dinleme</b> takes the text away. In <b>Dikte</b> a line plays and you type what you heard; the app marks it word by word and names the words that never reached you — diacritics are ignored, missing words are not. In <b>Ses önce</b> nothing is typed: you listen, decide whether it landed, and only then see the Turkish and the English.</p>'+'<p>The speed goes past normal on purpose, up to 1.75× on a passage and 1.5× in Dinleme. Real speech does not slow down, and comprehension that only works at 0.85× is comprehension that fails in a conversation. You can also cut the replays to one, which is how often a sentence is actually said to you.</p>'+'<p>One honest limit: this is your device’s own Turkish voice, not a recording of a person. It has no reduction, no regional accent and no overlapping speakers, so a clean 1.5× here is a floor and not a finish — the units on <i>Karagöz</i> and on <i>ağızlar</i> describe what it leaves out. Turkish radio and podcasts are the next step, and they are free.</p>'+'<p class="lead" style="margin-top:1.3rem">Üretim · saying it first</p>'+'<p>Reading and listening are not speaking. <b>Üretim</b> gives you the English, then a silence of a few seconds, and only then plays the Turkish — so the sentence has to leave your mouth before you hear the model. You mark yourself <b>Doğru</b> or <b>Yanlış</b>, and the sentences ride the same widening schedule as the words.</p>'+'<p>Long sentences can be built <b>backwards</b>, from the end forwards: <i>bilmiyorum → ne dediğini bilmiyorum → adamın ne dediğini bilmiyorum</i>. The verb lands last in Turkish, and holding the shape until it arrives is the thing that breaks fluency. A sentence you mark wrong is offered this way automatically.</p>'+'<p>Alongside the course’s own sentences there is a bank of '+CHUNKS.length+' <b>kalıplar</b> — the conversational prefabs you reach for whole, grouped by what each one does: agreeing, refusing, asking again when you have missed something, buying the thing, holding the floor — and <b>üç kez anlat</b>, which brings a unit’s speaking task back on day one, day three and day seven. Nothing is recorded and no microphone is used: you are the judge, which is also what keeps it working offline.</p>'+'<p class="lead" style="margin-top:1.3rem">Sor · asking</p>'+'<p>Everything else in this app answers. Sixty units of reading, hundreds of sentences to produce — and almost none of it is a question, which leaves you able to reply and unable to keep a conversation going. <b>Sor</b> drills the other half.</p>'+'<p>In <b>Ne sordum</b> a statement arrives and you produce the question it answers: <i>Okula gidiyorum</i> is the answer to <i>Nereye gidiyorsun?</i> — and note that the person moves, because nobody asks <i>Nereye gidiyorum?</i> to get that reply. In <b>Evet/hayır</b> you turn a statement into a yes-or-no question, which in Turkish is a matter of where <i>mi</i> lands, which vowel it takes, and what the person ending goes on.</p>'+'<p>The questions are assembled at the moment they are shown, from the same word list the built sentences use, so there is nothing to memorise. What comes back is the question word you were weak at rather than a sentence you happened to miss.</p>'+'<p class="lead" style="margin-top:1.3rem">Diyalog · keeping it alive</p>'+'<p>Everything else in this app is one exchange with a known answer. A conversation is not: what comes back depends on what you said, and sometimes you simply do not catch it. <b>Diyalog</b> is a short errand — a ticket, a stall, a pharmacy — with someone who talks at normal speed and has no idea you are learning. You <b>hear</b> them. You never read them.</p>'+'<p>What ends a conversation is almost never the missing word. It is the pause after it, and then the other person switches to English. So the only thing marked here is whether you <b>finished</b>: a conversation completed with four repairs is a success, and one abandoned over a single word is the failure this mode exists to train away. <b>Asking someone to repeat themselves costs you nothing</b>, and nothing keeps count of it between runs.</b></p>'+'<p>Three repair moves sit on screen in every conversation, and each does something different: <i>bir daha söyler misiniz</i> and <i>daha yavaş lütfen</i> get it said again, slower and slower; <i>affedersiniz, anlamadım</i> gets it rephrased in plainer words. They are not new — you have been drilling them in Üretim as kalıplar. This is the first place they are the difference between finishing and walking out. There is deliberately no free replay button: if hearing it again were one tap away, none of this would ever be needed.</p>'+'<p>The prices, times and places are generated every run, so the answer cannot be remembered — only heard — and the numbers are the one thing a machine can honestly mark, by the same check Sayılar uses. Getting one wrong does not end the conversation. In a shop you would hand over the wrong note and be corrected; you would not walk out.</p>'+'<p class="lead" style="margin-top:1.3rem">Atasözleri ve deyimler · said whole</p>'+'<p>Everything else you produce here has to be assembled — person, tense, case, and the verb last — and assembling is slow while the grammar is still new. A proverb is one stored object, and it comes out at full speed. That makes this the cheapest fluency in the language, which is exactly what a slow speaker needs.</p>'+'<p>In <b>Atasözleri</b> you are given a situation and produce the saying that answers it, never the other way round: knowing the words is not the skill, knowing the <i>moment</i> is, and a proverb said at the wrong one is worse than saying nothing. In <b>Deyimler</b> the English meaning comes first and you type the idiom. What the words literally say is shown <i>after</i> you answer — <i>kafa patlatmak</i> is not “to burst a head”, and that gap is the whole reason an idiom has to be learned in one piece rather than looked up word by word.</p>'+'<p>This is the strictest marking in the app: every word, in order, nothing extra. Dikte forgives one word in five and Dilbilgisi lets you reorder freely, but a fixed saying with one word wrong is not a saying slightly misremembered — it is a sentence nobody says. Diacritics are forgiven as everywhere else.</p>'+'<p>Where a saying genuinely has more than one real wording, both are accepted and you are shown the other after a right answer: <i>işleyen demir pas tutmaz</i> and <i>işleyen demir ışıldar</i> are both said. And if you know a wording this list does not, you can overrule the mark — the variants here are only as good as whoever wrote them down, and a wording you met in the street is not wrong for being missing.</p>'+'<p>These are anonymous folk material. There is no author to credit and no edition to check a line against, which is why this shelf could be built while the library of named authors is still waiting.</p>'+'<p class="lead" style="margin-top:1.3rem">Sayılar · numbers at speed</p>'+'<p>Turkish numbers are perfectly regular — <i>yüz yetmiş beş</i> is a hundred seventy-five and there is nothing to memorise — so knowing them was never the problem. Getting them <b>in time</b> is. Someone says a price and you have a second or two, not ten, and the conversion that arrives afterwards is no use to anybody.</p>'+'<p>So <b>Sayılar</b> puts a clock on it, and the clock is part of the mark: right but slow does not move a shape out a box. You can turn the bar off, but that is a decision you make rather than one the drill makes for you. What is scheduled is the <b>shape</b> — two digits, hundreds, thousands, the clock, a price — because that is what a person is slow at, not any particular number.</p>'+'<p>In <b>Duy</b> a number is said once and you type the digits. This is the second thing in the app the machine marks rather than you, after Dikte, and for the same reason: <i>altmış</i> and <i>yetmiş</i> sound alike at speed, and someone who heard the wrong one is certain they were right. A typed 342 either is or is not the answer. In <b>Söyle</b> the digits are on screen and you read them out before the model plays — that one you mark yourself, but the clock still runs.</p>'+'<p>Two things worth knowing, because they are where it goes wrong: a hundred is <i>yüz</i> and never <i>bir yüz</i>, and a thousand is <i>bin</i> and never <i>bir bin</i> — but a million keeps its bir, <i>bir milyon</i>. And past half past, the clock counts down to the <i>next</i> hour: 3:35 is <i>dörde yirmi beş var</i>, twenty-five to four.</p>'+'<p>The <b>time now</b>, in words, sits under the title on the home screen — <i>üçü çeyrek geçiyor</i>, with 15:15 beneath it. Nothing to start and nothing to mark: you read it a few times a day without meaning to, and the construction that never feels natural becomes ordinary. Tap it to come here.</p>'+'<p>Underneath it, the <b>date</b> the same way — <i>yirmi üç Eylül Çarşamba</i>, with 23.09.2026 beneath. No unit ever teaches the months, so this is the only place they turn up at all: read a dozen times over a year and Ocak through Aralık stop needing to be learned on purpose.</p>'+'<p class="lead" style="margin-top:1.3rem">Kendi kelimelerim · your own words</p>'+'<p>A word off a shop sign, out of a subtitle, or from someone talking to you. <b>Kendi kelimelerim</b> takes the Turkish and what it means, and stars it — so it joins the same spaced queue as any word you saved from a unit, and turns up under <b>Tekrar</b> in Bugün from the next day. There is nothing else to set up.</p>'+'<p>Adding a word the course already teaches stars that one instead of making a second copy, and pasted text is cleaned on the way in: a soft hyphen or a zero-width space out of a web page is invisible on screen and would break every match it touched. They appear in Sözlük under <b>Benim</b>, and editing one carries its place in the queue across rather than starting it again.</p>'+'<p>They do not feed <b>Tekrar motoru</b>, and that is deliberate: it ranks words by how often this app\u2019s own material mentions them, and a word you brought has no mentions at all — every one would sit permanently at the top and bury the course vocabulary that engine exists to rescue.</p>'+'<p class="lead" style="margin-top:1.3rem">Hata defteri · the mistake book</p>'+'<p>Until now every wrong answer vanished the moment the screen changed. The quiz kept a score, and the other modes kept a box number — so the explanation written for each question was shown once and thrown away, and nothing could tell you what you were getting wrong <b>repeatedly</b>.</p>'+'<p><b>Hata defteri</b> keeps all of it: what you were asked, what you said, what was right, and why. It is keyed by the question rather than kept as a log, so the count is the point — anything that has caught you twice or more goes to the top, and “four times” is a sentence the app can now say.</p>'+'<p>It is not another queue. Every mode already brings a wrong answer back the same day, so the drilling is already happening; this is the record, and the one place that answers “what keeps catching me”. Clearing an entry or the whole book changes nothing about the schedules.</p>'+'<p class="lead" style="margin-top:1.3rem">Yolda · hands-free</p>'+'<p><b>Yolda</b> is Üretim with the hands taken away, which turns out to be a different mode rather than a setting. The English is spoken to you, you answer out loud into the silence, the Turkish follows — and there is nothing to tap between starting and stopping, so it can be done while driving, walking or washing up. Sittings are five or ten minutes and the app stops itself.</p>'+'<p>The part that makes it Pimsleur rather than a playlist is that an item comes back <b>inside the same sitting</b> — three items later, then eight, then twenty — while it is still half remembered. A five-minute sitting covers a dozen or so phrases that way rather than rushing past fifty.</p>'+'<p>Marking happens once, at the end, when you have stopped: everything is taken as right and you tap the ones that got away. Nothing at all is written while the sitting runs, so abandoning one halfway costs you nothing rather than pushing a sentence you fumbled out to sixteen days.</p>'+'<p>One limit worth knowing before you rely on it: a phone stops speaking when its screen locks, on every platform. The app asks to hold the screen awake, which works on most recent browsers, but keep the phone unlocked and in a cradle rather than in a pocket.</p>'+'<p>A unit is ticked when you answer 80% of its questions correctly. Each level also has a <b>test ahead</b> exam: ten questions drawn from the whole level, and eight correct marks the level complete — so nothing you already know has to be sat through.</p>'+

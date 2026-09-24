@@ -222,16 +222,17 @@ function yolSave(){
 /* --- screens ---------------------------------------------------------- */
 function renderYolda(){
   const bank=yolBank();
-  let h=bar("Yolda","hands-free · eyes up",true)+'<div class="wrap">';
+  let h=bar("Yolda","hands-free · eyes up",true,"eller serbest")+'<div class="wrap">';
   if(!ttsOK()){
-    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but speech.</p></div></div>';
+    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">'+tx('This browser has no speech synthesis, and this mode is nothing but speech.','Bu tarayıcıda konuşma sentezi yok, bu bölüm ise baştan sona sesten ibaret.')+'</p></div></div>';
     paint(h);return;
   }
   h+=voiceNote();
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">A sitting that runs without you: the English is spoken, you answer out loud into the silence, then the Turkish comes. Nothing to tap until it ends, so it can be done while driving or working. Items come back three, eight and twenty slots later — inside the same sitting, while they are still half remembered.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('A sitting that runs without you: the English is spoken, you answer out loud into the silence, then the Turkish comes. Nothing to tap until it ends, so it can be done while driving or working. Items come back three, eight and twenty slots later — inside the same sitting, while they are still half remembered.',
+    'Kendi kendine ilerleyen bir oturum: İngilizcesi söylenir, sen sessizlikte yüksek sesle cevap verirsin, sonra Türkçesi gelir. Bitene kadar dokunacak bir şey yok; araba kullanırken ya da çalışırken yapılabilir. Her cümle aynı oturumda, yarı hatırlanırken, üç, sekiz ve yirmi sıra sonra yeniden gelir.')+'</p>';
   if(!bank.length){
     h+='<div class="card"><p class="lead">Bugünlük bitti</p>'+
-     '<p class="sub">Every sentence and prefab is scheduled far enough ahead that none is due today.</p>'+
+     '<p class="sub">'+tx('Every sentence and prefab is scheduled far enough ahead that none is due today.','Bütün cümlelerin ve kalıpların sırası ileride; bugün bekleyen yok.')+'</p>'+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
     paint(h);return;
   }
@@ -239,31 +240,33 @@ function renderYolda(){
   h+='<div class="stat"><div><b>'+sents+'</b><span>cümle</span></div>'+
      '<div><b>'+CHUNKS.length+'</b><span>kalıp</span></div>'+
      '<div><b>'+yrate()+'×</b><span>hız</span></div></div>';
-  if(!sents)h+='<p class="tiny" style="margin:.1rem .2rem .6rem">Prefabs only so far. They belong to no unit, so they are ready on day one; a unit’s own sentences join in once you have read its passage.</p>';
+  if(!sents)h+='<p class="tiny" style="margin:.1rem .2rem .6rem">'+tx('Prefabs only so far. They belong to no unit, so they are ready on day one; a unit’s own sentences join in once you have read its passage.',
+    'Şimdilik yalnızca kalıplar. Hiçbir üniteye ait olmadıkları için ilk günden hazırlar; bir ünitenin cümleleri, metnini okuyunca eklenir.')+'</p>';
 
   h+='<h2 class="sec">Başla</h2>';
   YOL_MINS.forEach(function(m){
     h+='<button class="card row" onclick="startYolda('+m+')"><div class="grow">'+
      '<p class="lead">'+m+' dakika</p>'+
-     '<p class="sub">'+(m===5?"A short one — a commute, or the walk to the shop."
-                              :"Long enough to get past the first few and into the ones that come back.")+'</p></div>'+
+     '<p class="sub">'+(m===5?tx("A short one — a commute, or the walk to the shop.","Kısa bir oturum: bir yol ya da bakkala yürüyüş.")
+                              :tx("Long enough to get past the first few and into the ones that come back.","İlk birkaç cümleyi geçip geri gelenlere ulaşacak kadar uzun."))+'</p></div>'+
      '<span class="chev">'+IC.chev+'</span></button>';
   });
 
   h+='<h2 class="sec">Ayarlar</h2><div class="card">';
   h+='<p class="lead" style="font-size:.95rem">Sessizlik · the gap</p>'+
-   '<p class="sub">Longer than Üretim’s, because nobody is waiting for your thumb.</p><div class="segs">';
+   '<p class="sub">'+tx('Longer than Üretim’s, because nobody is waiting for your thumb.','Üretim’dekinden uzun, çünkü kimse parmağını beklemiyor.')+'</p><div class="segs">';
   YGAPS.forEach(function(n){h+='<button class="'+(n===ygap()?"on":"")+'" onclick="setYgap('+n+')">'+n+'<i>saniye</i></button>';});
   h+='</div>';
   h+='<p class="lead" style="font-size:.95rem">Hız · the model’s speed</p>'+
-   '<p class="sub">1× is where the voice sits naturally. Below it is a crutch you will not get in a conversation.</p><div class="segs">';
+   '<p class="sub">'+tx('1× is where the voice sits naturally. Below it is a crutch you will not get in a conversation.','Sesin doğal hızı 1×. Altı bir koltuk değneği; konuşmada kimse sana bunu vermez.')+'</p><div class="segs">';
   YRATES.forEach(function(r){
     h+='<button class="'+(Math.abs(r-yrate())<0.01?"on":"")+'" onclick="setYrate('+r+')">'+r+'×'+
      (r>1?'<i>hızlı</i>':r===1?'<i>normal</i>':'<i>yavaş</i>')+'</button>';
   });
   h+='</div></div>';
 
-  h+='<p class="foot">Keep the screen on: speech stops when a phone locks, so the app asks to hold the screen awake and that is all it can do about it.<br>Marking happens once, at the end — nothing is written while you drive.</p></div>';
+  h+='<p class="foot">'+tx('Keep the screen on: speech stops when a phone locks, so the app asks to hold the screen awake and that is all it can do about it.<br>Marking happens once, at the end — nothing is written while you drive.',
+    'Ekranı açık tut: telefon kilitlenince ses durur; uygulama ekranı uyanık tutmayı ister, elinden gelen de budur.<br>Değerlendirme bir kez, en sonda yapılır; sen yoldayken hiçbir şey kaydedilmez.')+'</p></div>';
   paint(h);
 }
 
@@ -273,7 +276,8 @@ function renderYoldaRun(){
     const cov=yolCovered(), miss=cov.filter(function(it){return YL.missed[it.k];}).length;
     let h=bar("Yolda","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big pass">'+cov.length+'</div><p class="sub">cümle geçildi · covered</p></div>';
-    h+='<div class="card"><p class="sub">Everything here is taken as produced. Tap the ones that got away — those come back today, the rest move out a box. Nothing has been written yet.</p></div>';
+    h+='<div class="card"><p class="sub">'+tx('Everything here is taken as produced. Tap the ones that got away — those come back today, the rest move out a box. Nothing has been written yet.',
+      'Buradakilerin hepsi söylenmiş sayılır. Kaçırdıklarına dokun: onlar bugün yeniden gelir, ötekiler bir kutu ileri gider. Henüz hiçbir şey kaydedilmedi.')+'</p></div>';
     h+='<div class="card" style="padding:.3rem 1rem">';
     cov.forEach(function(it){
       const bad=!!YL.missed[it.k];

@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.63";
+const APP_VERSION="v3.64";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -37,7 +37,7 @@ function load(){
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
 function saveWarn(){
   if(!SAVEFAIL)return "";
-  return '<div class="savewarn"><div class="savewarn-in"><span class="grow"><b>Kaydedilmiyor</b> · this browser is not saving your progress. What you do now is lost when the page closes.</span>'+
+  return '<div class="savewarn"><div class="savewarn-in"><span class="grow"><b>Kaydedilmiyor</b> · '+tx('this browser is not saving your progress. What you do now is lost when the page closes.','bu tarayıcı ilerlemeni kaydetmiyor. Şimdi yaptıkların sayfa kapanınca kaybolur.')+'</span>'+
     '<button onclick="saveHelp()">Yedekle</button></div></div>';
 }
 function saveHelp(){
@@ -59,13 +59,6 @@ function streak(){
 
 /* ===================== helpers ===================== */
 const app=()=>document.getElementById("app");
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function fold(s){
-  return String(s).replace(/İ/g,"i").replace(/I/g,"i").replace(/ı/g,"i").replace(/Ş/g,"s").replace(/ş/g,"s")
-   .replace(/Ğ/g,"g").replace(/ğ/g,"g").replace(/Ü/g,"u").replace(/ü/g,"u").replace(/Ö/g,"o").replace(/ö/g,"o")
-   .replace(/Ç/g,"c").replace(/ç/g,"c").replace(/[âÂ]/g,"a").replace(/[îÎ]/g,"i").replace(/[ûÛ]/g,"u")
-   .toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-}
 /* Nothing reviews material the learner has not met. A review of something
    never seen is not a review — it is a test in a language not yet taught,
    and getting it wrong handed a day-one learner C2 vocabulary to recall.
@@ -170,31 +163,14 @@ function crest(px){
 }
 
 /* ===================== voice ===================== */
-const VOICE={rate:0.85,mode:null,idx:0,tid:null,ready:false};
-function ttsOK(){return typeof window!=="undefined"&&"speechSynthesis"in window;}
-function trVoice(){
-  if(!ttsOK())return null;
-  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
-  return vs.find(v=>/^tr/i.test(v.lang))||null;
-}
-/* The middle answer is the one that matters. A device with speech but no
-   Turkish voice does not fall silent: it reads Turkish in its default
-   voice, so a beginner hears Merhaba in an English accent from lesson one
-   and nothing says so. "unknown" is a voice list not loaded yet, and says
-   nothing rather than warn on a device that is fine. */
-function voiceState(){
-  if(!ttsOK())return "none";
-  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
-  if(!vs.length)return "unknown";
-  return vs.some(v=>/^tr/i.test(v.lang))?"ok":"notr";
-}
 function voiceNoteInner(){
   const st=voiceState();
   if(st==="notr")return '<div class="card vnote"><p class="lead">Türkçe ses yok · no Turkish voice</p>'+
-    '<p class="sub">This device can speak but has no Turkish voice, so Turkish is read in another language’s voice with the wrong sounds. Treat what you hear as a rough guide, not a model to copy, until one is added.</p>'+
+    '<p class="sub">'+tx('This device can speak but has no Turkish voice, so Turkish is read in another language’s voice with the wrong sounds. Treat what you hear as a rough guide, not a model to copy, until one is added.',
+      'Bu cihaz konuşabiliyor ama Türkçe sesi yok; Türkçe başka bir dilin sesiyle, yanlış seslerle okunur. Türkçe bir ses eklenene kadar duyduğunu taklit edilecek bir örnek değil, kaba bir yol gösterici say.')+'</p>'+
     '<button class="btn ghost" onclick="voiceHelp()">Nasıl eklenir · how to add one</button></div>';
   if(st==="none")return '<div class="card vnote"><p class="lead">Ses yok · no speech</p>'+
-    '<p class="sub">This browser cannot speak, so nothing will be read aloud. Everything else works.</p></div>';
+    '<p class="sub">'+tx('This browser cannot speak, so nothing will be read aloud. Everything else works.','Bu tarayıcı konuşamıyor; hiçbir şey sesli okunmayacak. Geri kalan her şey çalışır.')+'</p></div>';
   return "";
 }
 /* Wrapped in #vnote so a voice list that arrives after the paint can fill
@@ -213,18 +189,6 @@ if(ttsOK()){try{
   };
   speechSynthesis.getVoices();   /* Chrome loads the list lazily, on first ask */
 }catch(e){}}
-function say(text,rate,onend,lang,vol){
-  if(!ttsOK())return false;
-  try{
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    const v=lang?null:trVoice(); if(v)u.voice=v;
-    u.lang=lang||"tr-TR"; u.rate=rate||VOICE.rate;
-    if(vol!==undefined)u.volume=vol;
-    if(onend)u.onend=onend;
-    speechSynthesis.speak(u); return true;
-  }catch(e){return false;}
-}
 function sayLine(i){
   stopPlay();
   const u=unit(V.u); if(!u)return;
@@ -289,20 +253,8 @@ function setRate(r){VOICE.rate=r;S.rate=r;save();const m=VOICE.mode,i=VOICE.idx;
   if(m)playFrom(i,m);}
 
 /* ===================== review queue (SRS) ===================== */
-const STEPS=[0,1,2,4,8,16,32,64,120];
-function dayNum(){return Math.floor(Date.now()/86400000);}
 function srsAdd(k){if(!S.srs)S.srs={};if(!S.srs[k])S.srs[k]={b:0,d:dayNum()};}
 function srsDrop(k){if(S.srs)delete S.srs[k];}
-/* Words and produced sentences climb the same ladder in different
-   stores, so the box arithmetic lives here once. next() is given the
-   current box and returns the new one. */
-function isDue(map,k){const r=map&&map[k];return !r||r.d<=dayNum();}
-function bump(map,k,next){
-  const r=map[k]||{b:0,d:dayNum(),f:dayNum()};   /* f: the day it was first practised */
-  r.b=Math.max(0,Math.min(next(r.b),STEPS.length-1));
-  r.d=dayNum()+STEPS[r.b];
-  map[k]=r; return r;
-}
 function dueList(){
   if(!S.srs)S.srs={};
   return S.star.filter(function(k){return isDue(S.srs,k);});
@@ -331,23 +283,6 @@ function grade(k,g){
    before the stamp existed count as old, which only errs toward one more
    sitting on the day this shipped. */
 const NEW_DAY={rep:10,gram:3,dinle:8,prod:12};
-function newToday(map,pfx){
-  const n=dayNum(); let c=0;
-  if(map)for(const k in map){const r=map[k]; if(r&&r.f===n&&(!pfx||k.indexOf(pfx)===0))c++;}
-  return c;
-}
-/* Everything due now: reviews oldest first, then as many never-practised
-   items, in the bank's own order, as today's allowance still admits. */
-function dueItems(map,bank,cap,pfx){
-  const n=dayNum(), old=[], fresh=[];
-  bank.forEach(function(it){
-    const r=map&&map[it.k];
-    if(r){if(r.d<=n)old.push(it);}else fresh.push(it);
-  });
-  old.sort(function(x,y){return map[x.k].d-map[y.k].d;});
-  return old.concat(cap===undefined?fresh:fresh.slice(0,Math.max(0,cap-newToday(map,pfx))));
-}
-function dueQueue(map,bank,limit,cap,pfx){return dueItems(map,bank,cap,pfx).slice(0,limit);}
 
 function starKey(tr,en){return tr+"|"+en;}
 function isStarred(tr,en){return S.star.indexOf(starKey(tr,en))>-1;}
@@ -378,6 +313,7 @@ function back(){
      the back arrow and the Bitir button do the same thing, which is what
      a learner expects of a mode whose whole point is not touching it. */
   else if(V.view==="uykurun"){uyStop();UY=null;go("uyku");}
+  else if(V.view==="adim"){go("unit",AD?AD.u:V.u,"v");}
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
   else if(V.view==="retell"){go("unit",V.u,"r");}
   /* The back arrow retraces the menu you came through. Before the two
@@ -428,7 +364,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Derse başla":"start the lesson","Sınava gir":"take the test","Dersi tekrarla":"go over the lesson again","Türkçesini yaz":"type the Turkish","Sen de dene":"now you try","Metni göster":"show the text","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",
@@ -533,18 +469,58 @@ function enUnder(h){
     return '<'+tag+attr+'>'+lead+esc(g.tr)+'<span class="gl">'+esc(g.en)+'</span>';
   });
 }
-function enOn(){return S.en===undefined?lvPct("A2")<100:!!S.en;}
-function enApply(){try{document.documentElement.classList.toggle("noen",!enOn());}catch(e){}}
-function toggleEN(){S.en=!enOn(); save(); enApply();
+/* Instruction prose in both languages; which shows is the stage's call. */
+function tx(en,tr){return '<span class="t-tr">'+tr+'</span><span class="t-en">'+en+'</span>';}
+/* The same for plain text — a confirm() or a message poked in with
+   textContent — which cannot hold two spans. */
+function txt(en,tr){const m=enMode();return m==="en"?en:m==="tr"?tr:tr+" ("+en+")";}
+/* Less English the further the learner gets, the way a school moves its
+   classroom language over: labels first, then instructions, and (later)
+   the explanations. The stage is the level being worked in — the level of
+   the unit after the furthest one passed — so passing the A2 test puts a
+   learner in B1 at once, and dipping back into an old unit changes
+   nothing.
+
+     stage 0  A1–A2  labels Turkish with English under · instructions English
+     stage 1  B1     labels Turkish · instructions Turkish, English under
+     stage 2  B2+    labels Turkish · instructions Turkish
+
+   The EN button is "show me the English now". A choice is stored with the
+   stage it was made in and lapses when the stage changes, so turning the
+   English on at A2 does not hold it on through C2. A choice saved before
+   the stages existed was a plain true/false and counts as a stage-0 one.
+   Off is Turkish only everywhere, stage 0 included: a beginner who wants
+   the instructions in Turkish can have them. */
+function curLv(){
+  let k=-1;
+  for(let i=0;i<UNITS.length;i++)if(isDone(UNITS[i].id))k=i;
+  return UNITS[Math.min(k+1,UNITS.length-1)].lv;
+}
+function enStage(){const lv=curLv();return lv==="A1"||lv==="A2"?0:lv==="B1"?1:2;}
+function enChoice(st){
+  const e=S.en;
+  if(e===undefined||e===null)return undefined;
+  if(typeof e==="boolean")return st===0?e:undefined;
+  return e.st===st?!!e.on:undefined;
+}
+function enOn(){const st=enStage(), c=enChoice(st);return c!==undefined?c:st<=1;}
+function enLabels(){const st=enStage(), c=enChoice(st);return c!==undefined?c:st===0;}
+function enMode(){return !enOn()?"tr":enStage()===0?"en":"both";}
+function enApply(){try{
+  const c=document.documentElement.classList, m=enMode();
+  c.toggle("noen",!enLabels());
+  ["en","both","tr"].forEach(function(x){c.toggle("ins-"+x,x===m);});
+}catch(e){}}
+function toggleEN(){S.en={st:enStage(),on:!enOn()}; save(); enApply();
   document.querySelectorAll(".en-btn").forEach(function(b){b.setAttribute("aria-pressed",String(enOn()));});}
 function enBtn(){return '<button class="icon-btn en-btn" onclick="toggleEN()" aria-pressed="'+enOn()+'" aria-label="English under the Turkish">EN</button>';}
 function paint(h){enApply(); app().innerHTML=enUnder(h);}
 
-function bar(title,sub,showHome){
+function bar(title,sub,showHome,subTr){
   return '<div class="bar"><div class="bar-in">'+
    '<button class="icon-btn" onclick="back()" aria-label="Back">'+IC.back+'</button>'+
    (showHome?'<button class="icon-btn" onclick="home()" aria-label="Home">'+IC.home+'</button>':'')+
-   '<div class="bar-title">'+esc(title)+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'+
+   '<div class="bar-title">'+esc(title)+(sub?'<small>'+(subTr?tx(esc(sub),esc(subTr)):esc(sub))+'</small>':'')+'</div>'+
    enBtn()+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button>'+
    '</div>'+saveWarn()+'</div>';

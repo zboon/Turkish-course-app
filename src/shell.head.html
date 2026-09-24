@@ -105,6 +105,11 @@ a{color:var(--cobalt)}
    fail contrast there: the label's own colour, a little quieter. */
 .btn .gl,.pill .gl,button.on .gl{color:inherit;opacity:.8}
 .noen .gl{display:none!important}
+/* instructions in both languages; the stage decides which shows */
+.ins-en .t-tr,.ins-tr .t-en{display:none}
+.ins-both .t-en{display:block;font-size:.86em;color:var(--ink2);margin-top:.15em}
+/* the bar has room for one line: English at stage 0, Turkish after */
+.ins-both .bar-title .t-en{display:none}
 .en-btn{font:700 .66rem/1 Karla,system-ui,sans-serif;letter-spacing:.04em}
 .en-btn[aria-pressed="false"]{color:var(--faint);text-decoration:line-through}
 .bar-title{flex:1;min-width:0;text-align:center;font-weight:600;font-size:.95rem;
@@ -158,6 +163,7 @@ a{color:var(--cobalt)}
   box-shadow:var(--shadow);padding:.95rem 1rem;margin:.6rem 0;
 }
 button.card,a.card{display:block;width:100%;text-align:left;text-decoration:none;color:inherit}
+button.card.row{display:flex}
 .row{display:flex;align-items:center;gap:.75rem}
 .grow{flex:1;min-width:0}
 .chev{color:var(--faint);flex:0 0 auto}
@@ -294,6 +300,21 @@ h2.sec::after{
 .night-stop{background:none;border:1px solid #2a303b;border-radius:12px;color:#7d8594;
   font:600 .9rem/1.2 'Karla',sans-serif;padding:.7rem 2.4rem;cursor:pointer}
 .night-stop .gl{color:#5f6775}
+/* Adım adım: a progress line, a picture, a word or a line at a time. */
+.abar{height:8px;border-radius:5px;background:var(--sunk);overflow:hidden;margin:.2rem 0 1rem}
+.abar i{display:block;height:100%;background:var(--turk)}
+.adw{text-align:center}
+.adw .vtr{font-size:1.6rem;margin:.3rem 0 .1rem}.adw .ven{font-size:.95rem;margin-bottom:.6rem}
+.adw .sbtn{margin:0 auto}
+.pic{font-size:3.6rem;line-height:1.2}
+.pic.sm{display:block;font-size:1.8rem;line-height:1.2}
+.adopts{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:1rem}
+.adopts .opt{text-align:center;margin:0}
+.adl .adtr{font:500 1.35rem/1.45 'Crimson Pro',serif;margin:.2rem 0 .6rem}
+.adl .aden{color:var(--ink2);margin:.6rem 0 0}
+.adl .adhid{font-size:2rem;text-align:center;opacity:.7}
+.adim-go{margin:.2rem 0 .3rem}
+.adim-or{margin:.7rem .2rem .8rem}
 /* A locked unit or lesson: still tappable, to say what opens it. */
 .unit.locked .unit-t{color:var(--ink2)}
 .unit.locked .tick{color:var(--faint)}

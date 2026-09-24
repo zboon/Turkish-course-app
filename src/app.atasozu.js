@@ -157,27 +157,32 @@ function ataNext(){
 function renderAta(){
   const all=ataBank("x"), firm=all.filter(function(it){return ataBox(it.k)>=4;}).length;
   const dueA=ataDue("a").length, dueD=ataDue("d").length;
-  let h=bar("Atasözleri ve deyimler","sayings · said whole, not assembled",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything else you produce here has to be built — person, tense, case, the verb last — and building is slow while the grammar is new. These are stored whole and come out at full speed, which is exactly what a slow speaker needs. They are also anonymous folk material, so unlike the reading passages there is no author to credit and no edition to check.</p>';
+  let h=bar("Atasözleri ve deyimler","sayings · said whole, not assembled",true,"bütün olarak söylenen sözler")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('Everything else you produce here has to be built — person, tense, case, the verb last — and building is slow while the grammar is new. These are stored whole and come out at full speed, which is exactly what a slow speaker needs. They are also anonymous folk material, so unlike the reading passages there is no author to credit and no edition to check.',
+    'Burada söylediğin başka her şeyi kurman gerekir: kişi, zaman, hâl, en sonda fiil; dilbilgisi yeniyken kurmak yavaştır. Bunlar ise bütün olarak saklanır ve tam hızla çıkar; yavaş konuşan birinin tam da ihtiyacı olan şey. Ayrıca anonim halk sözleridir: okuma metinlerinin aksine anılacak bir yazar ya da kontrol edilecek bir baskı yok.')+'</p>';
 
   h+='<div class="stat"><div><b>'+ATASOZU.length+'</b><span>atasözü</span></div>'+
      '<div><b>'+DEYIM.length+'</b><span>deyim</span></div>'+
-     '<div><b>'+firm+'</b><span>holding</span></div></div>';
+     '<div><b>'+firm+'</b><span>'+tx('holding','oturmuş')+'</span></div></div>';
 
   h+='<h2 class="sec">Çalış</h2>';
   h+='<div class="card"><p class="lead">Atasözleri · '+dueA+' hazır</p>'+
-   '<p class="sub">A situation comes up and you produce the saying that answers it. Knowing the words is not the skill — knowing the <i>moment</i> is, because a proverb said at the wrong one is worse than saying nothing.</p>'+
+   '<p class="sub">'+tx('A situation comes up and you produce the saying that answers it. Knowing the words is not the skill — knowing the <i>moment</i> is, because a proverb said at the wrong one is worse than saying nothing.',
+     'Bir durum gelir, sen ona uyan sözü söylersin. Beceri kelimeleri bilmek değil, <i>anı</i> bilmektir; yanlış anda söylenen bir atasözü hiç söylememekten kötüdür.')+'</p>'+
    (dueA?'<button class="btn" onclick="startAta(\'a\')">Başla</button>'
-        :'<p class="tiny">Nothing due. They come back as their boxes come round.</p>')+'</div>';
+        :'<p class="tiny">'+tx('Nothing due. They come back as their boxes come round.','Şimdilik bekleyen yok. Sırası gelince geri gelirler.')+'</p>')+'</div>';
   h+='<div class="card"><p class="lead">Deyimler · '+dueD+' hazır</p>'+
-   '<p class="sub">English meaning in, Turkish idiom out. What the words literally say is shown after you answer, not before — <i>kafa patlatmak</i> is not "to burst a head", and that gap is the whole reason an idiom has to be learned as one piece.</p>'+
+   '<p class="sub">'+tx('English meaning in, Turkish idiom out. What the words literally say is shown after you answer, not before — <i>kafa patlatmak</i> is not "to burst a head", and that gap is the whole reason an idiom has to be learned as one piece.',
+     'İngilizce anlamı gelir, sen Türkçe deyimi söylersin. Kelimelerin tam olarak ne dediği cevaptan sonra gösterilir, önce değil: <i>kafa patlatmak</i> “bir kafayı patlatmak” değildir ve bir deyimin tek parça öğrenilmesinin nedeni bu farktır.')+'</p>'+
    (dueD?'<button class="btn" onclick="startAta(\'d\')">Başla</button>'
-        :'<p class="tiny">Nothing due yet.</p>')+'</div>';
+        :'<p class="tiny">'+tx('Nothing due yet.','Henüz bekleyen yok.')+'</p>')+'</div>';
 
   h+='<h2 class="sec">Nasıl işaretlenir</h2><div class="card">'+
-   '<p class="sub">Every word, in order, nothing extra. This is the strictest judge in the app and deliberately so: a fixed saying with one word wrong is not a saying slightly misremembered, it is a sentence nobody says. Diacritics are forgiven as everywhere else, and where a saying genuinely has more than one real wording both are accepted — you will see the other after a right answer. If you know a wording this list does not, you can overrule the mark.</p></div>';
+   '<p class="sub">'+tx('Every word, in order, nothing extra. This is the strictest judge in the app and deliberately so: a fixed saying with one word wrong is not a saying slightly misremembered, it is a sentence nobody says. Diacritics are forgiven as everywhere else, and where a saying genuinely has more than one real wording both are accepted — you will see the other after a right answer. If you know a wording this list does not, you can overrule the mark.',
+     'Her kelime, sırasıyla, fazlası olmadan. Uygulamanın en sıkı değerlendirmesi bu ve bilerek öyle: bir kelimesi yanlış kalıplaşmış bir söz, biraz yanlış hatırlanmış bir söz değil, kimsenin söylemediği bir cümledir. Şapkalı ve noktalı harfler her yerdeki gibi önemsenmez. Bir sözün gerçekten birden çok söylenişi varsa hepsi kabul edilir; doğru cevaptan sonra ötekini görürsün. Bu listede olmayan bir söyleniş biliyorsan değerlendirmeyi değiştirebilirsin.')+'</p></div>';
 
-  h+='<p class="foot">Anonymous folk material — no author, no edition, nothing to attribute.<br>Scheduled by saying, on the same ladder as everything else.</p></div>';
+  h+='<p class="foot">'+tx('Anonymous folk material — no author, no edition, nothing to attribute.<br>Scheduled by saying, on the same ladder as everything else.',
+    'Anonim halk sözleri: yazarı, baskısı, anılacak kimsesi yok.<br>Her söz, öteki her şeyle aynı merdivende sıraya konur.')+'</p></div>';
   paint(h);
 }
 
@@ -187,7 +192,8 @@ function renderAtaRun(){
     paint(bar("Söz","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(AT.right*2>=AT.q.length?"pass":"fail")+'">'+AT.right+'/'+AT.q.length+'</div>'+
       '<p class="sub">tam çıktı · produced exactly</p></div>'+
-      '<div class="card"><p class="sub">Anything missed comes back today, the rest moves out a box. A near miss counts as a miss here — the form is the whole thing.</p>'+
+      '<div class="card"><p class="sub">'+tx('Anything missed comes back today, the rest moves out a box. A near miss counts as a miss here — the form is the whole thing.',
+        'Yanlış yapılanlar bugün yeniden gelir, ötekiler bir kutu ileri gider. Burada “az kaldı” da yanlış sayılır; her şey biçimde.')+'</p>'+
       '<button class="btn" onclick="startAta(\''+AT.mode+'\')">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'ata\')">Atasözleri ve deyimler</button></div></div>');
     return;
@@ -225,11 +231,12 @@ function renderAtaRun(){
     h+='</div>';
     h+='<div class="fb '+(won?"ok":"no")+'"><b>'+
      (AT.over&&!r.clean?"Kabul edildi":r.clean?"Tam":r.hit+" / "+r.of+" kelime")+'</b>'+
-     (AT.over&&!r.clean?"Taken as right. It moves out a box."
+     (AT.over&&!r.clean?tx("Taken as right. It moves out a box.","Doğru kabul edildi. Bir kutu ileri gider.")
       :r.clean?((it.alt&&it.alt.length)
-                 ?"Also said: "+it.alt.map(esc).join(" · ")+". Both are real; you will meet either."
-                 :"It comes back later and later from here.")
-              :"Red is what the saying has and you did not. A fixed form is the whole point, so this counts as a miss and comes back today.")+'</div>';
+                 ?tx("Also said: "+it.alt.map(esc).join(" · ")+". Both are real; you will meet either.","Şöyle de söylenir: "+it.alt.map(esc).join(" · ")+". İkisi de gerçek; hangisiyle de karşılaşabilirsin.")
+                 :tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek."))
+              :tx("Red is what the saying has and you did not. A fixed form is the whole point, so this counts as a miss and comes back today.",
+                  "Kırmızılar sözde var, sende yok. Bütün mesele kalıbın kendisi; bu yüzden yanlış sayılır ve bugün yeniden gelir."))+'</div>';
     if(!won)h+='<button class="btn ghost" onclick="ataAccept()">Benimki de söyleniyor · mine is said too</button>';
     h+='<button class="btn" onclick="ataNext()">'+(AT.i+1>=AT.q.length?"Sonuç":"Devam")+'</button>';
   }

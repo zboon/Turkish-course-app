@@ -282,6 +282,15 @@ reseed(4242); ev("startPlacement()"); grab("placement");
 ev("startRetell('a1u2')"); grab("retell");
 
 /* The language engine, hashed as data rather than as a screen. */
+/* Adım adım: each kind of step in a1u1. */
+ev("wipe()"); reseed(4242); ev("startAdim('a1u1')"); grab("adim:word");
+["hear", "spell", "gram", "line", "end"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); render()"); grab("adim:" + t); });
+reseed(4243); ev("startAdim('a2u2')");
+["type", "gex"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); render()"); grab("adim:a2:" + t); });
+reseed(4244); ev("startAdim('b1u3')");
+["line", "cloze"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); AD.heard={}; render()"); grab("adim:b1:" + t); });
+ev("stopPlay(); AD=null");
+
 /* Uyumadan önce: empty, with today's material, running and ended. */
 ev("wipe()"); ev("go('uyku')"); grab("uyku:empty");
 ev("go('unit','a1u1','v')"); ev("go('unit','a1u1','r')"); ev("go('uyku')"); grab("uyku");
