@@ -216,6 +216,23 @@ h2.sec::after{
 .door-i svg{width:34px;height:34px;display:block}
 .door-t{font-family:'Crimson Pro',Georgia,serif;font-size:1.2rem;font-weight:600;line-height:1.1;text-align:center}
 .door-t .gl{text-align:center}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin:.2rem 0 .6rem}
+.tool{
+  display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;min-height:104px;text-align:left;
+  background:var(--card);border:1px solid var(--line);border-bottom-width:4px;border-radius:16px;
+  padding:.85rem .9rem .75rem;color:var(--ink);
+}
+.tool-i{color:var(--cobalt);display:block}
+.tool-i svg{width:28px;height:28px;display:block}
+.tool-t{font-family:'Crimson Pro',Georgia,serif;font-size:1.15rem;font-weight:600;line-height:1.15}
+/* Nothing in it yet: faded, and says so. The words stay at full contrast
+   because they are still read; only the icon and the ground step back. */
+.tool.idle{background:none;border-bottom-width:1px}
+.tool.idle .tool-i{color:var(--faint)}
+.tool-e{font-size:.75rem;color:var(--faint);font-weight:600}
+.tool-e .gl{font-weight:500}
+.links{display:flex;justify-content:center;gap:1.4rem;margin-top:1rem}
+.links .homelink{margin:0}
 .homelink{display:block;margin:1.2rem auto 0;background:none;border:0;color:var(--cobalt);
   font-weight:600;font-size:.92rem;text-align:center}
 /* İlerleme's rows, and the line under a sitting's Devam naming what it opens. */

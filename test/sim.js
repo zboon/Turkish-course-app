@@ -2635,11 +2635,19 @@ step("araçlar · every tool is still reachable", () => {
      "Tekrar motoru", so a bare word check held however the headings were
      renamed. Second time that trap has come up in this file. */
   ['Konuşma' + GL('speaking'), 'Dinleme' + GL('listening'), 'Tekrar' + GL('bringing it back'),
-   'Kelimeler' + GL('words'), 'Kurs' + GL('the course')].forEach(g => {
+   'Kelimeler' + GL('words')].forEach(g => {
     ok(lastPaint.includes('class="sec">' + g + '</h2>'), "Araçlar has no " + g + " heading");
   });
   const heads = (lastPaint.match(/class="sec">/g) || []).length;
-  ok(heads === 5, "Araçlar has " + heads + " groups, wanted 5 — a flat list is what this replaced");
+  ok(heads === 4, "Araçlar has " + heads + " groups, wanted 4 — a flat list is what this replaced");
+  /* Reported: the page was sixteen rows of text under two paragraphs.
+     Every tool is a tile now, and the page carries no prose. */
+  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 15, "Araçlar should have fifteen tool tiles");
+  ok(!lastPaint.includes("card nav row"), "a text row is back on Araçlar");
+  ok(!/Everything here is optional|tag means|class="foot"/.test(lastPaint), "the explanatory paragraphs are back on Araçlar");
+  /* The two reference pages are links, not tools. */
+  ok(/class="homelink" onclick="go\('nasil'\)"/.test(lastPaint) && /class="homelink" onclick="go\('about'\)"/.test(lastPaint),
+     "Nasıl çalışır and Hakkında are not the links at the foot of Araçlar");
 });
 
 step("araçlar · hazır is honest, and lives, and dies", () => {
@@ -2651,7 +2659,8 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
     if (i < 0) return null;
     return lastPaint.slice(i, lastPaint.indexOf("</button>", i));
   };
-  const tagged = (fn) => { const r = rowRaw(fn); return !!r && /hazır/.test(r); };
+  /* "Ready" is the tile without the faded Şimdilik boş mark. */
+  const tagged = (fn) => { const r = rowRaw(fn); return !!r && /class="tool"/.test(lastPaint.slice(lastPaint.lastIndexOf("<button", lastPaint.indexOf('onclick="' + fn + '"')), lastPaint.indexOf('onclick="' + fn + '"'))) && !/Şimdilik boş/.test(r); };
 
   ev("wipe()"); ev("go('araclar')");
   /* Nine that never depend on a unit, a starred word or a mistake: a
@@ -2659,16 +2668,21 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
      These carry the tag from the very first paint. */
   ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
    "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')"].forEach(fn => {
-    ok(tagged(fn), fn + " should be tagged hazır on a fresh install — it needs nothing met");
+    ok(tagged(fn), fn + " should be ready on a fresh install — it needs nothing met");
   });
+  /* The fade and the words go together: a tile drawn faded says why, and
+     one that says it is empty is drawn faded. */
+  const tiles = lastPaint.match(/<button class="tool[^"]*"[\s\S]*?<\/button>/g) || [];
+  ok(tiles.length && tiles.every(t => /class="tool idle"/.test(t) === /Şimdilik boş/.test(t)),
+     "a tile's fade and its Şimdilik boş label disagree");
   /* Five that start empty and are not lying about it. */
   ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')"].forEach(fn => {
-    ok(!tagged(fn), fn + " is tagged hazır on a fresh install, but its bank is empty");
+    ok(!tagged(fn), fn + " is offered as ready on a fresh install, but its bank is empty");
   });
   /* Reference rows carry no readiness claim either way — "how this
      works" is not a bank that fills up. */
-  ok(!tagged("go('nasil')") && !tagged("go('about')"),
-     "a reference row picked up a readiness tag it never asked for");
+  ok(!/Şimdilik boş/.test(rowRaw("go('nasil')") || "") && !/Şimdilik boş/.test(rowRaw("go('about')") || ""),
+     "a reference link picked up a readiness mark it never asked for");
 
   /* And each of the five flips on, independently, the moment its own
      bank actually has something — never before, never all at once. */
@@ -2990,7 +3004,7 @@ step("kayıt · a save that fails is said on every screen until one works", () =
 /* The frequency layer: ten a day, into the queue that already exists, and
    only once there is a day one behind the learner. */
 step("sık · ten common words a day, into the ordinary reviews", () => {
-  const tagged = fn => { const i = lastPaint.indexOf('onclick="' + fn + '"'); return i > -1 && /hazır/.test(lastPaint.slice(i, lastPaint.indexOf("</button>", i))); };
+  const tagged = fn => { const i = lastPaint.indexOf('onclick="' + fn + '"'); return i > -1 && !/Şimdilik boş/.test(lastPaint.slice(i, lastPaint.indexOf("</button>", i))); };
   const sikStep = () => ev("planToday()").steps.find(s => s.k === "sik");
   ev("wipe()"); ev("S.tips=true; S.sik={}; save(); home()");
   ok(!sikStep(), "day one offers common words — the plan must stay one instruction until a unit is done");
@@ -3024,7 +3038,7 @@ step("sık · ten common words a day, into the ordinary reviews", () => {
   ok(sikStep().n === 0, "the plan's word step did not tick once today's ten were added");
   ok(/Bugünlük bu kadar/.test(lastPaint), "the screen does not say today's words are done");
   ev("go('araclar')");
-  ok(!tagged("go('sik')"), "Sık kelimeler is still tagged hazır with today's words done");
+  ok(!tagged("go('sik')"), "Sık kelimeler is still offered as ready with today's words done");
 
   /* More on request, and never stored as a setting. */
   ev("go('sik')");
@@ -3389,7 +3403,7 @@ step("uyumadan önce · today, once more, then quiet", () => {
   ok(/Henüz bir şey yok/.test(lastPaint) && !lastPaint.includes("startUyku("), "an empty bank still offers a sitting");
   ev("go('araclar')");
   const row = () => { const i = lastPaint.indexOf('onclick="go(\'uyku\')"'); return i > -1 ? lastPaint.slice(i, lastPaint.indexOf("</button>", i)) : ""; };
-  ok(row() && !/hazır/.test(row()), "Araçlar has no row for it, or tags it ready with nothing to play");
+  ok(row() && /Şimdilik boş/.test(row()), "Araçlar has no tile for it, or offers it as ready with nothing to play");
 
   /* The grain of met: words once the list is open, lines once read. */
   ev("go('unit','a1u1','v')");

@@ -1367,7 +1367,7 @@ nothing duplicated in it, which now includes a lesson that shares
 *merhaba* with unit one.
 
 Not in the daily plan: it is optional and only makes sense at night.
-Araçlar has it under Dinleme, tagged hazır when there is something to play.
+Araçlar has it under Dinleme, drawn faded (Şimdilik boş) when there is nothing to play.
 
 ## Hata defteri (the mistake book)
 
@@ -1944,7 +1944,7 @@ section heading over the tiles, no footer.
 | tile | behind it |
 |---|---|
 | **Dersler** | the six levels and their sixty units, the placement test |
-| **Araçlar** | everything else, grouped: Konuşma · Dinleme · Tekrar · Kelimeler · Kurs |
+| **Araçlar** | everything else, as tiles in four groups: Konuşma · Dinleme · Tekrar · Kelimeler |
 | **İlerleme** | where the learner stands, and today's plan step by step |
 
 Four decisions worth keeping:
@@ -2005,37 +2005,36 @@ believing it.**
 Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
 
-### `hazır` — which of Araçlar's sixteen rows have anything to do yet
+### Araçlar as tiles, and "Şimdilik boş"
 
-(Sixteen since Sık kelimeler joined the Kelimeler section; it reads
-`sikBatch().length`, so it is tagged on a fresh install and untagged once
-the day's words are in.)
+By request, after the landing page: Araçlar was sixteen rows of text under
+two explanatory paragraphs, and is now fifteen tiles in a two-column grid
+under the same four headings (Konuşma, Dinleme, Tekrar, Kelimeler), each
+an icon (`TOOL_IC`), a name and a few words of English, built by
+`toolTile()`. The two paragraphs and the footer are gone; Nasıl çalışır
+and Bu kurs hakkında are two links at the foot rather than a fifth group.
 
-Eight draw on nothing but themselves — a prefab bank, a generator, the whole
-word list — and are exactly as full on day one as they will ever be. Five
-start at zero and fill in as units are read, words are starred, mistakes
-are made. A curious beginner who wanders into Araçlar before following
-`Bugün` can open any of the five and land on an honest "not yet" card —
-the same anticlimax `renderGram()`/`renderHata()` already handle
-gracefully one tap in, but one tap too late to have saved the visit.
+Readiness is shown on the exception. It used to be a green **hazır** pill
+on every row with something to do, which needed a paragraph to explain
+it, and nine of the fourteen tools are full from day one anyway. Now a
+tool whose bank is empty is drawn faded (`.tool.idle`) and says
+**Şimdilik boş** (empty for now); the rest carry no mark. The flags are
+the same live booleans as before, computed at the render from the banks
+the modes check themselves (`listenBank()`, `uyBank()`, `repBank()`,
+`gramBank()`, `S.star`, `S.err`, `sikBatch()`), never a hand-typed list.
+"For now" rather than "yet" because Sık kelimeler empties once the day's
+ten are in, as well as before anything has been met.
 
-`hazır` says which is which *before* that tap: a small pill on the row,
-`navRow`'s optional fourth argument, present only where there is
-something to do right now. Nothing here is a hand-typed list, because a
-hand-typed list drifts — each flag is the same boolean the destination
-screen itself would show as empty, computed at the same render:
-`chunkBank()`/`LEX`/`DIYALOG`/`ATASOZU`/`DEYIM`/`dictAll()` never start at
-zero so those six are simply `true`; `listenBank()`, `repBank()`,
-`gramBank()`, `S.star.length` and `Object.keys(S.err).length` are read
-live, so the tag appears on Tekrar motoru the moment `repBank()` first
-returns something and not a render before. Leaving the argument off
-entirely — as Dersler's two `navRow` calls and Araçlar's own Kurs section
-do — is different from passing `false`: it means readiness is not that
-row's business at all, so no pill either way. `sim.js` walks the fourteen
-rows a readiness claim actually applies to — the two Kurs rows separately
-assert they carry no tag at all — then meets a1u1 one tab at a time and
-checks that exactly the row whose bank that tab feeds picks up the tag,
-never the others.
+`sim.js` checks the four headings, fifteen tiles and no text row or
+paragraph; the nine tools ready on a fresh install and the five that are
+not; each of those five turning ready when exactly the tab that feeds it
+is met; that a tile's fade and its label never disagree; and the two
+reference pages being links. Nine deliberate breakages each turned it
+red; one did not at first (the fade dropped while the label stayed),
+because the test read only the label, which is why the fade-and-label
+check exists.
+
+`navRow()` is now only Dersler's; its readiness slot is unused.
 
 ## Sözlük (the word list)
 
