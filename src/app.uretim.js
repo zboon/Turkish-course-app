@@ -121,14 +121,14 @@ function prodStop(){if(PR&&PR.tid){clearTimeout(PR.tid);PR.tid=null;}}
 function startProd(mode){
   stopPlay();
   const q=mode==="g"?genBank():mode==="t"?moveBank()
-         :mode==="q"?sorBank():mode==="e"?askBank()
+         :mode==="q"?sorBank():mode==="e"?askBank():mode==="i"?prodQueue(adaBank())
          :prodQueue(mode==="k"?chunkBank():sentenceBank());
   if(!q.length){V={view:"prod"};render();return;}
   /* Sor rides this runner but is not Üretim, and a sitting that calls
      itself by the wrong name is the sort of small lie that makes a
      learner distrust the rest. */
   PR={mode:mode,q:q,i:0,phase:"gap",left:prodGap(),tid:null,right:0,build:null,bi:0,
-      title:(mode==="q"||mode==="e")?"Sor":"Üretim"};
+      title:(mode==="q"||mode==="e")?"Sor":mode==="i"?"Adacıklar":"Üretim"};
   V={view:"prodrun"};window.scrollTo(0,0);
   touchDay();prodStep();
 }
@@ -286,12 +286,12 @@ function renderProdRun(){
   if(PR.phase==="end"){
     /* A banked set can run dry; a generated one never does. Söyle, the
        passage lines, is the Bugün step; the rest come from Araçlar. */
-    const banked=PR.mode==="s"||PR.mode==="k";
-    const left=banked?prodDue(PR.mode==="k"?chunkBank():sentenceBank()).length:1;
-    const sor=PR.mode==="q"||PR.mode==="e";
+    const banked=PR.mode==="s"||PR.mode==="k"||PR.mode==="i";
+    const left=banked?prodDue(PR.mode==="k"?chunkBank():PR.mode==="i"?adaBank():sentenceBank()).length:1;
+    const sor=PR.mode==="q"||PR.mode==="e", ada=PR.mode==="i";
     endScreen({title:PR.title,n:PR.right,of:PR.q.length,label:"kendi değerlendirmen · your own marking",
                plan:PR.mode==="s",again:left?"startProd('"+PR.mode+"')":"",
-               hub:sor?"go('sor')":"go('prod')",hubName:sor?"Sor":"Üretim"});
+               hub:sor?"go('sor')":ada?"adaGo('ada')":"go('prod')",hubName:sor?"Sor":ada?"Adacıklar":"Üretim"});
     return;
   }
   const it=PR.q[PR.i];

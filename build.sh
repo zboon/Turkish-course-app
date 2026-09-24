@@ -25,6 +25,7 @@ cat \
   src/data/konusma.js \
   src/data/baslarken.js \
   src/data/resim.js \
+  src/data/ada.js \
   src/shared/text.js \
   src/shared/voice.js \
   src/shared/srs.js \
@@ -47,6 +48,7 @@ cat \
   src/app.adim.js \
   src/app.ilerleme.js \
   src/app.coz.js \
+  src/app.ada.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"

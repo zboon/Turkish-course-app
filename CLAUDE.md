@@ -47,6 +47,7 @@ src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
 src/data/baslarken.js    const BASLA=[…];    // six lessons before unit one
 src/data/resim.js        const RESIM={…};    // a picture for A1 words, for the guided lesson
+src/data/ada.js          const ADA=[…];      // the questions a language island is built from
 src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
@@ -69,11 +70,12 @@ src/app.uyku.js          before sleep: today's material, quietly
 src/app.adim.js          Derse başla: a unit taught in three lessons, one screen at a time
 src/app.ilerleme.js      İlerleme: the state of every mode, on one page
 src/app.coz.js           Çöz: a word taken apart into its endings
+src/app.ada.js           Adacıklar: the learner's own sentences, checked, then drilled
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is twenty files rather than one because it grew past the point
+The app is twenty-one files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -326,6 +328,7 @@ deliberate breakage.
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
  sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
  ders:{unitId:[d1,d2,d3]}, coz:{"fut":{b,d,f}},
+ ada:{n, s:[{id,isl,q,tr,en,day,chk,was}]},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
@@ -337,6 +340,10 @@ again keeps its day. Together they are what the one-lesson-a-day pace
 counts (see Bugün). `ders` is progress: `wipe()` clears it.
 `coz` is keyed by an ending (`fut`, `loc`, `abil`), never by a word,
 for the same reason `num` is keyed by a shape; see Çöz. Progress too.
+`ada.s` is the learner's own sentences, each with a permanent `id` from
+the counter `ada.n` and filed under island `isl` and question `q` (ids
+from `ADA`, as permanent as unit ids). Its drill schedule is `i:<id>` in
+`prod`, so a correction keeps the sentence's key; see Adacıklar.
 
 Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
 `num`, `ata`, `dia` — carries `f`, the day it was first practised, which
@@ -799,8 +806,9 @@ push the plan past one instruction. Direct access is in Araçlar.
 ## Çöz (taking a word apart)
 
 Built, by request, as the first of three things a polyglot would do with
-Turkish that this app did not (the other two, writing about your own
-life and logging outside listening, are proposed but not built). A
+Turkish that this app did not (the second, writing about your own life,
+is Adacıklar below; the third, logging outside listening, is proposed
+but not built). A
 Turkish word is a stem and a queue of endings, each doing one job in a
 fixed order: *gel-ebil-ir-im* is come · can · as a rule · I. Read the
 endings and a word never met reads itself. Everything else here builds
@@ -879,6 +887,89 @@ pieces before the answer, a miss in the book with the chosen word shown,
 no schedule written until the end, a second tap ignored, the grades,
 practice moving nothing, `back()` and `wipe()`. Thirty-two deliberate
 breakages each turned a check red.
+
+## Adacıklar (language islands)
+
+Built, by request, the second of the polyglot moves. The first things
+anyone asks in Turkish are about the learner: where are you from, what
+do you do, what did you do at the weekend. A learner who can say the
+course's sentences still stalls there, because none of them is about
+them. Polyglots prepare those answers on purpose: a few sentences on each
+part of their own life, corrected by a native speaker and rehearsed
+until they come out whole. The prepared patches are "language islands",
+and a conversation is stepping from one to the next.
+
+`adaGo('ada')` lists islands (`ADA` in `src/data/ada.js`: eight topics,
+37 questions). Each question is asked in Turkish, in the grammar of one
+unit `u`, with its English and a model answer `eg` to adapt. It opens
+when that unit's grammar has been read (`metGram`), and an island is
+listed once its first question opens; a1u1 opens *Adın ne?* and
+*Nerelisin?*, and every island has a question an A1–A2 learner can
+open. The learner writes a sentence and its English (the English is the
+drill prompt), a few a day; the hub counts today's against `ADA_DAY`
+(5), a target and not a cap.
+
+**The check is a person, and that is the design.** Nothing in the app
+can mark free writing: every judge here compares an answer with a known
+one, and a sentence about the learner's life has none. Drilling an
+unchecked sentence rehearses its mistakes into a fixed form, the one way
+a drill makes a learner worse. So a sentence is saved **kontrol
+bekliyor** and stays out of the drill. *Kontrol ettir* gathers the
+waiting ones into a message to paste to a tandem partner, a teacher or
+r/turkishlearning (`adaExport()`: Turkish greeting first, then each
+sentence with its English and the question it answers, because
+*Yedide.* is only checkable against *Kaçta kalkıyorsun?*), with a copy
+button. When the answer comes the learner marks each **Doğru** or types
+the correction (`adaFix`), which keeps the original as `was` and shows
+it struck through. The learner can mark a sentence right themselves, and
+the page says to do that only when sure; there was no honest way to
+forbid it, and no one to ask is a real situation.
+
+Checked sentences ride **Üretim's runner** as mode `i` (`adaBank()`):
+the learner's English, the silent gap, the Turkish, self-graded, with
+backward buildup on a miss, keyed `i:<id>` in `S.prod` and capped at
+`NEW_DAY.prod` new a day like the passage lines. `PR.title` is
+Adacıklar, the end screen and `back()` return to it, and a miss goes to
+the mistake book under the same key.
+
+Four things it has to get right:
+
+1. **A sentence's key is a counter, never its text or position**, so a
+   correction keeps its place. But a corrected sentence is a new thing
+   to learn, so a change to the Turkish clears its `i:` schedule.
+2. **Editing a checked sentence unchecks it**, because nobody checked
+   the new wording. Editing only the English does not.
+3. **A refusal does not redraw** (no Turkish, no English): the boxes
+   hold what was typed, the Dinleme replay trap again. The message goes
+   into `#adamsg` in place; a successful save's message rides `ADAMSG`
+   through the redraw and is shown once.
+4. **Deleting takes its schedule and its mistake-book entry with it.**
+   Pasted text is cleaned of invisible characters, as in Kendi
+   kelimelerim, with room for a sentence.
+
+Not in the daily plan: it is open-ended writing, and the plan's steps
+are queues that empty. Araçlar has it under Konuşma. The questions and
+model answers are the author's Turkish and simple on purpose, and belong
+on the native-speaker list with Başlarken.
+
+`validate.js` pins every island and question id by name, checks each
+question opens with a real unit, is asked as a question in both
+languages, has a model answer, no invisible characters and no
+exclamation marks, and that every island is reachable by A2 (72 island
+checks). `sim.js` walks it: the gate by grammar and a closed island
+refusing to open; both refusals leaving the form alone; a save cleaned,
+unchecked and filed; unchecked kept out of the drill and the hub; the
+message to send; marking right; a correction keeping the original; the
+drill on the learner's English, a miss scheduled today and booked, the
+end and `back()`; an edit unchecking and clearing its schedule, an
+English-only edit not; delete; `wipe()`. Twenty-nine
+deliberate breakages each turned a check red. Three did not at first, and
+all three were the breakage's fault: one changed a model sentence
+the first time it appeared, which is a1u1's copy rather than the
+island's; one moved an island's first A2 question and left it a second;
+and one could not find the cleaner, because the file held the invisible
+characters themselves rather than their `\u` escapes. That last one was
+worth finding: it now uses escapes, like `cleanWord()`.
 
 ## Sayılar (numbers at speed)
 
@@ -1492,6 +1583,7 @@ s:<unitId>#<i>   a passage line      k:<index>    a prefab
 d: / a:          dictation, audio-first — deliberately NOT merged
 r:<fold(word)>   a vocabulary item   y:<unitId>   a grammar point
 coz:<ending>     a word misread in Çöz, one entry per ending
+i:<id>           one of the learner's own sentences, missed in the drill
 ```
 
 `d:` and `a:` stay apart for the same reason they are apart in `S.dinle`:
@@ -2205,7 +2297,7 @@ deliberate breakage.
 ### Araçlar as tiles, and "Şimdilik boş"
 
 By request, after the landing page: Araçlar was sixteen rows of text under
-two explanatory paragraphs, and is now sixteen tiles in a two-column grid
+two explanatory paragraphs, and is now seventeen tiles in a two-column grid
 under the same four headings (Konuşma, Dinleme, Tekrar, Kelimeler), each
 an icon (`TOOL_IC`), a name and a few words of English, built by
 `toolTile()`. The two paragraphs and the footer are gone; Nasıl çalışır
@@ -2218,13 +2310,13 @@ tool whose bank is empty is drawn faded (`.tool.idle`) and says
 **Şimdilik boş** (empty for now); the rest carry no mark. The flags are
 the same live booleans as before, computed at the render from the banks
 the modes check themselves (`listenBank()`, `uyBank()`, `repBank()`,
-`gramBank()`, `S.star`, `S.err`, `sikBatch()`, `czRoles()`), never a hand-typed list.
+`gramBank()`, `S.star`, `S.err`, `sikBatch()`, `czRoles()`, `adaOpen()`), never a hand-typed list.
 "For now" rather than "yet" because Sık kelimeler empties once the day's
 ten are in, as well as before anything has been met.
 
-`sim.js` checks the four headings, sixteen tiles and no text row or
-paragraph; the nine tools ready on a fresh install and the six that are
-not (Çöz, added later, is the sixth); each of those six turning ready when exactly the tab that feeds it
+`sim.js` checks the four headings, seventeen tiles and no text row or
+paragraph; the nine tools ready on a fresh install and the seven that are
+not (Çöz and Adacıklar, added later, are the last two); each of those seven turning ready when exactly the tab that feeds it
 is met; that a tile's fade and its label never disagree; and the two
 reference pages being links. Nine deliberate breakages each turned it
 red; one did not at first (the fade dropped while the label stayed),

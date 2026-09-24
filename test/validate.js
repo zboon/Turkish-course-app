@@ -79,7 +79,7 @@ try {
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf," +
-    "czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
+    "ADA:ADA,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -1341,6 +1341,53 @@ let contrastPairs = 0;
   if (/color:\s*(#fff\b|#ffffff\b|white\b)/i.test(rules)) err("contrast", "a rule paints literal white text — use var(--on-accent), which flips in dark mode");
 }
 
+/* ---------- adacıklar ---------- */
+/* Every sentence a learner writes is filed under "<island>.<question>",
+   so those ids are as permanent as a unit id: a rename strands what was
+   written under it. Pinned by name. The rest is the data being usable:
+   a real unit to open each question, a question asked as a question, a
+   model answer with its English, and every island reachable by A2 so
+   none sits closed for most of the course. */
+let adaChecks = 0;
+{
+  const ADA = M.ADA;
+  const PIN = {ben: ["ad", "nereli", "yas", "dil", "neden"], aile: ["adi", "kimler", "simdi", "buyuk", "cocukken"],
+    ev: ["nerede", "oda", "odanda", "nasil", "yol"], gun: ["kahvalti", "kalk", "dun", "aksam", "eve"],
+    is: ["ne", "nerede", "sure", "sev", "zorunda"], bos: ["hobi", "yemek", "haftasonu"],
+    plan: ["hafta", "gitmek", "para", "turkce"], gecmis: ["yaz", "buyudun", "cocuk", "sehir"]};
+  if (!Array.isArray(ADA) || !ADA.length) err("adacıklar", "ADA is empty");
+  else {
+    const byId = {};
+    ADA.forEach(i => { if (byId[i.id]) err("adacıklar", "island id " + i.id + " is used twice"); byId[i.id] = i; });
+    Object.keys(PIN).forEach(id => {
+      const i = byId[id];
+      if (!i) { err("adacıklar", "island " + id + " is gone, and every sentence written under it with it"); return; }
+      PIN[id].forEach(q => { adaChecks++; if (!i.q.some(x => x.id === q)) err("adacıklar", id + "." + q + " is gone, and every sentence written under it with it"); });
+    });
+    const inv = /[\u00AD\u200B\u200C\u200D\u2060\uFEFF]/;
+    ADA.forEach(i => {
+      if (!str(i.tr) || !str(i.en)) err("adacıklar", i.id + " needs a Turkish and an English name");
+      const seen = {};
+      if (!i.q.some(x => { const u = UNITS.find(v => v.id === x.u); return u && (u.lv === "A1" || u.lv === "A2"); }))
+        err("adacıklar", i.id + " has no question an A1 or A2 learner can open");
+      i.q.forEach(x => {
+        const at = "adacıklar " + i.id + "." + x.id;
+        adaChecks++;
+        if (seen[x.id]) err(at, "question id used twice in the island");
+        seen[x.id] = 1;
+        if (!UNITS.some(u => u.id === x.u)) err(at, "opens with unit " + x.u + ", which does not exist");
+        if (!str(x.tr) || !/\?$/.test(x.tr)) err(at, "the Turkish is not a question");
+        if (!str(x.en) || !/\?$/.test(x.en)) err(at, "the English is not a question");
+        if (!Array.isArray(x.eg) || !str(x.eg[0]) || !str(x.eg[1])) err(at, "needs a model answer and its English");
+        [x.tr, x.en].concat(x.eg || []).forEach(t => {
+          if (inv.test(t)) err(at, "contains an invisible character");
+          if (/!/.test(t)) err(at, "has an exclamation mark");
+        });
+      });
+    });
+  }
+}
+
 /* ---------- atasözleri ve deyimler ---------- */
 /* The judge here is the strictest in the app — every word, in order,
    nothing extra — so the data has to be able to survive it. Two ways
@@ -1598,6 +1645,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

@@ -311,6 +311,18 @@ ev("czNext(); czPick(CZ.q[1].c)"); grab("coz:right");
 ev("while(CZ.i<CZ.q.length){if(CZ.sel===null)czPick(CZ.q[CZ.i].c);czNext();}"); grabx("coz:end");
 ev("CZ=null; wipe()");
 
+/* Adacıklar: empty, open, an island with a form, the check page, a fix. */
+ev("adaGo('ada')"); grab("ada:empty");
+["a1u1", "a1u4", "a1u5", "a1u6"].forEach(u => ev("go('unit'," + q(u) + ",'g')"));
+ev("adaGo('adaisl','gun'); adaWrite('gun','kalk')"); grab("ada:form");
+ev("document.getElementById('adatr').value='Sabah yedide kalkarım.'; document.getElementById('adaen').value='I get up at seven.'; adaSave()"); grab("ada:isl");
+ev("adaWrite('gun','kahvalti'); document.getElementById('adatr').value='Kahvaltıda yumurta yiyorum.'; document.getElementById('adaen').value='I eat eggs for breakfast.'; adaSave()");
+ev("adaGo('adakontrol')"); grab("ada:kontrol");
+ev("adaFix('1')"); grab("ada:fix");
+ev("document.getElementById('adatr').value='Sabah yedide kalkıyorum.'; adaSave(); adaOk('2'); adaGo('ada')"); grab("ada");
+ev("adaGo('adaisl','gun')"); grab("ada:isl:checked");
+ev("wipe()");
+
 /* The locked views, with the real rule back. */
 ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen; wipe()");
 ev("go('level','A1')"); grab("locked:level:A1");
