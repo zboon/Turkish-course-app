@@ -2743,7 +2743,7 @@ step("araçlar · every tool is still reachable", () => {
   ok(heads === 4, "Araçlar has " + heads + " groups, wanted 4 — a flat list is what this replaced");
   /* Reported: the page was sixteen rows of text under two paragraphs.
      Every tool is a tile now, and the page carries no prose. */
-  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 16, "Araçlar should have sixteen tool tiles");
+  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 17, "Araçlar should have seventeen tool tiles");
   ok(!lastPaint.includes("card nav row"), "a text row is back on Araçlar");
   ok(!/Everything here is optional|tag means|class="foot"/.test(lastPaint), "the explanatory paragraphs are back on Araçlar");
   /* The two reference pages are links, not tools. */
@@ -2776,8 +2776,8 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
   const tiles = lastPaint.match(/<button class="tool[^"]*"[\s\S]*?<\/button>/g) || [];
   ok(tiles.length && tiles.every(t => /class="tool idle"/.test(t) === /Şimdilik boş/.test(t)),
      "a tile's fade and its Şimdilik boş label disagree");
-  /* Six that start empty and are not lying about it. */
-  ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')", "go('coz')"].forEach(fn => {
+  /* Seven that start empty and are not lying about it. */
+  ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')", "go('coz')", "adaGo('ada')"].forEach(fn => {
     ok(!tagged(fn), fn + " is offered as ready on a fresh install, but its bank is empty");
   });
   /* Reference rows carry no readiness claim either way — "how this
@@ -2797,6 +2797,7 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
 
   ev("go('unit','a1u1','g')"); ev("go('araclar')");
   ok(tagged("go('gram')"), "meeting a1u1's grammar point did not tag Dilbilgisi tekrarı hazır");
+  ok(tagged("adaGo('ada')"), "reading a1u1's grammar did not open Adacıklar, whose first questions it answers");
   ok(!tagged("go('words')"), "meeting a grammar point tagged Sözlüğüm hazır too early");
   ok(!tagged("go('hata')"), "meeting a grammar point tagged Hata defteri hazır too early");
   ok(!tagged("go('coz')"), "a1u1's grammar teaches no ending Çöz asks, yet it was tagged ready");
@@ -3715,9 +3716,6 @@ step("the path opens in order", () => {
   ev("wipe(); home(); " + LIFT);
 });
 
-/* ===================== report ===================== */
-console.log("sim: " + seenScreens.size + " distinct screens · " + screens + " paints · " +
-  checks + " checks · " + voice.said + " utterances · " + voice.cancels + " stops");
 /* ===================== İngilizcesi · English under the Turkish ===================== */
 step("çöz · a word in pieces, and only the pieces met", () => {
   ev("confirm=function(){return true}; wipe(); home()");
@@ -3830,6 +3828,86 @@ step("çöz · a word in pieces, and only the pieces met", () => {
   ok(Object.keys(ev("S.coz")).length === 0, "wipe() kept Çöz's schedule");
 });
 
+step("adacıklar · your own sentences, checked by a person, then drilled", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  const put = (tr, en) => { ev("document.getElementById('adatr').value=" + q(tr)); ev("document.getElementById('adaen').value=" + q(en)); };
+  const st = () => ev("S.ada");
+  ok(ev("adaOpen().length") === 0, "a fresh install has an island open");
+  ev("adaGo('ada')");
+  ok(/Şimdilik boş/.test(lastPaint) && !lastPaint.includes("startProd('i')"), "an empty Adacıklar offers something");
+
+  /* a1u1's grammar opens its two questions, and nothing else. */
+  ev("go('unit','a1u1','g')");
+  ok(JSON.stringify(ev("adaOpen().map(function(i){return i.id})")) === '["ben"]', "a1u1 opened " + JSON.stringify(ev("adaOpen().map(function(i){return i.id})")));
+  ev("adaGo('adaisl','aile')");
+  ok(ev("V.view") === "ada", "a closed island opened");
+  ev("adaGo('adaisl','ben')");
+  ok(lastPaint.includes("adaWrite('ben','ad')") && lastPaint.includes("adaWrite('ben','nereli')"), "a1u1's questions cannot be answered");
+  ok(!lastPaint.includes("adaWrite('ben','yas')") && lastPaint.includes("Kaç yaşındasın?"), "a question whose grammar is unread can be answered, or is not shown as coming");
+
+  /* Writing: a refusal keeps what was typed, a save records it unchecked. */
+  ev("adaWrite('ben','ad')");
+  ok(lastPaint.includes('id="adatr"'), "Yaz did not open the form");
+  put("", "My name is Can.");
+  let before = screens; ev("adaSave()");
+  ok(screens === before && st().s.length === 0, "an empty sentence was saved, or the refusal redrew the form");
+  put("Benim ad\u00ADım Can.", "");
+  before = screens; ev("adaSave()");
+  ok(screens === before && st().s.length === 0, "a sentence with no English was saved, or the refusal redrew the form");
+  put("Benim ad\u00ADım Can.", "My name is Can.");
+  ev("adaSave()");
+  const s1 = st().s[0];
+  ok(s1 && s1.tr === "Benim adım Can." && s1.en === "My name is Can." && s1.chk === 0 && s1.q === "ad" && s1.isl === "ben" && s1.day === ev("dayNum()"),
+     "the sentence was not saved clean and unchecked: " + JSON.stringify(s1));
+  ok(lastPaint.includes("Benim adım Can.") && /kontrol bekliyor/.test(lastPaint) && !lastPaint.includes('id="adatr"'), "the saved sentence is not shown as waiting");
+
+  /* Unchecked is never drilled. */
+  ok(ev("adaBank().length") === 0, "an unchecked sentence is in the drill");
+  ev("adaGo('ada')");
+  ok(!lastPaint.includes("startProd('i')") && lastPaint.includes("adaGo('adakontrol')"), "the hub offers a drill of unchecked work, or no way to get it checked");
+
+  /* Getting it checked. */
+  ev("adaWrite('ben','nereli')"); ev("adaGo('adaisl','ben'); adaWrite('ben','nereli')");
+  put("Ben Londra'dan.", "I am from London."); ev("adaSave()");
+  ev("adaGo('adakontrol')");
+  const exp = ev("adaExport()");
+  ok(/^Merhaba!/.test(exp) && exp.includes("1. Benim adım Can.") && exp.includes("soru: Adın ne?") && exp.includes("2. Ben Londra'dan."),
+     "the message to send is missing its greeting, a sentence or the question it answers");
+  ok(lastPaint.includes(esc("Ben Londra'dan.")) && lastPaint.includes("adaOk('1')") && lastPaint.includes("adaFix('2')"), "the check page does not list both sentences");
+  ev("adaOk('1')");
+  ok(st().s[0].chk === 1 && ev("adaBank().length") === 1, "marking a sentence right did not put it in the drill");
+  ev("adaFix('2')"); put("Londralıyım.", "I am from London."); ev("adaSave()");
+  const s2 = st().s[1];
+  ok(s2.chk === 1 && s2.tr === "Londralıyım." && s2.was === "Ben Londra'dan.", "a correction did not keep the original and check the new one: " + JSON.stringify(s2));
+  ok(/Hepsi kontrol edildi|Everything is checked/.test(lastPaint), "with nothing waiting the check page does not say so");
+
+  /* The drill is Üretim's runner, on the learner's own English. */
+  ev("S.prod={}; S.err={}; startProd('i')");
+  ok(ev("V.view") === "prodrun" && ev("PR.title") === "Adacıklar" && ev("PR.q.length") === 2 && ev("PR.q[0].k") === "i:1", "the drill did not start on the checked sentences");
+  ok(lastPaint.includes("My name is Can.") && !lastPaint.includes("Benim adım Can."), "the prompt is not the learner's English, or the Turkish shows first");
+  ev("prodModel(); prodMark(false)");
+  ok(ev("S.prod['i:1'].b") === 0 && ev("S.err['i:1']") && ev("S.err['i:1'].c") === "Benim adım Can.", "a miss was not scheduled today or not booked");
+  ev("while(PR&&PR.phase!=='end'){if(PR.phase==='build')prodBuildNext();else{prodModel();prodMark(true);}}");
+  ok(lastPaint.includes("adaGo('ada')") && lastPaint.includes("Adacıklar"), "the drill does not end back at Adacıklar");
+  ev("startProd('i')");
+  if (ev("V.view") === "prodrun") { ev("back()"); ok(ev("V.view") === "ada", "back() from an island drill did not return to Adacıklar"); }
+
+  /* Changing a checked sentence unchecks it and restarts its schedule. */
+  ev("S.prod['i:2']={b:3,d:dayNum()+4,f:0}; adaGo('adaisl','ben'); adaEdit('2')");
+  put("Londralıyım ama İstanbul'da yaşıyorum.", "I am from London but I live in Istanbul."); ev("adaSave()");
+  ok(st().s[1].chk === 0 && !ev("S.prod['i:2']"), "an edited checked sentence stayed checked or kept its schedule");
+  ev("adaEdit('1')"); put("Benim adım Can.", "My name is Can, as it happens."); ev("adaSave()");
+  ok(st().s[0].chk === 1, "changing only the English unchecked the Turkish");
+
+  /* Deleting takes its schedule and its mistake with it. */
+  ev("S.prod['i:1']={b:1,d:0,f:0}; adaDel('1')");
+  ok(st().s.length === 1 && !ev("S.prod['i:1']") && !ev("S.err['i:1']"), "a deleted sentence left its schedule or its mistake behind");
+  ev("adaGo('ada')"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from Adacıklar did not return to Araçlar");
+  ev("wipe()");
+  ok(ev("S.ada.s.length") === 0 && ev("S.ada.n") === 0, "wipe() kept the learner's sentences");
+});
+
 step("english layer", () => {
   const html = () => ev("document.documentElement.classList.contains('noen')");
   /* Day one: on, with no choice made. wipe() keeps S.en like any setting,
@@ -3903,6 +3981,10 @@ step("english layer", () => {
     ok(EU(x) === x, "content of class " + c + " was glossed");
   });
 });
+
+/* ===================== report ===================== */
+console.log("sim: " + seenScreens.size + " distinct screens · " + screens + " paints · " +
+  checks + " checks · " + voice.said + " utterances · " + voice.cancels + " stops");
 
 ok(txBad.size === 0, "instructions whose Turkish half is empty, the same as the English, or English: " +
    [...txBad.entries()].slice(0, 5).map(e => q(e[0]) + " / " + q(e[1])).join("; "));

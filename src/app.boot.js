@@ -46,6 +46,9 @@ function render(){
   else if(v==="adim")renderAdim();
   else if(v==="coz")renderCoz();
   else if(v==="cozrun")renderCozRun();
+  else if(v==="ada")renderAda();
+  else if(v==="adaisl")renderAdaIsl();
+  else if(v==="adakontrol")renderAdaKontrol();
   else renderHome();
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */
