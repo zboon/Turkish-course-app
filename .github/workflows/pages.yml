@@ -48,6 +48,13 @@ jobs:
       - name: Nothing drawn or generated changed
         run: node test/snap.js
 
+      # Türkçe Macera, the children's app, built into dist/kids/ by build.sh.
+      - name: Kids app data and contrast
+        run: node kids/test/validate.js
+
+      - name: Kids app played through
+        run: node kids/test/sim.js
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

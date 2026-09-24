@@ -10,6 +10,8 @@ is generated. Never hand-edit `dist/`.
 node test/validate.js   # data integrity + 266 morphology forms + 872 number forms + 46 contrast pairs + mistake naming
 node test/sim.js        # headless render of all 346 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
+node kids/test/validate.js   # the children's app: data and contrast
+node kids/test/sim.js        # the children's app, every lesson played through
 ```
 
 Run all four before every commit; they take a second each. `build.sh` already
@@ -44,6 +46,9 @@ src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
 src/data/baslarken.js    const BASLA=[…];    // six lessons before unit one
+src/shared/text.js       esc(), fold()                 — shared with kids/
+src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
+src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -203,6 +208,68 @@ Nothing was lost that is said nowhere else: the bar above still reads
 directly below saying what the app is in plain English. The Ottoman
 script is not gone from the plan either — **Osmanlıca** is still on the
 roadmap as a mode, where it is the subject rather than an ornament.
+
+## Türkçe Macera (the children's app)
+
+Built, by request: a version for **11–13 year olds starting Turkish from
+English**, in `kids/`, built by `kids/build.sh` (which `./build.sh` runs)
+into `dist/kids/index.html`, so Pages serves it at `/kids/`. The
+published artifact is **https://claude.ai/artifact/MxVvyJxDVpsf1Hkxm4Z4vy**
+— a separate link from the course's, and it must stay the same link for
+the same reason: a child's progress lives there.
+
+**It is a sibling, not a copy.** The course is built round adult reading
+passages, long English explanations and typed answers; none of that suits
+a twelve-year-old, so the content, screens and games are its own. What is
+shared is what should never differ between the two: `src/shared/` holds
+`fold()` and `esc()`, the voice (`say`, `voiceState`) and the review
+ladder (`STEPS`, `bump`, `dueItems`). They were moved out of
+`app.core.js` for this, a pure move that `snap.js` passed unchanged, and
+both builds concatenate them, so a fix there reaches both apps.
+
+- **Content** — `kids/src/data/units.js`: twelve units (greetings,
+  numbers, colours, animals, family, food, school, body, clothes,
+  weather, hobbies, town), each ten words with an emoji as the picture,
+  four phrases, one grammar tip in plain English and a short comic with a
+  recurring cast (Ece, Can, and Pamuk, an Istanbul street cat). Unit ids
+  `k1`–`k12` are permanent and word positions are append-only: review
+  keys are `<unitId>#<index>`.
+- **Games** — three lessons a unit (Tanış: meet the words, hear and pick;
+  Oyna: match pairs, spell with letter tiles whose decoys are the letters
+  beginners confuse, ı/i ş/s ç/c; Konuş: the comic read aloud, build a
+  sentence, say it out loud, type a word), then **Kupa**, a ten-question
+  trophy, first try only, typing and spelling included. A lesson sends a
+  missed round back at the end until it is right and scores only first
+  tries (1–3 stars); the trophy does not, because it is a test.
+- **The path opens in order**, as the course's does: the next unit when
+  this one's trophy is won, and the trophy can be tried straight away,
+  which is the test-out. Nothing reached is locked again.
+- **Review** — lesson one seeds its words onto the shared ladder (right
+  first time: tomorrow; missed: today); a unit won by trophy alone counts
+  its words as met. The daily review draws on met words at `KNEW_DAY` (10)
+  new a day, the same rule as the course's `NEW_DAY`.
+- **Motivation** — XP (10 a first-try answer, 5 a second), animal ranks
+  (kitten, fox, eagle, lion, dragon), a day streak, stars and trophies,
+  and a small chime made with Web Audio, no files. Praise is in Turkish
+  (Harika, Aferin, Süper), which teaches it. The course's house rule
+  against exclamation marks does not apply here; everything else does.
+- **Separate storage** — `localStorage["turkce-kids-v1"]`
+  `{name,u:{kN:{l:[s,s,s],cup:{at,score}}},srs,xp,days,theme,snd}`. It
+  never reads or writes the course's key, and `sim.js` checks that.
+  Backup and restore live on the grown-ups page.
+
+`kids/test/validate.js` holds the data (ids pinned, ten words, unique
+emoji, English and Turkish per unit, lower-case Turkish letters only, at
+least four spellable words and two multi-word phrases per unit, a known
+speaker on every comic line) and WCAG AA on every text pair in both
+themes. `kids/test/sim.js` runs on the course's `test/dom.js` and plays
+every lesson and trophy of all twelve units through the real engine,
+right and wrong. Fourteen deliberate breakages each turned it red; three
+did not at first and all three were the test's fault — a daily-cap check
+on a bank too small to reach the cap, a breakage that removed one of the
+comic's two guards, and no check that leaving mid-comic silences it. The
+comic check also found a real crash, `talkPlay()` on a round that was not
+a comic, now guarded.
 
 ## Nothing reviews what has not been met
 

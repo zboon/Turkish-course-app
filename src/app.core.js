@@ -59,13 +59,6 @@ function streak(){
 
 /* ===================== helpers ===================== */
 const app=()=>document.getElementById("app");
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function fold(s){
-  return String(s).replace(/İ/g,"i").replace(/I/g,"i").replace(/ı/g,"i").replace(/Ş/g,"s").replace(/ş/g,"s")
-   .replace(/Ğ/g,"g").replace(/ğ/g,"g").replace(/Ü/g,"u").replace(/ü/g,"u").replace(/Ö/g,"o").replace(/ö/g,"o")
-   .replace(/Ç/g,"c").replace(/ç/g,"c").replace(/[âÂ]/g,"a").replace(/[îÎ]/g,"i").replace(/[ûÛ]/g,"u")
-   .toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
-}
 /* Nothing reviews material the learner has not met. A review of something
    never seen is not a review — it is a test in a language not yet taught,
    and getting it wrong handed a day-one learner C2 vocabulary to recall.
@@ -170,24 +163,6 @@ function crest(px){
 }
 
 /* ===================== voice ===================== */
-const VOICE={rate:0.85,mode:null,idx:0,tid:null,ready:false};
-function ttsOK(){return typeof window!=="undefined"&&"speechSynthesis"in window;}
-function trVoice(){
-  if(!ttsOK())return null;
-  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
-  return vs.find(v=>/^tr/i.test(v.lang))||null;
-}
-/* The middle answer is the one that matters. A device with speech but no
-   Turkish voice does not fall silent: it reads Turkish in its default
-   voice, so a beginner hears Merhaba in an English accent from lesson one
-   and nothing says so. "unknown" is a voice list not loaded yet, and says
-   nothing rather than warn on a device that is fine. */
-function voiceState(){
-  if(!ttsOK())return "none";
-  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
-  if(!vs.length)return "unknown";
-  return vs.some(v=>/^tr/i.test(v.lang))?"ok":"notr";
-}
 function voiceNoteInner(){
   const st=voiceState();
   if(st==="notr")return '<div class="card vnote"><p class="lead">Türkçe ses yok · no Turkish voice</p>'+
@@ -213,18 +188,6 @@ if(ttsOK()){try{
   };
   speechSynthesis.getVoices();   /* Chrome loads the list lazily, on first ask */
 }catch(e){}}
-function say(text,rate,onend,lang,vol){
-  if(!ttsOK())return false;
-  try{
-    speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    const v=lang?null:trVoice(); if(v)u.voice=v;
-    u.lang=lang||"tr-TR"; u.rate=rate||VOICE.rate;
-    if(vol!==undefined)u.volume=vol;
-    if(onend)u.onend=onend;
-    speechSynthesis.speak(u); return true;
-  }catch(e){return false;}
-}
 function sayLine(i){
   stopPlay();
   const u=unit(V.u); if(!u)return;
@@ -289,20 +252,8 @@ function setRate(r){VOICE.rate=r;S.rate=r;save();const m=VOICE.mode,i=VOICE.idx;
   if(m)playFrom(i,m);}
 
 /* ===================== review queue (SRS) ===================== */
-const STEPS=[0,1,2,4,8,16,32,64,120];
-function dayNum(){return Math.floor(Date.now()/86400000);}
 function srsAdd(k){if(!S.srs)S.srs={};if(!S.srs[k])S.srs[k]={b:0,d:dayNum()};}
 function srsDrop(k){if(S.srs)delete S.srs[k];}
-/* Words and produced sentences climb the same ladder in different
-   stores, so the box arithmetic lives here once. next() is given the
-   current box and returns the new one. */
-function isDue(map,k){const r=map&&map[k];return !r||r.d<=dayNum();}
-function bump(map,k,next){
-  const r=map[k]||{b:0,d:dayNum(),f:dayNum()};   /* f: the day it was first practised */
-  r.b=Math.max(0,Math.min(next(r.b),STEPS.length-1));
-  r.d=dayNum()+STEPS[r.b];
-  map[k]=r; return r;
-}
 function dueList(){
   if(!S.srs)S.srs={};
   return S.star.filter(function(k){return isDue(S.srs,k);});
@@ -331,23 +282,6 @@ function grade(k,g){
    before the stamp existed count as old, which only errs toward one more
    sitting on the day this shipped. */
 const NEW_DAY={rep:10,gram:3,dinle:8,prod:12};
-function newToday(map,pfx){
-  const n=dayNum(); let c=0;
-  if(map)for(const k in map){const r=map[k]; if(r&&r.f===n&&(!pfx||k.indexOf(pfx)===0))c++;}
-  return c;
-}
-/* Everything due now: reviews oldest first, then as many never-practised
-   items, in the bank's own order, as today's allowance still admits. */
-function dueItems(map,bank,cap,pfx){
-  const n=dayNum(), old=[], fresh=[];
-  bank.forEach(function(it){
-    const r=map&&map[it.k];
-    if(r){if(r.d<=n)old.push(it);}else fresh.push(it);
-  });
-  old.sort(function(x,y){return map[x.k].d-map[y.k].d;});
-  return old.concat(cap===undefined?fresh:fresh.slice(0,Math.max(0,cap-newToday(map,pfx))));
-}
-function dueQueue(map,bank,limit,cap,pfx){return dueItems(map,bank,cap,pfx).slice(0,limit);}
 
 function starKey(tr,en){return tr+"|"+en;}
 function isStarred(tr,en){return S.star.indexOf(starKey(tr,en))>-1;}
