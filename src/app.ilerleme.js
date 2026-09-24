@@ -76,7 +76,8 @@ function renderIlerleme(){
   if(plan.steps.length)h+='<h2 class="sec">Bugün</h2><div class="card" style="padding:.2rem 1rem">'+planRows(plan)+'</div>';
 
   h+='<h2 class="sec">Kurs</h2><div class="card">'+
-    ilRow("Başlarken","the lessons before unit one",baslaCount(),BASLA.length);
+    ilRow("Başlarken","the lessons before unit one",baslaCount(),BASLA.length)+
+    ilRow("Dersler","lessons finished, three a unit",dersCount(),UNITS.length*LESSONS);
   LEVELS.forEach(function(l){h+=ilRow(l.id+" · "+l.tr,l.en,lvDone(l.id),unitsOf(l.id).length);});
   h+='</div>';
 

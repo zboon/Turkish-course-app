@@ -780,7 +780,7 @@ function planToday(){
   const rep=Math.min(repDue().length,REP_SESSION);
   const words=dueList().length;
   const gr=Math.min(gramDue().length,GRAM_SESSION);
-  const dk=Math.min(dinleDue("d:"),DSESSION);
+  const dic=Math.min(dinleDue("d:"),DSESSION);
   const pr=Math.min(prodDue(sentenceBank()).length,SESSION);
   const rt=retellDue().length;
   /* "Yeni" absorbs the old resume card: mid-unit it carries you back to the
@@ -793,8 +793,10 @@ function planToday(){
      already ticked instead of moving on. */
   const resuming=!!at&&!isDone(at.id);
   const nx=resuming?at:nextUnit();
-  /* Today's new unit is done: the step stays, ticked, naming tomorrow's. */
-  const capped=!resuming&&!!nx&&unitsToday()>=UNIT_DAY;
+  /* The unit's next lesson, or its exercises once all three are done. */
+  const dk=nx?dersNext(nx.id):0, dl=nx?dersLabel(nx,dk):null;
+  /* Today's lesson is done: the step stays, ticked, naming tomorrow's. */
+  const capped=!!nx&&dayFull();
   /* Before any unit is opened, a complete beginner is pointed at the
      intro lessons first. Still one instruction on day one. */
   const intro=baslaPlan();
@@ -814,9 +816,9 @@ function planToday(){
     {k:"gram", tr:"Dilbilgisi",en:"build a sentence with the pattern", tt:"kalıpla bir cümle kur", n:gr,
      avail:gramBank().length>0,
      mins:Math.round(gr*PLAN_MIN[3]/60), go:"startGram()"},
-    {k:"dinle",tr:"Dinle",   en:"write down what you hear", tt:"duyduğunu yaz", n:dk,
+    {k:"dinle",tr:"Dinle",   en:"write down what you hear", tt:"duyduğunu yaz", n:dic,
      avail:listenBank("d:").length>0,
-     mins:Math.round(dk*PLAN_MIN[1]/60), go:"startDinle('d')"},
+     mins:Math.round(dic*PLAN_MIN[1]/60), go:"startDinle('d')"},
     {k:"prod", tr:"Söyle",   en:"say it before the model", tt:"örnekten önce sen söyle", n:pr,
      avail:sentenceBank().length>0,
      mins:Math.round(pr*PLAN_MIN[2]/60), go:"startProd('s')"},
@@ -824,27 +826,26 @@ function planToday(){
     {k:"new",  tr:"Giriş", en:"before unit one · "+intro.en, tt:"birinci üniteden önce · "+intro.tr,
      n:1, mins:8, avail:true, go:"go('basla','"+intro.id+"')"}:
     capped?
-    {k:"new",  tr:"Yarın", en:"tomorrow: "+nx.lv+" · "+nx.tr, tt:"yarın: "+nx.lv+" · "+nx.tr,
-     n:0, mins:0, avail:true, go:"go('unit','"+nx.id+"','v')"}:
-    {k:"new",  tr:resuming?"Devam":"Yeni",
-     en:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s):""):"every unit is done",
-     tt:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s).split(" · ")[0]:""):"bütün üniteler bitti",
-     n:nx?1:0, mins:nx?10:0, avail:!!nx,
-     go:nx?"go('unit','"+nx.id+"','"+(resuming?S.place.s:"v")+"')":"home()"}
+    {k:"new",  tr:"Yarın", en:"tomorrow: "+dl.en, tt:"yarın: "+dl.tt,
+     n:0, mins:0, avail:true, go:dl.go}:
+    {k:"new",  tr:resuming||dk>0?"Devam":"Yeni",
+     en:nx?dl.en:"every unit is done", tt:nx?dl.tt:"bütün üniteler bitti",
+     n:nx?1:0, mins:nx?12:0, avail:!!nx, go:nx?dl.go:"home()"}
   ];
   if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",tt:"aklından yeniden anlat",n:rt,
                           avail:true,mins:rt*3,go:"startRetell('"+retellDue()[0].id+"')"});
-  /* The commonest words the units never teach. New material, so after
-     every review and before the unit — and only once a unit is finished,
-     or day one would be two instructions. */
+  /* The commonest words the units never teach. The lessons carry them
+     now; this step is only for the share of units passed without them
+     (by a level test, say). New material, so after every review and
+     before the lesson. */
   if(sikAvail()){
-    const sn=sikLeft();
+    const sn=Math.min(sikLeft(),sikBehind().length);
     steps.splice(steps.length-1,0,{k:"sik",tr:"Kelime",en:"common words the units never teach",tt:"ünitelerin öğretmediği sık kelimeler",n:sn,
                                    avail:true,mins:Math.max(1,Math.round(sn*30/60)),go:"go('sik')"});
   }
   const shown=steps.filter(function(s){return s.avail;});
   const left=shown.filter(function(s){return s.n>0;});
-  return {steps:shown,left:left,all:steps,tomorrow:capped?nx:null,
+  return {steps:shown,left:left,all:steps,tomorrow:capped?Object.assign({id:nx.id},dl):null,
           mins:shown.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
 }
 /* Bugün on the landing page is one button. It used to be a heading, a
@@ -860,11 +861,11 @@ function planCard(){
   if(!s){
     const t=p.tomorrow;
     return h+'<div class="today done"><span class="today-t">Bugünlük bitti<span class="gl">done for today</span></span>'+
-      '<span class="today-s">'+(t?tx('Tomorrow: '+esc(t.lv+' · '+t.tr)+'. One new unit a day gives the reviews time to work.',
-                                      'Yarın: '+esc(t.lv+' · '+t.tr)+'. Günde bir yeni ünite, tekrarların işlemesine zaman tanır.')
+      '<span class="today-s">'+(t?tx('Tomorrow: '+esc(t.en)+'. One lesson a day gives the reviews time to work.',
+                                      'Yarın: '+esc(t.tt)+'. Günde bir ders, tekrarların işlemesine zaman tanır.')
                             :tx('Every unit is done and nothing is due.','Bütün üniteler bitti, bekleyen bir şey yok.'))+'</span></div>'+
       /* The pace is the plan's, not a lock. */
-      (t?'<button class="homelink" onclick="go(\'unit\',\''+t.id+'\',\'v\')">Yine de devam et<span class="gl">carry on anyway</span></button>':'');
+      (t?'<button class="homelink" onclick="'+t.go+'">Yine de devam et<span class="gl">carry on anyway</span></button>':'');
   }
   return h+'<button class="today" onclick="'+s.go+'">'+
     '<span class="today-t">Başla<span class="gl">start</span></span>'+
@@ -904,7 +905,7 @@ function planNext(){
   const tm=planToday().tomorrow;
   if(!nx)return '<div class="card"><p class="lead">Bugünlük bitti</p><p class="sub">'+
     tx('Everything in today’s plan is done. Anything more is extra.','Bugünün planındaki her şey bitti. Bundan sonrası fazladan.')+
-    (tm?' '+tx('Tomorrow: '+esc(tm.lv+' · '+tm.tr)+'.','Yarın: '+esc(tm.lv+' · '+tm.tr)+'.'):'')+'</p>'+
+    (tm?' '+tx('Tomorrow: '+esc(tm.en)+'.','Yarın: '+esc(tm.tt)+'.'):'')+'</p>'+
     '<button class="btn" onclick="home()">Ana sayfa</button></div>';
   return '<button class="btn" onclick="'+nx.go+'">Devam</button>'+
     '<p class="tiny next-step">'+tx('Next: '+esc(nx.tr)+' · '+esc(nx.en),'Sıradaki: '+esc(nx.tr)+' · '+esc(nx.tt||nx.en))+'</p>';

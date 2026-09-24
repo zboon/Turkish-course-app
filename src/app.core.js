@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.67";
+const APP_VERSION="v3.68";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -80,22 +80,42 @@ function lvPct(lv){const a=unitsOf(lv);return a.length?Math.round(100*lvDone(lv)
 function allPct(){return Math.round(100*UNITS.filter(u=>isDone(u.id)).length/UNITS.length);}
 function currentLevel(){for(const l of LEVELS){if(lvPct(l.id)<100)return l.id;}return "C2";}
 function nextUnit(){for(const u of UNITS){if(!isDone(u.id))return u;}return null;}
-/* A new unit a day. Reported by the learner: two A2 units took an
+/* A new lesson a day. Reported by the learner: two A2 units took an
    afternoon, so the whole level could be ticked in a day, and a unit
    passed on a quiz minutes after the lesson is a unit followed, not one
-   kept. Reviews already let in only NEW_DAY new items a day; new units
-   had no pace at all. So the plan offers UNIT_DAY new units a day and
-   then stops, naming tomorrow's. It is the plan's pace, not a lock: a
-   unit opened by hand from Dersler is resumed as normal.
+   kept. The first answer was a unit a day; the second, asked for after
+   comparing it with Pimsleur's month a level, is that a unit is three
+   lessons (Derse başla, app.adim.js) and the plan offers one of them a
+   day, so a level of ten units is about a month. It is the plan's pace,
+   not a lock: every lesson can be opened by hand from the unit page.
+
+   S.ders[unitId] is [d1,d2,d3], the day each lesson was FIRST finished
+   (0 while it is not), so a lesson gone over again keeps its day.
+
    A unit counts on the day it was FIRST passed (done.first, set once by
    the unit quiz); a unit passed again keeps its day, and a level test
    writes no `first` at all. Records from before this have none either
-   and count as old. */
-const UNIT_DAY=1;
-function unitsToday(){
-  const n=dayNum();
-  return UNITS.filter(function(u){const d=S.done[u.id];return d&&d.first===n;}).length;
+   and count as old. Passing a unit whose third lesson is done is the end
+   of that lesson rather than new work, so it is not counted twice. */
+const LESSONS=3, LESSON_DAY=1;
+function dersOf(id){return (S.ders&&S.ders[id])||[0,0,0];}
+/* The next lesson of a unit, 0–2, or 3 once all three are finished and
+   only its exercises are left. */
+function dersNext(id){const d=dersOf(id);for(let k=0;k<LESSONS;k++)if(!d[k])return k;return LESSONS;}
+function dersMark(id,k){
+  if(!S.ders)S.ders={};
+  const d=dersOf(id).slice(); if(d[k])return;
+  d[k]=dayNum(); S.ders[id]=d; save();
 }
+function dersCount(){let n=0;for(const id in (S.ders||{}))n+=S.ders[id].filter(Boolean).length;return n;}
+function lessonsNewToday(){
+  const n=dayNum();
+  let c=0;
+  for(const id in (S.ders||{}))c+=S.ders[id].filter(function(d){return d===n;}).length;
+  UNITS.forEach(function(u){const d=S.done[u.id];if(d&&d.first===n&&!dersOf(u.id)[LESSONS-1])c++;});
+  return c;
+}
+function dayFull(){return lessonsNewToday()>=LESSON_DAY;}
 /* The course opens in order: the six lessons of Başlarken one after
    another, then each unit once the one before it is passed. A level's
    test ahead passes every unit in it, so it is the way to skip, as in
@@ -381,7 +401,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Derse başla":"start the lesson","Sınava gir":"take the test","Dersi tekrarla":"go over the lesson again","Türkçesini yaz":"type the Turkish","Sen de dene":"now you try","Metni göster":"show the text","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Önce sen söyle":"say it first","Sık kelimeler":"common words","Tekrara ekle":"add to my reviews","Konuş":"speak","Şimdi değil":"not now","Kilitli":"locked","Derse başla":"start the lesson","Sınava gir":"take the test","Dersi tekrarla":"go over the lesson again","Türkçesini yaz":"type the Turkish","Sen de dene":"now you try","Metni göster":"show the text","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "İlerleme":"progress","Bir oturum daha":"one more sitting","Hatalar":"mistakes","Hata defterini aç":"open the mistake book",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
@@ -433,6 +453,7 @@ const EN_RULES=[
  [/^(\d+) konu · bu oturum$/,()=>"grammar points this sitting"],
  [/^(\d+) kelime gözden geçirildi$/,()=>"words gone over"],
  [/^(\d+) kelime bugün hâlâ bekliyor\.$/,()=>"still waiting today"],
+ [/^Ders (\d) bitti$/,m=>"lesson "+m[1]+" done"],
  [/^(A1|A2|B1|B2|C1|C2) seviye sınavı$/,m=>m[1]+" level test"],
  [/^Atasözleri · (\d+) hazır$/,m=>"proverbs · "+m[1]+" ready"],
  [/^Deyimler · (\d+) hazır$/,m=>"idioms · "+m[1]+" ready"],

@@ -66,7 +66,7 @@ src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.sik.js           the frequency layer: ten common words a day
 src/app.baslarken.js     the lessons before unit one
 src/app.uyku.js          before sleep: today's material, quietly
-src/app.adim.js          Derse başla: a unit taught one screen at a time
+src/app.adim.js          Derse başla: a unit taught in three lessons, one screen at a time
 src/app.ilerleme.js      İlerleme: the state of every mode, on one page
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
@@ -324,13 +324,16 @@ deliberate breakage.
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
  sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
+ ders:{unitId:[d1,d2,d3]},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
 `done[id].first` is the day a unit was first passed by its own quiz, set
 once and kept on every later pass; a level test writes none, and records
-from before v3.67 have none. It is what the one-new-unit-a-day pace counts
-(see Bugün).
+from before v3.67 have none. `ders[id]` is the day each of the unit's
+three lessons was first finished, `0` while it is not; a lesson gone over
+again keeps its day. Together they are what the one-lesson-a-day pace
+counts (see Bugün). `ders` is progress: `wipe()` clears it.
 
 Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
 `num`, `ata`, `dia` — carries `f`, the day it was first practised, which
@@ -1715,36 +1718,85 @@ is taught. So it has **no name**. It is the main button at the top of
 every unit, **Derse başla** (**Dersi tekrarla** once the unit is
 passed), with the tabs underneath under *Ya da üniteye kendin göz at*.
 
-`startAdim(id)` walks the unit's own material in order and hands over to
-`startUnitQuiz`, the five exercises, which are what tick the unit. The
-order is the same at every level; the checks grow with the learner,
-because what teaches at A1 is too easy to teach anything at B1:
+### Three lessons a unit
 
-| level | words | checks | grammar | passage |
-|---|---|---|---|---|
-| A1 | pictured (`RESIM`), heard | hear and pick ×4, spell from tiles ×3 | read | line by line, shown |
-| A2 | heard | type the Turkish from the English ×4 | read, then type one example | line by line, shown |
-| B1+ | heard | the word typed back into its own sentence ×4, after the passage | read, then type one example | heard first, then shown |
+By request, after one new unit a day (see Bugün) still made a level ten
+days. The learner compared that with Pimsleur's month a level, and a
+unit walked in one sitting was an afternoon's reading, not a thing kept.
+So from v3.68 `startAdim(id, k)` is **three lessons**, the plan offers
+one a day, and the third hands over to `startUnitQuiz`, the five
+exercises, which are what tick the unit. Left without `k` it opens the
+unit's next lesson. Each lesson meets something new and brings back what
+the one before it met:
 
-From B1 the checks come after the passage, because a word blanked in a
-sentence not yet read is a guess. `adimCloze()` is Tekrar's cloze builder
-restricted to the unit's own lines (the form the line uses, never a line
-that uses the word twice). A word with no sentence is asked from the
-English instead, so there are always four: 38 of the 40 B1+ units ask
-127 of 160 in their sentences.
+| lesson | new | brought back |
+|---|---|---|
+| 1 · Kelimeler ve dilbilgisi | the ten words, the grammar point | — |
+| 2 · Okuma | the passage; the first half of the unit's common words | the words, in the passage (B1+) |
+| 3 · Tekrar ve konuşma | the second half of the common words; the speaking task | the words recalled, an example of the grammar, the passage said aloud |
+
+The checks grow with the learner, because what teaches at A1 is too easy
+to teach anything at B1:
+
+| level | lesson 1 | lesson 2 | lesson 3 |
+|---|---|---|---|
+| A1 | words pictured (`RESIM`) and heard · hear and pick ×4 · spell from tiles ×3 · grammar | lines shown · say ×3 | hear ×3 · spell ×2 · say ×3 · speak |
+| A2 | words · type the Turkish ×4 · grammar · type one example | lines shown · say ×3 | type ×4 · one example · say ×3 · speak |
+| B1+ | words · type the Turkish ×4 · grammar · type one example | lines heard first · the words typed into their sentences ×4 · say ×3 | type ×4 · one example · say ×3 · speak |
+
+Phase 2, still to come, adds a second short passage or dialogue to
+lesson three using the same grammar. That is sixty new texts, so it
+waits for a native speaker's check. Phase 1 uses only Turkish the course
+already has.
+
+Three step types came with the lessons:
+
+- **`say`: say it first.** A passage line's English is shown and nothing
+  plays. The learner says the Turkish aloud, then **Göster** reveals and
+  plays the model: Üretim's order, with no grading. Lesson two takes
+  three lines from the first half of the passage and lesson three three
+  from the second, so the two days never repeat a line.
+- **`sik`: the unit's common words.** `sikShare(u, half)` (app.sik.js) is
+  the unit's slice of the frequency list, less any word already met. It
+  is shown as a list to hear, and **biliyorum** marks one known. Tekrara
+  ekle takes each in through `sikTake()`, the same call the Sık kelimeler
+  screen uses: starred with its first review tomorrow, or recorded as
+  known. So the list's 1,473 words now arrive with the course instead of
+  beside it.
+- **`speak`: the speaking task.** `u.speak`, said aloud for a minute.
+  **Anlattım** counts it as the task's first telling through
+  `retellCount()`, factored out of `retellDone()`, so the plan's Anlat
+  step brings it back on day three and day seven. A telling already
+  under way keeps its own schedule. **Şimdi değil** goes on without it,
+  for someone who cannot talk out loud where they are.
+
+From B1 the word checks come after the passage, because a word blanked
+in a sentence not yet read is a guess. `adimCloze()` is Tekrar's cloze
+builder restricted to the unit's own lines (the form the line uses,
+never a line that uses the word twice). A word with no sentence is asked
+from the English instead, so there are always four: 38 of the 40 B1+
+units ask 127 of 160 in their sentences.
+
+The unit page leads with the next lesson (**Derse başla**), the exercises
+once all three are done, or **Dersi tekrarla** once the unit is passed.
+Under it is a row of the three lessons, ticked as they are finished,
+each of which opens by hand.
 
 Five decisions:
 
-- **It adds no material and no storage.** Each part calls `markSeen()`
-  for its own tab as it is shown: `v` for the words, `g` for the grammar,
-  `r` for the passage. So the reviews open at exactly the grain they
-  would if the tabs had been read. Walking the words does not count as
-  reading the passage (see "Nothing reviews what has not been met").
+- **Its storage is small and it adds no material.** Each part calls
+  `markSeen()` for its own tab as it is shown: `v` for the words, `g` for
+  the grammar, `r` for the passage. So the reviews open at exactly the
+  grain they would if the tabs had been read, and lesson one does not
+  count as reading the passage (see "Nothing reviews what has not been
+  met"). `S.ders` records the day each lesson was first finished; the
+  common words and the speaking task write to their own existing
+  records, and nothing else is written.
 - **The checks are practice, not marks.** Nothing is scheduled, starred
   or written to the mistake book. A missed check comes back once more
-  (`ADIM_RETRY`, 2): before the grammar at A1 and A2, so the words are
-  settled before the unit moves on from them, and before the end from
-  B1, where the checks come last.
+  (`ADIM_RETRY`, 2), after the other checks and before the lesson moves
+  on from them (`AD_STOP`: the grammar, the lines to say, the common
+  words, the speaking task or the end).
 - **Typed answers use the course's own judges.** `wordOk()` and
   `sentOk()` were factored out of `tkCheck()` and `grCheck()` for this
   (a pure move that `snap.js` passed unchanged), so a spoken spelling,
@@ -1758,16 +1810,29 @@ Five decisions:
 
 `validate.js` fails on a `RESIM` key that is not an A1 entry, which is
 how a spelling edit would strand one, and requires at least three
-spellable words in every A1 unit. `sim.js` walks all sixty units and
-checks each level's shape: the checks it asks for, their count, the
-passage before the checks at B1+, and every blank filling back to its
-line without the answer left in it. It also checks the autoplay happens
-once and a redraw does not repeat it, the seen-flag grain, a missed
-check coming back exactly once and where, the B1 line hidden until
-shown, the English hidden until asked for, the judges (the other you, a
+spellable words in every A1 unit. `sim.js` walks all 180 lessons of the
+sixty units and checks each one's shape: which checks it asks and how
+many, the passage in lesson two only, the checks after the passage at
+B1+, the lines to say coming from different halves, the speaking task
+last, and every blank filling back to its line without the answer left
+in it. It checks that the shares cover the list exactly, with no gap and
+no overlap, and that walking every lesson finishes 180 and takes in every
+common word. It walks a1u1's three lessons as a learner would: the
+autoplay happens once and a redraw does not repeat it; the seen-flag
+grain; a missed check coming back exactly once; a line to say stays
+silent and hidden until Göster; a word marked known is not starred and
+the rest are due tomorrow; the speaking task is counted once and due on
+day three; and `S` is untouched apart from those. It also checks the B1
+line hidden until shown, a missed B1 check coming back before the lines
+to say, the English hidden until asked for, the judges (the other you, a
 spoken form without its pronoun, a wrong example marked word by word, an
-empty answer ignored), that `S` is untouched apart from `seen`, the quiz
-handoff, `back()` and the lock.
+empty answer ignored), the quiz handoff, `back()` and the lock.
+Twenty-six deliberate breakages of the lessons and the pace each turned
+it red: the cap, a lesson's day reset on a redo, the day counted twice or
+not at all, the end not marking, the next lesson offered on a full day,
+the plan's step and the unit page's button, each step type out of place,
+silent or early, the known word starred, the words due today, the task
+counted wrongly, a gap in the shares, the retry's place and `wipe()`.
 
 A related fix that shipped with it: `button.card` set `display:block`
 and outranked `.row`, so every navigation row in the app had its
@@ -1829,8 +1894,10 @@ action before orientation.
 
 Order is everything perishable first, new material last: reviews decay on a
 schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
-or Yeni, with Anlat inserted before the last step when a retell is due, and
-Kelime — the day's ten common words — after that, once a unit is finished.
+or Yeni — the next lesson of the unit under way, or its exercises once
+all three are done — with Anlat inserted before the last step when a
+retell is due, and Kelime after that only for the common words of units
+passed without their lessons (see Sık kelimeler).
 Before any unit has been opened, the last step is **Giriş**, the next of
 the lessons before unit one (see Başlarken below); it is still the only
 step on day one.
@@ -1852,24 +1919,36 @@ backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
 test, run one sitting, and the Tekrar step must tick and the plan must
 lead on to a2u1.
 
-**One new unit a day.** Reported by the learner: two A2 units took an
+**One new lesson a day.** Reported by the learner: two A2 units took an
 afternoon, so the whole level could be ticked in a day, and a unit
 passed on a five-question quiz minutes after the lesson has been
 followed, not kept. The review queues already let in `NEW_DAY` new items
-a day; new units had no pace at all. So the plan offers `UNIT_DAY` (1)
-new unit a day: once `unitsToday()` — units whose `done.first` is today —
-reaches it, the unit step stays in the plan ticked as **Yarın**, naming
-tomorrow's unit, and `planToday().tomorrow` carries it to the landing
-page (*Bugünlük bitti · Yarın: A2 · …*) and to the end screens. The unit
-quiz's pass screen leads on to the rest of today's plan rather than to
-**Sonraki ünite**. It is the plan's pace, not a lock: a unit opened by
-hand from Dersler, or from the landing page's *Yine de devam et*, is
-resumed as normal, and a level test is still the way to skip. A unit
-passed again, or by a level test, is not a new one. `sim.js` checks all
-of it; ten deliberate breakages each turned it red, and an eleventh
-showed a `byTest` guard in `unitsToday()` was dead code, since a level
-test never writes `first`, so it was removed and the test now breaks the
-real path instead.
+a day; new units had no pace at all. The first fix (v3.67) was a unit a
+day. The learner then set it against Pimsleur's roughly one month a
+level, so from v3.68 a unit is **three lessons** (see Derse başla) and
+the plan offers `LESSON_DAY` (1) of them a day: ten units, thirty
+lessons, about a month.
+
+`dayFull()` is the test. It counts `lessonsNewToday()`: lessons whose
+`ders` day is today, plus units whose `done.first` is today and whose
+third lesson is not done. The second half is for a unit passed through
+its tabs without the lessons. It leaves out the usual case, lesson three
+leading straight into the exercises, which is one day's work and not
+two. Once the day is full, the plan's last step stays ticked as
+**Yarın**, naming tomorrow's lesson, and `planToday().tomorrow` carries
+it to the landing page (*Bugünlük bitti · Tomorrow: A1 · Merhaba ·
+lesson 2 of 3*) and to the end screens. A lesson's end and the unit
+quiz's pass screen lead on to the rest of today's plan, and offer
+**Sonraki ders** or **Sonraki ünite** only while the day is not full.
+With all three lessons done and the exercises not yet passed, the step
+is the exercises.
+
+It is the plan's pace, not a lock. Every lesson opens by hand from the
+unit page, and so does the landing page's *Yine de devam et*. A level
+test is still the way to skip. Going over a lesson again, passing a unit
+again or passing a level test is not new work. `sim.js` checks all of
+it, and the breakages under Derse başla include the pace. `unitsToday()`
+went with the unit pace; it had no caller left.
 
 **On the landing page the plan is one button.** Reported by the learner:
 the paragraph above Başla was too busy, and the children's app, big and
@@ -2142,9 +2221,18 @@ day's ten. "Bir on daha" is a module variable reset at midnight, never
 stored. It does **not** feed Tekrar motoru: that engine drills what the
 corpus mentions least, and these are by construction words it barely
 mentions. In Sözlük they sit under Çekirdek as the topic *sık*, so the
-source filter stays four segments wide. The plan offers Kelime only once
-a unit is finished, keeping day one to one instruction; Araçlar has it
-from the start.
+source filter stays four segments wide.
+
+**Most of them now arrive in the lessons.** `sikShare(u)` splits the list
+between the sixty units in its own order, about twenty-five words each,
+so the commonest come first. A unit's lesson two takes the first half and
+lesson three the second, as a list with *biliyorum*, and `sikTake()` takes
+each one in exactly as this screen does. Words already met are left out,
+so using both never offers a word twice. The plan's **Kelime** step is
+now only for `sikBehind()`: words from units passed without their
+lessons, by a level test or before v3.68. It needs a unit passed, so day
+one is still one instruction. Araçlar has the whole list, ten a day, from
+the start.
 
 `validate.js` holds the list additive (nothing the course, CORE or POS
 has), unique, lower case, free of numbers and invisible characters, verbs
