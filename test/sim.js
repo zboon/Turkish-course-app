@@ -3125,6 +3125,84 @@ step("başlarken · the lessons before unit one", () => {
   ev("window.speechSynthesis=__ss; wipe(); home()");
 });
 
+/* Uyumadan önce: only what was studied today, Turkish only, each said
+   twice, quieter as it goes, and it stops by itself, in silence. */
+step("uyumadan önce · today, once more, then quiet", () => {
+  const bank = () => ev("uyBank()");
+  const has = (b, tr) => b.items.some(it => it.tr === tr);
+  const u = UNITS[0], prim = w => ev("vocabPrimary(" + q(w) + ")");
+  drain(60000); ev("stopPlay()");
+  ev("confirm=function(){return true}; wipe(); home()");
+  ok(bank().items.length === 0, "a fresh install has something to play before sleep");
+  ev("go('uyku')");
+  ok(/Henüz bir şey yok/.test(lastPaint) && !lastPaint.includes("startUyku("), "an empty bank still offers a sitting");
+  ev("go('araclar')");
+  const row = () => { const i = lastPaint.indexOf('onclick="go(\'uyku\')"'); return i > -1 ? lastPaint.slice(i, lastPaint.indexOf("</button>", i)) : ""; };
+  ok(row() && !/hazır/.test(row()), "Araçlar has no row for it, or tags it ready with nothing to play");
+
+  /* The grain of met: words once the list is open, lines once read. */
+  ev("go('unit','a1u1','v')");
+  let b = bank();
+  ok(b.today && u.vocab.every(w => has(b, prim(w[0]))), "today's words are not all in the bank");
+  ok(!u.read.lines.some(l => has(b, l[0])), "an unread passage's lines are in the bank");
+  ev("go('unit','a1u1','r')");
+  b = bank();
+  ok(u.read.lines.every(l => has(b, l[0])), "a passage read today is not in the bank");
+  ok(!UNITS[1].vocab.some(w => has(b, prim(w[0]))), "a unit not studied today is in the bank");
+  ev("S.sik[SIK[0][0]]={d:dayNum()}; S.sik[SIK[1][0]]={d:dayNum(),k:1}; S.basla.alfabe={at:Date.now()}; S.basla.yazim={at:Date.now(),byTest:true}; S.basla.nezaket={at:Date.now()}");
+  b = bank();
+  ok(has(b, ev("SIK[0][0]")) && !has(b, ev("SIK[1][0]")), "a common word added today is missing, or one marked known is in");
+  ok(has(b, "araba") && !has(b, "otobüs"), "an intro lesson passed today is missing, or one only tested out of is in");
+  /* nezaket's "Merhaba." and a1u1's "merhaba" are one thing to hear. */
+  ok(b.items.filter(it => ev("fold(" + q(it.tr) + ")") === "merhaba").length === 1 &&
+     new Set(b.items.map(it => ev("fold(" + q(it.tr) + ")"))).size === b.items.length, "the bank says something twice");
+
+  /* Nothing today: the last lesson, and it says so. */
+  ev("S.seen.a1u1.at=Date.now()-17*3600000; S.sik={}; S.basla={}");
+  b = bank();
+  ok(!b.today && b.items.length > 0 && b.from[0].indexOf(u.tr) > -1, "with nothing today it does not fall back to the last lesson");
+  ev("go('uyku')");
+  ok(/last lesson/.test(lastPaint), "the fallback does not say it is the last lesson rather than today's");
+
+  /* The sitting, on the fake clock, untouched. */
+  ev("go('unit','a1u1','v')");
+  const before = ev("JSON.stringify(S)");
+  drain(60000); ev("stopPlay()");
+  voice.spoken = []; voice.langs = []; voice.rates = []; voice.vols = [];
+  ev("startUyku(5)");
+  const items = ev("UY.items.map(function(it){return it.tr})");
+  drain(60000);
+  ok(ev("UY.done") === true, "the sitting did not end by itself");
+  const log = voice.spoken.map((t, i) => [t, voice.langs[i], voice.rates[i], voice.vols[i]]).filter(p => items.includes(p[0]));
+  ok(log.length >= 2 && log.length % 2 === 0 && log.every((p, i) => i % 2 === 0 || p[0] === log[i - 1][0]), "an item was not said exactly twice");
+  ok(log.filter((_, i) => i % 2 === 0).every((p, k) => p[0] === items[k % items.length]), "the items were said out of order");
+  ok(log.length / 2 > items.length, "five minutes did not cycle round a ten-word bank");
+  ok(log.every(p => /^tr/.test(p[1]) && p[2] === ev("UY_RATE")), "something was said in another voice or at another speed");
+  ok(Math.abs(log[0][3] - ev("UY_VOL[0]")) < 0.02, "the sitting did not start at its own volume");
+  ok(items.includes(voice.spoken[voice.spoken.length - 1]), "the sitting ended by saying something that is not the material");
+  ok(ev("JSON.stringify(S)") === before, "a before-sleep sitting wrote to progress");
+  ok(/İyi geceler/.test(lastPaint), "the end screen does not say good night");
+
+  /* Quieter as it goes. */
+  ev("startUyku(5)"); ev("UY.t0-=5*60000");
+  ok(Math.abs(ev("uyVol()") - ev("UY_VOL[1]")) < 0.02 && ev("UY_VOL[1]") < ev("UY_VOL[0]"), "the volume does not fall to its floor by the end");
+
+  /* Leaving silences it, and back() leaves. */
+  const s1 = voice.said;
+  ev("home()"); drain(60000);
+  ok(voice.said === s1, "a before-sleep sitting kept talking over the next screen");
+  ok(!ev("!!(UY&&(UY.tid||UY.cid))"), "a timer was left armed after leaving");
+  ev("go('unit','a1u1','v'); startUyku(10)"); drain(5);
+  ev("back()");
+  const s2 = voice.said; drain(60000);
+  ok(ev("V.view") === "uyku" && ev("UY") === null && voice.said === s2, "back() did not end the sitting");
+
+  /* No speech at all: said, not attempted. */
+  ev("__ss=window.speechSynthesis; delete window.speechSynthesis; go('uyku')");
+  ok(/Ses yok/.test(lastPaint) && !lastPaint.includes("startUyku("), "with no speech it still offers a sitting");
+  ev("window.speechSynthesis=__ss; wipe(); home()");
+});
+
 /* The path opens in order: each lesson when the one before it is passed,
    unit one when all six are, each unit when the one before it is. A level
    test is the way to skip, and nothing already opened is locked again. */

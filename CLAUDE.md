@@ -59,11 +59,12 @@ src/app.diyalog.js       branching conversation and the repair kit
 src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.sik.js           the frequency layer: ten common words a day
 src/app.baslarken.js     the lessons before unit one
+src/app.uyku.js          before sleep: today's material, quietly
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is sixteen files rather than one because it grew past the point
+The app is seventeen files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -243,7 +244,7 @@ deliberate breakage.
 `localStorage["turkce-course-v1"]`, one object:
 
 ```js
-{done:{unitId:{score,of,at,byTest}}, seen:{unitId:{v,g,r,d}},
+{done:{unitId:{score,of,at,byTest}}, seen:{unitId:{v,g,r,d,at}},
  place:{u,s}, star:["tr|en"], srs:{"tr|en":{b:box,d:dueDay}},
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
@@ -435,7 +436,8 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 - Voice runs on the device's own `tr-TR` speech synthesis. `stopPlay()` is
   called at the top of `go()` and `home()` — any new navigation path must too,
   or audio keeps playing over the next screen. `stopPlay()` also clears the
-  Üretim countdown, the Dinleme timer and a Yolda sitting, so a timer
+  Üretim countdown, the Dinleme timer, a Yolda sitting and an Uyumadan
+  önce sitting, so a timer
   started in any of them dies with the screen; anything else that sets a
   timer needs its own stop called from `stopPlay()` for the same reason.
   Yolda matters most here: it holds the speaker for minutes, so a leak is
@@ -1192,6 +1194,51 @@ One honest limit, in the About text too: **a phone stops speaking when
 its screen locks**, on every platform this runs on. `yolWake()` asks for a
 screen wake lock, which is all the app can do about it; the learner still
 needs the phone unlocked and in a cradle rather than in a pocket.
+
+## Uyumadan önce (before sleep)
+
+Built, by request, after the learner asked whether sleep-learning videos
+work. They do not, in the way they claim: nothing new is learned while
+asleep, and audio playing all night can fragment the sleep that
+consolidates what was studied. What holds up is narrower: sleep keeps
+what was studied in the hours before it, and replaying that material
+quietly helps a little. `go('uyku')` is built to that and no further.
+
+- **Only today's material.** `uyBank()` takes units opened or passed in
+  the last `UY_HOURS` (16) hours — a window rather than a calendar day, so
+  studying at eleven and listening at half past twelve is still "today"
+  — at the grain the reviews use: words once the list was opened, lines
+  once the passage was read, examples once the grammar was. Plus the
+  common words added today and an intro lesson *passed* today (not one
+  only tested out of). With nothing today it falls back to the last
+  unit opened and says so. Nothing new is ever introduced.
+  `markSeen()` now stamps `S.seen[id].at` for this; nothing else reads it.
+- **Turkish only, each item twice, slow (`UY_RATE`), getting quieter**
+  from `UY_VOL[0]` to `UY_VOL[1]` across the sitting, through a volume
+  argument `say()` gained for it.
+- **It stops by itself, in silence**, after five or ten minutes. Yolda
+  announces its end because a driver is not looking; this one must not,
+  because the listener is falling asleep. The running screen is a
+  full-screen dim overlay in both themes.
+- **It writes nothing and has no settings.** No progress key, no box,
+  nothing marked. The hub says plainly what it can and cannot do.
+
+The engine is Yolda's shape: every step armed twice (onend and a
+watchdog) with a token, the deadline only raising a flag, a wake lock
+for the sitting, and `uyStop()` called from `stopPlay()` so leaving the
+screen silences it. `sim.js` plays a whole sitting on the fake clock and
+checks every item is said exactly twice, in order, in Turkish at the
+set rate, cycling round, ending on the material rather than on an
+announcement, and leaving `S` byte-for-byte unchanged. The fade is
+tested by winding `UY.t0` back, because the fake clock drives timers
+but not `Date.now()`. Fourteen deliberate breakages each turned it red;
+two did not at first, and both were the test's fault: a breakage that
+did not match the source, and a de-duplication check on a bank with
+nothing duplicated in it, which now includes a lesson that shares
+*merhaba* with unit one.
+
+Not in the daily plan: it is optional and only makes sense at night.
+Araçlar has it under Dinleme, tagged hazır when there is something to play.
 
 ## Hata defteri (the mistake book)
 

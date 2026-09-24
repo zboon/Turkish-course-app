@@ -282,6 +282,11 @@ reseed(4242); ev("startPlacement()"); grab("placement");
 ev("startRetell('a1u2')"); grab("retell");
 
 /* The language engine, hashed as data rather than as a screen. */
+/* Uyumadan önce: empty, with today's material, running and ended. */
+ev("wipe()"); ev("go('uyku')"); grab("uyku:empty");
+ev("go('unit','a1u1','v')"); ev("go('unit','a1u1','r')"); ev("go('uyku')"); grab("uyku");
+ev("startUyku(5)"); grab("uyku:run"); ev("uyFinish()"); grab("uyku:end"); ev("stopPlay(); UY=null");
+
 /* The locked views, with the real rule back. */
 ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen; wipe()");
 ev("go('level','A1')"); grab("locked:level:A1");

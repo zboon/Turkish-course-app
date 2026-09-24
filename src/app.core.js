@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.62";
+const APP_VERSION="v3.63";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -213,13 +213,14 @@ if(ttsOK()){try{
   };
   speechSynthesis.getVoices();   /* Chrome loads the list lazily, on first ask */
 }catch(e){}}
-function say(text,rate,onend,lang){
+function say(text,rate,onend,lang,vol){
   if(!ttsOK())return false;
   try{
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
     const v=lang?null:trVoice(); if(v)u.voice=v;
     u.lang=lang||"tr-TR"; u.rate=rate||VOICE.rate;
+    if(vol!==undefined)u.volume=vol;
     if(onend)u.onend=onend;
     speechSynthesis.speak(u); return true;
   }catch(e){return false;}
@@ -265,6 +266,7 @@ function stopPlay(){
   prodStop();                    /* the Üretim gap is a timer too */
   dinleStop();                   /* and the Dinleme replay timer */
   yolStop();                     /* and a hands-free sitting, which is all timers */
+  uyStop();                      /* and a before-sleep sitting, likewise */
   if(ttsOK()){try{speechSynthesis.cancel();}catch(e){}}
   markMode();
 }
@@ -341,7 +343,7 @@ function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
 /* The tool screens all hang off Araçlar; Dersler holds the levels. */
 const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
-            "sayilar","diyalog","ata","words","dict","about","nasil","sik"];
+            "sayilar","diyalog","ata","words","dict","about","nasil","sik","uyku"];
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
@@ -357,6 +359,7 @@ function back(){
   /* Leaving a sitting mid-drive should not throw away what was covered:
      the back arrow and the Bitir button do the same thing, which is what
      a learner expects of a mode whose whole point is not touching it. */
+  else if(V.view==="uykurun"){uyStop();UY=null;go("uyku");}
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
   else if(V.view==="retell"){go("unit",V.u,"r");}
   /* The back arrow retraces the menu you came through. Before the two
@@ -407,7 +410,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",
@@ -450,6 +453,7 @@ const EN_UI={
 /* Labels with a number or a name in them. */
 const EN_RULES=[
  [/^(.+) ile başla$/,m=>"start with "+m[1]],
+ [/^(\d+) kelime ve cümle$/,()=>"words and sentences"],
  [/^(\d+) soru$/,m=>m[1]==="1"?"1 question":m[1]+" questions"],
  [/^(\d+) basamak$/,m=>m[1]+" digits"],
  [/^(\d+) kelime$/,()=>"words"],

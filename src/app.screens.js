@@ -118,7 +118,8 @@ function renderAraclar(){
 
   h+='<h2 class="sec">Dinleme · listening</h2>'+
    navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0)+
-   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true);
+   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true)+
+   navRow("Uyumadan önce","Today's words and sentences, said quietly, then it stops — 5 or 10 minutes","go('uyku')",uyBank().items.length>0);
 
   h+='<h2 class="sec">Tekrar · bringing it back</h2>'+
    navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')",repBank().length>0)+
@@ -235,7 +236,8 @@ function renderLevel(){
 /* ===================== unit ===================== */
 const SECS=[["v","Kelimeler","words"],["g","Dilbilgisi","grammar"],["r","Okuma","reading"],["d","Alıştırma","practice"]];
 function secName(k){const s=SECS.find(x=>x[0]===k);return s?s[1]+" · "+s[2]:"";}
-function markSeen(uid,sec){ if(!S.seen[uid])S.seen[uid]={}; S.seen[uid][sec]=1; S.place={u:uid,s:sec}; touchDay(); save(); }
+/* at is when the unit was last opened, for Uyumadan önce's "today". */
+function markSeen(uid,sec){ if(!S.seen[uid])S.seen[uid]={}; S.seen[uid][sec]=1; S.seen[uid].at=Date.now(); S.place={u:uid,s:sec}; touchDay(); save(); }
 function renderUnit(){
   const u=unit(V.u), sec=V.sec||"v";
   if(!unitOpen(u.id)){

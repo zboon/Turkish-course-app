@@ -1,7 +1,7 @@
 {
  "home": "b4d4f3a2ad03e025",
  "dersler": "c5ab536072281324",
- "araclar": "4385e2213bf1ed1f",
+ "araclar": "bde01772037bb5b9",
  "nasil": "766fbd4c3a6e0f47",
  "baslarken": "250930bfdefbd6ac",
  "basla:alfabe": "9ae12be88fa4621c",
@@ -262,7 +262,7 @@
  "unit:c2u10:g": "46687630422fa94a",
  "unit:c2u10:r": "4ddff5ef36c76af2",
  "unit:c2u10:d": "bb8ac857a57ef05e",
- "about": "d6fa4b9648cbf1e5",
+ "about": "96758d225ca2275a",
  "words:empty": "d7c530838493b9a5",
  "dict": "e81d06585f1966c2",
  "dict:n": "1e972276322d5ecf",
@@ -360,8 +360,8 @@
  "home:tips-hidden": "662b2c35cb9199a9",
  "home:plan:open": "324a0c7ad495f393",
  "dersler:underway": "c9c4599b53ce20d7",
- "araclar:underway": "f95e3d20fb25d219",
- "about:tips-hidden": "b8cdd6f8bd42044a",
+ "araclar:underway": "54f54e33bc90e4c6",
+ "about:tips-hidden": "f5fb9c8a5263c55b",
  "words:full": "c86bbe64a469fff8",
  "cards": "7b102396916a8577",
  "cards:flip": "1fd36b0394a59d10",
@@ -370,6 +370,10 @@
  "quiz": "de53059fa30db8fa",
  "placement": "3eec4acd23628a83",
  "retell": "90f90973a5e7f8a1",
+ "uyku:empty": "d2827dfc8c7779fe",
+ "uyku": "22fe78f77998a092",
+ "uyku:run": "88e1c1523d1a724f",
+ "uyku:end": "a285c202db43e48e",
  "locked:level:A1": "9173eff8196d2892",
  "locked:unit:a1u1": "a48f66a26af1aaf4",
  "locked:unit:b2u3": "1d988bf4b548c196",
@@ -378,5 +382,5 @@
  "locked:basla:cumle": "a506978bf2afc7c5",
  "__pure": "4d3303857e21e992",
  "__pureForms": 2432,
- "__screens": 377
+ "__screens": 381
 }
