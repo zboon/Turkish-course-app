@@ -682,9 +682,24 @@ because it forces a sentence out of the mouth *before* the model is heard.
    runs on `fold()`ed text, so `CONVERB` is written in folded spelling.
    Postpositions (`için`, `sonra`, `gibi`) break *after*, never before, and
    nothing may open on a clitic (`de`, `da`, `mi`) — both would produce a
-   piece that cannot stand on its own. A sentence marked wrong is offered
-   this way automatically. `sim.js` checks every one of the 432 lines: each
-   piece must be a true tail, each step longer than the last.
+   piece that cannot stand on its own. It is a button, **Sondan başa
+   kur**, on a long sentence before it is marked, and when the pieces run
+   out the sentence is handed back to be marked. `sim.js` checks every one
+   of the 432 lines: each piece must be a true tail, each step longer than
+   the last.
+
+   It used to open by itself on every Yanlış. Reported by the learner:
+   that stopped the sitting dead, when what they wanted was to move on
+   and meet the sentence again. So **Yanlış moves on, and a first miss
+   comes back once at the end of the sitting** (`again`), while it is
+   still half remembered. The retry is graded like any try, so right the
+   second time goes to tomorrow rather than leaving today's Söyle step
+   open, and wrong again leaves it due today, not queued a third time;
+   it is neither scored (the end screen counts first tries out of the
+   sitting's sentences, `PR.n0`) nor booked in the mistake book again,
+   since it is the same miss. This is every mode on the runner: Söyle,
+   Kalıplar, Kurma, Dönüştürme, Sor and Adacıklar. Seven deliberate breakages
+   each turned `sim.js` red.
 3. **Chunk bank.** `src/data/chunks.js`, 331 conversational prefabs, drilled
    by the same runner with `k:` keys, grouped by what the phrase *does* —
    agreeing, refusing, repairing a conversation that has come apart,

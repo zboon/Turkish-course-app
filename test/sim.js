@@ -414,13 +414,13 @@ function produce(good) {
       "Doğru scheduled " + JSON.stringify(rec) + ", expected box " + want + " at +" + ev("STEPS[" + want + "]"));
   } else ok(rec.b === 0 && rec.d === day, "Yanlış did not bring the sentence back today");
 
-  /* A sentence you could not produce is offered backwards. */
-  if (phase() === "build") {
-    const parts = ev("PR.build");
-    ok(parts.length > 1, "buildup opened with a single piece");
-    ok(parts[parts.length - 1] === it.tr, "buildup does not end on the whole sentence");
-    for (let i = 0; i < parts.length + 1 && phase() === "build"; i++) ev("prodBuildNext()");
-    ok(phase() !== "build", "buildup did not finish");
+  /* Reported: Yanlış opened the backward buildup and stopped the sitting.
+     It moves on now, and a first miss comes back once at the end. */
+  if (!good) {
+    ok(phase() !== "build", "Yanlış opened the backward buildup instead of moving on");
+    const q = ev("PR.q"), last = q[q.length - 1];
+    if (!it.again) ok(last.k === key && last.again === true, "a missed sentence was not brought back at the end of the sitting");
+    else ok(q.filter(x => x.k === key && x.again).length === 1, "a retry missed again was queued a third time");
   }
 }
 
@@ -454,6 +454,10 @@ step("üretim · sentences", () => {
   const n = ev("PR.q.length");
   ok(n === ev("SESSION"), "a session is " + n + " items, expected " + ev("SESSION"));
   for (let i = 0; i < n; i++) produce(i % 3 !== 0);     /* miss every third */
+  /* Each miss came back once at the end; miss it again, so it stays due. */
+  const again = ev("PR.q.length") - n;
+  ok(again === Math.ceil(n / 3), "the misses did not each come back once: " + again);
+  for (let i = 0; i < again && phase() !== "end"; i++) produce(false);
   ok(phase() === "end", "the session did not finish");
   ok(/kendi değerlendirmen/.test(lastPaint), "no score screen after üretim");
   ok(ev("Object.keys(S.prod).length") === n, "graded " + n + " but stored " + ev("Object.keys(S.prod).length"));
@@ -603,6 +607,7 @@ step("kurma · generated drills", () => {
   ok(ev("PR.q.every(function(i){return i.tr&&i.en&&i.tr.length>2})"), "a generated drill came out empty");
   ok(new Set(ev("PR.q.map(function(i){return i.tr})")).size > 1, "every generated sentence is the same");
   for (let i = 0; i < n; i++) produce(i % 2 === 0);
+  for (let i = 0; i < n && phase() !== "end"; i++) produce(true);   /* the misses, back once */
   ok(phase() === "end", "generated session did not finish");
   /* Scheduling is by pattern, so a handful of keys, not a dozen. */
   ok(ev("Object.keys(S.prod).length") <= n, "pattern scheduling stored more keys than items");
@@ -3965,6 +3970,50 @@ step("dinleme günlüğü · hours outside the app, counted honestly", () => {
   ok(ev("V.view") === "araclar", "back() from the log did not return to Araçlar");
   ev("wipe()");
   ok(ev("S.log.e.length") === 0 && ev("S.log.src.length") === 0, "wipe() kept the log");
+});
+
+step("üretim · a miss moves on, comes back once, and building up is a choice", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  ev("go('unit','a1u1','r')"); ev("setGap(3)"); ev("S.err={}"); ev("startProd('s')");
+  const n0 = ev("PR.q.length"), k0 = ev("PR.q[0].k");
+  ev("prodModel(); prodMark(false)");
+  ok(ev("PR.i") === 1 && ev("PR.phase") === "gap", "Yanlış did not move on to the next sentence");
+  ok(ev("PR.q.length") === n0 + 1 && ev("PR.q[PR.q.length-1].k") === k0, "the missed sentence is not waiting at the end");
+  ok(ev("S.err[" + q(k0) + "].n") === 1, "the miss was not booked");
+  /* Everything else right, then the retry: right on the second try goes to
+     tomorrow, is not scored as a first-time right and is not booked again. */
+  for (let i = 1; i < n0; i++) ev("prodModel(); prodMark(true)");
+  ok(ev("PR.q[PR.i].again") === true && /Bir daha/.test(lastPaint), "the retry does not say it is the second time");
+  ev("prodModel(); prodMark(true)");
+  ok(ev("S.prod[" + q(k0) + "].b") === 1 && ev("S.prod[" + q(k0) + "].d") === ev("dayNum()") + 1, "a retry got right did not go to tomorrow");
+  ok(ev("PR.phase") === "end" && lastPaint.includes((n0 - 1) + "/" + n0), "the score is not first tries out of the sentences: " + ev("PR.right"));
+  ok(ev("S.err[" + q(k0) + "].n") === 1, "the retry was booked again");
+  /* Missed twice: back today, and not a third time in the sitting. */
+  ev("wipe(); go('unit','a1u1','r'); setGap(3); startProd('s')");
+  const k1 = ev("PR.q[0].k"), m = ev("PR.q.length");
+  ev("prodModel(); prodMark(false)");
+  for (let i = 1; i < m; i++) ev("prodModel(); prodMark(true)");
+  ev("prodModel(); prodMark(false)");
+  ok(ev("PR.phase") === "end" && ev("S.prod[" + q(k1) + "].b") === 0 && ev("S.prod[" + q(k1) + "].d") === ev("dayNum()"),
+     "a sentence missed twice did not end the sitting due today");
+  /* Building up is a button, before marking, and hands the mark back. */
+  ev("wipe(); go('unit','a2u1','r'); setGap(3); startProd('s')");
+  let found = false;
+  for (let i = 0; i < 12 && ev("PR.phase") !== "end"; i++) {
+    ev("prodModel()");
+    if (ev("clauseSplit(PR.q[PR.i].tr).length") > 1) { found = true; break; }
+    ev("prodMark(true)");
+  }
+  ok(found, "no sentence long enough to build up");
+  if (found) {
+    const k = ev("PR.q[PR.i].k");
+    ok(lastPaint.includes('onclick="prodBuild()"'), "the build-up button is missing on a long sentence");
+    ev("prodBuild()");
+    ok(ev("PR.phase") === "build", "the build-up button did not build up");
+    for (let i = 0; i < 20 && ev("PR.phase") === "build"; i++) ev("prodBuildNext()");
+    ok(ev("PR.phase") === "model" && ev("PR.q[PR.i].k") === k && !ev("S.prod[" + q(k) + "]"),
+       "building up did not hand the sentence back to be marked, or marked it for the learner");
+  }
 });
 
 step("english layer", () => {
