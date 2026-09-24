@@ -1,4 +1,4 @@
-/* Derse başla: a unit taught one screen at a time.
+/* Derse başla: a unit taught in three lessons, one screen at a time.
 
    A unit is four tabs a learner moves between freely, which is right for
    someone who knows what they want and easy to drift through for someone
@@ -8,27 +8,39 @@
    is the main way into a unit; the tabs stay underneath for browsing.
    Borrowed from the children's app, where it is the whole shape.
 
-   The order is the same at every level; the checks grow with the learner,
-   because what teaches at A1 is too easy to teach anything at B1:
+   It is three lessons, one a day in the plan (LESSON_DAY, app.core.js),
+   because one sitting made a unit an afternoon and a level a day. Each
+   lesson meets something new and brings back what came the day before:
 
-     A1  words with pictures · hear and pick · spell from tiles ·
-         grammar · the passage line by line
-     A2  words · type the Turkish from the English · grammar, then type
-         one example · the passage line by line
-     B1+ words · grammar, then type one example · the passage heard before
-         it is shown · the words typed back into their own sentences
+     1  Kelimeler ve dilbilgisi — the ten words and their checks, then
+        the grammar point (from A2, one example typed)
+     2  Okuma — the passage line by line (from B1, heard before it is
+        shown, then the words typed back into their sentences), three of
+        its lines said aloud before they are heard, and the first half of
+        the unit's common words
+     3  Tekrar ve konuşma — the words recalled a day later, an example of
+        the grammar (from A2), three more lines said aloud, the second
+        half of the common words, the speaking task, then the exercises
 
-   From B1 the checks come after the passage, because a word blanked in a
+   The checks grow with the learner, because what teaches at A1 is too
+   easy to teach anything at B1: A1 hears and spells, A2 and up types the
+   Turkish from the English. From B1 the passage's words are asked in
+   their own sentences, after it is read, because a word blanked in a
    sentence the learner has not read yet is a guess.
 
-   It adds no material and no storage: each part marks its tab seen as it
-   is shown (markSeen, the same record the tabs write), so the reviews
-   open exactly as if the tabs had been read. The checks are practice,
-   not marks — nothing is scheduled or put in the mistake book, and one
-   missed comes back later in the lesson. Typed answers are marked by
-   wordOk() and sentOk(), the judges Tekrar and Dilbilgisi use, so a
-   spoken spelling or the other "you" counts here as it does there.
-   AD holds a run and, like Q and PR, survives a re-render. */
+   The common words are the unit's share of SIK (sikShare, app.sik.js),
+   taken in exactly as Sık kelimeler takes them: starred, first review
+   tomorrow, or marked known. The speaking task told here counts as its
+   first telling, so the plan brings it back on day three and day seven.
+   Otherwise it adds no material: each part marks its tab seen as it is
+   shown (markSeen), so the reviews open exactly as if the tabs had been
+   read, and S.ders records only which lessons are finished, and when.
+   The checks are practice, not marks — nothing is scheduled or put in
+   the mistake book, and one missed comes back later in the lesson. Typed
+   answers are marked by wordOk() and sentOk(), the judges Tekrar and
+   Dilbilgisi use, so a spoken spelling or the other "you" counts here as
+   it does there. AD holds a run and, like Q and PR, survives a
+   re-render. */
 
 /* ===================== ders · the guided lesson ===================== */
 const ADIM_RETRY=2;
@@ -64,38 +76,66 @@ function adimCloze(u,w){
 }
 function adimType(w){return {t:"type",w:w,c:w.say,alts:vocabForms(w.tr)};}
 function adimGex(u){const e=pick(u.gram.eg);return {t:"gex",c:e[0],en:e[1]};}
-function adimSteps(u){
-  const tier=adimTier(u), W=adimWords(u), steps=W.map(function(w){return {t:"word",w:w};});
-  const lines=u.read.lines.map(function(l,i){return {t:"line",i:i};});
-  if(tier===0){
-    shuffle(W).slice(0,4).forEach(function(w){
-      steps.push({t:"hear",w:w,opts:shuffle(shuffle(W.filter(function(x){return x.i!==w.i;})).slice(0,3).concat([w]))});
-    });
-    shuffle(W.filter(adimSpellable)).slice(0,3).forEach(function(w){steps.push({t:"spell",w:w,tiles:spellTiles(w.say)});});
+const DERS=[["Kelimeler ve dilbilgisi","words and grammar"],["Okuma","reading"],["Tekrar ve konuşma","review and speaking"]];
+/* What the plan says about a unit's next lesson, and where it goes. */
+function dersLabel(u,k){
+  const base=u.lv+" · "+u.tr+" · ";
+  return k<LESSONS?{en:base+"lesson "+(k+1)+" of 3",tt:base+"ders "+(k+1)+" / 3",go:"startAdim('"+u.id+"',"+k+")"}
+                  :{en:base+"the exercises",tt:base+"alıştırmalar",go:"startUnitQuiz('"+u.id+"')"};
+}
+function adimHear(W,n){
+  return shuffle(W).slice(0,n).map(function(w){
+    return {t:"hear",w:w,opts:shuffle(shuffle(W.filter(function(x){return x.i!==w.i;})).slice(0,3).concat([w]))};
+  });
+}
+function adimSpell(W,n){return shuffle(W.filter(adimSpellable)).slice(0,n).map(function(w){return {t:"spell",w:w,tiles:spellTiles(w.say)};});}
+/* Three lines to say before they are heard: from the first half of the
+   passage in lesson two, from the second in lesson three. */
+function adimSayLines(u,half){
+  const n=u.read.lines.length, m=Math.ceil(n/2), idx=[];
+  for(let i=half?m:0;i<(half?n:m);i++)idx.push(i);
+  return shuffle(idx).slice(0,3).sort(function(a,b){return a-b;}).map(function(i){return {t:"say",i:i};});
+}
+/* The unit's share of the common words, less any already met. */
+function adimSik(u,half){
+  const w=sikShare(u,half).filter(function(e){return !sikMet(e);});
+  return w.length?[{t:"sik",words:w.map(function(e){return [e[0],e[1]];})}]:[];
+}
+function adimSteps(u,k){
+  const tier=adimTier(u), W=adimWords(u);
+  let steps=[];
+  if(k===0){
+    steps=W.map(function(w){return {t:"word",w:w};});
+    steps=steps.concat(tier===0?adimHear(W,4).concat(adimSpell(W,3)):shuffle(W).slice(0,4).map(adimType));
     steps.push({t:"gram"});
-    lines.forEach(function(s){steps.push(s);});
-  }else if(tier===1){
-    shuffle(W).slice(0,4).forEach(function(w){steps.push(adimType(w));});
-    steps.push({t:"gram"},adimGex(u));
-    lines.forEach(function(s){steps.push(s);});
+    if(tier>0)steps.push(adimGex(u));
+  }else if(k===1){
+    steps=u.read.lines.map(function(l,i){return {t:"line",i:i};});
+    if(tier===2){
+      /* Words that have a sentence in this passage are asked in it; the
+         rest are asked from the English, so there are always four. */
+      const cl=[], rc=[];
+      shuffle(W).forEach(function(w){const c=adimCloze(u,w); if(c)cl.push(c); else rc.push(adimType(w));});
+      steps=steps.concat(cl.concat(rc).slice(0,4));
+    }
+    steps=steps.concat(adimSayLines(u,0),adimSik(u,0));
   }else{
-    steps.push({t:"gram"},adimGex(u));
-    lines.forEach(function(s){steps.push(s);});
-    /* Words that have a sentence in this passage are asked in it; the
-       rest are asked from the English, so there are always four. */
-    const sh=shuffle(W), cl=[], rc=[];
-    sh.forEach(function(w){const c=adimCloze(u,w); if(c)cl.push(c); else rc.push(adimType(w));});
-    cl.concat(rc).slice(0,4).forEach(function(s){steps.push(s);});
+    steps=tier===0?adimHear(W,3).concat(adimSpell(W,2)):shuffle(W).slice(0,4).map(adimType);
+    if(tier>0)steps.push(adimGex(u));
+    steps=steps.concat(adimSayLines(u,1),adimSik(u,1),[{t:"speak"}]);
   }
   steps.push({t:"end"});
   steps.forEach(function(s,i){s.id=i;});
   return steps;
 }
-function startAdim(id){
+/* k: the lesson, 0–2. Left out, the unit's next one — or the first,
+   going over a unit whose three are done. */
+function startAdim(id,k){
   const u=unit(id); if(!adimFor(u)||!unitOpen(id))return;
+  if(!(k>=0&&k<LESSONS)){const n=dersNext(id);k=n<LESSONS?n:0;}
   stopPlay();
-  AD={u:id,tier:adimTier(u),q:adimSteps(u),i:0,phase:"ask",sel:null,built:[],ok:null,shown:false,txt:false,
-      typed:"",j:null,diag:null,heard:{},tries:{}};
+  AD={u:id,k:k,tier:adimTier(u),q:adimSteps(u,k),i:0,phase:"ask",sel:null,built:[],ok:null,shown:false,txt:false,
+      typed:"",j:null,diag:null,heard:{},tries:{},known:{}};
   V={view:"adim",u:id};window.scrollTo(0,0);touchDay();render();
 }
 function adCur(){return AD&&AD.q[AD.i];}
@@ -103,15 +143,16 @@ function adNext(){
   if(!AD)return;
   stopPlay();
   AD.i=Math.min(AD.i+1,AD.q.length-1);
-  AD.phase="ask";AD.sel=null;AD.built=[];AD.ok=null;AD.shown=false;AD.txt=false;AD.typed="";AD.j=null;AD.diag=null;
+  AD.phase="ask";AD.sel=null;AD.built=[];AD.ok=null;AD.shown=false;AD.txt=false;AD.typed="";AD.j=null;AD.diag=null;AD.known={};
   window.scrollTo(0,0);render();
 }
 /* What is said once a check is answered: the word, the whole line, or the
    whole example. Never after a listening check — it was just heard. */
 function adSaid(s){return s.t==="cloze"?s.full:s.t==="gex"?s.c:s.w?s.w.say:"";}
-/* A missed check goes further down the line — before the grammar at A1
-   and A2, so the words are settled before the unit moves on from them,
-   and before the end from B1, where the checks come last. */
+/* A missed check goes further down the line, to just before the lesson
+   moves on from the words: the grammar, the lines said aloud, the common
+   words, the speaking task, or the end. */
+const AD_STOP={gram:1,say:1,sik:1,speak:1,end:1};
 function adJudge(ok){
   const s=adCur(); if(!s)return;
   const n=(AD.tries[s.id]=(AD.tries[s.id]||0)+1);
@@ -119,8 +160,7 @@ function adJudge(ok){
     const again=Object.assign({},s,{retry:true});
     if(again.opts)again.opts=shuffle(again.opts);
     if(again.tiles)again.tiles=shuffle(again.tiles);
-    const before=AD.tier<2&&s.t!=="gex"?"gram":"end";
-    const at=AD.q.findIndex(function(x,k){return k>AD.i&&x.t===before;});
+    const at=AD.q.findIndex(function(x,k){return k>AD.i&&AD_STOP[x.t];});
     AD.q.splice(at<0?AD.q.length-1:at,0,again);
   }
   AD.ok=ok;AD.phase="fb";render();
@@ -149,6 +189,26 @@ function adType(){
   }
 }
 function adShow(){if(AD){AD.shown=true;render();}}
+/* Said first, then heard: the Turkish is revealed and played. */
+function adSay(){
+  const s=adCur(); if(!s||s.t!=="say")return;
+  AD.shown=true;render();
+  say(unit(AD.u).read.lines[s.i][0],VOICE.rate);
+}
+function adKnow(j){if(AD){AD.known[j]=!AD.known[j];render();}}
+function adSik(){
+  const s=adCur(); if(!s||s.t!=="sik")return;
+  s.words.forEach(function(e,j){if(!sikMet(e))sikTake(e,!!AD.known[j]);});
+  save();adNext();
+}
+/* Told once here, it is the task's first telling; one already under way
+   keeps its own schedule. */
+function adSpeak(){
+  if(!AD)return;
+  const r=S.retell&&S.retell[AD.u];
+  if(!r||!r.n)retellCount(AD.u);
+  adNext();
+}
 function adText(){if(AD){AD.txt=true;render();}}
 
 function renderAdim(){
@@ -158,8 +218,10 @@ function renderAdim(){
   if(s.t==="word"&&!(S.seen[u.id]&&S.seen[u.id].v))markSeen(u.id,"v");
   if(s.t==="gram"&&!(S.seen[u.id]&&S.seen[u.id].g))markSeen(u.id,"g");
   if(s.t==="line"&&!(S.seen[u.id]&&S.seen[u.id].r))markSeen(u.id,"r");
+  /* Reaching the end finishes the lesson, before the plan is read below. */
+  if(s.t==="end")dersMark(u.id,AD.k);
   const typed=s.t==="type"||s.t==="cloze"||s.t==="gex";
-  let h=bar(u.tr,u.lv+" · Ünite "+u.n+" · ders",true)+'<div class="wrap">';
+  let h=bar(u.tr,u.lv+" · Ünite "+u.n+" · ders "+(AD.k+1)+" / "+LESSONS,true)+'<div class="wrap">';
   h+='<div class="abar"><i style="width:'+Math.round(100*AD.i/(AD.q.length-1))+'%"></i></div>';
   if(s.t==="word"){
     h+='<p class="qn">Yeni kelime</p><div class="card adw">'+(s.w.em?'<div class="pic">'+s.w.em+'</div>':'')+
@@ -194,10 +256,45 @@ function renderAdim(){
       (AD.shown&&!hid?'<p class="aden">'+esc(ln[1])+'</p>':'')+'</div>'+
       (hid?'<button class="btn ghost" onclick="adText()">Metni göster</button>':AD.shown?'':'<button class="btn ghost" onclick="adShow()">İngilizcesi</button>')+
       '<button class="btn" onclick="adNext()">Devam</button>';
+  }else if(s.t==="say"){
+    const ln=u.read.lines[s.i];
+    h+='<p class="qn">Önce sen söyle</p><p class="src" style="margin:0 .2rem .6rem"><b>'+esc(u.read.t)+'</b> · '+(s.i+1)+' / '+u.read.lines.length+'</p>'+
+      '<div class="card adl"><p class="q" style="margin:0">'+esc(ln[1])+'</p>'+
+      (AD.shown?'<p class="adtr">'+esc(ln[0])+'</p>'+spkBtn(ln[0],{aria:"Listen"}):'')+'</div>'+
+      (AD.shown?'<button class="btn" onclick="adNext()">Devam</button>'
+               :'<p class="tiny" style="margin:0 .2rem .7rem">'+tx('Say it in Turkish, out loud, then check it against the model.','Türkçesini yüksek sesle söyle, sonra örnekle karşılaştır.')+'</p>'+
+                '<button class="btn" onclick="adSay()">Göster</button>');
+  }else if(s.t==="sik"){
+    h+='<p class="qn">Sık kelimeler</p><p class="sub" style="margin:0 .2rem .8rem">'+
+      tx('Words people say all the time that the units do not teach. Tap one to hear it, and mark any you already know. The rest go into your reviews, first review tomorrow.',
+         'Herkesin sık kullandığı ama ünitelerin öğretmediği kelimeler. Dinlemek için dokun, bildiklerini işaretle. Kalanlar tekrarlarına eklenir; ilk tekrar yarın.')+'</p>'+
+      '<div class="card" style="padding:.3rem 1rem">';
+    s.words.forEach(function(e,j){
+      const kn=!!AD.known[j];
+      h+='<div class="vrow'+(kn?' known':'')+'">'+spkBtn(e[0],{aria:"Listen"})+
+        '<div class="grow"><div class="vtr">'+esc(e[0])+'</div><div class="ven">'+esc(e[1])+'</div></div>'+
+        '<button class="sbtn'+(kn?' on':'')+'" onclick="adKnow('+j+')">biliyorum</button></div>';
+    });
+    h+='</div><button class="btn" onclick="adSik()">Tekrara ekle</button>';
+  }else if(s.t==="speak"){
+    h+='<p class="qn">Konuş</p><div class="card"><p class="q" style="margin:0">'+esc(u.speak)+'</p></div>'+
+      '<p class="sub" style="margin:0 .2rem .9rem">'+tx('Say it out loud, in Turkish, for a minute or so, with this unit’s words and pattern. Getting to the end matters more than getting it right. It comes back in your plan on day three and day seven.',
+        'Yüksek sesle, Türkçe, bir dakika kadar anlat; bu ünitenin kelimelerini ve kalıbını kullan. Doğru söylemekten çok sonuna kadar gitmek önemli. Üçüncü ve yedinci gün planında yeniden gelecek.')+'</p>'+
+      '<button class="btn" onclick="adSpeak()">Anlattım</button><button class="btn ghost" onclick="adNext()">Şimdi değil</button>';
+  }else if(AD.k<LESSONS-1){
+    /* Lessons one and two end on the rest of today's plan; the next
+       lesson is tomorrow's, and offered here only while today has none. */
+    const k=AD.k+1;
+    h+='<div class="score"><div class="big pass">✓</div><p class="sub">Ders '+(AD.k+1)+' bitti</p></div>'+
+      '<div class="card"><p class="sub">'+tx('Next: lesson '+(k+1)+', '+DERS[k][1]+'. One lesson a day gives the reviews time to bring this one back first.',
+        'Sıradaki: '+(k+1)+'. ders, '+DERS[k][0].toLocaleLowerCase("tr")+'. Günde bir ders, tekrarların önce bunu geri getirmesine zaman tanır.')+'</p></div>'+
+      planNext()+
+      (dayFull()?'':'<button class="btn ghost" onclick="startAdim(\''+u.id+'\','+k+')">Sonraki ders →</button>')+
+      '<button class="btn ghost" onclick="go(\'unit\',\''+u.id+'\',\'v\')">Üniteye dön</button>';
   }else{
     h+='<div class="score"><div class="big pass">✓</div><p class="sub">Alıştırmalara hazırsın</p></div>'+
-      '<div class="card"><p class="sub">'+tx("You have met the ten words, the grammar point and the whole passage. The five exercises tick the unit: four right out of five.",
-        "On kelimeyi, dilbilgisi konusunu ve metnin tamamını gördün. Üniteyi beş alıştırma tamamlar: beşte dört doğru yeterli.")+'</p>'+
+      '<div class="card"><p class="sub">'+tx("Over three lessons you have met the ten words, the grammar point and the whole passage. The five exercises tick the unit: four right out of five.",
+        "Üç derste on kelimeyi, dilbilgisi konusunu ve metnin tamamını gördün. Üniteyi beş alıştırma tamamlar: beşte dört doğru yeterli.")+'</p>'+
       '<button class="btn" onclick="startUnitQuiz(\''+u.id+'\')">Alıştırmalara geç →</button>'+
       '<button class="btn ghost" onclick="go(\'unit\',\''+u.id+'\',\'v\')">Üniteye dön</button></div>';
   }

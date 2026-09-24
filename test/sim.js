@@ -917,6 +917,37 @@ step("listening state survives wipe and restore the way settings should", () => 
    want a populated queue have to say so; the default is a beginner with
    nothing behind them. */
 function meetAll() { ev("UNITS.forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:1}}); save()"); }
+/* Derse başla: answer whatever the lesson's current step asks, right or
+   wrong; false when the step is not a check. */
+const ADIM_CHECKS = ["hear", "spell", "type", "cloze", "gex"];
+function adimAnswer(s, right) {
+  if (s.t === "hear") ev("adPick(" + (right ? s.w.i : s.opts.find(o => o.i !== s.w.i).i) + ")");
+  else if (s.t === "spell") {
+    const used = [];
+    s.w.say.split("").forEach(l => { const i = s.tiles.findIndex((t, j) => t === l && !used.includes(j)); used.push(i); ev("adAdd(" + i + ")"); });
+    if (!right) { ev("AD.built=AD.built.slice().reverse()"); if (s.w.say.split("").reverse().join("") === s.w.say) ev("AD.built=[AD.built[0]]"); }
+    ev("adSpell()");
+  } else if (s.t === "type" || s.t === "cloze" || s.t === "gex") {
+    doc.getElementById("abox").value = right ? s.c : "qqq zzz";
+    ev("adType()");
+  } else return false;
+  return true;
+}
+/* Walk the lesson under way to its end, everything right; each step
+   passes through the calls a learner's taps make. */
+function walkAdim(onStep) {
+  let g = 0;
+  while (ev("adCur().t") !== "end" && g++ < 120) {
+    const s = ev("adCur()");
+    if (onStep) onStep(s);
+    if (adimAnswer(s, true)) ev("adNext()");
+    else if (s.t === "say") { ev("adSay()"); ev("adNext()"); }
+    else if (s.t === "sik") ev("adSik()");
+    else if (s.t === "speak") ev("adSpeak()");
+    else ev("adNext()");
+  }
+  return ev("adCur().t") === "end";
+}
 
 step("nothing is reviewed before it has been met", () => {
   ev("wipe()");
@@ -2343,8 +2374,8 @@ step("the plan's last step resumes only a unit that is not finished", () => {
   ev("go('unit','a1u3','r')"); ev("home()");
   const mid = ev("planToday()").steps.find(s => s.k === "new");
   ok(mid.tr === "Devam", "a bookmark mid-unit does not offer Devam");
-  ok(mid.go.indexOf("a1u3") > -1 && mid.go.indexOf("'r'") > -1,
-     "Devam does not return to the section that was open: " + mid.go);
+  ok(mid.go === "startAdim('a1u3',0)",
+     "Devam does not return to the unit that was open: " + mid.go);
 
   /* Finish that unit; the bookmark survives, so the plan must move past it. */
   ev("S.done['a1u3']={score:5,of:5,at:Date.now()}; save()");
@@ -2615,40 +2646,60 @@ step("nasıl çalışır · a link while it is useful, the text on its own page"
 /* Reported: two A2 units took an afternoon, so a level could be ticked
    in a day. The plan now offers one new unit a day and names tomorrow's;
    a unit opened by hand is resumed as normal. */
-step("pace · one new unit a day, and what counts as new", () => {
-  ev("wipe()");
-  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
-  ok(ev("S.done.a1u1.first") === ev("dayNum()"), "a first pass does not record its day");
-  ok(ev("unitsToday()") === 1, "a unit passed today is not counted");
-  ok(!lastPaint.includes(">Sonraki ünite"), "the score screen offers a second new unit today");
-  const p = ev("planToday()");
-  const nw = p.steps.find(x => x.k === "new");
-  ok(nw && nw.n === 0 && nw.tr === "Yarın", "the plan's unit step does not wait for tomorrow");
-  ok(p.tomorrow && p.tomorrow.id === "a1u2", "the plan does not name tomorrow's unit");
-  ok(!p.left.some(x => x.go === "go('unit','a1u2','v')"), "the plan still sends the learner on to unit two today");
+step("pace · one new lesson a day, and what counts as new", () => {
+  ev("confirm=function(){return true}; wipe()");
+  ev("startAdim('a1u1',0)"); ok(walkAdim(), "lesson one did not reach its end");
+  ok(ev("S.ders.a1u1[0]") === ev("dayNum()") && !ev("S.ders.a1u1[1]"), "a finished lesson does not record its day, or recorded another");
+  ok(ev("dayFull()"), "a lesson finished today does not fill the day");
+  ok(/Ders 1 bitti/.test(lastPaint) && !lastPaint.includes(">Sonraki ders"), "the end of a lesson offers a second one today");
+  ok(!lastPaint.includes("startUnitQuiz("), "lesson one leads to the exercises");
+  let p = ev("planToday()"), nw = p.steps.find(x => x.k === "new");
+  ok(nw && nw.n === 0 && nw.tr === "Yarın" && nw.go === "startAdim('a1u1',1)", "the plan does not wait for tomorrow's lesson: " + JSON.stringify(nw));
+  ok(p.tomorrow && p.tomorrow.id === "a1u1" && /lesson 2 of 3/.test(p.tomorrow.en), "the plan does not name tomorrow's lesson");
 
   /* With the rest of the day done, the landing page says so and names it. */
   ev("__pt=planToday; planToday=function(){const p=__pt();p.left=[];return p}"); ev("home()");
-  ok(/Bugünlük bitti/.test(lastPaint) && lastPaint.includes(esc(ev("UNITS[1].tr"))), "the finished day does not name tomorrow's unit");
-  ok(lastPaint.includes('class="homelink" onclick="go(\'unit\',\'a1u2\',\'v\')"'), "there is no way to carry on anyway");
+  ok(/Bugünlük bitti/.test(lastPaint) && lastPaint.includes("lesson 2 of 3"), "the finished day does not name tomorrow's lesson");
+  ok(lastPaint.includes('class="homelink" onclick="startAdim(\'a1u1\',1)"'), "there is no way to carry on anyway");
   ev("planToday=__pt");
 
-  /* It is the plan's pace, not a lock: opened by hand, it is resumed. */
-  ev("go('unit','a1u2','v')");
-  const r = ev("planToday()").steps.find(x => x.k === "new");
-  ok(r.tr === "Devam" && r.go.indexOf("a1u2") > -1 && r.n === 1, "a unit opened by hand is not resumed");
+  /* The next day, the next lesson; going over an old one again is not new. */
+  ev("S.ders.a1u1[0]=dayNum()-1; save()");
+  nw = ev("planToday()").steps.find(x => x.k === "new");
+  ok(nw.tr === "Devam" && nw.go === "startAdim('a1u1',1)" && nw.n === 1, "the next day does not offer the next lesson: " + JSON.stringify(nw));
+  ev("startAdim('a1u1',0)"); walkAdim();
+  ok(ev("S.ders.a1u1[0]") === ev("dayNum()-1") && !ev("dayFull()"), "going over an old lesson counted as today's");
+  ok(lastPaint.includes("startAdim('a1u1',1)") && lastPaint.includes(">Sonraki ders"), "a day with no lesson yet does not offer the next one");
 
-  /* The next day, the next unit. */
-  ev("S.done.a1u1.first=dayNum()-1; S.place=null; save()");
-  const t = ev("planToday()").steps.find(x => x.k === "new");
-  ok(t.tr === "Yeni" && t.go === "go('unit','a1u2','v')" && t.n === 1, "the next day does not offer the next unit");
+  /* Lesson three leads into the exercises, and passing them that day is
+     the end of the same lesson, not a second new thing. */
+  ev("S.ders.a1u1=[dayNum()-2,dayNum()-1,0]; save(); startAdim('a1u1',2)"); walkAdim();
+  ok(lastPaint.includes("startUnitQuiz('a1u1')"), "lesson three does not lead to the exercises");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("S.done.a1u1.first") === ev("dayNum()"), "a first pass does not record its day");
+  ok(ev("lessonsNewToday()") === 1, "lesson three and its exercises counted as " + ev("lessonsNewToday()") + " new things");
+  ok(!lastPaint.includes(">Sonraki ünite"), "the score screen offers a new unit today");
+  nw = ev("planToday()").steps.find(x => x.k === "new");
+  ok(nw.tr === "Yarın" && nw.go === "startAdim('a1u2',0)", "tomorrow is not the next unit's first lesson: " + JSON.stringify(nw));
 
-  /* Passing a unit again, or by a level test, is not a new unit. */
+  /* All three lessons done and the exercises not passed: that is the step. */
+  ev("wipe(); S.seen.a1u1={v:1,g:1,r:1}; S.ders.a1u1=[dayNum()-3,dayNum()-2,dayNum()-1]; save()");
+  nw = ev("planToday()").steps.find(x => x.k === "new");
+  ok(nw.go === "startUnitQuiz('a1u1')" && nw.n === 1, "with its lessons done the plan does not send the learner to the exercises: " + nw.go);
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.indexOf("startUnitQuiz('a1u1')") > -1 && lastPaint.indexOf("startUnitQuiz('a1u1')") < lastPaint.indexOf('class="segs ders"'),
+     "the unit page does not lead with the exercises once its lessons are done");
+
+  /* A unit passed without its lessons is the day's new work. */
+  ev("wipe(); startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("dayFull()"), "a unit passed without its lessons did not fill the day");
+
+  /* Passing a unit again, or by a level test, is not new. */
   ev("S.done.a1u1.first=0; save()");
   ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
-  ok(ev("S.done.a1u1.first") === 0 && ev("unitsToday()") === 0, "passing an old unit again counted as today's new one");
+  ok(ev("S.done.a1u1.first") === 0 && ev("lessonsNewToday()") === 0, "passing an old unit again counted as today's new one");
   ev("wipe()"); ev("startLevelExam('A1')"); while (ev("Q.i<Q.items.length")) answer(true);
-  ok(ev("isDone('a1u5')") && ev("unitsToday()") === 0, "a level test counted its units as today's new one");
+  ok(ev("isDone('a1u5')") && ev("lessonsNewToday()") === 0, "a level test counted its units as today's new one");
 });
 
 step("ilerleme · words held beside a rough target for the level", () => {
@@ -3211,7 +3262,7 @@ step("başlarken · the lessons before unit one", () => {
   /* All six done: the plan goes on to unit one, and says so. */
   BASLA.forEach(L => { if (!ev("baslaDone(" + q(L.id) + ")")) { ev("startBasla(" + q(L.id) + ")"); while (ev("Q.i<Q.items.length")) introReply(true); } });
   ok(ev("baslaCount()") === BASLA.length, "running every lesson right did not tick them all");
-  ok(plan().left[0].go === "go('unit','a1u1','v')", "with the intro done the plan does not go to unit one: " + plan().left[0].go);
+  ok(plan().left[0].go === "startAdim('a1u1',0)", "with the intro done the plan does not go to unit one: " + plan().left[0].go);
   ok(/a1u1/.test(lastPaint), "the last lesson's score screen does not lead to unit one");
 
   /* Progress, not a setting: a backup carries it and wipe clears it. */
@@ -3257,7 +3308,7 @@ step("reported · a level test does not bury the plan in reviews", () => {
   for (let i = 0; i < n; i++) { doc.getElementById("tbox").value = ev("TK.q[TK.i].c"); ev("tkCheck()"); ev("tkNext()"); }
   ok(step("rep").n === 0, "after a full sitting Tekrar still asks for " + step("rep").n + " — the loop that was reported");
   ok(ev("planToday()").left.every(s => s.k !== "rep"), "the plan's next step is still Tekrar");
-  ok(step("new") && step("new").go === "go('unit','a2u1','v')" && ev("unitOpen('a2u1')"), "the plan does not lead on to A2");
+  ok(step("new") && step("new").go === "startAdim('a2u1',0)" && ev("unitOpen('a2u1')"), "the plan does not lead on to A2");
   ok(ev("Object.keys(S.rep).every(function(k){return S.rep[k].f===dayNum()})"), "a first practice is not stamped with its day");
   /* Tomorrow, the next ten — and the reviews of today's come due as they fall. */
   ev("Object.keys(S.rep).forEach(function(k){S.rep[k].f--;S.rep[k].d--}); save()");
@@ -3297,110 +3348,173 @@ step("reported · the other you counts where the sentence does not say which", (
   ev("wipe(); home()");
 });
 
-/* Adım adım: an A1 unit one screen at a time, then its own exercises.
-   It marks what it shows exactly as the tabs would, and writes nothing
-   else: the checks are practice, not marks. */
-step("derse başla · a unit one screen at a time, checks by level", () => {
+/* Derse başla: a unit in three lessons, one screen at a time, then its
+   own exercises. Each lesson marks what it shows exactly as the tabs
+   would; the only other things it writes are the lesson's own day, the
+   common words taken in, and the speaking task's first telling. */
+step("derse başla · a unit in three lessons, checks by level", () => {
   drain(60000); ev("stopPlay()");
   ev("confirm=function(){return true}; wipe(); home()");
-  /* Answer whatever the current step asks, right or (once) wrong. */
-  const answerStep = (s, right) => {
-    if (s.t === "hear") ev("adPick(" + (right ? s.w.i : s.opts.find(o => o.i !== s.w.i).i) + ")");
-    else if (s.t === "spell") {
-      const used = [];
-      s.w.say.split("").forEach(l => { const i = s.tiles.findIndex((t, j) => t === l && !used.includes(j)); used.push(i); ev("adAdd(" + i + ")"); });
-      if (!right) { ev("AD.built=AD.built.slice().reverse()"); if (s.w.say.split("").reverse().join("") === s.w.say) ev("AD.built=[AD.built[0]]"); }
-      ev("adSpell()");
-    } else if (s.t === "type" || s.t === "cloze" || s.t === "gex") {
-      doc.getElementById("abox").value = right ? s.c : "qqq zzz";
-      ev("adType()");
-    } else return false;
-    return true;
-  };
   const F = x => ev("fold(" + q(x) + ")");
-  const CHECKS = ["hear", "spell", "type", "cloze", "gex"];
-  /* Every unit offers the lesson at the top; a finished one offers it again. */
+  const CHECKS = ADIM_CHECKS;
+  /* Every unit offers its next lesson at the top, and all three under it. */
   ev("go('unit','b2u3','v')");
-  ok(lastPaint.includes("startAdim('b2u3')") && lastPaint.includes("Derse başla"), "a B2 unit does not open on its lesson");
+  ok(lastPaint.includes("startAdim('b2u3',0)") && lastPaint.includes("Derse başla"), "a B2 unit does not open on its first lesson");
   ok(lastPaint.indexOf("startAdim(") < lastPaint.indexOf('class="segs"'), "the lesson is not above the tabs");
+  [0, 1, 2].forEach(i => ok(lastPaint.includes("startAdim('b2u3'," + i + ")"), "lesson " + (i + 1) + " cannot be opened by hand"));
   ok(!lastPaint.includes("Adım adım"), "the old name is still on the unit page");
   ev("S.done.a1u1={score:5,of:5,at:1}; go('unit','a1u1','v')");
-  ok(lastPaint.includes("Dersi tekrarla"), "a finished unit does not offer the lesson again");
+  ok(lastPaint.includes("Dersi tekrarla") && lastPaint.includes("startAdim('a1u1',0)"), "a finished unit does not offer its lessons again");
   ev("wipe(); home()");
-  const before = ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done])");
+
+  const u = UNITS[0], T = ev("dayNum()");
+  const snap = () => ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done,S.retell,S.sik])");
+  let before = snap();
+
+  /* Lesson one: the words and the grammar, nothing of the passage. */
   ev("startAdim('a1u1')");
-  const u = UNITS[0];
-  ok(ev("V.view") === "adim" && ev("AD.q[0].t") === "word", "the lesson does not open on the first word");
+  ok(ev("AD.k") === 0 && ev("V.view") === "adim" && ev("AD.q[0].t") === "word", "the unit does not open on the first word of lesson one");
   ok(voice.spoken[voice.spoken.length - 1] === ev("AD.q[0].w.say"), "the first word is not said as it arrives");
   const said = voice.said; ev("render()");
   ok(voice.said === said, "a redraw said the word again");
   ok(lastPaint.includes(ev("RESIM[" + q(u.vocab[0][0]) + "]")), "a pictured word shows no picture");
   ok(ev("!!(S.seen.a1u1&&S.seen.a1u1.v)") && !ev("!!S.seen.a1u1.g") && !ev("!!S.seen.a1u1.r"),
      "the words marked more than the word list as seen");
-  /* Walk A1: miss the first check once, get everything else right. */
+  ok(!ev("AD.q").some(x => x.t === "line" || x.t === "say" || x.t === "sik" || x.t === "speak"), "lesson one reaches past the words and grammar");
+  /* Miss the first check once, get everything else right. */
   let missed = false, guard = 0;
   const n0 = ev("AD.q.length");
   while (ev("adCur().t") !== "end" && guard++ < 80) {
     const s = ev("adCur()");
     if (CHECKS.includes(s.t)) {
       const right = missed || !(missed = true);
-      answerStep(s, right);
+      adimAnswer(s, right);
       ok(ev("AD.ok") === right, "a " + s.t + " check was marked the other way");
-      ev("adNext()");
-    } else {
-      if (s.t === "gram") ok(lastPaint.includes(esc(u.gram.t)) && ev("!!S.seen.a1u1.g"), "the grammar step did not show the point, or mark it read");
-      if (s.t === "line") {
-        ok(voice.spoken[voice.spoken.length - 1] === u.read.lines[s.i][0], "a passage line was not read aloud as it arrived");
-        ok(lastPaint.includes('<p class="adtr">'), "an A1 line was not shown as it arrived");
-        ok(!lastPaint.includes(esc(u.read.lines[s.i][1])), "a line's English was shown before it was asked for");
-        ev("adShow()");
-        ok(lastPaint.includes(esc(u.read.lines[s.i][1])), "asking for the English did not show it");
-      }
-      ev("adNext()");
-    }
+    } else if (s.t === "gram") ok(lastPaint.includes(esc(u.gram.t)) && ev("!!S.seen.a1u1.g"), "the grammar step did not show the point, or mark it read");
+    ev("adNext()");
   }
-  ok(ev("adCur().t") === "end", "the lesson did not reach its end");
+  ok(ev("adCur().t") === "end", "lesson one did not reach its end");
   ok(ev("AD.q.length") === n0 + 1, "a missed check did not come back exactly once");
-  ok(ev("!!S.seen.a1u1.r"), "the reading was not marked read");
-  ok(lastPaint.includes("startUnitQuiz('a1u1')"), "the end does not lead to the unit's exercises");
-  ok(ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done])") === before, "the lesson scheduled, marked or ticked something");
-  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
-  ok(ev("isDone('a1u1')"), "the exercises after the lesson did not tick the unit");
+  ok(!ev("!!S.seen.a1u1.r"), "lesson one marked the passage read");
+  ok(ev("S.ders.a1u1[0]") === T, "lesson one was not recorded as finished");
+  ok(snap() === before, "lesson one scheduled, marked or ticked something");
 
-  /* Every unit walks to its end, and its checks are the ones its level
-     asks for, in the order its level puts them. */
-  const shape = { A1: ["hear", "spell"], A2: ["type", "gex"], B1: ["gex"] };
+  /* Lesson two: the passage, three lines said before they are heard, and
+     the first half of the unit's common words. */
+  ev("startAdim('a1u1')");
+  ok(ev("AD.k") === 1 && ev("adCur().t") === "line", "the unit's next lesson is not lesson two, on the passage");
+  const share = ev("sikShare(unit('a1u1'),0)");
+  let sayN = 0;
+  walkAdim(s => {
+    if (s.t === "line") {
+      ok(voice.spoken[voice.spoken.length - 1] === u.read.lines[s.i][0], "a passage line was not read aloud as it arrived");
+      ok(lastPaint.includes('<p class="adtr">'), "an A1 line was not shown as it arrived");
+      ok(!lastPaint.includes(esc(u.read.lines[s.i][1])), "a line's English was shown before it was asked for");
+      ev("adShow()");
+      ok(lastPaint.includes(esc(u.read.lines[s.i][1])), "asking for the English did not show it");
+    }
+    if (s.t === "say") {
+      sayN++;
+      ok(s.i < Math.ceil(u.read.lines.length / 2), "lesson two asks a line from the second half");
+      ok(lastPaint.includes(esc(u.read.lines[s.i][1])) && !lastPaint.includes('<p class="adtr">'), "a line to say showed its Turkish first");
+      const n = voice.said; ev("render()");
+      ok(voice.said === n, "a line to say was spoken before the learner said it");
+      ev("adSay()");
+      ok(lastPaint.includes(esc(u.read.lines[s.i][0])) && voice.spoken[voice.spoken.length - 1] === u.read.lines[s.i][0], "Göster did not show and play the line");
+      ev("render()");  /* adSay advanced nothing: walkAdim's own adSay repeats harmlessly */
+    }
+    if (s.t === "sik") {
+      ok(JSON.stringify(s.words) === JSON.stringify(share.map(e => [e[0], e[1]])), "lesson two's common words are not the first half of the unit's share");
+      ev("adKnow(0)");
+      ok(/class="vrow known"/.test(lastPaint), "a word marked known does not show it");
+    }
+  });
+  ok(sayN === 3, "lesson two asked " + sayN + " lines to say, not three");
+  ok(ev("!!S.seen.a1u1.r"), "the passage was not marked read");
+  ok(ev("S.sik[" + q(share[0][0]) + "].k") === 1 && !ev("isStarred(" + q(share[0][0]) + "," + q(share[0][1]) + ")"), "a word marked known was starred");
+  ok(share.slice(1).every(e => ev("isStarred(" + q(e[0]) + "," + q(e[1]) + ")") && ev("S.srs[starKey(" + q(e[0]) + "," + q(e[1]) + ")].d") === T + 1),
+     "the rest of the common words were not starred for tomorrow");
+  ok(/Ders 2 bitti/.test(lastPaint) && !lastPaint.includes("startUnitQuiz("), "lesson two does not end as a lesson");
+  ok(ev("S.ders.a1u1[1]") === T, "lesson two was not recorded as finished");
+
+  /* Lesson three: the words recalled, the other lines, the second half,
+     the speaking task as its first telling, then the exercises. */
+  ev("startAdim('a1u1')");
+  ok(ev("AD.k") === 2, "the unit's next lesson is not lesson three");
+  const Q3 = ev("AD.q"), share2 = ev("sikShare(unit('a1u1'),1)");
+  ok(Q3.filter(x => x.t === "say").every(x => x.i >= Math.ceil(u.read.lines.length / 2)), "lesson three asks a line lesson two had");
+  ok(Q3.findIndex(x => x.t === "speak") === Q3.length - 2, "the speaking task is not the last thing before the end");
+  walkAdim(s => {
+    if (s.t === "speak") ok(lastPaint.includes(esc(u.speak)) && lastPaint.includes("adSpeak()"), "the speaking task is not shown");
+  });
+  ok(ev("S.retell.a1u1.n") === 1 && ev("S.retell.a1u1.d") === T + 2, "the speaking task was not counted as its first telling, due on day three");
+  ok(share2.every(e => ev("isStarred(" + q(e[0]) + "," + q(e[1]) + ")")), "lesson three did not take in the second half of the words");
+  ok(lastPaint.includes("startUnitQuiz('a1u1')"), "lesson three does not lead to the unit's exercises");
+  ok(ev("JSON.stringify([S.prod,S.rep,S.gram,S.err,S.dinle,S.done])") === JSON.stringify(JSON.parse(before).slice(2, 8)), "the lessons scheduled or marked something they should not");
+  /* Told again here, a telling under way keeps its own schedule. */
+  ev("startAdim('a1u1',2); AD.i=AD.q.findIndex(function(s){return s.t==='speak'}); render(); adSpeak()");
+  ok(ev("S.retell.a1u1.n") === 1, "going over lesson three counted a second telling");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("isDone('a1u1')"), "the exercises after the lessons did not tick the unit");
+
+  /* The shares split the list between the units, and the halves the share. */
+  const total = ev("UNITS.reduce(function(n,u){return n+sikShare(u).length},0)");
+  ok(total === ev("SIK.length"), "the units' shares cover " + total + " of " + ev("SIK.length") + " common words");
+  ok(ev("UNITS.every(function(u){return JSON.stringify(sikShare(u,0).concat(sikShare(u,1)))===JSON.stringify(sikShare(u))})"), "a unit's two halves are not its share");
+  ok(ev("UNITS.every(function(u,i){return !i||sikShare(UNITS[i-1]).slice(-1)[0]!==sikShare(u)[0]})"), "two units share a word");
+
+  /* Every lesson of every unit walks to its end, and asks the checks its
+     level asks for, where its level puts them. */
   let clozes = 0, unitsWithCloze = 0;
   UNITS.forEach(v => {
-    ev("startAdim(" + q(v.id) + ")");
-    const Q = ev("AD.q"), kinds = Q.map(x => x.t);
-    const tier = v.lv === "A1" ? "A1" : v.lv === "A2" ? "A2" : "B1";
-    shape[tier].forEach(t => ok(kinds.includes(t), v.id + " has no " + t + " step"));
-    if (tier === "A1") ok(!kinds.some(t => t === "type" || t === "cloze" || t === "gex"), v.id + " asks an A1 learner to type");
-    if (tier !== "A1") ok(!kinds.some(t => t === "hear" || t === "spell"), v.id + " still asks beginner checks");
-    const checks = Q.filter(x => x.t === "type" || x.t === "cloze").length;
-    if (tier !== "A1") ok(checks === 4, v.id + " has " + checks + " word checks, not four");
-    if (tier === "B1") ok(kinds.lastIndexOf("line") < kinds.indexOf(kinds.find(t => t === "type" || t === "cloze")) || !kinds.some(t => t === "type" || t === "cloze"),
-                          v.id + " checks the words before the passage is read");
-    Q.filter(x => x.t === "cloze").forEach(c => {
-      clozes++;
-      ok(c.q.includes("___") && F(c.q.replace("___", c.c)) === F(c.full), v.id + ": a blank does not fill back to its line");
-      ok(!F(c.q).split(" ").includes(F(c.c)), v.id + ": the answer is still in the blanked line");
-    });
-    if (Q.some(x => x.t === "cloze")) unitsWithCloze++;
-    let g = 0;
-    while (ev("adCur().t") !== "end" && g++ < 90) {
-      const s = ev("adCur()");
-      if (answerStep(s, true)) ok(ev("AD.ok") === true, v.id + ": a right " + s.t + " answer was marked wrong: " + s.c);
-      ev("adNext()");
+    const tier = v.lv === "A1" ? 0 : v.lv === "A2" ? 1 : 2;
+    const half = Math.ceil(v.read.lines.length / 2);
+    for (let k = 0; k < 3; k++) {
+      ev("startAdim(" + q(v.id) + "," + k + ")");
+      const Q = ev("AD.q"), kinds = Q.map(x => x.t), tag = v.id + " lesson " + (k + 1);
+      const words = Q.filter(x => x.t === "type" || x.t === "cloze").length;
+      if (tier === 0) ok(!kinds.some(t => t === "type" || t === "cloze" || t === "gex"), tag + " asks an A1 learner to type");
+      else ok(!kinds.some(t => t === "hear" || t === "spell"), tag + " still asks beginner checks");
+      if (k === 0) {
+        ok(kinds.filter(t => t === "word").length === 10 && kinds.includes("gram") && !kinds.includes("line"), tag + " is not the words and the grammar");
+        if (tier === 0) ok(kinds.filter(t => t === "hear").length === 4 && kinds.includes("spell"), tag + " does not hear and spell");
+        else ok(words === 4 && kinds.includes("gex"), tag + " has " + words + " word checks and " + (kinds.includes("gex") ? "an" : "no") + " example");
+      } else if (k === 1) {
+        ok(kinds.filter(t => t === "line").length === v.read.lines.length && !kinds.includes("word") && !kinds.includes("gram"), tag + " is not the passage");
+        ok(kinds.filter(t => t === "say").length === Math.min(3, half), tag + " does not say three lines");
+        if (tier === 2) {
+          ok(words === 4 && kinds.lastIndexOf("line") < kinds.findIndex(t => t === "type" || t === "cloze"), tag + " checks the words before the passage is read, or not four");
+        } else ok(words === 0, tag + " checks words in the passage below B1");
+        Q.filter(x => x.t === "cloze").forEach(c => {
+          clozes++;
+          ok(c.q.includes("___") && F(c.q.replace("___", c.c)) === F(c.full), v.id + ": a blank does not fill back to its line");
+          ok(!F(c.q).split(" ").includes(F(c.c)), v.id + ": the answer is still in the blanked line");
+        });
+        if (Q.some(x => x.t === "cloze")) unitsWithCloze++;
+      } else {
+        ok(!kinds.includes("line") && !kinds.includes("word") && kinds.includes("speak"), tag + " is not the review and the speaking");
+        if (tier === 0) ok(kinds.filter(t => t === "hear").length === 3, tag + " does not recall the words by ear");
+        else ok(words === 4 && kinds.includes("gex"), tag + " does not recall four words and an example");
+        ok(kinds.filter(t => t === "say").length === Math.min(3, v.read.lines.length - half), tag + " does not say the other lines");
+      }
+      let g = 0;
+      while (ev("adCur().t") !== "end" && g++ < 120) {
+        const s = ev("adCur()");
+        if (adimAnswer(s, true)) { ok(ev("AD.ok") === true, v.id + ": a right " + s.t + " answer was marked wrong: " + s.c); ev("adNext()"); }
+        else if (s.t === "sik") ev("adSik()");
+        else if (s.t === "speak") ev("adSpeak()");
+        else ev("adNext()");
+      }
+      ok(ev("adCur().t") === "end", tag + " did not walk to its end");
+      ok(ev("S.ders[" + q(v.id) + "][" + k + "]") === T, tag + " was not recorded");
     }
-    ok(ev("adCur().t") === "end", v.id + " did not walk to its end");
   });
   console.log("    " + unitsWithCloze + " of 40 B1+ units ask words in their sentences, " + clozes + " blanks");
   ok(unitsWithCloze >= 30, "only " + unitsWithCloze + " of the B1+ units ask a word in its sentence");
+  ok(ev("dersCount()") === 180 && ev("sikRest().length") === 0, "walking every lesson did not finish 180 lessons and take in every common word");
 
   /* B1 and up: the line is heard before it is shown. */
-  ev("startAdim('b1u3'); AD.i=AD.q.findIndex(function(s){return s.t==='line'}); AD.heard={}; render()");
+  ev("startAdim('b1u3',1); AD.heard={}; render()");
   const b1 = UNITS.find(x => x.id === "b1u3");
   ok(voice.spoken[voice.spoken.length - 1] === b1.read.lines[0][0], "a B1 line was not played as it arrived");
   ok(!lastPaint.includes('<p class="adtr">') && lastPaint.includes("adhid") && lastPaint.includes("adText()"), "a B1 line was shown before it was heard");
@@ -3408,18 +3522,19 @@ step("derse başla · a unit one screen at a time, checks by level", () => {
   ev("adText()");
   ok(lastPaint.includes('<p class="adtr">') && lastPaint.includes("adShow()") && !lastPaint.includes("adText()"), "showing a B1 line did not show it");
 
-  /* From B1 a missed check comes back before the end, not before the
-     grammar, which by then is behind the learner. */
-  ev("startAdim('b1u3'); AD.i=AD.q.findIndex(function(s){return s.t==='cloze'||s.t==='type'}); render()");
+  /* A missed check comes back after the other checks, before the lesson
+     moves on from the words. */
+  ev("startAdim('b1u3',1); AD.i=AD.q.findIndex(function(s){return s.t==='cloze'||s.t==='type'}); render()");
   const missId = ev("adCur().id");
   doc.getElementById("abox").value = "qqq zzz"; ev("adType()");
   const Qb = ev("AD.q"), at = Qb.findIndex((x, k) => k > ev("AD.i") && x.id === missId);
-  ok(at > -1 && Qb[at + 1] && Qb[at + 1].t === "end", "a missed B1 check did not come back just before the end");
+  ok(at > -1 && Qb[at + 1] && Qb[at + 1].t === "say" && Qb.slice(ev("AD.i") + 1, at).every(x => CHECKS.includes(x.t)),
+     "a missed B1 check did not come back after the other checks, before the lines to say");
   ok(lastPaint.includes("adNext()") && /class="fb no"/.test(lastPaint), "a missed B1 check showed no answer");
 
   /* Typed answers are marked by the course's own judges: the other you,
      a spoken form, and a dropped pronoun in a grammar example. */
-  ev("startAdim('a2u1'); AD.q.splice(AD.i,0,{t:'type',id:99,w:{i:0,tr:'nasılsın',say:'nasılsın',en:'how are you',em:''},c:'nasılsın',alts:['nasilsin']}); render()");
+  ev("startAdim('a2u1',0); AD.q.splice(AD.i,0,{t:'type',id:99,w:{i:0,tr:'nasılsın',say:'nasılsın',en:'how are you',em:''},c:'nasılsın',alts:['nasilsin']}); render()");
   doc.getElementById("abox").value = "nasılsınız"; ev("adType()");
   ok(ev("AD.ok") === true && lastPaint.includes("Sen · siz"), "the lesson refused the other you");
   ev("AD.q.splice(AD.i+1,0,{t:'gex',id:98,c:'Ben yarın gideceğim.',en:'I will go tomorrow.'}); adNext()");
@@ -3546,7 +3661,7 @@ step("the path opens in order", () => {
   ok(!ev("baslaOpen('yazim')") && !lastPaint.includes("go('basla','yazim')"), "failing a lesson opened the next one");
   ev("BASLA").forEach(L => { ev("startBasla(" + q(L.id) + ")"); while (ev("Q.i<Q.items.length")) introReply(true); });
   ok(open("a1u1") && !open("a1u2"), "passing the intro did not open unit one alone");
-  ok(ev("planToday()").left[0].go === "go('unit','a1u1','v')", "the plan does not go to unit one once it opens");
+  ok(ev("planToday()").left[0].go === "startAdim('a1u1',0)", "the plan does not go to unit one once it opens");
 
   /* A unit passed opens the next; failing it does not. */
   ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(false);

@@ -198,11 +198,16 @@ function startRetell(uid){
   if(!S.retell[uid])S.retell[uid]={n:0,d:dayNum()};
   save();V={view:"retell",u:uid};window.scrollTo(0,0);render();
 }
-function retellDone(uid){
-  const r=(S.retell&&S.retell[uid])||{n:0,d:dayNum()};
+/* One telling counted, and the next one scheduled. */
+function retellCount(uid){
+  if(!S.retell)S.retell={};
+  const r=S.retell[uid]||{n:0,d:dayNum()};
   r.n=Math.min(r.n+1,3);
   r.d=dayNum()+RETELL_NEXT[r.n];
   S.retell[uid]=r;save();touchDay();
+}
+function retellDone(uid){
+  retellCount(uid);
   /* Told: the short end, and the way on to the rest of Bugün. */
   V={view:"retelldone",u:uid};window.scrollTo(0,0);render();
 }

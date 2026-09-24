@@ -282,11 +282,17 @@ ev("startRetell('a1u2')"); grab("retell");
 
 /* The language engine, hashed as data rather than as a screen. */
 /* Adım adım: each kind of step in a1u1. */
-ev("wipe()"); reseed(4242); ev("startAdim('a1u1')"); grab("adim:word");
-["hear", "spell", "gram", "line", "end"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); render()"); grab("adim:" + t); });
-reseed(4243); ev("startAdim('a2u2')");
+ev("wipe()"); reseed(4242); ev("startAdim('a1u1',0)"); grab("adim:word");
+["hear", "spell", "gram", "end"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); render()"); grab("adim:" + t); });
+reseed(4245); ev("startAdim('a1u1',1)");
+["line", "say", "sik"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); AD.heard={}; render()"); grab("adim:2:" + t); });
+ev("AD.i=AD.q.findIndex(function(s){return s.t==='say'}); render(); adSay()"); grab("adim:2:said");
+reseed(4246); ev("startAdim('a1u1',2)");
+["speak", "end"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); render()"); grab("adim:3:" + t); });
+ev("go('unit','a1u1','v')"); grab("unit:lessons");
+reseed(4243); ev("startAdim('a2u2',0)");
 ["type", "gex"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); render()"); grab("adim:a2:" + t); });
-reseed(4244); ev("startAdim('b1u3')");
+reseed(4244); ev("startAdim('b1u3',1)");
 ["line", "cloze"].forEach(t => { ev("AD.i=AD.q.findIndex(function(s){return s.t===" + q(t) + "}); AD.heard={}; render()"); grab("adim:b1:" + t); });
 ev("stopPlay(); AD=null");
 

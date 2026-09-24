@@ -40,26 +40,45 @@ function sikLeft(){
   return Math.max(0,Math.min(SIK_DAY*(1+sikExtra())-sikAddedToday(),sikRest().length));
 }
 function sikBatch(){return sikRest().slice(0,sikLeft());}
-/* The plan offers this only once a unit is finished: it needs nothing met,
-   so on day one it would push the plan past one instruction. Araçlar has
-   it from the start for anyone who goes looking. */
-function sikAvail(){return Object.keys(S.done||{}).length>0&&sikRest().length>0;}
+/* Each unit's share of the list, in the list's order: the first unit
+   takes the first twenty-five or so, the second the next, and so on, so
+   the commonest words come first. The second and third lessons of a unit
+   (app.adim.js) take half each; that is how these words mostly arrive
+   now. half: 0 or 1, or left out for the whole share. */
+function sikShare(u,half){
+  const i=UNITS.indexOf(u), N=SIK.length, M=UNITS.length;
+  const a=Math.round(i*N/M), b=Math.round((i+1)*N/M), m=Math.round((a+b)/2);
+  return half===0?SIK.slice(a,m):half===1?SIK.slice(m,b):SIK.slice(a,b);
+}
+/* Words from the share of a unit already passed that were never met:
+   a unit passed by its level test, or before the lessons carried them. */
+function sikBehind(){
+  return UNITS.filter(function(u){return isDone(u.id);}).reduce(function(a,u){
+    return a.concat(sikShare(u).filter(function(e){return !sikMet(e);}));
+  },[]);
+}
+/* The plan offers this only for those words: the rest come in the
+   lessons. It needs a unit passed, so day one stays one instruction.
+   Araçlar has the whole list from the start for anyone who goes looking. */
+function sikAvail(){return sikBehind().length>0;}
+/* One word taken in: known, or starred with its first review tomorrow —
+   not today: the word has just been read, and a box due today would
+   un-tick the plan's own Tekrar step the moment this one was done. */
+function sikTake(e,known){
+  const t=dayNum();
+  if(known){sikMap()[e[0]]={d:t,k:1};return;}
+  setStar(e[0],e[1],true);
+  S.srs[starKey(e[0],e[1])]={b:0,d:t+1};
+  sikMap()[e[0]]={d:t};
+}
 function sikKnow(t){
   const e=SIK.find(function(x){return x[0]===t;}); if(!e)return;
-  sikMap()[t]={d:dayNum(),k:1};
+  sikTake(e,true);
   save();render();
 }
-/* First review tomorrow, not today: the word has just been read, and a
-   box due today would un-tick the plan's own Tekrar step the moment this
-   one was done. */
 function sikAdd(){
   const b=sikBatch(); if(!b.length)return;
-  const t=dayNum();
-  b.forEach(function(e){
-    setStar(e[0],e[1],true);
-    S.srs[starKey(e[0],e[1])]={b:0,d:t+1};
-    sikMap()[e[0]]={d:t};
-  });
+  b.forEach(function(e){sikTake(e,false);});
   save();render();
 }
 function sikMore(){SIKX={d:dayNum(),n:sikExtra()+1};render();}

@@ -166,7 +166,7 @@ function renderNasil(){
   let h=bar("Nasıl çalışır","how to use this",true,"nasıl kullanılır")+'<div class="wrap"><div class="card gram">'+
    '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app. The English stays until A2 is complete, then steps aside so the Turkish does the work; the <b>EN</b> button at the top of every screen turns it off or back on whenever you like.</p>'+
    '<p><b>1 · Follow Bugün.</b> Its <b>Başla</b> button opens the next thing to do today, and each part ends with a <b>Devam</b> button to the one after. If you do only that, you are using the app correctly. The day\'s full list is on <b>İlerleme</b>.</p>'+
-   '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
+   '<p><b>2 · A unit is three lessons, one a day.</b> <b>Derse başla</b> at the top of a unit opens the next one: the ten words and the grammar point first, then the passage and some of the commonest words in Turkish, then a review, the speaking task and five exercises. Four right out of five ticks the unit, so a level of ten units takes about a month. The four tabs underneath, <b>Kelimeler</b>, <b>Dilbilgisi</b>, <b>Okuma</b> and <b>Alıştırma</b>, hold the same material to look through whenever you like.</p>'+
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
    '<p><b>5 · Everything opens in order.</b> From nothing, <b>Bugün</b> begins with six short lessons before unit one: the letters and their sounds, how words are spelt, stressed and built, and how a sentence is put together. They are in Dersler under <b>Başlarken</b>. Each lesson opens when the one before it is passed, unit one opens when all six are, and every unit after that opens when the one before it is passed.</p>'+
@@ -225,8 +225,16 @@ function renderUnit(){
   }
   markSeen(u.id,sec);
   let h=bar(u.tr,u.lv+" · Ünite "+u.n,true)+'<div class="wrap">';
-  /* The lesson is the way in; the tabs are for looking through it. */
-  h+='<button class="btn adim-go" onclick="startAdim(\''+u.id+'\')">'+(isDone(u.id)?"Dersi tekrarla":"Derse başla")+'</button>'+
+  /* The lessons are the way in; the tabs are for looking through it.
+     The button is the next lesson, or the exercises once all three are
+     done; the row under it opens any of the three by hand. */
+  const nk=dersNext(u.id), dn=isDone(u.id), dd=dersOf(u.id);
+  h+=(nk<LESSONS||dn?'<button class="btn adim-go" onclick="startAdim(\''+u.id+'\','+(dn?0:nk)+')">'+(dn?"Dersi tekrarla":"Derse başla")+'</button>'
+                    :'<button class="btn adim-go" onclick="startUnitQuiz(\''+u.id+'\')">Alıştırmalara geç →</button>')+
+     '<div class="segs ders">'+DERS.map(function(d,i){
+       return '<button class="'+(i===nk&&!dn?"on":"")+'" onclick="startAdim(\''+u.id+'\','+i+')">Ders '+(i+1)+
+         '<i>'+(dd[i]?"✓ ":"")+'<span class="gl">'+d[1]+'</span></i></button>';
+     }).join("")+'</div>'+
      '<p class="src adim-or">'+tx("Or look through the unit yourself:","Ya da üniteye kendin göz at:")+'</p>';
   h+='<div class="segs">';
   SECS.forEach(s=>{
@@ -516,10 +524,10 @@ function renderScore(){
     if(Q.mode==="unit"){
       const u=unit(Q.u), us=unitsOf(u.lv), i=us.findIndex(x=>x.id===u.id);
       /* Passed: the way on is the rest of today's plan, not the next unit
-         — that is tomorrow's, once today's new unit is done. */
+         — that is tomorrow's, once today's lesson is done. */
       if(pass){
         h+='</div>'+planNext();
-        if(i<us.length-1&&unitsToday()<UNIT_DAY)h+='<button class="btn ghost" onclick="go(\'unit\',\''+us[i+1].id+'\',\'v\')">Sonraki ünite →</button>';
+        if(i<us.length-1&&!dayFull())h+='<button class="btn ghost" onclick="go(\'unit\',\''+us[i+1].id+'\',\'v\')">Sonraki ünite →</button>';
         h+='<button class="btn ghost" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>';
       }else{
         h+='<button class="btn" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>'+
@@ -817,7 +825,7 @@ function importBox(){
 }
 function wipe(){
   if(typeof confirm==="function"&&!confirm("Delete all progress, saved words and your place? This cannot be undone."))return;
-  S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
+  S={done:{},seen:{},place:null,ders:{},star:[],tested:{},days:[],theme:S.theme,srs:{},rate:S.rate,
      prod:{},retell:{},gap:S.gap,prompten:S.prompten,pscope:S.pscope,
      dinle:{},drate:S.drate,dreplay:S.dreplay,rep:{},gram:{},ygap:S.ygap,yrate:S.yrate,err:{},mine:[],
      num:{},nmax:S.nmax,ncap:S.ncap,dia:{},ata:{},sik:{},basla:{},tips:S.tips,en:S.en};
