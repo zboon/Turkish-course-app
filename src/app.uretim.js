@@ -41,20 +41,15 @@ function sentenceBank(){
 function chunkBank(){
   return CHUNKS.map(function(c,i){return {k:"k:"+i,tr:c[0],en:c[1],lv:"Kalıp",from:"günlük konuşma"};});
 }
-function prodDue(bank){return bank.filter(function(it){return isDue(S.prod,it.k);});}
-/* Anything already scheduled and due comes first, oldest first; the rest
-   of the session is filled with sentences never seen before. */
-function prodQueue(bank){
-  const n=dayNum(), old=[], fresh=[];
-  bank.forEach(function(it){
-    const r=S.prod&&S.prod[it.k];
-    if(r){if(r.d<=n)old.push(it);}else fresh.push(it);
-  });
-  old.sort(function(x,y){return S.prod[x.k].d-S.prod[y.k].d;});
-  /* Reviews first, oldest due first; new sentences stay in course order,
-     so the mode walks the material rather than sampling it at random. */
-  return old.concat(fresh).slice(0,SESSION);
+/* Reviews first, oldest due first; new sentences stay in course order,
+   so the mode walks the material rather than sampling it at random, and
+   come in no faster than NEW_DAY.prod a day, counted per bank: prefabs
+   and passage lines each have their own allowance. */
+function prodDue(bank){
+  const pfx=bank.length?bank[0].k.slice(0,bank[0].k.indexOf(":")+1):"";
+  return dueItems(S.prod,bank,NEW_DAY.prod,pfx);
 }
+function prodQueue(bank){return prodDue(bank).slice(0,SESSION);}
 function prodGradeKey(k,good){
   if(!S.prod)S.prod={};
   bump(S.prod,k,function(b){return good?b+1:0;});

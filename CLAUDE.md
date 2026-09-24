@@ -59,11 +59,12 @@ src/app.diyalog.js       branching conversation and the repair kit
 src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.sik.js           the frequency layer: ten common words a day
 src/app.baslarken.js     the lessons before unit one
+src/app.uyku.js          before sleep: today's material, quietly
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is sixteen files rather than one because it grew past the point
+The app is seventeen files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -243,7 +244,7 @@ deliberate breakage.
 `localStorage["turkce-course-v1"]`, one object:
 
 ```js
-{done:{unitId:{score,of,at,byTest}}, seen:{unitId:{v,g,r,d}},
+{done:{unitId:{score,of,at,byTest}}, seen:{unitId:{v,g,r,d,at}},
  place:{u,s}, star:["tr|en"], srs:{"tr|en":{b:box,d:dueDay}},
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
@@ -255,6 +256,11 @@ deliberate breakage.
  sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
+
+Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
+`num`, `ata`, `dia` — carries `f`, the day it was first practised, which
+is what the daily allowance of new items counts (see Bugün). Records from
+before v3.63 have none and count as old.
 
 Üretim and Dinleme keys are as permanent as unit ids and for the same
 reason: `s:<unitId>#<lineIndex>` for a passage line and `k:<index>` for a
@@ -435,7 +441,8 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 - Voice runs on the device's own `tr-TR` speech synthesis. `stopPlay()` is
   called at the top of `go()` and `home()` — any new navigation path must too,
   or audio keeps playing over the next screen. `stopPlay()` also clears the
-  Üretim countdown, the Dinleme timer and a Yolda sitting, so a timer
+  Üretim countdown, the Dinleme timer, a Yolda sitting and an Uyumadan
+  önce sitting, so a timer
   started in any of them dies with the screen; anything else that sets a
   timer needs its own stop called from `stopPlay()` for the same reason.
   Yolda matters most here: it holds the speaker for minutes, so a leak is
@@ -1193,6 +1200,51 @@ its screen locks**, on every platform this runs on. `yolWake()` asks for a
 screen wake lock, which is all the app can do about it; the learner still
 needs the phone unlocked and in a cradle rather than in a pocket.
 
+## Uyumadan önce (before sleep)
+
+Built, by request, after the learner asked whether sleep-learning videos
+work. They do not, in the way they claim: nothing new is learned while
+asleep, and audio playing all night can fragment the sleep that
+consolidates what was studied. What holds up is narrower: sleep keeps
+what was studied in the hours before it, and replaying that material
+quietly helps a little. `go('uyku')` is built to that and no further.
+
+- **Only today's material.** `uyBank()` takes units opened or passed in
+  the last `UY_HOURS` (16) hours — a window rather than a calendar day, so
+  studying at eleven and listening at half past twelve is still "today"
+  — at the grain the reviews use: words once the list was opened, lines
+  once the passage was read, examples once the grammar was. Plus the
+  common words added today and an intro lesson *passed* today (not one
+  only tested out of). With nothing today it falls back to the last
+  unit opened and says so. Nothing new is ever introduced.
+  `markSeen()` now stamps `S.seen[id].at` for this; nothing else reads it.
+- **Turkish only, each item twice, slow (`UY_RATE`), getting quieter**
+  from `UY_VOL[0]` to `UY_VOL[1]` across the sitting, through a volume
+  argument `say()` gained for it.
+- **It stops by itself, in silence**, after five or ten minutes. Yolda
+  announces its end because a driver is not looking; this one must not,
+  because the listener is falling asleep. The running screen is a
+  full-screen dim overlay in both themes.
+- **It writes nothing and has no settings.** No progress key, no box,
+  nothing marked. The hub says plainly what it can and cannot do.
+
+The engine is Yolda's shape: every step armed twice (onend and a
+watchdog) with a token, the deadline only raising a flag, a wake lock
+for the sitting, and `uyStop()` called from `stopPlay()` so leaving the
+screen silences it. `sim.js` plays a whole sitting on the fake clock and
+checks every item is said exactly twice, in order, in Turkish at the
+set rate, cycling round, ending on the material rather than on an
+announcement, and leaving `S` byte-for-byte unchanged. The fade is
+tested by winding `UY.t0` back, because the fake clock drives timers
+but not `Date.now()`. Fourteen deliberate breakages each turned it red;
+two did not at first, and both were the test's fault: a breakage that
+did not match the source, and a de-duplication check on a bank with
+nothing duplicated in it, which now includes a lesson that shares
+*merhaba* with unit one.
+
+Not in the daily plan: it is optional and only makes sense at night.
+Araçlar has it under Dinleme, tagged hazır when there is something to play.
+
 ## Hata defteri (the mistake book)
 
 Built. Seven places in this app can tell a learner they were wrong, and
@@ -1364,6 +1416,30 @@ brother", not "mate"), a subtler note on *abi / abla / hocam / efendim*,
 *pardon* before *bakar mısınız* — which is less usual alone — and the
 vowel-stem futures above. New spoken material should go the same way
 before it ships.
+
+### Sen ya da siz (the other you)
+
+Reported by the learner: a Tekrar gap-fill built from *Memnun oldum.
+Nasılsın?* — "Pleased to meet you. How are you?" — refused *Nasılsınız*,
+which is at least as likely to be said to someone just met. English
+cannot say which you, so where the sentence does not decide it the other
+one is right. `sizToward()` in `app.lang.js` turns a typed *-sInIz* into
+the answer's *-sIn* or the reverse, only toward a word the answer has,
+in Tekrar motoru, Dilbilgisi tekrarı and a unit's gap-fill, and the
+feedback says why under **Sen · siz**.
+
+It is narrow on purpose. The same ending on a bare verb is the
+third-person command — *Kolay gelsin*, *Geçmiş olsun* — where *gelsiniz*
+is wrong, so the swap applies only after what makes *-sIn* certainly
+"you": *-yor*, the future, *-mAlI*, *-mIş*, the question particle and a
+short list of words said of a person (`SIZ_BASE`, `SIZ_WORDS`). The
+aorist is left out because *gelirsin* and *otursun* cannot be told apart
+in folded text. Nothing moves when the sentence has a *sen* or *siz* word
+or the English names the register ("informal"). `validate.js` holds both
+halves, including every command it must refuse, and checks that every
+*-sIn* word the course writes swaps back to itself; `sim.js` replays the
+reported case in all three places. Ten deliberate breakages each turned
+a test red.
 
 ### Başka türlü (the other ways to say it)
 
@@ -1553,6 +1629,23 @@ Kelime — the day's ten common words — after that, once a unit is finished.
 Before any unit has been opened, the last step is **Giriş**, the next of
 the lessons before unit one (see Başlarken below); it is still the only
 step on day one.
+
+**New items come in at a daily rate.** `NEW_DAY` caps how many
+never-practised items each review queue lets in per day — Tekrar 10,
+Dilbilgisi 3, Dinle 8, Söyle 12, prefabs and passage lines counted
+separately — while reviews of what has been practised come due without
+limit, the way Anki's new-cards-per-day works. `dueItems()` in
+`app.core.js` is the one place it happens, and `repDue`, `gramDue`,
+`dinleDue`, `prodDue` all go through it, so the runner, the hub, the
+end-of-sitting count and the plan read the same number.
+
+It exists because a learner reported it: after passing the A1 test,
+every A1 unit counted as met, a hundred words were "due" in Tekrar, and
+the plan — which puts reviews before new material — asked for ten after
+ten and never reached A2. Nothing was wrong with any one sitting; the
+backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
+test, run one sitting, and the Tekrar step must tick and the plan must
+lead on to a2u1.
 
 **The list folds; the instruction does not.** The card opens collapsed to
 one line — `5 adım · steps left · ~24 dk` — with the start button still

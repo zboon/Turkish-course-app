@@ -77,7 +77,7 @@ try {
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK,BASLA:BASLA," +
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
-    "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward," +
+    "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
@@ -316,6 +316,43 @@ let diagChecked = 0;
   UNITS.forEach(u => u.read.lines.forEach(l => l[0].split(/\s+/).forEach(w => {
     diagChecked++;
     if (w && D(w, w)) err("teşhis", u.id + ": " + JSON.stringify(w) + " is diagnosed against itself");
+  })));
+}
+
+/* ---------- sen / siz ---------- */
+/* Nasılsınız for Nasılsın where nothing decides which you. Held both
+   ways: the forms it must take, and the ones it must leave alone — above
+   all the third-person command, Kolay gelsin, which ends the same way. */
+let sizChecked = 0;
+{
+  const T = (t, a, c, e) => M.sizToward(t, a, c || "", e || "");
+  [["nasılsınız", "Nasılsın?", "— Memnun oldum. ___?", "Pleased to meet you. How are you?"],
+   ["Nasılsın", "Nasılsınız?"], ["iyisiniz", "iyisin"], ["geliyor musunuz", "geliyor musun"],
+   ["Ne yapıyorsunuz?", "Ne yapıyorsun?"], ["Türkçe konuşuyor musun?", "Türkçe konuşuyor musunuz?"],
+   ["gideceksiniz", "gideceksin"], ["gitmelisiniz", "gitmelisin"], ["yorulmuşsunuz", "yorulmuşsun"],
+   ["Kimsin?", "Kimsiniz?"], ["Hazır mısınız?", "Hazır mısın?"]
+  ].forEach(([t, a, c, e]) => {
+    sizChecked++;
+    const r = T(t, a, c, e);
+    if (r.text !== M.fold(a) || !r.used.length) err("sen/siz", JSON.stringify(t) + " should be accepted for " + JSON.stringify(a) + ", got " + JSON.stringify(r));
+  });
+  [["Kolay gelsiniz", "Kolay gelsin"], ["Geçmiş olsunuz", "Geçmiş olsun"], ["yapsınız", "yapsın"],
+   ["otursunuz", "otursun"], ["çeksiniz", "çeksin"],
+   ["nasılsınız", "Sen nasılsın?"], ["nasılsın", "Siz nasılsınız?"],
+   ["nasılsınız", "Nasılsın?", "— İyiyim. Sen ___?"],
+   ["nasılsınız", "nasılsın?", "", "how are you? (informal)"],
+   ["geliyorsunuz", "geliyorum"], ["geliyoruz", "geliyorsun"], ["nasıl", "nasılsın"]
+  ].forEach(([t, a, c, e]) => {
+    sizChecked++;
+    const r = T(t, a, c, e);
+    if (r.text === M.fold(a) && r.used.length) err("sen/siz", JSON.stringify(t) + " was accepted for " + JSON.stringify(a) + " — it is not the other you here");
+  });
+  /* Every -sIn/-sInIz word the course itself writes, swapped, must land on
+     a -sIn/-sInIz word again: the rule is its own inverse. */
+  const seen = new Set();
+  UNITS.forEach(u => u.read.lines.concat(u.gram.eg).forEach(l => M.fold(l[0]).split(" ").forEach(w => {
+    const x = M.sizSwap(w); if (!x || seen.has(w)) return; seen.add(w); sizChecked++;
+    if (M.sizSwap(x) !== w) err("sen/siz", w + " → " + x + " does not swap back");
   })));
 }
 
@@ -1450,6 +1487,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

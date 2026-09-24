@@ -118,7 +118,8 @@ function renderAraclar(){
 
   h+='<h2 class="sec">Dinleme · listening</h2>'+
    navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0)+
-   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true);
+   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true)+
+   navRow("Uyumadan önce","Today's words and sentences, said quietly, then it stops — 5 or 10 minutes","go('uyku')",uyBank().items.length>0);
 
   h+='<h2 class="sec">Tekrar · bringing it back</h2>'+
    navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')",repBank().length>0)+
@@ -235,7 +236,8 @@ function renderLevel(){
 /* ===================== unit ===================== */
 const SECS=[["v","Kelimeler","words"],["g","Dilbilgisi","grammar"],["r","Okuma","reading"],["d","Alıştırma","practice"]];
 function secName(k){const s=SECS.find(x=>x[0]===k);return s?s[1]+" · "+s[2]:"";}
-function markSeen(uid,sec){ if(!S.seen[uid])S.seen[uid]={}; S.seen[uid][sec]=1; S.place={u:uid,s:sec}; touchDay(); save(); }
+/* at is when the unit was last opened, for Uyumadan önce's "today". */
+function markSeen(uid,sec){ if(!S.seen[uid])S.seen[uid]={}; S.seen[uid][sec]=1; S.seen[uid].at=Date.now(); S.place={u:uid,s:sec}; touchDay(); save(); }
 function renderUnit(){
   const u=unit(V.u), sec=V.sec||"v";
   if(!unitOpen(u.id)){
@@ -447,7 +449,8 @@ function renderQuiz(){
   if(Q.sel!==null){
     const ok=Q.res[Q.i];
     h+='<div class="fb '+(ok?"ok":"no")+'"><b>'+(ok?"Doğru":"Yanlış")+'</b>'+
-      (ok?'':(it.t==="mc"?esc(it.a[it.c]):esc(it.c))+(it.why?' — ':''))+esc(it.why||"")+'</div>';
+      (ok?'':(it.t==="mc"?esc(it.a[it.c]):esc(it.c))+(it.why?' — ':''))+esc(it.why||"")+'</div>'+
+      (ok&&it.t==="fill"&&Q.siz?sizBox(Q.siz,it.c):'');
     h+='<button class="btn" onclick="nextQ()">'+(Q.i+1>=Q.items.length?"Sonuç":"Devam")+'</button>';
   }
   h+='</div>';
@@ -464,6 +467,12 @@ function answerFill(){
   const v=fin.value; Q.typed=v; Q.sel=0;
   const it=Q.items[Q.i];
   Q.res[Q.i]=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,"");
+  /* The other you, where the sentence does not say which. */
+  Q.siz=null;
+  if(!Q.res[Q.i]){
+    const sz=sizToward(v,it.c,it.q,"");
+    if(sz.used.length&&sz.text===fold(it.c)){Q.res[Q.i]=true;Q.siz=sz.used;}
+  }
   if(!Q.res[Q.i])quizNote(it,v);
   render();
 }
@@ -475,7 +484,7 @@ function answerOrder(){
   if(!Q.res[Q.i])quizNote(it,Q.built.join(" "));
   render();
 }
-function nextQ(){Q.i++;Q.sel=null;Q.built=[];Q.bidx=[];Q.pool=null;Q.used=[];Q.typed="";window.scrollTo(0,0);render();}
+function nextQ(){Q.i++;Q.sel=null;Q.siz=null;Q.built=[];Q.bidx=[];Q.pool=null;Q.used=[];Q.typed="";window.scrollTo(0,0);render();}
 function renderScore(){
   const n=Q.res.filter(Boolean).length, of=Q.items.length;
   touchDay();

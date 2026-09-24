@@ -178,12 +178,12 @@ function repShort(){                 /* still under the target */
   return repBank().filter(function(e){return repTotal(e)<REP_TARGET;});
 }
 function repDue(){
-  return repShort().filter(function(e){return isDue(S.rep,e.k);});
+  return dueItems(S.rep,repShort(),NEW_DAY.rep);
 }
 /* Reviews first, oldest due first, then the worst-served words never
    drilled — the same shape as Üretim and Dinleme, over a different bank. */
 function repQueue(){
-  return dueQueue(S.rep,repShort(),REP_SESSION);
+  return repDue().slice(0,REP_SESSION);
 }
 function repGrade(k,good){
   if(!S.rep)S.rep={};
@@ -312,6 +312,16 @@ function tkCheck(){
     });
     good=!!TK.spoken;
   }
+  /* Nasılsınız for Nasılsın, where the sentence does not say which you. */
+  TK.siz=null;
+  if(!good){
+    (it.alts||[fold(it.c)]).some(function(a){
+      const sz=sizToward(TK.typed,a,it.kind==="cloze"?it.q:"",it.kind==="cloze"?it.hint:it.en);
+      if(sz.used.length&&(sz.text===a||sz.text.replace(/ /g,"")===a.replace(/ /g,""))){TK.siz=sz.used;return true;}
+      return false;
+    });
+    good=!!TK.siz;
+  }
   TK.res=good;
   /* Name the rule when one rule explains the miss; otherwise say nothing. */
   TK.diag=good?null:diagAny(TK.typed,it.c);
@@ -350,7 +360,7 @@ function renderTekrar(){
 
   h+='<h2 class="sec">Çalış</h2><div class="card">'+
    '<p class="lead">'+now+' kelime · bu oturum</p>'+
-   '<p class="tiny" style="margin:.1rem 0 .4rem">'+short+' of '+total+' are still short of '+REP_TARGET+' encounters. This works through them '+REP_SESSION+' at a time; it is a floor being raised, not a backlog to clear in one go.</p>'+
+   '<p class="tiny" style="margin:.1rem 0 .4rem">'+short+' of '+total+' are still short of '+REP_TARGET+' encounters. This works through them '+REP_SESSION+' at a time, and brings in at most '+NEW_DAY.rep+' words it has not asked before each day, so a level test does not arrive as a hundred at once. It is a floor being raised, not a backlog to clear in one go.</p>'+
    '<p class="sub">Where the word appears in a passage, the line comes back with it blanked, and the answer is the form the sentence uses. Where it appears nowhere, the English comes first and you type the Turkish. Up to '+REP_SESSION+' in a sitting.</p>'+
    (due?'<button class="btn" onclick="startTekrar()">Başla</button>'
        :'<p class="tiny">Nothing due. The queue refills as boxes come round.</p>')+'</div>';
@@ -412,7 +422,7 @@ function renderTekrarRun(){
     h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?"Doğru":"Yanlış")+'</b>'+
      (TK.res?"It comes back later and later from here."
             :"Wrong answers come back today. Being asked still counts as an encounter.")+
-     (TK.res?spokenBox(TK.spoken,it.c):diagBox(TK.diag?[TK.diag]:[]))+altBox(tkAlts(it))+'</div>';
+     (TK.res?spokenBox(TK.spoken,it.c)+sizBox(TK.siz,it.c):diagBox(TK.diag?[TK.diag]:[]))+altBox(tkAlts(it))+'</div>';
     h+='<button class="btn" onclick="tkNext()">'+(TK.i+1>=TK.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';
@@ -450,7 +460,7 @@ function gramBank(){
     .map(function(u){return {k:"y:"+u.id,u:u};});
 }
 function gramDue(){
-  return gramBank().filter(function(it){return isDue(S.gram,it.k);});
+  return dueItems(S.gram,gramBank(),NEW_DAY.gram);
 }
 function gramGrade(k,good){
   if(!S.gram)S.gram={};
@@ -506,7 +516,7 @@ function gramWeak(){
 let GR=null;
 function startGram(){
   stopPlay();
-  const q=dueQueue(S.gram,gramBank(),GRAM_SESSION).map(gramItem);
+  const q=gramDue().slice(0,GRAM_SESSION).map(gramItem);
   if(!q.length){V={view:"gram"};render();return;}
   GR={q:q,i:0,phase:"ask",typed:"",res:null,right:0,hint:false,pre:-1,over:false};
   V={view:"gramrun"};window.scrollTo(0,0);
@@ -529,12 +539,20 @@ function grCheck(){
   GR.pre=gramBox(it.k);
   GR.over=false;
   GR.res=gramJudge(it.c,GR.typed);
-  GR.spoken=null;GR.pron=null;
+  GR.spoken=null;GR.pron=null;GR.siz=null;
   if(!GR.res.same){
     const sp=spokenToward(GR.typed,it.c);
     if(sp.used.length){
       const r2=gramJudge(it.c,sp.text);
       if(r2.same){GR.res=r2;GR.spoken=sp.used;}
+    }
+    /* The other you, where the sentence does not say which. */
+    if(!GR.res.same){
+      const sz=sizToward(GR.typed,it.c,"",it.en);
+      if(sz.used.length){
+        const r4=gramJudge(it.c,sz.text);
+        if(r4.same){GR.res=r4;GR.siz=sz.used;}
+      }
     }
     /* One subject pronoun more or fewer is still the sentence: the ending
        already says who. Marked on the line as optional, not as missing. */
@@ -673,7 +691,7 @@ function renderGramRun(){
                       :"It comes back later and later from here.")
              :(r.extra?"Struck-through words are not in the sentence. ":"")+
               "Red is what the model has and you did not. This point comes back today.")+
-     (won?(r.same?spokenBox(GR.spoken,it.c):""):diagBox(GR.diag))+altBox(grAlts(it),GR.pron&&r.same?PRON_NOTE:"")+'</div>';
+     (won?(r.same?spokenBox(GR.spoken,it.c)+sizBox(GR.siz,it.c):""):diagBox(GR.diag))+altBox(grAlts(it),GR.pron&&r.same?PRON_NOTE:"")+'</div>';
     if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
     h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
     h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
@@ -735,6 +753,13 @@ function spokenBox(used,written){
     used.map(function(w){return '“'+esc(w)+'”';}).join(", ")+
     (used.length===1?' is':' are')+' how it is said, so it counts. Written Turkish spells it “'+
     esc(String(written).replace(/[.!?]+$/,""))+'”, and that is the form you will read.</p></div>';
+}
+function sizBox(used,written){
+  if(!used||!used.length)return "";
+  return '<div class="diag"><b>Sen · siz</b><p>'+
+    used.map(function(w){return '“'+esc(w)+'”';}).join(", ")+
+    ' is the other “you”: siz is polite, or more than one person, and sen is one person you know well. Nothing here says which is meant, so it counts. The answer written here was “'+
+    esc(String(written).replace(/[.!?]+$/,""))+'”.</p></div>';
 }
 function diagBox(ds){
   if(!ds||!ds.length)return "";

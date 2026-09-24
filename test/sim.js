@@ -449,10 +449,11 @@ step("üretim · sentences", () => {
   ok(/kendi değerlendirmen/.test(lastPaint), "no score screen after üretim");
   ok(ev("Object.keys(S.prod).length") === n, "graded " + n + " but stored " + ev("Object.keys(S.prod).length"));
 
-  /* Due today should now be the missed ones, not the whole bank. */
-  const due = ev("prodDue(sentenceBank()).length"), all = ev("sentenceBank().length");
-  ok(due === all - ev("Object.keys(S.prod).filter(function(k){return S.prod[k].b>0}).length"),
-    "the sentences answered right are still due today");
+  /* Due today should now be the missed ones: a sitting of SESSION new
+     sentences has spent the day's allowance of new ones. */
+  const due = ev("prodDue(sentenceBank()).length");
+  ok(n === ev("NEW_DAY.prod") && due === ev("Object.keys(S.prod).filter(function(k){return S.prod[k].b===0}).length"),
+    "the sentences answered right are still due today, or new ones came past the day's allowance");
 });
 
 step("üretim · the English prompt", () => {
@@ -513,7 +514,7 @@ step("üretim · chunks", () => {
   ok(ev("PR.q[0].k").indexOf("k:") === 0, "chunk keys are not namespaced: " + ev("PR.q[0].k"));
   for (let i = 0; i < n; i++) produce(true);
   ok(phase() === "end", "chunk session did not finish");
-  ok(ev("prodDue(chunkBank()).length") === ev("CHUNKS.length") - n, "graded chunks are still due today");
+  ok(ev("prodDue(chunkBank()).length") === 0, "graded chunks are still due today, or new ones came past the day's allowance");
 
   /* The bank is the roadmap's first item, grown from 50 to 300+. Two
      things had to survive that: the sitting stays a sitting, and the hub
@@ -874,7 +875,7 @@ step("audio first reveals only after the decision", () => {
   const line = ev("DK.q[0].k").slice(2);
   ev("wipe()"); ev("S.pscope='all'");
   ev("S.dinle={'d:" + line + "':{b:4,d:0}}"); ev("save()");
-  ok(ev("dinleDue('a:')") === ev("listenBank('a:').length"),
+  ok(ev("dinleDue('a:')") === Math.min(ev("listenBank('a:').length"), ev("NEW_DAY.dinle")),
      "a dictation box changed what audio-first thinks is due");
   ev("setDrate(1)");
 });
@@ -1173,6 +1174,10 @@ step("grammar comes back, and is produced rather than recognised", () => {
   /* A sitting over the whole course. */
   ev("wipe()"); ev("UNITS.forEach(function(u){S.seen[u.id]={g:1}}); save()");
   ok(ev("gramBank().length") === UNITS.length, "not every point is in the bank once all are read");
+  ok(ev("gramDue().length") === ev("NEW_DAY.gram"), "sixty points never practised all came due at once");
+  /* The rest of this walks a full sitting, so the points are made due
+     reviews rather than new ones, which the daily allowance would cap. */
+  ev("UNITS.forEach(function(u){S.gram['y:'+u.id]={b:0,d:0}}); save()");
   ev("startGram()");
   ok(ev("GR.q.length") === ev("GRAM_SESSION"), "a sitting is " + ev("GR.q.length") +
      " points, expected " + ev("GRAM_SESSION"));
@@ -3122,6 +3127,147 @@ step("başlarken · the lessons before unit one", () => {
   ev("startBasla('alfabe')");
   ok(ev("Q.items.every(function(it){return !it.say})") && ev("Q.items.length") === BASLA[0].check.filter(i => !i.say).length,
      "with no speech a heard question was still asked");
+  ev("window.speechSynthesis=__ss; wipe(); home()");
+});
+
+/* Two things a learner reported, pinned as they were reported.
+   1. Testing out of A1 put a hundred words "due" at once, and the plan,
+      which puts reviews before new material, asked for ten after ten and
+      never reached A2. New items now come in at NEW_DAY a day per queue.
+   2. "Pleased to meet you. How are you?" refused Nasılsınız. Where the
+      sentence does not say which you, the other one counts. */
+step("reported · a level test does not bury the plan in reviews", () => {
+  ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen");
+  drain(60000); ev("stopPlay()");
+  ev("confirm=function(){return true}; wipe(); S.pscope='done'; save(); home()");
+  ev("startLevelExam('A1')"); for (let i = 0; i < 10; i++) answer(true);
+  ok(ev("lvPct('A1')") === 100, "the A1 test did not pass A1");
+  const step = k => ev("planToday()").steps.find(s => s.k === k);
+  ok(ev("repShort().length") > 50, "the scenario needs a large backlog to mean anything: " + ev("repShort().length"));
+  ok(step("rep").n === ev("NEW_DAY.rep"), "Tekrar asks for " + step("rep").n + " after a level test, not a day's worth");
+  ok(step("gram").n <= ev("NEW_DAY.gram") && step("dinle").n <= ev("NEW_DAY.dinle") && step("prod").n <= ev("NEW_DAY.prod"),
+     "a review step asks for more new items than a day's allowance");
+  /* One sitting of Tekrar, all right: the step ticks, and does not refill. */
+  ev("startTekrar()");
+  const n = ev("TK.q.length");
+  for (let i = 0; i < n; i++) { doc.getElementById("tbox").value = ev("TK.q[TK.i].c"); ev("tkCheck()"); ev("tkNext()"); }
+  ok(step("rep").n === 0, "after a full sitting Tekrar still asks for " + step("rep").n + " — the loop that was reported");
+  ok(ev("planToday()").left.every(s => s.k !== "rep"), "the plan's next step is still Tekrar");
+  ok(step("new") && step("new").go === "go('unit','a2u1','v')" && ev("unitOpen('a2u1')"), "the plan does not lead on to A2");
+  ok(ev("Object.keys(S.rep).every(function(k){return S.rep[k].f===dayNum()})"), "a first practice is not stamped with its day");
+  /* Tomorrow, the next ten — and the reviews of today's come due as they fall. */
+  ev("Object.keys(S.rep).forEach(function(k){S.rep[k].f--;S.rep[k].d--}); save()");
+  ok(step("rep").n === ev("REP_SESSION"), "the next day does not bring the next words");
+  ev("S.pscope=undefined; unitOpen=function(){return true}; baslaOpen=function(){return true}; wipe(); home()");
+});
+
+step("reported · the other you counts where the sentence does not say which", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  const cloze = (qtext, typed) => {
+    ev("TK={q:[{k:'nasilsin',u:'a1u1',tr:'nasılsın?',en:'how are you? (informal)',kind:'cloze',q:" + q(qtext) +
+       ",c:'Nasılsın',alts:['nasilsin'],hint:'Pleased to meet you. How are you?',from:'A1'}],i:0,phase:'ask',typed:'',res:null,right:0}; V={view:'tekrarrun'}; render()");
+    doc.getElementById("tbox").value = typed; ev("tkCheck()");
+    return ev("TK.res");
+  };
+  ok(cloze("— Memnun oldum. ___?", "nasılsınız") === true, "Nasılsınız was refused for “Pleased to meet you. How are you?” — the reported case");
+  ok(/Sen · siz/.test(lastPaint), "accepting the other you does not say why it counts");
+  ok(cloze("— Memnun oldum. ___?", "nasılsın") === true && !/Sen · siz/.test(lastPaint), "the answer itself was explained as the other you");
+  ok(cloze("— İyiyim, teşekkür ederim. Sen ___?", "nasılsınız") === false, "Nasılsınız was accepted after Sen, which decides it");
+  ok(cloze("— Memnun oldum. ___?", "nasıl") === false, "a word that is not the other you was accepted");
+  ev("TK=null");
+
+  /* Dilbilgisi: a real example, reached through its own rotation. */
+  ev("wipe(); S.seen.a1u5={g:1}; S.gram['y:a1u5']={b:0,d:0,n:2}; save(); startGram()");
+  ok(ev("GR.q[0].c") === "Ne yapıyorsun?", "the rotation did not reach the example under test: " + ev("GR.q[0].c"));
+  doc.getElementById("gbox").value = "Ne yapıyorsunuz"; ev("grCheck()");
+  ok(ev("GR.res.same") === true && /Sen · siz/.test(lastPaint), "Dilbilgisi refused Ne yapıyorsunuz for “What are you doing?”");
+  ev("GR=null");
+
+  /* A unit's own gap-fill, and the command that only looks alike. */
+  ev("startUnitQuiz('b2u2')");
+  const at = ev("unit('b2u2').drill.findIndex(function(d){return d.t==='fill'})");
+  for (let i = 0; i < at; i++) ev("nextQ()");
+  doc.getElementById("fin").value = "malısınız"; ev("answerFill()");
+  ok(ev("Q.res[Q.i]") === true && /Sen · siz/.test(lastPaint), "the gap-fill refused malısınız for “you ought to work”");
+  ok(ev("sizToward('Kolay gelsiniz','Kolay gelsin','','').used.length") === 0, "gelsiniz was taken for Kolay gelsin");
+  ev("wipe(); home()");
+});
+
+/* Uyumadan önce: only what was studied today, Turkish only, each said
+   twice, quieter as it goes, and it stops by itself, in silence. */
+step("uyumadan önce · today, once more, then quiet", () => {
+  const bank = () => ev("uyBank()");
+  const has = (b, tr) => b.items.some(it => it.tr === tr);
+  const u = UNITS[0], prim = w => ev("vocabPrimary(" + q(w) + ")");
+  drain(60000); ev("stopPlay()");
+  ev("confirm=function(){return true}; wipe(); home()");
+  ok(bank().items.length === 0, "a fresh install has something to play before sleep");
+  ev("go('uyku')");
+  ok(/Henüz bir şey yok/.test(lastPaint) && !lastPaint.includes("startUyku("), "an empty bank still offers a sitting");
+  ev("go('araclar')");
+  const row = () => { const i = lastPaint.indexOf('onclick="go(\'uyku\')"'); return i > -1 ? lastPaint.slice(i, lastPaint.indexOf("</button>", i)) : ""; };
+  ok(row() && !/hazır/.test(row()), "Araçlar has no row for it, or tags it ready with nothing to play");
+
+  /* The grain of met: words once the list is open, lines once read. */
+  ev("go('unit','a1u1','v')");
+  let b = bank();
+  ok(b.today && u.vocab.every(w => has(b, prim(w[0]))), "today's words are not all in the bank");
+  ok(!u.read.lines.some(l => has(b, l[0])), "an unread passage's lines are in the bank");
+  ev("go('unit','a1u1','r')");
+  b = bank();
+  ok(u.read.lines.every(l => has(b, l[0])), "a passage read today is not in the bank");
+  ok(!UNITS[1].vocab.some(w => has(b, prim(w[0]))), "a unit not studied today is in the bank");
+  ev("S.sik[SIK[0][0]]={d:dayNum()}; S.sik[SIK[1][0]]={d:dayNum(),k:1}; S.basla.alfabe={at:Date.now()}; S.basla.yazim={at:Date.now(),byTest:true}; S.basla.nezaket={at:Date.now()}");
+  b = bank();
+  ok(has(b, ev("SIK[0][0]")) && !has(b, ev("SIK[1][0]")), "a common word added today is missing, or one marked known is in");
+  ok(has(b, "araba") && !has(b, "otobüs"), "an intro lesson passed today is missing, or one only tested out of is in");
+  /* nezaket's "Merhaba." and a1u1's "merhaba" are one thing to hear. */
+  ok(b.items.filter(it => ev("fold(" + q(it.tr) + ")") === "merhaba").length === 1 &&
+     new Set(b.items.map(it => ev("fold(" + q(it.tr) + ")"))).size === b.items.length, "the bank says something twice");
+
+  /* Nothing today: the last lesson, and it says so. */
+  ev("S.seen.a1u1.at=Date.now()-17*3600000; S.sik={}; S.basla={}");
+  b = bank();
+  ok(!b.today && b.items.length > 0 && b.from[0].indexOf(u.tr) > -1, "with nothing today it does not fall back to the last lesson");
+  ev("go('uyku')");
+  ok(/last lesson/.test(lastPaint), "the fallback does not say it is the last lesson rather than today's");
+
+  /* The sitting, on the fake clock, untouched. */
+  ev("go('unit','a1u1','v')");
+  const before = ev("JSON.stringify(S)");
+  drain(60000); ev("stopPlay()");
+  voice.spoken = []; voice.langs = []; voice.rates = []; voice.vols = [];
+  ev("startUyku(5)");
+  const items = ev("UY.items.map(function(it){return it.tr})");
+  drain(60000);
+  ok(ev("UY.done") === true, "the sitting did not end by itself");
+  const log = voice.spoken.map((t, i) => [t, voice.langs[i], voice.rates[i], voice.vols[i]]).filter(p => items.includes(p[0]));
+  ok(log.length >= 2 && log.length % 2 === 0 && log.every((p, i) => i % 2 === 0 || p[0] === log[i - 1][0]), "an item was not said exactly twice");
+  ok(log.filter((_, i) => i % 2 === 0).every((p, k) => p[0] === items[k % items.length]), "the items were said out of order");
+  ok(log.length / 2 > items.length, "five minutes did not cycle round a ten-word bank");
+  ok(log.every(p => /^tr/.test(p[1]) && p[2] === ev("UY_RATE")), "something was said in another voice or at another speed");
+  ok(Math.abs(log[0][3] - ev("UY_VOL[0]")) < 0.02, "the sitting did not start at its own volume");
+  ok(items.includes(voice.spoken[voice.spoken.length - 1]), "the sitting ended by saying something that is not the material");
+  ok(ev("JSON.stringify(S)") === before, "a before-sleep sitting wrote to progress");
+  ok(/İyi geceler/.test(lastPaint), "the end screen does not say good night");
+
+  /* Quieter as it goes. */
+  ev("startUyku(5)"); ev("UY.t0-=5*60000");
+  ok(Math.abs(ev("uyVol()") - ev("UY_VOL[1]")) < 0.02 && ev("UY_VOL[1]") < ev("UY_VOL[0]"), "the volume does not fall to its floor by the end");
+
+  /* Leaving silences it, and back() leaves. */
+  const s1 = voice.said;
+  ev("home()"); drain(60000);
+  ok(voice.said === s1, "a before-sleep sitting kept talking over the next screen");
+  ok(!ev("!!(UY&&(UY.tid||UY.cid))"), "a timer was left armed after leaving");
+  ev("go('unit','a1u1','v'); startUyku(10)"); drain(5);
+  ev("back()");
+  const s2 = voice.said; drain(60000);
+  ok(ev("V.view") === "uyku" && ev("UY") === null && voice.said === s2, "back() did not end the sitting");
+
+  /* No speech at all: said, not attempted. */
+  ev("__ss=window.speechSynthesis; delete window.speechSynthesis; go('uyku')");
+  ok(/Ses yok/.test(lastPaint) && !lastPaint.includes("startUyku("), "with no speech it still offers a sitting");
   ev("window.speechSynthesis=__ss; wipe(); home()");
 });
 

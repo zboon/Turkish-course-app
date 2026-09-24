@@ -43,7 +43,7 @@ function listenBank(pfx){
   });
 }
 function dinleDue(pfx){
-  return listenBank(pfx).filter(function(it){return isDue(S.dinle,it.k);}).length;
+  return dueItems(S.dinle,listenBank(pfx),NEW_DAY.dinle,pfx).length;
 }
 function dinleGrade(k,good){
   if(!S.dinle)S.dinle={};
@@ -56,7 +56,7 @@ function dinleStop(){if(DK&&DK.tid){clearTimeout(DK.tid);DK.tid=null;}}
 function startDinle(mode){
   stopPlay();
   if(!ttsOK()){V={view:"dinle"};render();return;}
-  const q=dueQueue(S.dinle,listenBank(mode+":"),DSESSION);
+  const q=dueQueue(S.dinle,listenBank(mode+":"),DSESSION,NEW_DAY.dinle,mode+":");
   if(!q.length){V={view:"dinle"};render();return;}
   DK={mode:mode,q:q,i:0,phase:"play",typed:"",plays:0,res:null,right:0,tid:null};
   V={view:"dinlerun"};window.scrollTo(0,0);

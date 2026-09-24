@@ -123,15 +123,15 @@ function drain(limit) {
   return n;
 }
 
-const voice = { spoken: [], langs: [], rates: [], said: 0, cancels: 0, pending: [] };
+const voice = { spoken: [], langs: [], rates: [], vols: [], said: 0, cancels: 0, pending: [] };
 class SpeechSynthesisUtteranceStub {
-  constructor(text) { this.text = text; this.lang = ""; this.rate = 1; this.voice = null; this.onend = null; }
+  constructor(text) { this.text = text; this.lang = ""; this.rate = 1; this.volume = 1; this.voice = null; this.onend = null; }
 }
 const speechSynthesisStub = {
   onvoiceschanged: null,
   getVoices() { return [{ lang: "en-GB", name: "Daniel" }, { lang: "tr-TR", name: "Yelda" }]; },
   speak(u) {
-    voice.spoken.push(u.text); voice.said++; voice.langs.push(u.lang); voice.rates.push(u.rate);
+    voice.spoken.push(u.text); voice.said++; voice.langs.push(u.lang); voice.rates.push(u.rate); voice.vols.push(u.volume);
     if (u.onend) { const t = setTimeoutStub(() => { voice.pending = voice.pending.filter(x => x !== t); u.onend(); }, 20); voice.pending.push(t); }
   },
   cancel() {

@@ -39,6 +39,7 @@ cat \
   src/app.atasozu.js \
   src/app.sik.js \
   src/app.baslarken.js \
+  src/app.uyku.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"
