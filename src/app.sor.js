@@ -124,15 +124,18 @@ const SOR_WORDS=[["ne","what","Ne okuyorsun?"],["kim","who","Kim geldi?"],
                  ["nerede","where","Nerede oturuyorsun?"],["nasıl","how, what … like","Şehir nasıl?"],
                  ["kimin","whose","Kimin arabası?"]];
 function renderSor(){
-  let h=bar("Sor","asking · the other half",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Everything else in this app answers. Sixty units of reading, 432 sentences to produce, '+CHUNKS.length+' prefabs — and almost none of it is a question. A learner who can only answer is one a conversation stops dead with, because the other person runs out of things to ask.</p>';
+  let h=bar("Sor","asking · the other half",true,"soru sormak")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('Everything else in this app answers. Sixty units of reading, 432 sentences to produce, '+CHUNKS.length+' prefabs — and almost none of it is a question. A learner who can only answer is one a conversation stops dead with, because the other person runs out of things to ask.',
+    'Uygulamanın geri kalanı hep cevap verir: altmış ünite, 432 cümle, '+CHUNKS.length+' kalıp, ve neredeyse hiçbiri soru değil. Yalnızca cevap verebilen biriyle konuşma bir yerde durur, çünkü karşıdakinin soracak şeyi biter.')+'</p>';
 
   h+='<h2 class="sec">Çalış</h2>';
   h+='<div class="card"><p class="lead">Ne sordum · ask the question</p>'+
-   '<p class="sub">A statement arrives and you produce the question that would have drawn it out. <i>Okula gidiyorum</i> answers <i>Nereye gidiyorsun?</i> — and note the person moves: nobody asks <i>Nereye gidiyorum?</i> to get that answer.</p>'+
+   '<p class="sub">'+tx('A statement arrives and you produce the question that would have drawn it out. <i>Okula gidiyorum</i> answers <i>Nereye gidiyorsun?</i> — and note the person moves: nobody asks <i>Nereye gidiyorum?</i> to get that answer.',
+     'Bir cümle gelir, sen o cevabı doğuracak soruyu kurarsın. <i>Okula gidiyorum</i>, <i>Nereye gidiyorsun?</i> sorusunun cevabıdır. Kişinin değiştiğine dikkat et: bu cevabı almak için kimse <i>Nereye gidiyorum?</i> diye sormaz.')+'</p>'+
    '<button class="btn" onclick="startProd(\'q\')">Başla</button></div>';
   h+='<div class="card"><p class="lead">Evet / hayır</p>'+
-   '<p class="sub">The same statement as a yes-no question. The particle is the whole difficulty: a separate word that takes the person onto itself — <i>geliyor musun</i> — except in the past, where the verb keeps it: <i>geldin mi</i>.</p>'+
+   '<p class="sub">'+tx('The same statement as a yes-no question. The particle is the whole difficulty: a separate word that takes the person onto itself — <i>geliyor musun</i> — except in the past, where the verb keeps it: <i>geldin mi</i>.',
+     'Aynı cümle, evet/hayır sorusu olarak. Bütün zorluk soru ekinde: ayrı yazılır ve kişi ekini kendisi alır, <i>geliyor musun</i>; ama geçmiş zamanda kişi eki fiilde kalır, <i>geldin mi</i>.')+'</p>'+
    '<button class="btn" onclick="startProd(\'e\')">Başla</button></div>';
 
   h+='<h2 class="sec">Soru kelimeleri</h2><div class="card" style="padding:.3rem 1rem">';
@@ -142,6 +145,7 @@ function renderSor(){
       '<div class="ven" style="font-family:\'Crimson Pro\',serif;font-size:1rem">'+esc(w[2])+'</div></div></div>';
   });
   h+='</div>';
-  h+='<p class="foot">Questions are built fresh every time, so they cannot be recalled — only formed.<br>What comes back is the question word you were weak at, not a sentence you happened to miss.</p></div>';
+  h+='<p class="foot">'+tx('Questions are built fresh every time, so they cannot be recalled — only formed.<br>What comes back is the question word you were weak at, not a sentence you happened to miss.',
+    'Sorular her seferinde yeniden kurulur; ezberden gelmez, kurulur.<br>Geri gelen, zayıf olduğun soru kelimesidir, kaçırdığın bir cümle değil.')+'</p></div>';
   paint(h);
 }

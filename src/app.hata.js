@@ -36,13 +36,16 @@ const ERR_MODES=[["q","Alıştırma","unit drills"],["s","Üretim","producing"],
    button that drills exactly those. Split because the three are different
    work — mode, title, blurb, button label. */
 const PAT_CARDS=[["t","Kurma ve Dönüştürme",
-  "The generated drills are scheduled by pattern rather than by sentence, so these are patterns you are currently getting wrong — not sentences you happened to miss.",
+  ["The generated drills are scheduled by pattern rather than by sentence, so these are patterns you are currently getting wrong — not sentences you happened to miss.",
+   "Üretilen alıştırmalar cümleye göre değil kalıba göre sıralanır; bunlar şu an yanlış yaptığın kalıplar, rastgele kaçırdığın cümleler değil."],
   "Dönüştürme · drill these"],
  ["q","Sor · soru sözcükleri",
-  "Questions are generated the same way, and keyed by which question word the answer calls for.",
+  ["Questions are generated the same way, and keyed by which question word the answer calls for.",
+   "Sorular da aynı şekilde üretilir ve cevabın gerektirdiği soru kelimesine göre sıralanır."],
   "Sor · drill these"],
  ["e","Sor · evet/hayır",
-  "Keyed by tense, because where <i>mi</i> lands and what it carries is what changes with it.",
+  ["Keyed by tense, because where <i>mi</i> lands and what it carries is what changes with it.",
+   "Zamana göre sıralanır, çünkü <i>mi</i>’nin nereye geldiği ve ne taşıdığı zamanla değişir."],
   "Evet/hayır · drill these"]];
 
 function errNote(k,o){
@@ -149,7 +152,7 @@ function errForget(k){
   save();render();
 }
 function errWipe(){
-  if(typeof confirm==="function"&&!confirm("Clear the whole mistake book? The drills themselves are not affected."))return;
+  if(typeof confirm==="function"&&!confirm(txt("Clear the whole mistake book? The drills themselves are not affected.","Bütün hata defteri silinsin mi? Alıştırmaların kendisi etkilenmez.")))return;
   S.err={};save();render();
 }
 function errSay(t){if(t)say(t);}
@@ -178,23 +181,25 @@ function errRow(e){
 }
 function renderHata(){
   const all=errList(), rep=errRepeat(), today=all.filter(function(e){return e.at>=dayNum();});
-  let h=bar("Hata defteri","what went wrong, and why",true)+'<div class="wrap">';
+  let h=bar("Hata defteri","what went wrong, and why",true,"ne yanlış gitti, neden")+'<div class="wrap">';
   if(!all.length){
     h+='<div class="card"><p class="lead">Defter boş</p>'+
-     '<p class="sub">Nothing has gone wrong yet — or nothing has been attempted. Every wrong answer in a quiz, in Üretim, Dinleme, Tekrar, Dilbilgisi or Yolda lands here with its explanation, and anything that catches you out twice moves to the top.</p>'+
+     '<p class="sub">'+tx('Nothing has gone wrong yet — or nothing has been attempted. Every wrong answer in a quiz, in Üretim, Dinleme, Tekrar, Dilbilgisi or Yolda lands here with its explanation, and anything that catches you out twice moves to the top.',
+       'Henüz yanlış bir şey yok, ya da henüz bir şey denenmedi. Alıştırmada, Üretim’de, Dinleme’de, Tekrar’da, Dilbilgisi’nde ya da Yolda’da yaptığın her yanlış açıklamasıyla buraya gelir; iki kez takıldığın şey en üste çıkar.')+'</p>'+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
     paint(h);return;
   }
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Every mode already brings a wrong answer back today by itself, so this is not another queue — it is the record. What you said, what was right, why, and how often the same thing has caught you.</p>';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('Every mode already brings a wrong answer back today by itself, so this is not another queue — it is the record. What you said, what was right, why, and how often the same thing has caught you.',
+    'Her bölüm yanlış bir cevabı zaten bugün geri getirir; yani bu yeni bir sıra değil, bir kayıt. Ne dedin, doğrusu neydi, neden, ve aynı şeye kaç kez takıldın.')+'</p>';
   h+='<div class="stat"><div><b>'+rep.length+'</b><span>tekrarlayan</span></div>'+
      '<div><b>'+all.length+'</b><span>toplam</span></div>'+
      '<div><b>'+today.length+'</b><span>bugün</span></div></div>';
 
   if(rep.length){
     h+='<h2 class="sec">Tekrarlayanlar · caught you twice or more</h2>';
-    h+='<p class="tiny" style="margin:0 .2rem .4rem">This is the list the app could not show you before. A thing missed four times is not bad luck.</p>';
+    h+='<p class="tiny" style="margin:0 .2rem .4rem">'+tx('This is the list the app could not show you before. A thing missed four times is not bad luck.','Dört kez kaçırılan bir şey şanssızlık değildir.')+'</p>';
     rep.slice(0,12).forEach(function(e){h+=errRow(e);});
-    if(rep.length>12)h+='<p class="tiny" style="margin-top:.4rem">and '+(rep.length-12)+' more.</p>';
+    if(rep.length>12)h+='<p class="tiny" style="margin-top:.4rem">'+tx('and '+(rep.length-12)+' more.','ve '+(rep.length-12)+' tane daha.')+'</p>';
   }
 
   const by=errByMode(), pats=errPatterns();
@@ -208,13 +213,14 @@ function renderHata(){
       '<span style="display:block;height:100%;width:'+Math.round(100*n/max)+'%;border-radius:99px;background:var(--bole)"></span></span>'+
       '<span class="tiny" style="width:2.2rem;flex:0 0 auto">'+n+'</span></div>';
   });
-  h+='<p class="tiny" style="margin-top:.5rem">Distinct items missed, not attempts. A tall bar is a skill to work on rather than a word to relearn.</p></div>';
+  h+='<p class="tiny" style="margin-top:.5rem">'+tx('Distinct items missed, not attempts. A tall bar is a skill to work on rather than a word to relearn.',
+    'Deneme sayısı değil, kaçırılan farklı soru sayısı. Uzun bir çubuk, yeniden öğrenilecek bir kelime değil, üzerinde çalışılacak bir beceridir.')+'</p></div>';
 
   PAT_CARDS.forEach(function(c){
     const ps=pats.filter(function(p){return p.m===c[0];});
     if(!ps.length)return;
     h+='<div class="card"><p class="lead" style="font-size:.95rem">'+c[1]+'</p>'+
-     '<p class="sub" style="margin-bottom:.5rem">'+c[2]+'</p><div class="pillrow">';
+     '<p class="sub" style="margin-bottom:.5rem">'+tx(c[2][0],c[2][1])+'</p><div class="pillrow">';
     ps.slice(0,10).forEach(function(p){
       h+='<span class="pill bole">'+esc(p.tr)+'</span>';
     });
@@ -225,8 +231,10 @@ function renderHata(){
   errRecent().slice(0,15).forEach(function(e){h+=errRow(e);});
 
   h+='<div class="card"><p class="lead">Defteri temizle</p>'+
-   '<p class="sub">Clearing the book changes nothing about the drills — wrong answers still come back on their own schedule.</p>'+
+   '<p class="sub">'+tx('Clearing the book changes nothing about the drills — wrong answers still come back on their own schedule.',
+     'Defteri silmek alıştırmalarda hiçbir şeyi değiştirmez; yanlışlar yine kendi zamanında geri gelir.')+'</p>'+
    '<button class="btn ghost" onclick="errWipe()">Hepsini sil</button></div>';
-  h+='<p class="foot">Kept to the '+ERR_MAX+' most recent, and a thing missed often outlives a thing missed once.</p></div>';
+  h+='<p class="foot">'+tx('Kept to the '+ERR_MAX+' most recent, and a thing missed often outlives a thing missed once.',
+    'En fazla '+ERR_MAX+' kayıt tutulur; sık kaçırılan, bir kez kaçırılandan daha uzun kalır.')+'</p></div>';
   paint(h);
 }

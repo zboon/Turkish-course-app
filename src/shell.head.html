@@ -105,6 +105,11 @@ a{color:var(--cobalt)}
    fail contrast there: the label's own colour, a little quieter. */
 .btn .gl,.pill .gl,button.on .gl{color:inherit;opacity:.8}
 .noen .gl{display:none!important}
+/* instructions in both languages; the stage decides which shows */
+.ins-en .t-tr,.ins-tr .t-en{display:none}
+.ins-both .t-en{display:block;font-size:.86em;color:var(--ink2);margin-top:.15em}
+/* the bar has room for one line: English at stage 0, Turkish after */
+.ins-both .bar-title .t-en{display:none}
 .en-btn{font:700 .66rem/1 Karla,system-ui,sans-serif;letter-spacing:.04em}
 .en-btn[aria-pressed="false"]{color:var(--faint);text-decoration:line-through}
 .bar-title{flex:1;min-width:0;text-align:center;font-weight:600;font-size:.95rem;
@@ -307,7 +312,9 @@ h2.sec::after{
 .adopts .opt{text-align:center;margin:0}
 .adl .adtr{font:500 1.35rem/1.45 'Crimson Pro',serif;margin:.2rem 0 .6rem}
 .adl .aden{color:var(--ink2);margin:.6rem 0 0}
-.adim-go{border-color:var(--turk)}
+.adl .adhid{font-size:2rem;text-align:center;opacity:.7}
+.adim-go{margin:.2rem 0 .3rem}
+.adim-or{margin:.7rem .2rem .8rem}
 /* A locked unit or lesson: still tappable, to say what opens it. */
 .unit.locked .unit-t{color:var(--ink2)}
 .unit.locked .tick{color:var(--faint)}

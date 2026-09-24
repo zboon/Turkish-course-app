@@ -252,10 +252,11 @@ function diaQuit(){diaFinish(false);}
 
 /* --- screens ----------------------------------------------------------- */
 function diaHub(){
-  let h=bar("Diyalog","conversation · keep it alive",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">A short errand with someone who talks at normal speed and does not know you are learning. You hear them; you never read them. What ends a conversation is not the missing word — it is the pause after it, so the only thing marked here is whether you <b>finished</b>, and asking someone to repeat themselves costs you nothing at all.</p>';
+  let h=bar("Diyalog","conversation · keep it alive",true,"konuşmayı sürdür")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('A short errand with someone who talks at normal speed and does not know you are learning. You hear them; you never read them. What ends a conversation is not the missing word — it is the pause after it, so the only thing marked here is whether you <b>finished</b>, and asking someone to repeat themselves costs you nothing at all.',
+    'Normal hızda konuşan ve öğrendiğini bilmeyen biriyle kısa bir iş. Onu duyarsın, hiç okumazsın. Konuşmayı bitiren eksik kelime değil, ondan sonraki duraklamadır; bu yüzden burada yalnızca <b>bitirip bitirmediğine</b> bakılır ve birinden tekrar etmesini istemek sana hiçbir şey kaybettirmez.')+'</p>';
   if(!ttsOK()){
-    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, and this mode is nothing but listening.</p></div></div>';
+    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">'+tx('This browser has no speech synthesis, and this mode is nothing but listening.','Bu tarayıcıda konuşma sentezi yok, bu bölüm ise baştan sona dinlemekten ibaret.')+'</p></div></div>';
     paint(h);return;
   }
   h+=voiceNote();
@@ -277,16 +278,18 @@ function diaHub(){
   h+='</div>';
 
   h+='<h2 class="sec">Tamir çantası</h2><div class="card">'+
-   '<p class="sub" style="margin-bottom:.6rem">These three are always on screen, in every conversation, and each one does something different to the person you are talking to. They are not new material — you have been drilling them in Üretim as <i>kalıplar</i>. This is the first place they are the difference between finishing and walking out.</p>';
+   '<p class="sub" style="margin-bottom:.6rem">'+tx('These three are always on screen, in every conversation, and each one does something different to the person you are talking to. They are not new material — you have been drilling them in Üretim as <i>kalıplar</i>. This is the first place they are the difference between finishing and walking out.',
+     'Bu üçü her konuşmada ekrandadır ve her biri karşındakine başka bir şey yaptırır. Yeni değiller; Üretim’de <i>kalıp</i> olarak çalıştın. Burada bitirmekle yarıda bırakmak arasındaki farkı onlar belirler.')+'</p>';
   DIA_REPAIR.forEach(function(r){
     h+='<div class="vrow">'+spkBtn(r.tr,{aria:"Listen"})+
       '<div class="grow"><div class="vtr" style="font-size:.97rem">'+esc(r.tr)+'</div>'+
       '<div class="ven">'+esc(r.en)+' · '+
-      (r.lv>=2?"they rephrase it in plainer words":r.rate<0.75?"they say it again, much slower":"they say it again, slower")+'</div></div></div>';
+      (r.lv>=2?tx("they rephrase it in plainer words","daha basit kelimelerle yeniden söyler"):r.rate<0.75?tx("they say it again, much slower","çok daha yavaş yeniden söyler"):tx("they say it again, slower","daha yavaş yeniden söyler"))+'</div></div></div>';
   });
   h+='</div>';
 
-  h+='<p class="foot">Nothing you say is recorded and nothing but a number is marked.<br>The prices, times and places change every run, so the answer cannot be remembered — only heard.</p></div>';
+  h+='<p class="foot">'+tx('Nothing you say is recorded and nothing but a number is marked.<br>The prices, times and places change every run, so the answer cannot be remembered — only heard.',
+    'Söylediğin hiçbir şey kaydedilmez; yalnızca sayılar değerlendirilir.<br>Fiyatlar, saatler ve yerler her seferinde değişir; cevap ezberlenemez, ancak duyulur.')+'</p></div>';
   paint(h);
 }
 
@@ -302,7 +305,7 @@ function diaRun(){
   h+='<div class="card" style="text-align:center;padding:1.7rem 1rem">'+
    '<p style="font-size:2rem;margin:0;color:var(--turk)">'+IC.spk+'</p>'+
    '<p class="tiny" style="margin-top:.5rem">'+
-   (DG.lv>=2?"rephrased":DG.lv>=1?"said again, slower":"they are speaking · nothing is written down")+'</p></div>';
+   (DG.lv>=2?tx("rephrased","başka türlü söylendi"):DG.lv>=1?tx("said again, slower","daha yavaş tekrar edildi"):tx("they are speaking · nothing is written down","konuşuyor · hiçbir şey yazılmıyor"))+'</p></div>';
 
   if(DG.phase==="model"){
     const last=DG.log[DG.log.length-1];
@@ -316,7 +319,8 @@ function diaRun(){
     }
     h+='</div>';
     if(last&&last.num&&!DG.res)
-      h+='<div class="fb no"><b>Yanlış duydun</b>The conversation carries on — in a shop you would hand over the wrong note and be corrected, not walk out. It goes in the book under the same shape Sayılar drills.</div>';
+      h+='<div class="fb no"><b>Yanlış duydun</b>'+tx('The conversation carries on — in a shop you would hand over the wrong note and be corrected, not walk out. It goes in the book under the same shape Sayılar drills.',
+        'Konuşma sürer: dükkânda yanlış parayı uzatırsın, düzeltilirsin, çekip gitmezsin. Bu, deftere Sayılar’ın çalıştırdığı şekille yazılır.')+'</div>';
     h+='<button class="btn" onclick="diaNext()">Devam</button></div>';
     paint(h);return;
   }
@@ -348,7 +352,7 @@ function diaRun(){
       '<span class="ven" style="display:block">'+esc(r.en)+'</span></button>';
   });
   h+='<button class="btn ghost" onclick="diaQuit()">Vazgeç · walk away</button>';
-  h+='<p class="foot">Asking again is free and always will be.<br>The only thing this mode marks you down for is leaving.</p></div>';
+  h+='<p class="foot">'+tx('Asking again is free and always will be.<br>The only thing this mode marks you down for is leaving.','Yeniden sormak serbest ve hep öyle kalacak.<br>Bu bölümde tek eksi, konuşmayı bırakıp gitmektir.')+'</p></div>';
   paint(h);
   const box=document.getElementById("dgbox");
   if(box){
@@ -364,14 +368,17 @@ function diaEnd(){
      mode asks is whether you got to the end. */
   h+='<div class="score"><div class="big '+(DG.done?"pass":"fail")+'" '+
    'style="font-size:2.6rem">'+(DG.done?"Tamamlandı":"Yarıda kaldı")+'</div>'+
-   '<p class="sub">'+(DG.done?"you finished the errand":"you left before the end")+'</p></div>';
+   '<p class="sub">'+(DG.done?tx("you finished the errand","işini bitirdin"):tx("you left before the end","bitmeden ayrıldın"))+'</p></div>';
   h+='<div class="stat"><div><b>'+DG.turns+'</b><span>tur</span></div>'+
      '<div><b>'+DG.rep+'</b><span>tamir</span></div>'+
      '<div><b>'+(DG.nums?DG.numOk+"/"+DG.nums:"—")+'</b><span>sayı</span></div></div>';
   h+='<div class="card"><p class="sub">'+
-   (DG.done?"Finished"+(n>1?", for the "+n+"th time":"")+". The repairs are not a score — nothing keeps count of them between runs, and nothing ever will. They are what finishing cost today, and the number falls by itself once the phrases stop having to be found."
+   tx((DG.done?"Finished"+(n>1?", for the "+n+"th time":"")+". The repairs are not a score — nothing keeps count of them between runs, and nothing ever will. They are what finishing cost today, and the number falls by itself once the phrases stop having to be found."
           :"You left. That is the one thing this mode counts against you, because it is the one thing that actually ends a conversation — the word you missed never does. Every repair was there and free.")+
-   (DG.nums&&DG.numOk<DG.nums?" The price or the time got past you; that one is a Sayılar weakness and it is in the book under the shape Sayılar drills.":"")+'</p></div>';
+      (DG.nums&&DG.numOk<DG.nums?" The price or the time got past you; that one is a Sayılar weakness and it is in the book under the shape Sayılar drills.":""),
+      (DG.done?"Bitti"+(n>1?", "+n+". kez":"")+". Tamirler bir puan değil; aradaki sayısı hiçbir yerde tutulmaz. Bugün bitirmenin bedeli onlardı; kalıplar aranmadan gelmeye başlayınca sayı kendiliğinden düşer."
+          :"Ayrıldın. Bu bölümün sana karşı saydığı tek şey bu, çünkü bir konuşmayı gerçekten bitiren tek şey bu; kaçırdığın kelime asla bitirmez. Bütün tamirler oradaydı ve serbestti.")+
+      (DG.nums&&DG.numOk<DG.nums?" Fiyatı ya da saati kaçırdın; bu bir Sayılar zayıflığı ve deftere Sayılar’ın şekliyle yazıldı.":""))+'</p></div>';
   /* The transcript is the reward for getting to the end: now you may read
      what you were hearing. */
   h+='<h2 class="sec">Ne konuşuldu</h2><div class="card" style="padding:.4rem 1rem">';

@@ -70,8 +70,9 @@ function sikClass(e){
 
 function renderSik(){
   const b=sikBatch(), met=SIK.filter(sikMet).length, today=sikAddedToday();
-  let h=bar("Sık kelimeler","the most common words",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">The units choose their words for their passages. These are the ones people actually say most that the units never teach — <i>çünkü</i>, <i>zaten</i>, <i>lazım</i> — in the order they are needed. Ten a day, then they come back in your reviews like any starred word.</p>';
+  let h=bar("Sık kelimeler","the most common words",true,"en sık kelimeler")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('The units choose their words for their passages. These are the ones people actually say most that the units never teach — <i>çünkü</i>, <i>zaten</i>, <i>lazım</i> — in the order they are needed. Ten a day, then they come back in your reviews like any starred word.',
+    'Üniteler kelimelerini metinlerine göre seçer. Bunlar insanların en çok kullandığı ama ünitelerin hiç öğretmediği kelimeler: <i>çünkü</i>, <i>zaten</i>, <i>lazım</i>; gerektikleri sırayla. Günde on tane; sonra her yıldızlı kelime gibi tekrarlarında geri gelirler.')+'</p>';
   h+=voiceNote();
   h+='<div class="stat"><div><b>'+met+'</b><span>tanıdık</span></div>'+
      '<div><b>'+SIK.length+'</b><span>listede</span></div>'+
@@ -79,8 +80,9 @@ function renderSik(){
   if(!b.length){
     h+='<div class="card"><p class="lead">'+(sikRest().length?"Bugünlük bu kadar":"Hepsi bitti")+'</p>'+
      '<p class="sub">'+(sikRest().length
-        ?'Today’s words are in your reviews and come back tomorrow. Ten a day is enough to keep; more is there if you want it.'
-        :'Every word on the list has been met. They live in your reviews now.')+'</p>'+
+        ?tx('Today’s words are in your reviews and come back tomorrow. Ten a day is enough to keep; more is there if you want it.',
+            'Bugünün kelimeleri tekrarlarında; yarın geri gelecekler. Günde on tane akılda tutmaya yeter; istersen daha fazlası var.')
+        :tx('Every word on the list has been met. They live in your reviews now.','Listedeki her kelimeyi gördün. Artık tekrarlarında yaşıyorlar.'))+'</p>'+
      (sikRest().length?'<button class="btn ghost" onclick="sikMore()">Bir on daha · ten more</button>':'')+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
     paint(h);return;
@@ -93,6 +95,7 @@ function renderSik(){
   });
   h+='</div>';
   h+='<button class="btn" onclick="sikAdd()">Tekrara ekle · add '+(b.length===1?"it":"these "+b.length)+' to my reviews</button>';
-  h+='<p class="foot">Tap a word to hear it. <b>biliyorum</b> skips one you already know and brings in the next.<br>First review tomorrow.</p></div>';
+  h+='<p class="foot">'+tx('Tap a word to hear it. <b>biliyorum</b> skips one you already know and brings in the next.<br>First review tomorrow.',
+    'Dinlemek için kelimeye dokun. <b>biliyorum</b>, bildiğin kelimeyi atlar ve sıradakini getirir.<br>İlk tekrar yarın.')+'</p></div>';
   paint(h);
 }

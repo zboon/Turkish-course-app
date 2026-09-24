@@ -131,11 +131,13 @@ function dinleNext(){
 /* --- screens ---------------------------------------------------------- */
 function renderDinle(){
   const dd=dinleDue("d:"), ad=dinleDue("a:"), bank=sentenceBank().length;
-  let h=bar("Dinleme","listening · no text",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">Reading and shadowing keep the text in front of you. These two take it away: one asks you to <b>write</b> what you heard, the other only to understand it. The speed goes past normal on purpose.</p>';
+  let h=bar("Dinleme","listening · no text",true,"metinsiz dinleme")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('Reading and shadowing keep the text in front of you. These two take it away: one asks you to <b>write</b> what you heard, the other only to understand it. The speed goes past normal on purpose.',
+    'Okuma ve gölge çalışmasında metin önündedir. Bu ikisi metni kaldırır: biri duyduğunu <b>yazmanı</b>, öteki yalnızca anlamanı ister. Hızın normali geçmesi bilerek yapıldı.')+'</p>';
 
   if(!ttsOK()){
-    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">This browser has no speech synthesis, so there is nothing to listen to. On a phone the app’s other modes still work.</p></div></div>';
+    h+='<div class="card"><p class="lead">Ses yok</p><p class="sub">'+tx('This browser has no speech synthesis, so there is nothing to listen to. On a phone the app’s other modes still work.',
+      'Bu tarayıcıda konuşma sentezi yok, yani dinlenecek bir şey yok. Telefonda uygulamanın öteki bölümleri yine çalışır.')+'</p></div></div>';
     paint(h);return;
   }
   h+=voiceNote();
@@ -146,31 +148,37 @@ function renderDinle(){
 
   h+='<h2 class="sec">Çalış</h2>';
   h+='<div class="card"><p class="lead">Dikte · write what you hear</p>'+
-   '<p class="sub">A line plays with nothing on screen. Type it, and the app marks it word by word — diacritics are ignored, missing words are not. '+
-   bank+' line'+(bank===1?"":"s")+' in range · '+dd+' due today. Up to '+DSESSION+' in a sitting.</p>'+
+   '<p class="sub">'+tx('A line plays with nothing on screen. Type it, and the app marks it word by word — diacritics are ignored, missing words are not. '+
+   bank+' line'+(bank===1?"":"s")+' in range · '+dd+' due today. Up to '+DSESSION+' in a sitting.',
+   'Ekranda hiçbir şey yokken bir satır çalar. Onu yaz; uygulama kelime kelime değerlendirir. Şapkalı ve noktalı harfler önemsenmez, eksik kelimeler önemsenir. '+
+   'Kapsamda '+bank+' satır · bugün '+dd+' tane. Bir oturumda en fazla '+DSESSION+'.')+'</p>'+
    '<button class="btn" onclick="startDinle(\'d\')">Başla</button></div>';
   h+='<div class="card"><p class="lead">Ses önce · audio first</p>'+
-   '<p class="sub">The same lines, but nothing is typed: listen, decide whether you got it, and only then see the Turkish and the English. '+ad+' due today.</p>'+
+   '<p class="sub">'+tx('The same lines, but nothing is typed: listen, decide whether you got it, and only then see the Turkish and the English. '+ad+' due today.',
+     'Aynı satırlar, ama yazı yok: dinle, anlayıp anlamadığına karar ver, Türkçesini ve İngilizcesini ancak ondan sonra gör. Bugün '+ad+' tane.')+'</p>'+
    '<button class="btn" onclick="startDinle(\'a\')">Başla</button></div>';
 
   h+='<h2 class="sec">Ayarlar</h2><div class="card">';
   h+='<p class="lead" style="font-size:.95rem">Hız · listening speed</p>'+
-   '<p class="sub">1× is where the voice sits naturally. Above it is the training — a conversation will not slow down for you.</p><div class="segs">';
+   '<p class="sub">'+tx('1× is where the voice sits naturally. Above it is the training — a conversation will not slow down for you.',
+     'Sesin doğal hızı 1×. Üstü alıştırma içindir; bir konuşma senin için yavaşlamaz.')+'</p><div class="segs">';
   DRATES.forEach(function(r){
     h+='<button class="'+(Math.abs(r-drate())<0.01?"on":"")+'" onclick="setDrate('+r+')">'+r+'×'+
       (r>1?'<i>hızlı</i>':r===1?'<i>normal</i>':'<i>yavaş</i>')+'</button>';
   });
   h+='</div>';
   h+='<p class="lead" style="font-size:.95rem">Tekrar · replays allowed</p>'+
-   '<p class="sub">Fewer replays is harder and closer to the real thing, where a sentence is said once.</p><div class="segs">';
+   '<p class="sub">'+tx('Fewer replays is harder and closer to the real thing, where a sentence is said once.',
+     'Daha az tekrar daha zordur ve gerçeğe daha yakındır; gerçekte bir cümle bir kez söylenir.')+'</p><div class="segs">';
   DREPLAYS.forEach(function(n){
     h+='<button class="'+(n===dreplay()?"on":"")+'" onclick="setDreplay('+n+')">'+(n===0?"∞":n)+'<i>'+(n===0?"serbest":"kez")+'</i></button>';
   });
   h+='</div>';
-  h+='<p class="tiny">Sentences come from the same <b>Kaynak</b> range as Üretim — change it there.</p></div>';
+  h+='<p class="tiny">'+tx('Sentences come from the same <b>Kaynak</b> range as Üretim — change it there.','Cümleler Üretim’deki <b>Kaynak</b> ayarından gelir; oradan değiştir.')+'</p></div>';
 
-  h+='<p class="foot">This is the device’s own Turkish voice, not a recording of a person.<br>'+
-   'It has no reduction, no accent and no overlapping turns, so treat a clean 1.5× here as a floor rather than a finish.</p></div>';
+  h+='<p class="foot">'+tx('This is the device’s own Turkish voice, not a recording of a person.<br>'+
+   'It has no reduction, no accent and no overlapping turns, so treat a clean 1.5× here as a floor rather than a finish.',
+   'Bu, cihazın kendi Türkçe sesi; bir insan kaydı değil.<br>Kısaltma, şive ya da üst üste konuşma yok; burada temiz bir 1.5× bir başlangıçtır, varış değil.')+'</p></div>';
   paint(h);
 }
 
@@ -182,7 +190,7 @@ function renderDinleRun(){
     paint(bar("Dinleme","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(DK.right*2>=DK.q.length?"pass":"fail")+'">'+DK.right+'/'+DK.q.length+'</div>'+
       '<p class="sub">'+(dikte?"kelimesi kelimesine · marked by the app":"kendi değerlendirmen · your own marking")+'</p></div>'+
-      '<div class="card"><p class="sub">'+left+' still waiting in this set. The ones you missed come back today.</p>'+
+      '<div class="card"><p class="sub">'+tx(left+' still waiting in this set. The ones you missed come back today.','Bu grupta '+left+' tane daha bekliyor. Yanlış yaptıkların bugün yeniden gelir.')+'</p>'+
       '<button class="btn" onclick="startDinle(\''+DK.mode+'\')">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'dinle\')">Dinleme</button></div></div>');
     return;
@@ -197,7 +205,7 @@ function renderDinleRun(){
      '<button class="sbtn" style="font-size:1rem" id="dagain" onclick="dinlePlay()"'+
      (replayLeft()<=0?' disabled':'')+'>'+IC.spk+' tekrar dinle</button>'+
      '<p class="tiny" id="dplays" style="margin:.5rem 0 0">'+dplaysText()+'</p>'+
-     '<p class="tiny" style="margin:.2rem 0 0">'+drate()+'× · nothing is shown until you commit</p></div>';
+     '<p class="tiny" style="margin:.2rem 0 0">'+drate()+'× · '+tx('nothing is shown until you commit','karar verene kadar hiçbir şey gösterilmez')+'</p></div>';
     if(dikte){
       h+='<input class="inp" id="dbox" autocapitalize="off" autocomplete="off" autocorrect="off" '+
        'spellcheck="false" placeholder="duyduğunu yaz…" value="'+esc(DK.typed||"")+'">'+
@@ -213,9 +221,12 @@ function renderDinleRun(){
      '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+'</p>'+
      spkBtn(it.tr,{text:" tekrar",style:"margin-top:.4rem"})+'</div>';
     h+='<div class="fb '+(pass?"ok":"no")+'"><b>'+r.hit+' / '+r.of+' kelime'+(pass?" · Doğru":"")+'</b>'+
-     (r.extra?"Struck-through words were not said. ":"")+
-     (pass?"Anything in red was missed — read it once more before moving on."
-          :"Red words never reached you. Replay it, then take the next one.")+'</div>';
+     tx((r.extra?"Struck-through words were not said. ":"")+
+        (pass?"Anything in red was missed — read it once more before moving on."
+             :"Red words never reached you. Replay it, then take the next one."),
+        (r.extra?"Üstü çizili kelimeler söylenmedi. ":"")+
+        (pass?"Kırmızılar kaçırıldı; geçmeden önce bir kez daha oku."
+             :"Kırmızı kelimeler sana ulaşmadı. Yeniden dinle, sonra sıradakine geç."))+'</div>';
     h+='<button class="btn" onclick="dinleNext()">'+(DK.i+1>=DK.q.length?"Sonuç":"Devam")+'</button>';
   }else{
     h+='<div class="card" style="text-align:center;padding:1.6rem 1rem">'+

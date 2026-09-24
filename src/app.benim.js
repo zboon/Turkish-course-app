@@ -55,15 +55,15 @@ function mineOpen(){MW=null;MMSG="";go("mine");}
 function mineAdd(){
   MMSG="";
   const tr=mineVal("mtr"), en=mineVal("men"), note=mineVal("mnote");
-  if(!tr||!en){mineMsg("Both sides are needed — the Turkish and what it means.");return;}
-  if(mineList().length>=MINE_MAX){mineMsg("That is "+MINE_MAX+" of your own words, which is the limit.");return;}
+  if(!tr||!en){mineMsg(txt("Both sides are needed — the Turkish and what it means.","İki taraf da gerekli: Türkçesi ve anlamı."));return;}
+  if(mineList().length>=MINE_MAX){mineMsg(txt("That is "+MINE_MAX+" of your own words, which is the limit.","Kendi kelimelerin "+MINE_MAX+" tane oldu; sınır bu."));return;}
   const taught=mineTaught(tr);
   if(taught){
     setStar(taught.tr,taught.en,true);save();
-    mineMsg("“"+taught.tr+"” is already in the course — starred that one instead of making a second copy.");
+    mineMsg(txt("“"+taught.tr+"” is already in the course — starred that one instead of making a second copy.","“"+taught.tr+"” zaten kursta var; ikinci bir kopya yerine o yıldızlandı."));
     render();return;
   }
-  if(mineFind(tr)){mineMsg("“"+tr+"” is already in your list.");return;}
+  if(mineFind(tr)){mineMsg(txt("“"+tr+"” is already in your list.","“"+tr+"” zaten listende."));return;}
   mineList().push({tr:tr,en:en,note:note,at:dayNum()});
   setStar(tr,en,true);
   save();MW=null;render();
@@ -88,14 +88,14 @@ function mineSave(i){
   const tr=mineVal("mtr"), en=mineVal("men"), note=mineVal("mnote");
   if(!tr||!en){mineMsg("Both sides are needed.");return;}
   const clash=mineFind(tr);
-  if(clash&&clash!==e){mineMsg("“"+tr+"” is already in your list.");return;}
+  if(clash&&clash!==e){mineMsg(txt("“"+tr+"” is already in your list.","“"+tr+"” zaten listende."));return;}
   mineRekey(starKey(e.tr,e.en),starKey(tr,en));
   e.tr=tr;e.en=en;e.note=note;
   save();MW=null;render();
 }
 function mineDrop(i){
   const e=mineList()[i]; if(!e)return;
-  if(typeof confirm==="function"&&!confirm("Remove “"+e.tr+"” from your words? It leaves the review queue too."))return;
+  if(typeof confirm==="function"&&!confirm(txt("Remove “"+e.tr+"” from your words? It leaves the review queue too.","“"+e.tr+"” kelimelerinden çıkarılsın mı? Tekrar sırasından da çıkar.")))return;
   setStar(e.tr,e.en,false);
   mineList().splice(i,1);
   save();MW=null;render();
@@ -110,8 +110,9 @@ function mineStar(i){
 function renderMine(){
   const all=mineList(), ed=(MW!==null&&all[MW])?all[MW]:null;
   const due=all.filter(function(e){return isStarred(e.tr,e.en)&&isDue(S.srs,starKey(e.tr,e.en));}).length;
-  let h=bar("Kendi kelimelerim","words you met in the wild",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">A word off a sign, out of a subtitle, or from someone talking to you. Added here it is starred like any other, so it rides the same spaced queue and turns up in <b>Bugün</b> under Tekrar — nothing else to set up.</p>';
+  let h=bar("Kendi kelimelerim","words you met in the wild",true,"dışarıda karşılaştığın kelimeler")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('A word off a sign, out of a subtitle, or from someone talking to you. Added here it is starred like any other, so it rides the same spaced queue and turns up in <b>Bugün</b> under Tekrar — nothing else to set up.',
+    'Bir tabeladan, bir altyazıdan ya da biriyle konuşurken öğrendiğin bir kelime. Buraya eklenince öteki kelimeler gibi yıldızlanır, aynı tekrar sırasına girer ve <b>Bugün</b> listesinde Tekrar altında çıkar; başka bir ayar gerekmez.')+'</p>';
   if(all.length)h+='<div class="stat"><div><b>'+all.length+'</b><span>kelime</span></div>'+
      '<div><b>'+due+'</b><span>bugün</span></div>'+
      '<div><b>'+S.star.length+'</b><span>toplam yıldız</span></div></div>';
@@ -120,7 +121,7 @@ function renderMine(){
   h+='<input class="inp" id="mtr" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" '+
    'placeholder="Türkçe" value="'+esc(ed?ed.tr:"")+'">';
   h+='<input class="inp" id="men" style="margin-top:.5rem" autocapitalize="off" autocomplete="off" '+
-   'placeholder="what it means" value="'+esc(ed?ed.en:"")+'">';
+   'placeholder="'+txt("what it means","anlamı")+'" value="'+esc(ed?ed.en:"")+'">';
   h+='<input class="inp" id="mnote" style="margin-top:.5rem" autocapitalize="off" autocomplete="off" '+
    'placeholder="nerede gördün? · where you met it (optional)" value="'+esc(ed&&ed.note?ed.note:"")+'">';
   if(ed){
@@ -130,7 +131,7 @@ function renderMine(){
     h+='<button class="btn" onclick="mineAdd()">Ekle ve tekrara al</button>';
   }
   h+='<p class="tiny" id="mmsg" style="margin-top:.5rem;min-height:1.1em">'+esc(MMSG)+'</p>';
-  h+='<p class="tiny">Adding a word the course already teaches stars that one rather than making a second copy.</p></div>';
+  h+='<p class="tiny">'+tx('Adding a word the course already teaches stars that one rather than making a second copy.','Kursun zaten öğrettiği bir kelimeyi eklersen ikinci bir kopya yapılmaz, o kelime yıldızlanır.')+'</p></div>';
 
   if(all.length){
     h+='<h2 class="sec">Listem</h2><div class="card" style="padding:.3rem 1rem">';
@@ -146,9 +147,10 @@ function renderMine(){
     h+='</div>';
     h+='<button class="btn ghost" onclick="go(\'words\')">Sözlüğüm · review them</button>';
   }else{
-    h+='<div class="empty">Henüz kendi kelimen yok.<br>Add the first one above.</div>';
+    h+='<div class="empty">Henüz kendi kelimen yok.<br>'+tx('Add the first one above.','İlkini yukarıdan ekle.')+'</div>';
   }
-  h+='<p class="foot">These ride the starred-word queue, not Tekrar motoru.<br>That engine counts how often the course itself uses a word, and a word you brought has no count to improve.</p></div>';
+  h+='<p class="foot">'+tx('These ride the starred-word queue, not Tekrar motoru.<br>That engine counts how often the course itself uses a word, and a word you brought has no count to improve.',
+    'Bunlar Tekrar motoruna değil, yıldızlı kelime sırasına girer.<br>O motor kursun bir kelimeyi kaç kez kullandığını sayar; senin getirdiğin kelimenin öyle bir sayısı yok.')+'</p></div>';
   paint(h);
   const box=document.getElementById("mtr");
   if(box){

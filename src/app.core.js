@@ -37,7 +37,7 @@ function load(){
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
 function saveWarn(){
   if(!SAVEFAIL)return "";
-  return '<div class="savewarn"><div class="savewarn-in"><span class="grow"><b>Kaydedilmiyor</b> · this browser is not saving your progress. What you do now is lost when the page closes.</span>'+
+  return '<div class="savewarn"><div class="savewarn-in"><span class="grow"><b>Kaydedilmiyor</b> · '+tx('this browser is not saving your progress. What you do now is lost when the page closes.','bu tarayıcı ilerlemeni kaydetmiyor. Şimdi yaptıkların sayfa kapanınca kaybolur.')+'</span>'+
     '<button onclick="saveHelp()">Yedekle</button></div></div>';
 }
 function saveHelp(){
@@ -166,10 +166,11 @@ function crest(px){
 function voiceNoteInner(){
   const st=voiceState();
   if(st==="notr")return '<div class="card vnote"><p class="lead">Türkçe ses yok · no Turkish voice</p>'+
-    '<p class="sub">This device can speak but has no Turkish voice, so Turkish is read in another language’s voice with the wrong sounds. Treat what you hear as a rough guide, not a model to copy, until one is added.</p>'+
+    '<p class="sub">'+tx('This device can speak but has no Turkish voice, so Turkish is read in another language’s voice with the wrong sounds. Treat what you hear as a rough guide, not a model to copy, until one is added.',
+      'Bu cihaz konuşabiliyor ama Türkçe sesi yok; Türkçe başka bir dilin sesiyle, yanlış seslerle okunur. Türkçe bir ses eklenene kadar duyduğunu taklit edilecek bir örnek değil, kaba bir yol gösterici say.')+'</p>'+
     '<button class="btn ghost" onclick="voiceHelp()">Nasıl eklenir · how to add one</button></div>';
   if(st==="none")return '<div class="card vnote"><p class="lead">Ses yok · no speech</p>'+
-    '<p class="sub">This browser cannot speak, so nothing will be read aloud. Everything else works.</p></div>';
+    '<p class="sub">'+tx('This browser cannot speak, so nothing will be read aloud. Everything else works.','Bu tarayıcı konuşamıyor; hiçbir şey sesli okunmayacak. Geri kalan her şey çalışır.')+'</p></div>';
   return "";
 }
 /* Wrapped in #vnote so a voice list that arrives after the paint can fill
@@ -363,7 +364,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Adım adım":"step by step","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Derse başla":"start the lesson","Sınava gir":"take the test","Dersi tekrarla":"go over the lesson again","Türkçesini yaz":"type the Turkish","Sen de dene":"now you try","Metni göster":"show the text","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",
@@ -468,18 +469,58 @@ function enUnder(h){
     return '<'+tag+attr+'>'+lead+esc(g.tr)+'<span class="gl">'+esc(g.en)+'</span>';
   });
 }
-function enOn(){return S.en===undefined?lvPct("A2")<100:!!S.en;}
-function enApply(){try{document.documentElement.classList.toggle("noen",!enOn());}catch(e){}}
-function toggleEN(){S.en=!enOn(); save(); enApply();
+/* Instruction prose in both languages; which shows is the stage's call. */
+function tx(en,tr){return '<span class="t-tr">'+tr+'</span><span class="t-en">'+en+'</span>';}
+/* The same for plain text — a confirm() or a message poked in with
+   textContent — which cannot hold two spans. */
+function txt(en,tr){const m=enMode();return m==="en"?en:m==="tr"?tr:tr+" ("+en+")";}
+/* Less English the further the learner gets, the way a school moves its
+   classroom language over: labels first, then instructions, and (later)
+   the explanations. The stage is the level being worked in — the level of
+   the unit after the furthest one passed — so passing the A2 test puts a
+   learner in B1 at once, and dipping back into an old unit changes
+   nothing.
+
+     stage 0  A1–A2  labels Turkish with English under · instructions English
+     stage 1  B1     labels Turkish · instructions Turkish, English under
+     stage 2  B2+    labels Turkish · instructions Turkish
+
+   The EN button is "show me the English now". A choice is stored with the
+   stage it was made in and lapses when the stage changes, so turning the
+   English on at A2 does not hold it on through C2. A choice saved before
+   the stages existed was a plain true/false and counts as a stage-0 one.
+   Off is Turkish only everywhere, stage 0 included: a beginner who wants
+   the instructions in Turkish can have them. */
+function curLv(){
+  let k=-1;
+  for(let i=0;i<UNITS.length;i++)if(isDone(UNITS[i].id))k=i;
+  return UNITS[Math.min(k+1,UNITS.length-1)].lv;
+}
+function enStage(){const lv=curLv();return lv==="A1"||lv==="A2"?0:lv==="B1"?1:2;}
+function enChoice(st){
+  const e=S.en;
+  if(e===undefined||e===null)return undefined;
+  if(typeof e==="boolean")return st===0?e:undefined;
+  return e.st===st?!!e.on:undefined;
+}
+function enOn(){const st=enStage(), c=enChoice(st);return c!==undefined?c:st<=1;}
+function enLabels(){const st=enStage(), c=enChoice(st);return c!==undefined?c:st===0;}
+function enMode(){return !enOn()?"tr":enStage()===0?"en":"both";}
+function enApply(){try{
+  const c=document.documentElement.classList, m=enMode();
+  c.toggle("noen",!enLabels());
+  ["en","both","tr"].forEach(function(x){c.toggle("ins-"+x,x===m);});
+}catch(e){}}
+function toggleEN(){S.en={st:enStage(),on:!enOn()}; save(); enApply();
   document.querySelectorAll(".en-btn").forEach(function(b){b.setAttribute("aria-pressed",String(enOn()));});}
 function enBtn(){return '<button class="icon-btn en-btn" onclick="toggleEN()" aria-pressed="'+enOn()+'" aria-label="English under the Turkish">EN</button>';}
 function paint(h){enApply(); app().innerHTML=enUnder(h);}
 
-function bar(title,sub,showHome){
+function bar(title,sub,showHome,subTr){
   return '<div class="bar"><div class="bar-in">'+
    '<button class="icon-btn" onclick="back()" aria-label="Back">'+IC.back+'</button>'+
    (showHome?'<button class="icon-btn" onclick="home()" aria-label="Home">'+IC.home+'</button>':'')+
-   '<div class="bar-title">'+esc(title)+(sub?'<small>'+esc(sub)+'</small>':'')+'</div>'+
+   '<div class="bar-title">'+esc(title)+(sub?'<small>'+(subTr?tx(esc(sub),esc(subTr)):esc(sub))+'</small>':'')+'</div>'+
    enBtn()+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button>'+
    '</div>'+saveWarn()+'</div>';

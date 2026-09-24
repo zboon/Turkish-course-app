@@ -289,39 +289,40 @@ function tkKeep(){
   const box=document.getElementById("tbox");
   if(box&&TK)TK.typed=box.value;
 }
+/* Is a typed word one of the answers? Pure, so the guided lesson marks a
+   word exactly as Tekrar does. Same matcher as the gap-fill drills —
+   folded, and space-insensitive, so a learner without a Turkish keyboard
+   is not punished — and any listed alternative counts, because "ad" and
+   "isim" are both right. A spoken spelling of the answer is the answer:
+   gidicem is how gideceğim is said, and marking it wrong would teach a
+   learner to distrust what they hear. Only ever toward the answer's own
+   words. And Nasılsınız for Nasılsın, where the sentence does not say
+   which you. */
+function wordOk(typedRaw,alts,ctx,en){
+  const typed=fold(typedRaw), flat=typed.replace(/ /g,"");
+  const same=function(t,a){return t===a||t.replace(/ /g,"")===a.replace(/ /g,"");};
+  if(alts.some(function(a){return typed===a||flat===a.replace(/ /g,"");}))return {ok:true,spoken:null,siz:null};
+  let spoken=null, siz=null;
+  alts.some(function(a){
+    const sp=spokenToward(typedRaw,a);
+    if(sp.used.length&&same(sp.text,a)){spoken=sp.used;return true;}
+    return false;
+  });
+  if(spoken)return {ok:true,spoken:spoken,siz:null};
+  alts.some(function(a){
+    const sz=sizToward(typedRaw,a,ctx,en);
+    if(sz.used.length&&same(sz.text,a)){siz=sz.used;return true;}
+    return false;
+  });
+  return {ok:!!siz,spoken:null,siz:siz};
+}
 function tkCheck(){
   if(!TK)return;
   const it=TK.q[TK.i]; if(!it)return;
   tkKeep();
-  /* Same matcher as the gap-fill drills — folded, and space-insensitive,
-     so a learner without a Turkish keyboard is not punished — and any
-     listed alternative counts, because "ad" and "isim" are both right. */
-  const typed=fold(TK.typed), flat=typed.replace(/ /g,"");
-  let good=(it.alts||[fold(it.c)]).some(function(a){
-    return typed===a||flat===a.replace(/ /g,"");
-  });
-  /* A spoken spelling of the answer is the answer: gidicem is how
-     gideceğim is said, and marking it wrong would teach a learner to
-     distrust what they hear. Only ever toward the answer's own words. */
-  TK.spoken=null;
-  if(!good){
-    (it.alts||[fold(it.c)]).some(function(a){
-      const sp=spokenToward(TK.typed,a);
-      if(sp.used.length&&(sp.text===a||sp.text.replace(/ /g,"")===a.replace(/ /g,""))){TK.spoken=sp.used;return true;}
-      return false;
-    });
-    good=!!TK.spoken;
-  }
-  /* Nasılsınız for Nasılsın, where the sentence does not say which you. */
-  TK.siz=null;
-  if(!good){
-    (it.alts||[fold(it.c)]).some(function(a){
-      const sz=sizToward(TK.typed,a,it.kind==="cloze"?it.q:"",it.kind==="cloze"?it.hint:it.en);
-      if(sz.used.length&&(sz.text===a||sz.text.replace(/ /g,"")===a.replace(/ /g,""))){TK.siz=sz.used;return true;}
-      return false;
-    });
-    good=!!TK.siz;
-  }
+  const j=wordOk(TK.typed,it.alts||[fold(it.c)],it.kind==="cloze"?it.q:"",it.kind==="cloze"?it.hint:it.en);
+  const good=j.ok;
+  TK.spoken=j.spoken;TK.siz=j.siz;
   TK.res=good;
   /* Name the rule when one rule explains the miss; otherwise say nothing. */
   TK.diag=good?null:diagAny(TK.typed,it.c);
@@ -347,26 +348,30 @@ function renderTekrar(){
   const total=repBank().length;
   const bands=[["1","met once"],["2–3","thin"],["4–7","getting there"],
                ["8–20","durable"],["21+","embedded"]];
-  let h=bar("Tekrar motoru","repetition · the words the course forgets",true)+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">The course teaches '+total+
-   ' words and then mostly moves on. This counts how often each one actually turns up anywhere in the app, and drills whatever it will not bring back by itself — worst served first.</p>';
+  let h=bar("Tekrar motoru","repetition · the words the course forgets",true,"kursun unuttuğu kelimeler")+'<div class="wrap">';
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('The course teaches '+total+
+   ' words and then mostly moves on. This counts how often each one actually turns up anywhere in the app, and drills whatever it will not bring back by itself — worst served first.',
+   'Kurs '+total+' kelime öğretir ve çoğunu bir daha anmaz. Bu bölüm her kelimenin uygulamada kaç kez geçtiğini sayar ve kendiliğinden geri gelmeyenleri çalıştırır; en az geçen önce gelir.')+'</p>';
   /* The actionable number is the sitting, not the backlog: 495 due reads as
      a debt nobody will clear, and it is really "495 have not reached the
      target yet, ten of them now". */
   const now=Math.min(due,REP_SESSION);
   h+='<div class="stat"><div><b>'+now+'</b><span>şimdi</span></div>'+
-     '<div><b>'+short+'</b><span>under '+REP_TARGET+'</span></div>'+
-     '<div><b>'+(total-short)+'</b><span>at '+REP_TARGET+'+</span></div></div>';
+     '<div><b>'+short+'</b><span>'+tx('under '+REP_TARGET,REP_TARGET+' altı')+'</span></div>'+
+     '<div><b>'+(total-short)+'</b><span>'+tx(REP_TARGET+' or more',REP_TARGET+' ve üstü')+'</span></div></div>';
 
   h+='<h2 class="sec">Çalış</h2><div class="card">'+
    '<p class="lead">'+now+' kelime · bu oturum</p>'+
-   '<p class="tiny" style="margin:.1rem 0 .4rem">'+short+' of '+total+' are still short of '+REP_TARGET+' encounters. This works through them '+REP_SESSION+' at a time, and brings in at most '+NEW_DAY.rep+' words it has not asked before each day, so a level test does not arrive as a hundred at once. It is a floor being raised, not a backlog to clear in one go.</p>'+
-   '<p class="sub">Where the word appears in a passage, the line comes back with it blanked, and the answer is the form the sentence uses. Where it appears nowhere, the English comes first and you type the Turkish. Up to '+REP_SESSION+' in a sitting.</p>'+
+   '<p class="tiny" style="margin:.1rem 0 .4rem">'+tx(short+' of '+total+' are still short of '+REP_TARGET+' encounters. This works through them '+REP_SESSION+' at a time, and brings in at most '+NEW_DAY.rep+' words it has not asked before each day, so a level test does not arrive as a hundred at once. It is a floor being raised, not a backlog to clear in one go.',
+     total+' kelimeden '+short+' tanesi henüz '+REP_TARGET+' kez geçmedi. Bunlar '+REP_SESSION+' kelimelik oturumlarla çalışılır; her gün en fazla '+NEW_DAY.rep+' yeni kelime eklenir, böylece bir seviye sınavı yüz kelimeyi birden getirmez.')+'</p>'+
+   '<p class="sub">'+tx('Where the word appears in a passage, the line comes back with it blanked, and the answer is the form the sentence uses. Where it appears nowhere, the English comes first and you type the Turkish. Up to '+REP_SESSION+' in a sitting.',
+     'Kelime bir metinde geçiyorsa o satır kelime boş bırakılarak gelir; cümledeki biçimini yazarsın. Hiçbir yerde geçmiyorsa İngilizcesi gelir, sen Türkçesini yazarsın. Bir oturumda en fazla '+REP_SESSION+' kelime.')+'</p>'+
    (due?'<button class="btn" onclick="startTekrar()">Başla</button>'
-       :'<p class="tiny">Nothing due. The queue refills as boxes come round.</p>')+'</div>';
+       :'<p class="tiny">'+tx('Nothing due. The queue refills as boxes come round.','Şimdilik bekleyen yok. Sırası gelen kelimeler yeniden eklenir.')+'</p>')+'</div>';
 
   h+='<h2 class="sec">Karşılaşma sayısı</h2><div class="card">';
-  h+='<p class="sub" style="margin-bottom:.6rem">How many times each taught word is met — counting the app’s own material plus the drills below. Eight is roughly where a word starts to stay.</p>';
+  h+='<p class="sub" style="margin-bottom:.6rem">'+tx('How many times each taught word is met — counting the app’s own material plus the drills below. Eight is roughly where a word starts to stay.',
+    'Öğretilen her kelimeyle kaç kez karşılaşıldığı: uygulamanın kendi metinleri ve buradaki alıştırmalar birlikte. Bir kelime aşağı yukarı sekizinci karşılaşmada akılda kalmaya başlar.')+'</p>';
   const max=Math.max.apply(null,b)||1;
   bands.forEach(function(band,i){
     const pct=Math.round(100*b[i]/max);
@@ -377,9 +382,11 @@ function renderTekrar(){
       (i>=3?"var(--turk)":i===2?"var(--gold)":"var(--bole)")+'"></span></span>'+
       '<span class="tiny" style="width:5.5rem;flex:0 0 auto">'+b[i]+' · '+band[1]+'</span></div>';
   });
-  h+='<p class="tiny" style="margin-top:.6rem">Red is a word the course mentions and abandons. The aim is to empty the top two rows into the bottom two.</p></div>';
+  h+='<p class="tiny" style="margin-top:.6rem">'+tx('Red is a word the course mentions and abandons. The aim is to empty the top two rows into the bottom two.',
+    'Kırmızı, kursun bir kez anıp bıraktığı kelimedir. Amaç üstteki iki satırı alttaki ikisine taşımak.')+'</p></div>';
 
-  h+='<p class="foot">Encounters are counted by stem, so <i>kitaplar</i> counts for <i>kitap</i> but <i>kitabın</i> does not.<br>That undercounts, which is the safe direction for a floor.</p></div>';
+  h+='<p class="foot">'+tx('Encounters are counted by stem, so <i>kitaplar</i> counts for <i>kitap</i> but <i>kitabın</i> does not.<br>That undercounts, which is the safe direction for a floor.',
+    'Karşılaşmalar kökten sayılır: <i>kitaplar</i>, <i>kitap</i> için sayılır ama <i>kitabın</i> sayılmaz.<br>Bu yüzden sayı olduğundan az çıkar; güvenli olan da budur.')+'</p></div>';
   paint(h);
 }
 
@@ -389,8 +396,9 @@ function renderTekrarRun(){
     paint(bar("Tekrar","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(TK.right*2>=TK.q.length?"pass":"fail")+'">'+TK.right+'/'+TK.q.length+'</div>'+
       '<p class="sub">kelime hatırlandı · recalled</p></div>'+
-      '<div class="card"><p class="sub">'+repShort().length+' words are still under '+REP_TARGET+
-      ' encounters. Every drill here counts as one, right or wrong — being asked is the encounter.</p>'+
+      '<div class="card"><p class="sub">'+tx(repShort().length+' words are still under '+REP_TARGET+
+      ' encounters. Every drill here counts as one, right or wrong — being asked is the encounter.',
+      repShort().length+' kelime henüz '+REP_TARGET+' karşılaşmaya ulaşmadı. Buradaki her soru, doğru da olsa yanlış da olsa, bir karşılaşma sayılır.')+'</p>'+
       '<button class="btn" onclick="startTekrar()">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'tekrar\')">Tekrar motoru</button></div></div>');
     return;
@@ -420,8 +428,8 @@ function renderTekrarRun(){
      '<p class="sub" style="margin-top:.3rem">'+esc(it.tr+" · "+it.en)+'</p>'+
      '<button class="sbtn" style="margin-top:.4rem" onclick="tkSay()">'+IC.spk+' dinle</button></div>';
     h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?"Doğru":"Yanlış")+'</b>'+
-     (TK.res?"It comes back later and later from here."
-            :"Wrong answers come back today. Being asked still counts as an encounter.")+
+     (TK.res?tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek.")
+            :tx("Wrong answers come back today. Being asked still counts as an encounter.","Yanlışlar bugün yeniden gelir. Sorulmak yine de bir karşılaşma sayılır."))+
      (TK.res?spokenBox(TK.spoken,it.c)+sizBox(TK.siz,it.c):diagBox(TK.diag?[TK.diag]:[]))+altBox(tkAlts(it))+'</div>';
     h+='<button class="btn" onclick="tkNext()">'+(TK.i+1>=TK.q.length?"Sonuç":"Devam")+'</button>';
   }
@@ -527,6 +535,45 @@ function grKeep(){
   if(box&&GR)GR.typed=box.value;
 }
 function grHint(){grKeep();if(GR){GR.hint=true;render();}}
+/* Is a typed sentence the model? Pure, so the guided lesson marks a
+   grammar example exactly as Dilbilgisi tekrarı does: every word in any
+   order, then a spoken spelling, the other you, and one subject pronoun
+   more or fewer. */
+function sentOk(model,typed,en){
+  const J={res:gramJudge(model,typed),spoken:null,pron:null,siz:null};
+  if(!J.res.same){
+    const sp=spokenToward(typed,model);
+    if(sp.used.length){
+      const r2=gramJudge(model,sp.text);
+      if(r2.same){J.res=r2;J.spoken=sp.used;}
+    }
+    /* The other you, where the sentence does not say which. */
+    if(!J.res.same){
+      const sz=sizToward(typed,model,"",en);
+      if(sz.used.length){
+        const r4=gramJudge(model,sz.text);
+        if(r4.same){J.res=r4;J.siz=sz.used;}
+      }
+    }
+    /* One subject pronoun more or fewer is still the sentence: the ending
+       already says who. Marked on the line as optional, not as missing. */
+    if(!J.res.same){
+      const cands=[typed];
+      if(sp.used.length)cands.push(sp.text);
+      for(let i=0;i<cands.length;i++){
+        const ps=pronounSlack(model,cands[i]);
+        if(!ps)continue;
+        const r3=gramJudge(model,cands[i]);
+        r3.same=true;r3.order=false;
+        r3.ops.forEach(function(o){if((o.t==="miss"||o.t==="extra")&&fold(o.w)===ps.w)o.t="may";});
+        J.res=r3;J.pron=ps;
+        if(i>0)J.spoken=sp.used;
+        break;
+      }
+    }
+  }
+  return J;
+}
 function grCheck(){
   if(!GR)return;
   const it=GR.q[GR.i]; if(!it)return;
@@ -538,39 +585,8 @@ function grCheck(){
      the part worth reading. */
   GR.pre=gramBox(it.k);
   GR.over=false;
-  GR.res=gramJudge(it.c,GR.typed);
-  GR.spoken=null;GR.pron=null;GR.siz=null;
-  if(!GR.res.same){
-    const sp=spokenToward(GR.typed,it.c);
-    if(sp.used.length){
-      const r2=gramJudge(it.c,sp.text);
-      if(r2.same){GR.res=r2;GR.spoken=sp.used;}
-    }
-    /* The other you, where the sentence does not say which. */
-    if(!GR.res.same){
-      const sz=sizToward(GR.typed,it.c,"",it.en);
-      if(sz.used.length){
-        const r4=gramJudge(it.c,sz.text);
-        if(r4.same){GR.res=r4;GR.siz=sz.used;}
-      }
-    }
-    /* One subject pronoun more or fewer is still the sentence: the ending
-       already says who. Marked on the line as optional, not as missing. */
-    if(!GR.res.same){
-      const cands=[GR.typed];
-      if(sp.used.length)cands.push(sp.text);
-      for(let i=0;i<cands.length;i++){
-        const ps=pronounSlack(it.c,cands[i]);
-        if(!ps)continue;
-        const r3=gramJudge(it.c,cands[i]);
-        r3.same=true;r3.order=false;
-        r3.ops.forEach(function(o){if((o.t==="miss"||o.t==="extra")&&fold(o.w)===ps.w)o.t="may";});
-        GR.res=r3;GR.pron=ps;
-        if(i>0)GR.spoken=sp.used;
-        break;
-      }
-    }
-  }
+  const j=sentOk(it.c,GR.typed,it.en);
+  GR.res=j.res;GR.spoken=j.spoken;GR.pron=j.pron;GR.siz=j.siz;
   GR.diag=GR.res.same?[]:diagnoseLine(it.c,GR.typed,2);
   gramGrade(it.k,GR.res.same);
   if(GR.res.same)GR.right++;
@@ -605,30 +621,36 @@ function grNext(){
 function renderGram(){
   const bank=gramBank(), due=gramDue().length, now=Math.min(due,GRAM_SESSION);
   const firm=bank.filter(function(it){return gramBox(it.k)>=4;}).length;
-  let h=bar("Dilbilgisi tekrarı","grammar · produce it, do not recognise it",true)+'<div class="wrap">';
+  let h=bar("Dilbilgisi tekrarı","grammar · produce it, do not recognise it",true,"tanıma değil, kur")+'<div class="wrap">';
   if(!bank.length){
     h+='<div class="card"><p class="lead">Henüz dilbilgisi yok</p>'+
-     '<p class="sub">This drills the grammar points you have read. Open a unit’s Dilbilgisi tab and its point starts coming back here.</p>'+
+     '<p class="sub">'+tx('This drills the grammar points you have read. Open a unit’s Dilbilgisi tab and its point starts coming back here.',
+       'Burada okuduğun dilbilgisi konuları çalışılır. Bir ünitenin Dilbilgisi sekmesini açınca o konu buraya gelmeye başlar.')+'</p>'+
      '<button class="btn" onclick="home()">Bugüne dön</button></div></div>';
     paint(h);return;
   }
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">The course explains each grammar point once, in one tab, and then moves on. '+
+  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('The course explains each grammar point once, in one tab, and then moves on. '+
    'This brings the point back on a widening schedule and asks you to <i>build</i> a sentence with it from English — '+
-   'the examples rotate, so what is being tested is the pattern rather than one sentence.</p>';
+   'the examples rotate, so what is being tested is the pattern rather than one sentence.',
+   'Kurs her dilbilgisi konusunu bir kez, tek bir sekmede anlatır. Bu bölüm konuyu gittikçe açılan aralıklarla geri getirir ve İngilizceden bir cümle <i>kurmanı</i> ister. '+
+   'Örnekler değişir; sınanan tek bir cümle değil, kalıbın kendisidir.')+'</p>';
   h+='<div class="stat"><div><b>'+now+'</b><span>şimdi</span></div>'+
-     '<div><b>'+bank.length+'</b><span>read</span></div>'+
-     '<div><b>'+firm+'</b><span>holding</span></div></div>';
+     '<div><b>'+bank.length+'</b><span>'+tx('read','okunan')+'</span></div>'+
+     '<div><b>'+firm+'</b><span>'+tx('holding','oturmuş')+'</span></div></div>';
 
   h+='<h2 class="sec">Çalış</h2><div class="card">'+
    '<p class="lead">'+now+' konu · bu oturum</p>'+
-   '<p class="sub">English in, Turkish typed. Every word has to be there — these sentences are short, and the form is the whole question — but the order is yours, because Turkish allows what the English prompt does not pin down. '+
-   'Diacritics are forgiven, so ı ş ğ ç ö ü are optional, and where you produced a different correct sentence you can say so. The point and its table are there if you want them before answering.</p>'+
+   '<p class="sub">'+tx('English in, Turkish typed. Every word has to be there — these sentences are short, and the form is the whole question — but the order is yours, because Turkish allows what the English prompt does not pin down. '+
+   'Diacritics are forgiven, so ı ş ğ ç ö ü are optional, and where you produced a different correct sentence you can say so. The point and its table are there if you want them before answering.',
+   'İngilizcesi gelir, sen Türkçesini yazarsın. Her kelime olmalı, çünkü sorulan şey biçimin kendisi; ama sıra sana kalmış, Türkçe buna izin verir. '+
+   'ı ş ğ ç ö ü yazmak zorunlu değil. Başka doğru bir cümle kurduysan bunu söyleyebilirsin. İstersen cevaptan önce konuya ve tablosuna bakabilirsin.')+'</p>'+
    (due?'<button class="btn" onclick="startGram()">Başla</button>'
-       :'<p class="tiny">Nothing due. Points come back as their boxes come round.</p>')+'</div>';
+       :'<p class="tiny">'+tx('Nothing due. Points come back as their boxes come round.','Şimdilik bekleyen yok. Konular sırası gelince geri gelir.')+'</p>')+'</div>';
 
   const weak=gramWeak();
   h+='<h2 class="sec">Konular</h2><div class="card">'+
-   '<p class="sub" style="margin-bottom:.6rem">Weakest first. A point missed drops to today; a point produced correctly moves out one box.</p>';
+   '<p class="sub" style="margin-bottom:.6rem">'+tx('Weakest first. A point missed drops to today; a point produced correctly moves out one box.',
+     'En zayıf olan önce. Yanlış yapılan konu bugüne döner; doğru kurulan bir kutu ileri gider.')+'</p>';
   weak.slice(0,10).forEach(function(it){
     const b=gramBox(it.k);
     h+='<button class="unit" onclick="go(\'unit\',\''+it.u.id+'\',\'g\')">'+
@@ -637,9 +659,10 @@ function renderGram(){
       (b<0?"hiç sorulmadı · not yet asked":"kutu "+b+" · box "+b)+'</span></span>'+
       '<span class="chev">'+IC.chev+'</span></button>';
   });
-  if(weak.length>10)h+='<p class="tiny" style="margin-top:.5rem">and '+(weak.length-10)+' more, further out.</p>';
+  if(weak.length>10)h+='<p class="tiny" style="margin-top:.5rem">'+tx('and '+(weak.length-10)+' more, further out.','ve daha ileride '+(weak.length-10)+' konu daha.')+'</p>';
   h+='</div>';
-  h+='<p class="foot">The target sentences are the units’ own worked examples.<br>Nothing here is generated, so nothing here is approximate.</p></div>';
+  h+='<p class="foot">'+tx('The target sentences are the units’ own worked examples.<br>Nothing here is generated, so nothing here is approximate.',
+    'Hedef cümleler ünitelerin kendi örnekleridir.<br>Burada hiçbir şey üretilmez, yani hiçbir şey yaklaşık değildir.')+'</p></div>';
   paint(h);
 }
 
@@ -649,8 +672,10 @@ function renderGramRun(){
     paint(bar("Dilbilgisi","Bitti",true)+'<div class="wrap"><div class="score">'+
       '<div class="big '+(GR.right*2>=GR.q.length?"pass":"fail")+'">'+GR.right+'/'+GR.q.length+'</div>'+
       '<p class="sub">doğru üretildi · produced</p></div>'+
-      '<div class="card"><p class="sub">Anything missed comes back today, the rest moves out a box. '+
-      'A near miss counts as a miss here — the point is the form, and the marked line showed you which word carried it.</p>'+
+      '<div class="card"><p class="sub">'+tx('Anything missed comes back today, the rest moves out a box. '+
+      'A near miss counts as a miss here — the point is the form, and the marked line showed you which word carried it.',
+      'Yanlış yapılanlar bugün yeniden gelir, ötekiler bir kutu ileri gider. Burada “az kaldı” da yanlış sayılır: '+
+      'sorulan şey biçimdir ve işaretli satır hangi kelimenin taşıdığını gösterdi.')+'</p>'+
       '<button class="btn" onclick="startGram()">Devam</button>'+
       '<button class="btn ghost" onclick="go(\'gram\')">Dilbilgisi tekrarı</button></div></div>');
     return;
@@ -686,11 +711,12 @@ function renderGramRun(){
     const won=r.same||GR.over;
     h+='<div class="fb '+(won?"ok":"no")+'"><b>'+
      (GR.over&&!r.same?"Kabul edildi":r.same?"Doğru":r.hit+" / "+r.of+" kelime")+'</b>'+
-     (GR.over&&!r.same?"Taken as right. The point moves out a box."
-      :r.same?(r.order?"Same words, different order — Turkish allows it, and the model above is the usual one. It comes back later and later from here."
-                      :"It comes back later and later from here.")
-             :(r.extra?"Struck-through words are not in the sentence. ":"")+
-              "Red is what the model has and you did not. This point comes back today.")+
+     (GR.over&&!r.same?tx("Taken as right. The point moves out a box.","Doğru kabul edildi. Konu bir kutu ileri gider.")
+      :r.same?(r.order?tx("Same words, different order — Turkish allows it, and the model above is the usual one. It comes back later and later from here.",
+                          "Aynı kelimeler, başka bir sırayla. Türkçe buna izin verir; yukarıdaki sıra en yaygın olanı. Bundan sonra gittikçe daha geç gelecek.")
+                      :tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek."))
+             :tx((r.extra?"Struck-through words are not in the sentence. ":"")+"Red is what the model has and you did not. This point comes back today.",
+                 (r.extra?"Üstü çizili kelimeler cümlede yok. ":"")+"Kırmızı olanlar örnekte var, sende yok. Bu konu bugün yeniden gelecek."))+
      (won?(r.same?spokenBox(GR.spoken,it.c)+sizBox(GR.siz,it.c):""):diagBox(GR.diag))+altBox(grAlts(it),GR.pron&&r.same?PRON_NOTE:"")+'</div>';
     if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
     h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
@@ -803,38 +829,39 @@ function planToday(){
      second kind is left out of the plan altogether — a beginner should see
      one instruction, not three ticked rows for work they have never done. */
   const steps=[
-    {k:"rep",  tr:"Tekrar",  en:"the words the course forgets", n:rep+words,
+    {k:"rep",  tr:"Tekrar",  en:"the words the course forgets", tt:"kursun unuttuğu kelimeler", n:rep+words,
      avail:repBank().length>0||S.star.length>0,
      mins:Math.round((rep*PLAN_MIN[0]+words*10)/60),
      go:rep?"startTekrar()":"startReview()"},
     /* Grammar sits second: it decays like the words do, and unlike Dinle
        and Söyle it is the one step that asks for a form rather than a
        sentence already met. */
-    {k:"gram", tr:"Dilbilgisi",en:"build a sentence with the pattern", n:gr,
+    {k:"gram", tr:"Dilbilgisi",en:"build a sentence with the pattern", tt:"kalıpla bir cümle kur", n:gr,
      avail:gramBank().length>0,
      mins:Math.round(gr*PLAN_MIN[3]/60), go:"startGram()"},
-    {k:"dinle",tr:"Dinle",   en:"write down what you hear", n:dk,
+    {k:"dinle",tr:"Dinle",   en:"write down what you hear", tt:"duyduğunu yaz", n:dk,
      avail:listenBank("d:").length>0,
      mins:Math.round(dk*PLAN_MIN[1]/60), go:"startDinle('d')"},
-    {k:"prod", tr:"Söyle",   en:"say it before the model", n:pr,
+    {k:"prod", tr:"Söyle",   en:"say it before the model", tt:"örnekten önce sen söyle", n:pr,
      avail:sentenceBank().length>0,
      mins:Math.round(pr*PLAN_MIN[2]/60), go:"startProd('s')"},
     intro?
-    {k:"new",  tr:"Giriş", en:"before unit one · "+intro.en,
+    {k:"new",  tr:"Giriş", en:"before unit one · "+intro.en, tt:"birinci üniteden önce · "+intro.tr,
      n:1, mins:8, avail:true, go:"go('basla','"+intro.id+"')"}:
     {k:"new",  tr:resuming?"Devam":"Yeni",
      en:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s):""):"every unit is done",
+     tt:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s).split(" · ")[0]:""):"bütün üniteler bitti",
      n:nx?1:0, mins:nx?10:0, avail:!!nx,
      go:nx?"go('unit','"+nx.id+"','"+(resuming?S.place.s:"v")+"')":"home()"}
   ];
-  if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",n:rt,
+  if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",tt:"aklından yeniden anlat",n:rt,
                           avail:true,mins:rt*3,go:"go('prod')"});
   /* The commonest words the units never teach. New material, so after
      every review and before the unit — and only once a unit is finished,
      or day one would be two instructions. */
   if(sikAvail()){
     const sn=sikLeft();
-    steps.splice(steps.length-1,0,{k:"sik",tr:"Kelime",en:"common words the units never teach",n:sn,
+    steps.splice(steps.length-1,0,{k:"sik",tr:"Kelime",en:"common words the units never teach",tt:"ünitelerin öğretmediği sık kelimeler",n:sn,
                                    avail:true,mins:Math.max(1,Math.round(sn*30/60)),go:"go('sik')"});
   }
   const shown=steps.filter(function(s){return s.avail;});
@@ -861,7 +888,8 @@ function planCard(){
   let h='<h2 class="sec">Bugün</h2><div class="card">';
   if(!p.left.length){
     h+='<p class="lead">Bugünlük bitti</p>'+
-     '<p class="sub">Every queue is empty and the course is finished. Anything you open now is revision by choice.</p></div>';
+     '<p class="sub">'+tx('Every queue is empty and the course is finished. Anything you open now is revision by choice.',
+       'Bütün sıralar boş ve kurs bitti. Bundan sonra açtığın her şey kendi seçtiğin bir tekrar.')+'</p></div>';
     return h;
   }
   /* One instruction is not a list and does not need folding — which is
@@ -872,20 +900,21 @@ function planCard(){
   if(many){
     h+='<button class="disc" onclick="planToggle()" aria-expanded="'+(open?"true":"false")+'">'+
       '<span class="grow"><b>'+p.left.length+' adım</b> · '+
-      (p.left.length===1?"step":"steps")+' left · ~'+Math.max(1,p.mins)+' dk</span>'+
+      tx(p.left.length===1?"step left":"steps left","kaldı")+' · ~'+Math.max(1,p.mins)+' dk</span>'+
       '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
   }
   if(open){
     h+='<p class="sub" style="margin:0 0 .5rem">'+
-     (first?(baslaPlan()?'Start with the short lessons before unit one: the letters, the sounds and how a sentence is built. Each opens when the one before it is passed. ':'Start with the first unit. ')+'The review steps appear here once you have finished something to review — until then there is nothing to bring back.'
-          :'In this order: reviews decay on a schedule, new material does not. About '+
-            Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.')+'</p>';
+     (first?tx((baslaPlan()?'Start with the short lessons before unit one: the letters, the sounds and how a sentence is built. Each opens when the one before it is passed. ':'Start with the first unit. ')+'The review steps appear here once you have finished something to review — until then there is nothing to bring back.',
+               (baslaPlan()?'Birinci üniteden önceki kısa derslerle başla: harfler, sesler ve cümlenin nasıl kurulduğu. Her ders bir öncekini geçince açılır. ':'Birinci üniteyle başla. ')+'Tekrar edecek bir şey bitirince tekrar adımları burada görünür; o zamana kadar geri getirilecek bir şey yok.')
+          :tx('In this order: reviews decay on a schedule, new material does not. About '+Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.',
+              'Bu sırayla: tekrar edilmeyen şey unutulur, yeni konu ise bekleyebilir. Yaklaşık '+Math.max(1,p.mins)+' dakika.'))+'</p>';
     p.steps.forEach(function(s,i){
       const done=s.n===0;
       h+='<button class="unit" onclick="'+s.go+'">'+
         '<span class="tick '+(done?"done":(s===p.left[0]?"here":""))+'">'+(done?IC.check:(i+1))+'</span>'+
         '<span class="grow"><span class="unit-t">'+s.tr+(s.n>1?' · '+s.n:'')+'</span>'+
-        '<span class="unit-s">'+esc(s.en)+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
+        '<span class="unit-s">'+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
         '<span class="chev">'+IC.chev+'</span></button>';
     });
   }

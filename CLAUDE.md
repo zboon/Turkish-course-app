@@ -46,7 +46,7 @@ src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
 src/data/baslarken.js    const BASLA=[…];    // six lessons before unit one
-src/data/resim.js        const RESIM={…};    // a picture for A1 words, for Adım adım
+src/data/resim.js        const RESIM={…};    // a picture for A1 words, for the guided lesson
 src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
@@ -66,7 +66,7 @@ src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.sik.js           the frequency layer: ten common words a day
 src/app.baslarken.js     the lessons before unit one
 src/app.uyku.js          before sleep: today's material, quietly
-src/app.adim.js          Adım adım: an A1 unit one screen at a time
+src/app.adim.js          Derse başla: a unit taught one screen at a time
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
@@ -348,7 +348,7 @@ its schedule, the same hazard as renumbering a unit.
 Reordering a unit's `lines` silently re-points every schedule built on it,
 so add lines at the end rather than inserting them. `gap`, `prompten`,
 `pscope`, `drate`, `dreplay`, `ygap`, `yrate`, `nmax`, `ncap`, `tips` and `en`
-are settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
+(`{st,on}` since v3.64, or a legacy boolean; see İngilizcesi) are settings, not progress — `wipe()` keeps them, like `theme` and `rate`.
 `num` is keyed by the *shape* a number has rather than by any number —
 `duy:3` is three digits heard, `oku:saat` is a clock face read aloud —
 because the numbers are generated and endless while the shapes are six.
@@ -584,6 +584,60 @@ a redraw on toggle, `wipe()` dropping the setting, the second copy,
 `paint()` skipping the pass, the late voice note, an unlisted English
 half, and the pass escaping the interface elements — each turned
 `sim.js` red.
+
+### Less English as you go (the stages)
+
+By request, the way a school moves its classroom language over: labels
+first, then instructions, then (still to come) the explanations. The
+stage is the level being worked in, `curLv()`: the level of the unit
+after the furthest one passed. So passing the A2 test puts a learner in
+B1 at once, and dipping back into an old unit changes nothing.
+
+| stage | when | labels | instructions |
+|---|---|---|---|
+| 0 | A1–A2 | Turkish, English under | English |
+| 1 | B1 | Turkish only | Turkish, English under |
+| 2 | B2 and up | Turkish only | Turkish only |
+
+Grammar explanations, every drill's `why`, the feedback notes (spoken
+form, sen/siz, the pronoun, Neden?), About and Nasıl çalışır stay
+English at every stage for now. Explanations in Turkish at C1–C2 are the
+planned next step, and want a native speaker's pass first.
+
+- **Instructions are written twice, at the call site.** `tx(en, tr)`
+  puts both into the page as `.t-en` and `.t-tr` spans, and three
+  classes on `<html>` decide which show (`ins-en`, `ins-both`,
+  `ins-tr`). It is a call-site helper, not a pass like `enUnder()`,
+  because instruction prose carries counts and markup a lookup table
+  cannot key. Plain text (a `confirm()`, a message poked in with
+  `textContent`, a placeholder) cannot hold two spans, so `txt(en, tr)`
+  picks one string by stage. `navRow()` takes the Turkish as a fifth
+  argument, and `bar()` takes a Turkish subtitle as a fourth. The bar
+  has room for one line, so it shows English at stage 0 and Turkish
+  after.
+- **The EN button is "show me the English now"**, and a choice is
+  stored with its stage: `S.en = {st, on}`. It lapses when the stage
+  changes, so turning the English on at A2 does not hold it on through
+  C2. A choice saved before the stages existed is a plain boolean and
+  counts as a stage-0 choice. Off is Turkish only everywhere, stage 0
+  included.
+- **The Turkish is short and repeated on purpose.** Classroom language
+  is learnable because the same few instructions come back every day
+  (*Dinle*, *Yaz*, *Boşluğu doldur*, *Bundan sonra gittikçe daha geç
+  gelecek*), so reuse a sentence that already exists before writing a
+  new one. The instructions use *sen*, as the labels already did.
+- **English inside a feedback box is `--ink2`, not `--faint`.**
+  `validate.js` measured `--faint` at 4.0–4.5:1 on the right- and
+  wrong-answer grounds, so it failed AA there. The pairs are in `PAIRS`.
+
+`sim.js` scans every paint for a `tx()` pair whose Turkish half is
+empty, identical to the English, or still English (the half a copy and
+paste leaves behind). It found one on its first run: the plan's
+next-unit step, whose halves were the same unit name. It also checks
+the stage rule, including passing the A2 test straight into B1, a
+choice lapsing at a stage change and the legacy boolean. About 300
+instruction strings were translated. All the Turkish here is the
+author's, so it is on the native-speaker list with Başlarken.
 
 ## Üretim (production mode)
 
@@ -1638,27 +1692,42 @@ locked views at the end the same way. Sixteen deliberate breakages,
 ten on the lock and six on the intro test, each turned `sim.js` red. A new test that is about the lock has to restore
 the real functions first, or it is testing the stub.
 
-## Adım adım (an A1 unit one screen at a time)
+## Derse başla (the guided lesson)
 
-Built, by request, after the children's app: asked whether its shape
+Built, by request, after the children's app. Asked whether its shape
 suited adults too, the honest answer was *partly*. The drills in a kids'
 game are the wrong thing to copy, since an adult course needs recall and
 explanation. What transfers is the **pacing**. A unit is four tabs a
 learner moves between freely. That suits someone who knows what they
-want, and it is easy to drift through for a beginner: the word list gets
+want, and it is easy to drift through for anyone else: the word list gets
 skimmed, the grammar tab never gets opened, and there is no clear moment
 when the unit is done.
 
-`startAdim(id)` walks the unit's own material in order. First the ten
-words, each on a card with a picture from `RESIM`, said as it arrives.
-Then four listening checks (hear, pick the meaning), three spellings
-from letter tiles, the grammar point (`gramCard()`, split out of
-`secGram()` for this), and the passage one line at a time, English
-behind a tap. The end hands over to `startUnitQuiz`, the unit's own five
-exercises, which are what tick it. An entry card sits at the top of
-every A1 unit; the tabs stay underneath, unchanged.
+It shipped first as "Adım adım", A1 only, beside the tabs. The learner
+did not like the name, and it was not a feature anyway: it is how a unit
+is taught. So it has **no name**. It is the main button at the top of
+every unit, **Derse başla** (**Dersi tekrarla** once the unit is
+passed), with the tabs underneath under *Ya da üniteye kendin göz at*.
 
-Four decisions:
+`startAdim(id)` walks the unit's own material in order and hands over to
+`startUnitQuiz`, the five exercises, which are what tick the unit. The
+order is the same at every level; the checks grow with the learner,
+because what teaches at A1 is too easy to teach anything at B1:
+
+| level | words | checks | grammar | passage |
+|---|---|---|---|---|
+| A1 | pictured (`RESIM`), heard | hear and pick ×4, spell from tiles ×3 | read | line by line, shown |
+| A2 | heard | type the Turkish from the English ×4 | read, then type one example | line by line, shown |
+| B1+ | heard | the word typed back into its own sentence ×4, after the passage | read, then type one example | heard first, then shown |
+
+From B1 the checks come after the passage, because a word blanked in a
+sentence not yet read is a guess. `adimCloze()` is Tekrar's cloze builder
+restricted to the unit's own lines (the form the line uses, never a line
+that uses the word twice). A word with no sentence is asked from the
+English instead, so there are always four: 38 of the 40 B1+ units ask
+127 of 160 in their sentences.
+
+Five decisions:
 
 - **It adds no material and no storage.** Each part calls `markSeen()`
   for its own tab as it is shown: `v` for the words, `g` for the grammar,
@@ -1666,28 +1735,33 @@ Four decisions:
   would if the tabs had been read. Walking the words does not count as
   reading the passage (see "Nothing reviews what has not been met").
 - **The checks are practice, not marks.** Nothing is scheduled, starred
-  or written to the mistake book. A missed check goes back into the line
-  *before the grammar*, at most `ADIM_RETRY` (2) times, so the words are
-  settled before the unit moves on from them. The unit is ticked only by
-  its real exercises.
-- **A1 only (`ADIM_LV`).** This is where drifting through tabs costs the
-  most, and where a picture can stand for a word. From A2 the vocabulary
-  turns abstract, and the tabs are the better tool once a learner knows
-  the routine.
+  or written to the mistake book. A missed check comes back once more
+  (`ADIM_RETRY`, 2): before the grammar at A1 and A2, so the words are
+  settled before the unit moves on from them, and before the end from
+  B1, where the checks come last.
+- **Typed answers use the course's own judges.** `wordOk()` and
+  `sentOk()` were factored out of `tkCheck()` and `grCheck()` for this
+  (a pure move that `snap.js` passed unchanged), so a spoken spelling,
+  the other *you* and a dropped pronoun count here exactly as they do in
+  Tekrar and Dilbilgisi. An empty answer is not marked.
 - **The lock applies.** `startAdim` refuses a unit `unitOpen()` refuses.
-  The guided way is a second door to the same room, not a way round the
-  path.
+  The lesson is a second door to the same room, not a way round the path.
+- **`RESIM` is A1 only.** It is keyed by the exact vocab entry (`"ad /
+  isim"`, not a fold of it). Abstract words are left out rather than
+  given a picture that misleads, and from A2 most words are abstract.
 
-`RESIM` is keyed by the exact vocab entry (`"ad / isim"`, not a fold of
-it), and abstract words are left out rather than given a picture that
-misleads. `validate.js` fails on a key that is not an A1 entry, which is
+`validate.js` fails on a `RESIM` key that is not an A1 entry, which is
 how a spelling edit would strand one, and requires at least three
-spellable words in every A1 unit. `sim.js` walks all ten A1 units. It
-checks the autoplay happens once and a redraw does not repeat it, the
-seen-flag grain, that a missed check comes back exactly once, that the
-English stays hidden until asked for, that `S` is untouched apart from
-`seen`, the quiz handoff, `back()`, and the lock. Twelve deliberate
-breakages each turned a test red.
+spellable words in every A1 unit. `sim.js` walks all sixty units and
+checks each level's shape: the checks it asks for, their count, the
+passage before the checks at B1+, and every blank filling back to its
+line without the answer left in it. It also checks the autoplay happens
+once and a redraw does not repeat it, the seen-flag grain, a missed
+check coming back exactly once and where, the B1 line hidden until
+shown, the English hidden until asked for, the judges (the other you, a
+spoken form without its pronoun, a wrong example marked word by word, an
+empty answer ignored), that `S` is untouched apart from `seen`, the quiz
+handoff, `back()` and the lock.
 
 A related fix that shipped with it: `button.card` set `display:block`
 and outranked `.row`, so every navigation row in the app had its

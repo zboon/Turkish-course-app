@@ -1230,7 +1230,9 @@ let contrastPairs = 0;
     ["gold-ink", "card", 4.5, ".tick.here"], ["gold-ink", "gold-soft", 4.5, ".pill.gold, .savewarn button"],
     ["ink", "gold-soft", 4.5, ".savewarn"], ["gold", "card", 3, ".star.on (icon)"],
     ["paper", "ink", 4.5, "the gloss tooltip"], ["gold-inv", "ink", 4.5, "the glossed word in the tooltip"],
-    ["on-accent", "cobalt", 4.5, ".btn, .lvl-badge.on"], ["on-accent", "turk", 4.5, ".tick.done, .vb.on"]
+    ["on-accent", "cobalt", 4.5, ".btn, .lvl-badge.on"], ["on-accent", "turk", 4.5, ".tick.done, .vb.on"],
+    ["ink2", "turk-soft", 4.5, ".t-en in a right-answer box"], ["ink2", "bole-soft", 4.5, ".t-en in a wrong-answer box"],
+    ["ink2", "gold-soft", 4.5, ".t-en in a gold card"]
   ];
   [["light", light], ["dark", Object.assign({}, light, darkMq)]].forEach(([theme, T]) => {
     PAIRS.forEach(([fg, bg, min, where]) => {
