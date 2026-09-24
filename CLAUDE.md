@@ -7,7 +7,7 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 266 morphology forms + 872 number forms + 46 contrast pairs + mistake naming
+node test/validate.js   # data integrity + 339 morphology forms + 872 number forms + 54 contrast pairs + mistake naming
 node test/sim.js        # headless render of all 346 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 node kids/test/validate.js   # the children's app: data and contrast
@@ -68,11 +68,12 @@ src/app.baslarken.js     the lessons before unit one
 src/app.uyku.js          before sleep: today's material, quietly
 src/app.adim.js          Derse başla: a unit taught in three lessons, one screen at a time
 src/app.ilerleme.js      İlerleme: the state of every mode, on one page
+src/app.coz.js           Çöz: a word taken apart into its endings
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is eighteen files rather than one because it grew past the point
+The app is twenty files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -324,7 +325,7 @@ deliberate breakage.
  num:{"duy:3":{b,d}, "oku:saat":{b,d}}, dia:{"bilet":{b,d,n}},
  ata:{"a:damlaya":{b,d}, "d:kafapatlat":{b,d}},
  sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
- ders:{unitId:[d1,d2,d3]},
+ ders:{unitId:[d1,d2,d3]}, coz:{"fut":{b,d,f}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
@@ -334,6 +335,8 @@ from before v3.67 have none. `ders[id]` is the day each of the unit's
 three lessons was first finished, `0` while it is not; a lesson gone over
 again keeps its day. Together they are what the one-lesson-a-day pace
 counts (see Bugün). `ders` is progress: `wipe()` clears it.
+`coz` is keyed by an ending (`fut`, `loc`, `abil`), never by a word,
+for the same reason `num` is keyed by a shape; see Çöz. Progress too.
 
 Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
 `num`, `ata`, `dia` — carries `f`, the day it was first practised, which
@@ -724,7 +727,7 @@ the vetted drill stems and `LEX` drives the morphology engine in
 
 The morphology engine derives what is derivable and the lexicon lists
 what is not — see the flags at the top of `lex.js`. `validate.js` holds
-266 hand-checked forms and will not let the engine disagree with them,
+339 hand-checked forms (Çöz's split words among them) and will not let the engine disagree with them,
 checks that every collocation names a noun that exists, and fails when a
 word is added without the flags its forms need. `sim.js` sweeps 600
 generated prompts for empty output, leaked `undefined`, double spaces,
@@ -792,6 +795,90 @@ Dönüştürme would drill something else entirely.
 Sor is **not** in the daily plan, like Kurma ve Dönüştürme and for the same
 reason: it needs no material met, so it would be available on day one and
 push the plan past one instruction. Direct access is in Araçlar.
+
+## Çöz (taking a word apart)
+
+Built, by request, as the first of three things a polyglot would do with
+Turkish that this app did not (the other two, writing about your own
+life and logging outside listening, are proposed but not built). A
+Turkish word is a stem and a queue of endings, each doing one job in a
+fixed order: *gel-ebil-ir-im* is come · can · as a rule · I. Read the
+endings and a word never met reads itself. Everything else here builds
+words or hears them; nothing asked the learner to take one apart.
+
+`go('coz')` says a generated word and offers four meanings in English.
+**Each wrong one is the right one with one piece changed**: another
+person, the negative, another tense or case. So the stem gives nothing
+away, and the only way to answer is to read the endings. The first two
+distractors change the piece the question is about (`czNear()` returns
+those first), so there is always one that differs exactly there. After
+the answer the word comes back in pieces (`czChips()`): the surface, the
+archiphoneme label a grammar writes (`-lAr`, `-DI`, `-(y)AcAk`, with A
+and I for the vowel harmony picks), the meaning, and a note for every
+letter that is not simply the label filled in: a softened stem, a
+dropped vowel, a buffer y or n, a d that became t, k → ğ, -mA narrowed
+before -yor, the negative aorist's missing z. A miss also shows the
+Turkish of the meaning that was picked, with a speaker.
+
+**The engine** is a section of `app.lang.js`, `çöz`, so `validate.js`
+lifts it with the rest. `czVerb(e,t,p,neg)` and `czNoun(n,pl,ps,c)`
+return `{w, pieces, notes}`. The verb pieces are derived independently
+of the builders and **must join to the form `czForm()` builds**, or the
+function returns null: two derivations that agree are much harder to get
+wrong than one. Four verb forms the drills never needed are added,
+`vAbil` (-(y)Abil, and with `neg` -(y)AmA, "cannot"), `vMali`,
+`vMis` and `vSa`. They stay out of `TENSES`, which the generated drills
+and the mistake book walk. The ability stem is the future's 3sg minus
+its -cAk (*gele, okuya, gide, yiye*), which carries the softening and
+*ye → yi* for free. Nouns are `CZ_NOUNS`, 21 countable LEX nouns with
+the English plural and the cases that make a phrase anyone would say
+("in my house", "from my friend", never "in my friend"). Plural with
+*his/her* is never generated: *evleri* is his houses, their house and
+their houses, and a decoder that picked one would teach a guess.
+
+**Where the letters have two readings, it says so rather than tests it.**
+*evinde* is "in your house" and "in his/her house"; `czAlso()` walks
+the noun's whole space for the same spelling and a note names them.
+They are never offered as options, because no two options may share a
+spelling (a first guard that excluded them by meaning as well survived
+its breakage, which is how it was found to be redundant, and went). The possessive *-(I)n*
+against the genitive and *-(s)I* against the accusative get the same
+note when no case follows.
+
+**Each ending opens with its unit's grammar** (`metGram`), from `CZ_ROLES`:
+plural a1u2, possessive a1u3, -DA a1u4, -(I)yor a1u5, -DAn a1u8, -DI
+a2u1, -(y)AcAk a2u2, -(y)A a2u3, -(y)Abil a2u4, the aorist a2u6,
+-(y)lA a2u8, -mIş b1u1, -sA b1u2, -mAlI b2u2. Distractors are held to
+what is open too. A noun ending alone has nothing to be confused with
+(*kitaplar*: books, or book), so nouns wait for a second; one verb
+ending already has six persons and a negative. On a fresh install the
+tile is faded, *Şimdilik boş*.
+
+**Scheduled by ending, not by word**, in `S.coz`: the words are endless
+and the endings are fourteen, the same reasoning as Sayılar's shapes. A
+sitting is `CZ_SESSION` (10): each due ending twice, at most `CZ_NEW`
+(3) never practised a day, and the rest practice drawn from everything
+open. The schedule moves **once, at the end**, one step per due ending,
+back to today if it was missed anywhere in the sitting; practice items
+move nothing, and leaving early writes nothing, as in Yolda. A miss goes
+to the mistake book under `coz:<ending>` (mode `o`), with the pieces as
+its explanation. Not in the daily plan, like the other generated modes.
+
+`validate.js` holds 73 hand-checked forms: 43 verbs and 22 nouns split
+into pieces, and 8 English renderings. It then sweeps every verb × eight
+tenses × six persons × both polarities (3,072, each must split and join),
+every noun combination, and checks the noun forms against `nPlur`,
+`nP1`, `nP3`, `nLoc`, `nDat` and `nAbl` where they overlap. `snap.js`
+hashes every split (4,227 of them, with notes and English). `sim.js`
+checks the gate (nothing, the plural alone, then two, then four, and no
+later ending leaking into an option over 160 items), 30 items of every
+ending for four distinct options and meanings, a key that is the word,
+pieces that join, the other reading never offered and always noted; the
+new-ending cap; a sitting: the word said once and not on a redraw, no
+pieces before the answer, a miss in the book with the chosen word shown,
+no schedule written until the end, a second tap ignored, the grades,
+practice moving nothing, `back()` and `wipe()`. Thirty-two deliberate
+breakages each turned a check red.
 
 ## Sayılar (numbers at speed)
 
@@ -1404,6 +1491,7 @@ q:<unitId>#<i>   a unit drill        p:<i>        a placement question
 s:<unitId>#<i>   a passage line      k:<index>    a prefab
 d: / a:          dictation, audio-first — deliberately NOT merged
 r:<fold(word)>   a vocabulary item   y:<unitId>   a grammar point
+coz:<ending>     a word misread in Çöz, one entry per ending
 ```
 
 `d:` and `a:` stay apart for the same reason they are apart in `S.dinle`:
@@ -2117,7 +2205,7 @@ deliberate breakage.
 ### Araçlar as tiles, and "Şimdilik boş"
 
 By request, after the landing page: Araçlar was sixteen rows of text under
-two explanatory paragraphs, and is now fifteen tiles in a two-column grid
+two explanatory paragraphs, and is now sixteen tiles in a two-column grid
 under the same four headings (Konuşma, Dinleme, Tekrar, Kelimeler), each
 an icon (`TOOL_IC`), a name and a few words of English, built by
 `toolTile()`. The two paragraphs and the footer are gone; Nasıl çalışır
@@ -2130,13 +2218,13 @@ tool whose bank is empty is drawn faded (`.tool.idle`) and says
 **Şimdilik boş** (empty for now); the rest carry no mark. The flags are
 the same live booleans as before, computed at the render from the banks
 the modes check themselves (`listenBank()`, `uyBank()`, `repBank()`,
-`gramBank()`, `S.star`, `S.err`, `sikBatch()`), never a hand-typed list.
+`gramBank()`, `S.star`, `S.err`, `sikBatch()`, `czRoles()`), never a hand-typed list.
 "For now" rather than "yet" because Sık kelimeler empties once the day's
 ten are in, as well as before anything has been met.
 
-`sim.js` checks the four headings, fifteen tiles and no text row or
-paragraph; the nine tools ready on a fresh install and the five that are
-not; each of those five turning ready when exactly the tab that feeds it
+`sim.js` checks the four headings, sixteen tiles and no text row or
+paragraph; the nine tools ready on a fresh install and the six that are
+not (Çöz, added later, is the sixth); each of those six turning ready when exactly the tab that feeds it
 is met; that a tile's fade and its label never disagree; and the two
 reference pages being links. Nine deliberate breakages each turned it
 red; one did not at first (the fade dropped while the label stayed),

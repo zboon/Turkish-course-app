@@ -3,14 +3,14 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.68";
+const APP_VERSION="v3.69";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
-       num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},tips:true};
+       num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},coz:{},tips:true};
 /* Progress lives in this browser and nowhere else, so a save that fails is
    the one silent bug that costs a learner months: every box, every star,
    gone when the tab closes, and nothing said. It used to be swallowed.
@@ -33,6 +33,8 @@ function load(){
   if(!S.sik)S.sik={};
   /* S.basla is keyed by intro lesson id, as permanent as a unit id. */
   if(!S.basla)S.basla={};
+  /* S.coz is keyed by an ending ("fut", "loc"), never by a word. */
+  if(!S.coz)S.coz={};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
 function saveWarn(){
@@ -332,7 +334,7 @@ function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
 /* The tool screens all hang off Araçlar; Dersler holds the levels. */
 const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
-            "sayilar","diyalog","ata","words","dict","about","nasil","sik","uyku"];
+            "sayilar","diyalog","ata","words","dict","about","nasil","sik","uyku","coz"];
 /* İlerleme is reached from the home screen, so back() from it goes home. */
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
@@ -346,6 +348,7 @@ function back(){
   else if(V.view==="dinlerun"){go("dinle");}
   else if(V.view==="tekrarrun"){go("tekrar");}
   else if(V.view==="gramrun"){go("gram");}
+  else if(V.view==="cozrun"){CZ=null;go("coz");}
   /* Leaving a sitting mid-drive should not throw away what was covered:
      the back arrow and the Bitir button do the same thing, which is what
      a learner expects of a mode whose whole point is not touching it. */
@@ -468,7 +471,7 @@ const EN_INLINE=[
  "stop and mark","drill these","review them","walk away","place me","hide on the home screen","mine is said too",
  "how to add one","ten more","where to","caught you twice or more","speaking","listening","bringing it back","words",
  "how it is said","listening and shadowing","the review queue","what the course teaches once","produce the pattern",
- "listening without the text","saying it first","asking","keeping it alive","said whole","numbers at speed",
+ "listening without the text","saying it first","asking","taking a word apart","keeping it alive","said whole","numbers at speed",
  "your own words","the mistake book","hands-free","how many words","the texts","back up",
  "build it","change it","the gap","where sentences come from","write what you hear","audio first","listening speed",
  "replays allowed","the model’s speed","ask the question","write the digits","read it out","how high","the bar",

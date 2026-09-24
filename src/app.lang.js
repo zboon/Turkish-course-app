@@ -723,3 +723,266 @@ function shortOf(model){
   }
   return null;
 }
+
+/* ===================== çöz · taking a word apart ===================== */
+/* A Turkish word is a stem and a queue of endings, each doing one job
+   in a fixed order: gel-ebil-ir-im is come · can · as a rule · I. A
+   learner who sees that reads a word they have never met; one who does
+   not is left memorising forms, which does not scale to a language
+   where one verb has hundreds.
+
+   This splits a generated word into its pieces. Each piece carries its
+   surface (what is written), its archiphoneme label (what a grammar
+   writes: -lAr, -DI, -(y)AcAk, with A and I standing for the vowel
+   harmony will choose) and what it means. The joined pieces must equal
+   the form the engine builds by its own route, which validate.js checks
+   for every verb, tense, person and polarity: two derivations that
+   agree are much harder to get wrong than one.
+
+   Four forms the drills never needed are added here: -(y)Abil "can"
+   (and -(y)AmA "cannot"), -mAlI "must", -mIş "apparently" and -sA
+   "if". They stay out of TENSES, which the generated drills and the
+   mistake book walk. */
+function vFutStem(e){return vFut(e,2,false).slice(0,-3);}     /* gele, okuya, gide, yiye */
+function vAbil(e,p,neg){
+  const fs=vFutStem(e);
+  return neg?vAor({t:fs+"mek"},p,true):vAor({t:fs+"bilmek",aor:1},p,false);
+}
+/* The personal endings after a vowel, as on -mAlI: gelmeliyim. */
+function copEnd(w,p){return ["y"+I(w)+"m","s"+I(w)+"n","","y"+I(w)+"z","s"+I(w)+"n"+I(w)+"z","l"+A(w)+"r"][p];}
+function vMali(e,p,neg){
+  let st=vStem(e); if(neg)st+="m"+A(st);
+  const w0=st+"m"+A(st), w=w0+"l"+I(w0);
+  return w+copEnd(w,p);
+}
+function vMis(e,p,neg){let st=vStem(e); if(neg)st+="m"+A(st); return pers1(st+"m"+I(st)+"ş",p);}
+function vSa(e,p,neg){let st=vStem(e); if(neg)st+="m"+A(st); return pers2(st+"s"+A(st),p);}
+const CZ_VF={abil:vAbil,mali:vMali,mis:vMis,sa:vSa};
+function czForm(e,t,p,neg){return CZ_VF[t]?CZ_VF[t](e,p,neg):conj(e,t,p,neg);}
+
+/* --- English -------------------------------------------------------- */
+const CZ_WHO=["I","you","he/she","we","you (plural)","they"];
+const CZ_BE=["am","are","is","are","are","are"];
+function czVerbEN(v,t,p,neg){
+  const [base,ger,past,s3]=v.e, s=CZ_WHO[p], one=p===2;
+  const pres=one?s3:base, dont=one?" does not ":" do not ";
+  let out;
+  if(t==="prog")out=s+" "+CZ_BE[p]+(neg?" not ":" ")+ger;
+  else if(t==="past")out=s+(neg?" did not "+base:" "+past);
+  else if(t==="fut")out=s+" will"+(neg?" not ":" ")+base;
+  else if(t==="aor")out=s+(neg?dont+base:" "+pres);
+  else if(t==="abil")out=s+(neg?" cannot ":" can ")+base;
+  else if(t==="mali")out=s+(neg?" must not ":" must ")+base;
+  else if(t==="mis")out=s+" apparently"+(neg?" did not "+base:" "+past);
+  else out="if "+s+(neg?dont+base:" "+pres);
+  return cap(out);
+}
+/* Nouns the decoder uses, with what English needs and Turkish does not
+   say: the plural, and which cases make a phrase anyone would utter —
+   "in my house" and "from my friend", not "in my friend". */
+const CZ_NOUNS=[
+ ["ev","house","houses",{loc:"in",dat:"to",abl:"from"}],
+ ["okul","school","schools",{loc:"at",dat:"to",abl:"from"}],
+ ["şehir","city","cities",{loc:"in",dat:"to",abl:"from"}],
+ ["sokak","street","streets",{loc:"in",dat:"to",abl:"from"}],
+ ["araba","car","cars",{loc:"in",dat:"to",abl:"from",ile:"by"}],
+ ["otobüs","bus","buses",{loc:"on",abl:"from",ile:"by"}],
+ ["uçak","plane","planes",{loc:"on",abl:"from",ile:"by"}],
+ ["masa","table","tables",{loc:"on",dat:"to",abl:"from"}],
+ ["pencere","window","windows",{loc:"at",dat:"to",abl:"from"}],
+ ["kapı","door","doors",{loc:"at",dat:"to",abl:"from"}],
+ ["kitap","book","books",{loc:"in",abl:"from"}],
+ ["kalem","pen","pens",{ile:"with"}],
+ ["telefon","phone","phones",{loc:"on",ile:"by"}],
+ ["el","hand","hands",{loc:"in",ile:"with"}],
+ ["göz","eye","eyes",{loc:"in",ile:"with"}],
+ ["arkadaş","friend","friends",{dat:"to",abl:"from",ile:"with"}],
+ ["çocuk","child","children",{dat:"to",abl:"from",ile:"with"}],
+ ["öğretmen","teacher","teachers",{dat:"to",abl:"from",ile:"with"}],
+ ["kedi","cat","cats",{dat:"to",abl:"from",ile:"with"}],
+ ["köpek","dog","dogs",{dat:"to",abl:"from",ile:"with"}],
+ ["kalp","heart","hearts",{loc:"in"}]
+].map(function(r){return {t:r[0],sg:r[1],pl:r[2],c:r[3]};});
+const CZ_POSS=["my","your","his/her","our","your (plural)"];
+function czNounEN(n,pl,ps,c){
+  const noun=pl?n.pl:n.sg;
+  /* arabayla is "by car", with no article; arabamla is "with my car". */
+  if(c==="ile"&&n.c.ile==="by")return ps==null&&!pl?"By "+n.sg:cap("with "+(ps!=null?CZ_POSS[ps]:"the")+" "+noun);
+  const det=ps!=null?CZ_POSS[ps]+" ":c?"the ":"";
+  return cap((c?n.c[c]+" ":"")+det+noun);
+}
+
+/* --- the pieces -------------------------------------------------------- */
+/* r is the piece's job, which is also its colour on screen:
+   kok stem · olum negative · zam tense or mood · kis person
+   cog plural · iye possessive · hal case */
+function czP(m,r,a,en){return {m:m,r:r,a:a,en:en};}
+const CZ_PERS1=["-Im","-sIn","","-Iz","-sInIz","-lAr"];
+const CZ_PERS2=["-m","-n","","-k","-nIz","-lAr"];
+const CZ_PERSC=["-(y)Im","-sIn","","-(y)Iz","-sInIz","-lAr"];
+const CZ_TEN={prog:["-(I)yor","now, -ing"],past:["-DI","past"],fut:["-(y)AcAk","will"],
+  aor:["-Ir / -Ar","as a rule"],abil:["-(y)Abil","can"],mali:["-mAlI","must"],
+  mis:["-mIş","apparently"],sa:["-sA","if"]};
+const CZ_VOICELESS="the d is a t after a voiceless consonant (f s t k ç ş h p)";
+
+/* A verb, in pieces, with a note for every letter that is not simply
+   the label with its vowels filled in. Returns null if the pieces do not
+   join to the form czForm builds, which validate.js holds at zero. */
+function czVerb(e,t,p,neg){
+  const raw=vStem(e), gloss=e.e[0], P=[], N=[];
+  let stem=raw;
+  const tl=CZ_TEN[t];
+  const pushNeg=function(m){P.push(czP(m,"olum","-mA","not"));};
+  let tense="", after=null, zless=false;
+  if(t==="prog"){
+    if(neg){pushNeg("m"+I(raw)); tense="yor";
+      N.push("-mA narrows to -m"+I(raw)+" before -yor: "+raw+"m"+I(raw)+"yor, never "+raw+"m"+A(raw)+"yor.");}
+    else if(irr(e,"prog")){stem=e.irr.prog; tense="yor";
+      N.push(raw+"- is "+stem+"- before -yor.");}
+    else if(endsVowel(raw)){
+      const b=raw.slice(0,-1), v=I(b);
+      if(v===raw[raw.length-1]){tense="yor";
+        N.push("After a vowel -(I)yor needs no vowel of its own: "+raw+"yor.");}
+      else{stem=b; tense=v+"yor";
+        N.push(raw+"- loses its last "+raw[raw.length-1]+" before -(I)yor, and the I takes its vowel from what is left: "+b+v+"yor.");}
+    }else{stem=soften(raw,e); tense=I(raw)+"yor";}
+    after="p1";
+  }else if(t==="past"){
+    if(neg){pushNeg("m"+A(raw)); tense="d"+I(raw+"m"+A(raw));}
+    else{tense=D(raw)+I(raw); if(D(raw)==="t")N.push("-DI: "+CZ_VOICELESS+".");}
+    after="p2";
+  }else if(t==="fut"){
+    if(neg){pushNeg("m"+A(raw)); const w=raw+"m"+A(raw); tense="y"+A(w)+"c"+A(w)+"k";
+      N.push("y keeps the vowels of -mA and -AcAk apart.");}
+    else if(irr(e,"fut")){stem=e.irr.fut.slice(0,-5); tense=e.irr.fut.slice(-5);
+      N.push(raw+"- is "+stem+"- before a y.");}
+    else if(endsVowel(raw)){tense="y"+A(raw)+"c"+A(raw)+"k"; N.push("y keeps two vowels apart: "+raw+" + "+A(raw)+"c"+A(raw)+"k.");}
+    else{stem=soften(raw,e); tense=A(raw)+"c"+A(raw)+"k";}
+    after="p1";
+  }else if(t==="aor"){
+    if(neg){pushNeg("m"+A(raw));
+      if(p===0||p===3){zless=true; N.push("The negative aorist has no z with I and we: "+raw+"m"+A(raw)+"m, "+raw+"m"+A(raw)+"y"+I(raw)+"z.");}
+      else tense="z";
+      after="p1";
+    }else{
+      if(endsVowel(raw)){tense="r"; N.push("After a vowel the aorist is just -r.");}
+      else{stem=soften(raw,e);
+        if(syllables(raw)>1){tense=I(raw)+"r"; N.push("-Ir, because "+raw+"- has more than one syllable.");}
+        else if(e.aor){tense=I(raw)+"r"; N.push(raw+"- is one of the thirteen one-syllable verbs that take -Ir rather than -Ar.");}
+        else{tense=A(raw)+"r"; N.push("-Ar, as most one-syllable stems take.");}}
+      after="p1";
+    }
+  }else if(t==="abil"){
+    const fs=vFutStem(e);
+    stem=irr(e,"fut")?e.irr.fut.slice(0,-5):endsVowel(raw)?raw:soften(raw,e);
+    if(stem!==raw&&irr(e,"fut"))N.push(raw+"- is "+stem+"- before a y.");
+    const link=fs.slice(stem.length);
+    if(link[0]==="y")N.push("y keeps two vowels apart: "+stem+" + "+link.slice(1)+(neg?"m"+A(fs):"bil")+".");
+    if(neg){
+      P.push(czP(null,"kok",raw+"-",gloss));
+      P.push(czP(link+"m"+A(fs),"zam","-(y)AmA","cannot"));
+      if(p===0||p===3){zless=true; N.push("-(y)AmA has no z with I and we: "+fs+"m"+A(fs)+"m, "+fs+"m"+A(fs)+"y"+I(fs)+"z.");}
+      else tense="z";
+      N.push("-(y)AmA is \"cannot\": the negative of -(y)Abil, with the aorist's z after it.");
+    }else{
+      P.push(czP(null,"kok",raw+"-",gloss));
+      P.push(czP(link+"bil","zam","-(y)Abil","can"));
+      tense="ir"; N.push("-(y)Abil is followed by the aorist, always -ir, because bil- takes -Ir.");
+    }
+    after="p1";
+  }else if(t==="mali"){
+    const w=neg?raw+"m"+A(raw):raw; if(neg)pushNeg("m"+A(raw));
+    tense="m"+A(w)+"l"+I(w+"m"+A(w)); after="cop";
+  }else if(t==="mis"){
+    const w=neg?raw+"m"+A(raw):raw; if(neg)pushNeg("m"+A(raw));
+    tense="m"+I(w)+"ş"; after="p1";
+  }else if(t==="sa"){
+    const w=neg?raw+"m"+A(raw):raw; if(neg)pushNeg("m"+A(raw));
+    tense="s"+A(w); after="p2";
+  }
+  if(t!=="abil")P.unshift(czP(stem,"kok",raw+"-",gloss));
+  else P[0].m=stem;
+  if(stem!==raw&&soften(raw,e)===stem&&!irr(e,"fut")&&!irr(e,"prog"))
+    N.unshift(raw+"- → "+stem+"-: "+raw.slice(-1)+" softens to "+stem.slice(-1)+" before a vowel.");
+  if(tense){
+    const lab=t==="abil"?["-Ir","as a rule"]:t==="aor"&&neg?["-z","as a rule"]:tl;
+    P.push(czP(tense,"zam",lab[0],lab[1]));
+  }
+  /* The person, read off what is left of the whole form, so a k that
+     turned into ğ shows up as exactly that. */
+  const full=czForm(e,t,p,neg), sofar=P.map(function(x){return x.m;}).join("");
+  const lab=after==="p2"?CZ_PERS2:after==="cop"?CZ_PERSC:CZ_PERS1;
+  let rest=full.slice(sofar.length);
+  if(full.slice(0,sofar.length)!==sofar){
+    const last=P[P.length-1];
+    if(sofar.slice(-1)==="k"&&full[sofar.length-1]==="ğ"&&full.slice(0,sofar.length-1)===sofar.slice(0,-1)){
+      last.m=last.m.slice(0,-1)+"ğ";
+      N.push("k becomes ğ before a vowel: -"+last.m.slice(0,-1)+"k + -"+rest+" → "+last.m+rest+".");
+    }else return null;
+  }
+  if(zless&&p===3)P.push(czP(rest,"kis","-(y)Iz","we"));
+  else if(zless&&p===0)P.push(czP(rest,"kis","-m","I"));
+  else if(rest)P.push(czP(rest,"kis",lab[p],CZ_WHO[p]));
+  else P.push(czP("","kis","—",CZ_WHO[p]));
+  if(after==="cop"&&rest[0]==="y")N.push("After the vowel of -mAlI, I and we take a y: -(y)Im, -(y)Iz.");
+  if(p===2)N.push("No ending is the third person: he, she or it.");
+  if(P.map(function(x){return x.m;}).join("")!==full)return null;
+  return {w:full,pieces:P,notes:N};
+}
+
+/* A noun, in pieces. pl plural, ps possessive person 0-4 (2 is his/her)
+   or null, c a case (loc dat abl ile) or null. Plural with his/her is
+   never generated: evleri is his houses, their house and their houses,
+   and a decoder that picked one would be teaching a guess. */
+function czNoun(n,pl,ps,c){
+  const e=byName(n.t); if(!e)return null;
+  const P=[czP(e.t,"kok",e.t,n.sg)], N=[];
+  let w=e.t;
+  const bare=function(){return w===e.t;};
+  const hA=function(){return bare()?eA(e):A(w);}, hI=function(){return bare()?eI(e):I(w);};
+  /* A vowel-initial ending on the bare stem may soften it or drop a vowel. */
+  const onStem=function(){
+    if(!bare()||endsVowel(e.t))return;
+    const s=stemFor(e);
+    if(s!==e.t){
+      P[0].m=s;
+      if(e.drop)N.push(e.t+" → "+s+"-: the last vowel falls out before a vowel.");
+      else N.push(e.t+" → "+s+"-: "+e.t.slice(-1)+" softens to "+s.slice(-1)+" before a vowel.");
+    }
+    w=s;
+  };
+  if(e.front)N.push(e.t+" takes front endings although its vowel is back: a loanword that breaks harmony.");
+  if(pl){const s="l"+hA()+"r"; P.push(czP(s,"cog","-lAr","more than one")); w+=s;}
+  if(ps!=null){
+    const vow=endsVowel(w), lab=["-(I)m","-(I)n","-(s)I","-(I)mIz","-(I)nIz"][ps];
+    let s;
+    if(vow){const i=hI(); s=["m","n","s"+i,"m"+i+"z","n"+i+"z"][ps];
+      if(ps===2)N.push("After a vowel -(s)I keeps its s.");}
+    else{const i=hI(); onStem(); s=[i+"m",i+"n",i,i+"m"+i+"z",i+"n"+i+"z"][ps];}
+    P.push(czP(s,"iye",lab,CZ_POSS[ps])); w+=s;
+  }
+  if(c){
+    const after3=ps===2, en={loc:"in, at, on",dat:"to",abl:"from",ile:"with, by"}[c];
+    let s, lab;
+    if(c==="loc"||c==="abl"){
+      lab=c==="loc"?"-DA":"-DAn";
+      if(after3){s="nd"+hA(); N.push("After -(s)I a case ending takes an n.");}
+      else{s=D(w)+hA(); if(D(w)==="t")N.push(lab+": "+CZ_VOICELESS+".");}
+      if(c==="abl")s+="n";
+    }else if(c==="dat"){
+      lab="-(y)A";
+      if(after3){s="n"+hA(); N.push("After -(s)I a case ending takes an n: -nA, not -yA.");}
+      else if(endsVowel(w)){s="y"+hA(); N.push("y keeps two vowels apart.");}
+      else{const a=hA(); onStem(); s=a;}
+    }else{
+      lab="-(y)lA";
+      s=(endsVowel(w)?"yl":"l")+hA();
+      N.push("-(y)lA is ile written onto the word, and joined on it follows vowel harmony"+(s[0]==="y"?"; y keeps two vowels apart.":"."));
+    }
+    P.push(czP(s,"hal",lab,en)); w+=s;
+  }
+  /* Two readings the letters cannot tell apart, said rather than hidden. */
+  if(ps===1&&!c&&(pl||!endsVowel(e.t)))N.push(w+" is also \"of the "+(pl?n.pl:n.sg)+"\", the genitive: the same -(I)n. The words round it decide.");
+  if(ps===2&&!c&&!endsVowel(e.t))N.push(w+" is also the accusative, \"the "+n.sg+"\" as an object. The sentence decides.");
+  return {w:w,pieces:P,notes:N};
+}

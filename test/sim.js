@@ -2743,7 +2743,7 @@ step("araçlar · every tool is still reachable", () => {
   ok(heads === 4, "Araçlar has " + heads + " groups, wanted 4 — a flat list is what this replaced");
   /* Reported: the page was sixteen rows of text under two paragraphs.
      Every tool is a tile now, and the page carries no prose. */
-  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 15, "Araçlar should have fifteen tool tiles");
+  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 16, "Araçlar should have sixteen tool tiles");
   ok(!lastPaint.includes("card nav row"), "a text row is back on Araçlar");
   ok(!/Everything here is optional|tag means|class="foot"/.test(lastPaint), "the explanatory paragraphs are back on Araçlar");
   /* The two reference pages are links, not tools. */
@@ -2776,8 +2776,8 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
   const tiles = lastPaint.match(/<button class="tool[^"]*"[\s\S]*?<\/button>/g) || [];
   ok(tiles.length && tiles.every(t => /class="tool idle"/.test(t) === /Şimdilik boş/.test(t)),
      "a tile's fade and its Şimdilik boş label disagree");
-  /* Five that start empty and are not lying about it. */
-  ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')"].forEach(fn => {
+  /* Six that start empty and are not lying about it. */
+  ["go('dinle')", "go('tekrar')", "go('gram')", "go('words')", "go('hata')", "go('coz')"].forEach(fn => {
     ok(!tagged(fn), fn + " is offered as ready on a fresh install, but its bank is empty");
   });
   /* Reference rows carry no readiness claim either way — "how this
@@ -2799,6 +2799,9 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
   ok(tagged("go('gram')"), "meeting a1u1's grammar point did not tag Dilbilgisi tekrarı hazır");
   ok(!tagged("go('words')"), "meeting a grammar point tagged Sözlüğüm hazır too early");
   ok(!tagged("go('hata')"), "meeting a grammar point tagged Hata defteri hazır too early");
+  ok(!tagged("go('coz')"), "a1u1's grammar teaches no ending Çöz asks, yet it was tagged ready");
+  ev("go('unit','a1u5','g')"); ev("go('araclar')");
+  ok(tagged("go('coz')"), "reading a1u5's grammar (the present tense) did not open Çöz");
 
   ev("setStar('merhaba','hello',true)"); ev("go('araclar')");
   ok(tagged("go('words')"), "starring a word did not tag Sözlüğüm hazır");
@@ -3716,6 +3719,117 @@ step("the path opens in order", () => {
 console.log("sim: " + seenScreens.size + " distinct screens · " + screens + " paints · " +
   checks + " checks · " + voice.said + " utterances · " + voice.cancels + " stops");
 /* ===================== İngilizcesi · English under the Turkish ===================== */
+step("çöz · a word in pieces, and only the pieces met", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  const roles = () => ev("czRoles().map(function(r){return r.k})");
+  ok(roles().length === 0, "a fresh install has endings to decode");
+  ev("go('coz')");
+  ok(/Şimdilik boş/.test(lastPaint) && !lastPaint.includes('onclick="startCoz()"'), "an empty Çöz still offers a sitting");
+  ev("startCoz()");
+  ok(ev("V.view") === "coz" && ev("CZ") === null, "startCoz ran with nothing open");
+
+  /* A noun ending alone has nothing to be confused with; two do. */
+  ev("go('unit','a1u2','g')");
+  ok(roles().length === 0, "the plural alone opened Çöz");
+  ev("go('unit','a1u3','g')");
+  ok(roles().join() === "pl,ps", "the plural and the possessive did not open together: " + roles().join());
+  ev("go('unit','a1u5','g')"); ev("go('unit','a1u4','g')");
+  ok(roles().join() === "pl,ps,loc,prog", "a1u2-5's grammar opened " + roles().join());
+
+  /* Nothing not met turns up, in the answer or in a wrong option. */
+  const later = /\b(will|can|cannot|must|if|apparently|did|from|to|with|by)\b/i;
+  let leak = null, n = 0;
+  ["pl", "ps", "loc", "prog"].forEach(k => {
+    for (let i = 0; i < 40; i++) {
+      const it = ev("czItem(" + q(k) + ")"); n++;
+      if (!it) { leak = k + ": no item"; continue; }
+      it.opts.forEach(o => { if (later.test(o.en)) leak = k + ": " + o.en; });
+      if (it.opts.some(o => /\b(went|came|drank|made)\b/i.test(o.en))) leak = k + ": a past tense";
+    }
+  });
+  ok(!leak, "an ending not yet met was offered: " + leak);
+
+  /* Every piece open: each item is well formed, by construction. */
+  ["b2u2", "b1u2", "b1u1", "a2u8", "a2u6", "a2u4", "a2u3", "a2u2", "a2u1", "a1u8"].forEach(u => ev("go('unit'," + q(u) + ",'g')"));
+  ok(roles().length === 14, "all fourteen endings are not open with their units read: " + roles().length);
+  let bad = null;
+  roles().forEach(k => {
+    for (let i = 0; i < 30; i++) {
+      const it = ev("czItem(" + q(k) + ")");
+      if (!it) { bad = k + ": no item"; return; }
+      if (it.opts.length !== 4) bad = k + ": " + it.opts.length + " options";
+      if (new Set(it.opts.map(o => o.w)).size !== 4 || new Set(it.opts.map(o => o.en)).size !== 4) bad = k + ": two options alike in " + it.w;
+      if (it.opts[it.c].w !== it.w || it.opts[it.c].en !== it.en) bad = k + ": the key is not the word";
+      if (it.pieces.map(p => p.m).join("") !== it.w) bad = k + ": the pieces of " + it.w + " do not join";
+      if (it.opts.some(o => it.also.indexOf(o.en) > -1)) bad = k + ": " + it.w + " offers a reading its own letters also say";
+      if (it.also.length && !it.notes.some(x => x.indexOf("also says") > -1)) bad = k + ": " + it.w + " is ambiguous and does not say so";
+    }
+  });
+  ok(!bad, "a Çöz item is malformed: " + bad);
+  /* The ambiguity the notes are there for: evinde is your house and his. */
+  const also = ev("(function(){var s={k:'n',n:CZ_NOUNS[0],pl:false,ps:1,c:'loc'};return czAlso(s,czBuild(s));})()");
+  ok(also.indexOf("In his/her house") > -1, "evinde is not known to be his/her house too: " + JSON.stringify(also));
+  ok(ev("CZ_NOUNS.every(function(n){return !!byName(n.t)})"), "a Çöz noun is not in LEX");
+
+  /* Only CZ_NEW never-practised endings a day. */
+  ok(ev("czDue().length") === ev("CZ_NEW"), "a fresh learner with everything open got " + ev("czDue().length") + " new endings, not CZ_NEW");
+
+  /* A sitting, from the start: the word is said once, not on a redraw. */
+  ev("confirm=function(){return true}; wipe(); home()");
+  ["a1u5", "a1u2", "a1u3"].forEach(u => ev("go('unit'," + q(u) + ",'g')"));
+  ev("go('coz')");
+  ok(lastPaint.includes('onclick="startCoz()"') && lastPaint.includes('class="czp'), "the hub has no Başla or no worked example");
+  const before = voice.said;
+  ev("startCoz()");
+  ok(ev("V.view") === "cozrun" && ev("CZ.q.length") === ev("CZ_SESSION"), "a sitting is not CZ_SESSION words");
+  ok(voice.said === before + 1 && voice.spoken[voice.spoken.length - 1] === ev("CZ.q[0].w"), "the word was not said on arrival");
+  ev("render()");
+  ok(voice.said === before + 1, "a redraw said the word again");
+  const w0 = ev("CZ.q[0].w");
+  ok(lastPaint.includes(esc(w0)) && (lastPaint.match(/class="opt"/g) || []).length === 4, "the word or its four meanings are missing");
+  ok(!lastPaint.includes('class="czp'), "the answer's pieces show before it is answered");
+  const due = ev("CZ.due.slice()");
+  ok(due.length === 3 && due.every(k => ["pl", "ps", "prog"].indexOf(k) > -1), "the due endings are " + JSON.stringify(due));
+  /* Wrong: the book keeps it, the pieces and the chosen word show, and
+     nothing is scheduled until the end. */
+  const wrong = ev("(CZ.q[0].c+1)%4"), chose = ev("CZ.q[0].opts[" + wrong + "].w"), role0 = ev("CZ.q[0].role");
+  ev("czPick(" + wrong + ")");
+  ok(/Yanlış/.test(lastPaint) && lastPaint.includes(esc(chose)) && lastPaint.includes('class="czp'), "a miss does not show the chosen word and the pieces");
+  const e = ev("S.err['coz:" + role0 + "']");
+  ok(e && e.m === "o" && e.c === w0 && e.n === 1, "the miss did not reach the mistake book under coz:" + role0);
+  ok(Object.keys(ev("S.coz")).length === 0, "a schedule moved mid-sitting");
+  ev("czPick(0)");
+  ok(ev("CZ.sel") === wrong, "a second tap changed the answer");
+  ev("czNext()");
+  for (let i = 1; i < 10; i++) { ev("czPick(CZ.q[CZ.i].c)"); ok(/Doğru/.test(lastPaint), "a right answer is not marked right"); ev("czNext()"); }
+  ok(/Bitti/.test(lastPaint) && lastPaint.includes("startCoz()"), "the sitting does not end on the end screen");
+  const today = ev("dayNum()"), sc = ev("S.coz");
+  due.forEach(k => {
+    const r = sc[k], missed = k === role0;
+    ok(r && r.b === (missed ? 0 : 1) && r.d === today + (missed ? 0 : 1), k + " was graded " + JSON.stringify(r) + (missed ? " after a miss" : " with none"));
+  });
+  ok(ev("errList().length") === 1, "right answers reached the mistake book");
+
+  /* Practice moves nothing: with nothing due but what was missed, clear
+     that too and a sitting is practice. */
+  ev("S.coz[" + q(role0) + "].d=dayNum()+5; save()");
+  const snap = JSON.stringify(ev("S.coz"));
+  ok(ev("czDue().length") === 0, "something is still due");
+  ev("go('coz')");
+  ok(/practice/.test(lastPaint) || /alıştırma/.test(lastPaint), "the hub does not say a sitting now is practice");
+  ev("startCoz()");
+  for (let i = 0; i < 10; i++) { ev("czPick((CZ.q[CZ.i].c+1)%4)"); ev("czNext()"); }
+  ok(JSON.stringify(ev("S.coz")) === snap, "a practice sitting moved a schedule");
+
+  /* Leaving writes nothing, and back() returns to the hub. */
+  ev("S.coz={}; save(); startCoz(); czPick(CZ.q[0].c); back()");
+  ok(ev("V.view") === "coz" && ev("CZ") === null && Object.keys(ev("S.coz")).length === 0, "leaving a sitting wrote a schedule or did not go back to Çöz");
+  ev("go('coz')"); ev("back()");
+  ok(ev("V.view") === "araclar", "back() from Çöz did not return to Araçlar");
+  ev("S.coz={pl:{b:2,d:0,f:0}}; wipe()");
+  ok(Object.keys(ev("S.coz")).length === 0, "wipe() kept Çöz's schedule");
+});
+
 step("english layer", () => {
   const html = () => ev("document.documentElement.classList.contains('noen')");
   /* Day one: on, with no choice made. wipe() keeps S.en like any setting,

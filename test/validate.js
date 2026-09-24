@@ -78,7 +78,8 @@ try {
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK,BASLA:BASLA,RESIM:RESIM," +
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
-    "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf};", sandbox, { filename: file });
+    "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf," +
+    "czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -736,6 +737,98 @@ else {
   NEG_GOLD.forEach(r => vcell(r[0], r[1], r[2], true, r[3]));
   PERSON_GOLD.forEach(r => vcell(r[0], r[1], r[2], false, r[3]));
 
+  /* Çöz: a word in pieces. Every piece below was split and checked by
+     hand; the dashes are where the pieces meet. The new forms (-(y)Abil,
+     -(y)AmA, -mAlI, -mIş, -sA) have no other test, so each is here in
+     several persons and both polarities. */
+  const CZ_VGOLD = [
+    ["gelmek", "abil", 0, 0, "gel-ebil-ir-im"], ["gitmek", "abil", 0, 0, "gid-ebil-ir-im"],
+    ["okumak", "abil", 2, 0, "oku-yabil-ir"], ["yemek", "abil", 3, 0, "yi-yebil-ir-iz"],
+    ["gelmek", "abil", 0, 1, "gel-eme-m"], ["gelmek", "abil", 1, 1, "gel-eme-z-sin"],
+    ["gitmek", "abil", 3, 1, "gid-eme-yiz"], ["okumak", "abil", 5, 1, "oku-yama-z-lar"],
+    ["yapmak", "abil", 2, 1, "yap-ama-z"], ["olmak", "abil", 2, 0, "ol-abil-ir"],
+    ["gelmek", "mali", 0, 0, "gel-meli-yim"], ["okumak", "mali", 3, 0, "oku-malı-yız"],
+    ["gitmek", "mali", 2, 1, "git-me-meli"], ["almak", "mali", 4, 0, "al-malı-sınız"],
+    ["yemek", "mali", 1, 0, "ye-meli-sin"], ["gelmek", "mali", 5, 0, "gel-meli-ler"],
+    ["gelmek", "mis", 2, 0, "gel-miş"], ["gitmek", "mis", 0, 0, "git-miş-im"],
+    ["okumak", "mis", 5, 1, "oku-ma-mış-lar"], ["görmek", "mis", 1, 0, "gör-müş-sün"],
+    ["uyumak", "mis", 3, 0, "uyu-muş-uz"],
+    ["gelmek", "sa", 0, 0, "gel-se-m"], ["okumak", "sa", 3, 0, "oku-sa-k"],
+    ["gitmek", "sa", 4, 1, "git-me-se-niz"], ["yemek", "sa", 5, 0, "ye-se-ler"],
+    ["gelmek", "fut", 0, 0, "gel-eceğ-im"], ["okumak", "fut", 2, 0, "oku-yacak"],
+    ["yemek", "fut", 2, 0, "yi-yecek"], ["gelmek", "fut", 3, 1, "gel-me-yeceğ-iz"],
+    ["beklemek", "prog", 0, 0, "bekl-iyor-um"], ["okumak", "prog", 3, 1, "oku-mu-yor-uz"],
+    ["gitmek", "prog", 0, 0, "gid-iyor-um"], ["uyumak", "prog", 2, 0, "uyu-yor"],
+    ["yemek", "prog", 1, 0, "yi-yor-sun"], ["başlamak", "prog", 5, 0, "başl-ıyor-lar"],
+    ["gitmek", "past", 0, 0, "git-ti-m"], ["gelmek", "past", 4, 1, "gel-me-di-niz"],
+    ["yapmak", "aor", 5, 0, "yap-ar-lar"], ["gelmek", "aor", 0, 0, "gel-ir-im"],
+    ["okumak", "aor", 2, 0, "oku-r"], ["gelmek", "aor", 0, 1, "gel-me-m"],
+    ["gelmek", "aor", 1, 1, "gel-me-z-sin"], ["okumak", "aor", 3, 1, "oku-ma-yız"]
+  ];
+  const CZ_NGOLD = [
+    /* noun, plural, possessive person (2 is his/her), case, pieces */
+    ["kitap", 0, 0, null, "kitab-ım"], ["kitap", 1, 3, "abl", "kitap-lar-ımız-dan"],
+    ["araba", 0, 2, "loc", "araba-sı-nda"], ["araba", 0, 2, "dat", "araba-sı-na"],
+    ["şehir", 0, 0, "dat", "şehr-im-e"], ["şehir", 0, null, "dat", "şehr-e"],
+    ["kalp", 0, 1, null, "kalb-in"], ["kalp", 1, null, "loc", "kalp-ler-de"],
+    ["ev", 0, 1, "loc", "ev-in-de"], ["çocuk", 1, 4, "ile", "çocuk-lar-ınız-la"],
+    ["araba", 0, null, "ile", "araba-yla"], ["köpek", 0, 2, "ile", "köpeğ-i-yle"],
+    ["kapı", 1, 0, "dat", "kapı-lar-ım-a"], ["otobüs", 0, null, "abl", "otobüs-ten"],
+    ["uçak", 0, 0, "loc", "uçağ-ım-da"], ["sokak", 0, null, "dat", "sokağ-a"],
+    ["kitap", 0, null, "loc", "kitap-ta"], ["pencere", 0, 3, null, "pencere-miz"],
+    ["öğretmen", 1, null, "dat", "öğretmen-ler-e"], ["kalem", 0, null, "ile", "kalem-le"],
+    ["arkadaş", 0, 2, "abl", "arkadaş-ı-ndan"], ["masa", 0, 4, "loc", "masa-nız-da"]
+  ];
+  const CZ_EGOLD = [
+    ["v", "gelmek", "abil", 0, 1, "I cannot come"], ["v", "gelmek", "sa", 2, 0, "If he/she comes"],
+    ["v", "gitmek", "mis", 3, 1, "We apparently did not go"], ["v", "okumak", "mali", 4, 0, "You (plural) must read"],
+    ["n", "ev", 0, 1, "loc", "In your house"], ["n", "araba", 0, null, "ile", "By car"],
+    ["n", "araba", 0, 0, "ile", "With my car"], ["n", "çocuk", 1, 3, "dat", "To our children"]
+  ];
+  const czJoin = r => r ? r.pieces.filter(p => p.m).map(p => p.m).join("-") : "(null)";
+  CZ_VGOLD.forEach(([t, tense, p, neg, want]) => {
+    const e = find(t); if (!e) { err("LEX", t + " is in the Çöz golden set but not in the lexicon"); return; }
+    mChecked++;
+    const got = czJoin(M.czVerb(e, tense, p, !!neg));
+    if (got !== want) err("çöz", t + " " + tense + "." + p + (neg ? ".neg" : "") + ': split as "' + got + '", hand-checked "' + want + '"');
+  });
+  const czN = t => M.CZ_NOUNS.find(n => n.t === t);
+  CZ_NGOLD.forEach(([t, pl, ps, c, want]) => {
+    mChecked++;
+    const got = czJoin(M.czNoun(czN(t), !!pl, ps, c));
+    if (got !== want) err("çöz", t + (pl ? "+pl" : "") + (ps != null ? "+p" + ps : "") + (c ? "+" + c : "") + ': split as "' + got + '", hand-checked "' + want + '"');
+  });
+  CZ_EGOLD.forEach(r => {
+    mChecked++;
+    const got = r[0] === "v" ? M.czVerbEN(find(r[1]), r[2], r[3], !!r[4]) : M.czNounEN(czN(r[1]), !!r[2], r[3], r[4]);
+    if (got !== r[5]) err("çöz", r.slice(1, -1).join(" ") + ': English "' + got + '", wanted "' + r[5] + '"');
+  });
+  /* And by sweep: every verb, tense, person and polarity splits, and the
+     pieces join to the form the engine builds by its own route; every
+     noun combination joins, and where it overlaps the noun paradigm it
+     agrees with it. */
+  M.drillable().forEach(e => ["prog", "past", "fut", "aor", "abil", "mali", "mis", "sa"].forEach(t =>
+    [0, 1, 2, 3, 4, 5].forEach(p => [false, true].forEach(n => {
+      const r = M.czVerb(e, t, p, n);
+      if (!r) err("çöz", e.t + " " + t + "." + p + (n ? ".neg" : "") + " does not split into pieces that join");
+      else if (r.w !== M.czForm(e, t, p, n)) err("çöz", e.t + " " + t + " splits to " + r.w + ", built as " + M.czForm(e, t, p, n));
+    }))));
+  M.CZ_NOUNS.forEach(n => {
+    const e = find(n.t);
+    if (!e) { err("çöz", n.t + " is a Çöz noun but not in the lexicon"); return; }
+    const w = (pl, ps, c) => M.czNoun(n, pl, ps, c).w;
+    [["nPlur", w(true, null, null)], ["nP1", w(false, 0, null)], ["nP3", w(false, 2, null)],
+     ["nLoc", w(false, null, "loc")], ["nDat", w(false, null, "dat")], ["nAbl", w(false, null, "abl")]].forEach(([f, got]) => {
+      if (M[f](e) !== got) err("çöz", n.t + ": the decoder builds " + got + " where " + f + " builds " + M[f](e));
+    });
+    [false, true].forEach(pl => [null, 0, 1, 2, 3, 4].forEach(ps => [null, "loc", "abl", "dat", "ile"].forEach(c => {
+      if (pl && ps === 2) return;
+      const r = M.czNoun(n, pl, ps, c);
+      if (r.pieces.map(p => p.m).join("") !== r.w) err("çöz", n.t + " pieces do not join to " + r.w);
+    })));
+    Object.keys(n.c).forEach(k => { if (["loc", "abl", "dat", "ile"].indexOf(k) < 0) err("çöz", n.t + " lists an unknown case " + k); });
+  });
+
   /* Collocations must point at nouns that exist, or a frame will build a
      sentence around a word the app has never heard of. */
   const nouns = new Set(LEX.filter(e => e.p === "n").map(e => e.t));
@@ -1220,7 +1313,7 @@ let contrastPairs = 0;
      3 is AA for an icon, which is what .star.on is. Add a row whenever a
      rule starts painting a new colour on a new ground. */
   const PAIRS = [
-    ["ink", "paper", 4.5, "body text"], ["ink2", "paper", 4.5, ".sub"], ["ink2", "card", 4.5, ".sub in a card"],
+    ["ink", "paper", 4.5, "body text"], ["ink", "card", 4.5, ".czp b, a stem in Çöz"], ["ink2", "paper", 4.5, ".sub"], ["ink2", "card", 4.5, ".sub in a card"],
     ["ink2", "sunk", 4.5, "segmented control"],
     ["faint", "paper", 4.5, "clock digits, .tiny, the road"], ["faint", "card", 4.5, ".src, .qn, .tiny in a card"],
     ["turk", "paper", 4.5, "the clock"], ["turk", "card", 4.5, ".q .blank, .spd.on"], ["turk", "turk-soft", 4.5, ".pill.turk"],
