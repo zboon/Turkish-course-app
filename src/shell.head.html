@@ -127,7 +127,7 @@ a{color:var(--cobalt)}
 
 /* ---------- hero ---------- */
 .hero{padding:1.5rem 0 .4rem;text-align:center}
-.crest{display:block;width:76px;height:76px;margin:0 auto .6rem}
+.crest{display:block;width:64px;height:64px;margin:0 auto .5rem}
 .mark{
   font-family:'Crimson Pro',Georgia,serif; font-weight:600;
   font-size:clamp(2.6rem,12vw,3.4rem); line-height:1; letter-spacing:-.01em; margin:0;
@@ -189,43 +189,58 @@ h2.sec::after{
 .vnote{border-left:3px solid var(--gold)}
 .vnote .btn{margin-top:.7rem}
 
-/* The two doors. The landing page is the plan, the road and these, and
-   nothing else — fifteen tool rows stacked in one column was a wall, and
-   a wall is read as noise rather than as choices. A block is a big
-   target, which is what a thumb wants, and it carries a live line so the
-   choice is informed rather than blind. The gold rule runs down the edge
-   the way it runs out of a section heading: one stroke, and it stops. */
-.block{
-  display:block;width:100%;text-align:left;color:inherit;
-  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-  box-shadow:var(--shadow);padding:1.3rem 2.4rem 1.3rem 1.2rem;margin:.7rem 0;
-  position:relative;overflow:hidden;
+/* The landing page, drawn big: one button for today, then three tiles.
+   The children's app is the model here, not for its colours but for its
+   scale — a thumb-sized target with one word on it reads as a choice,
+   where a paragraph reads as something to get past. */
+.today{
+  display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;
+  position:relative;background:var(--cobalt);color:var(--on-accent);border:0;
+  border-radius:18px;padding:1.2rem 3rem 1.2rem 1.3rem;margin:.3rem 0 .4rem;
+  box-shadow:0 4px 0 rgba(0,0,0,.14);
 }
-.block::before{
-  content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
-  background:linear-gradient(180deg,var(--gold),transparent);opacity:.5;
+.today-t{font-family:'Crimson Pro',Georgia,serif;font-size:2rem;font-weight:600;line-height:1.1}
+.today-t .gl{display:inline;margin-left:.5em;font-size:.4em;color:inherit;opacity:.8}
+.today-s{font-size:.92rem;margin-top:.35rem;opacity:.92}
+.today .t-en,.today .t-tr{color:inherit}
+.today .chev{position:absolute;right:1.1rem;top:50%;transform:translateY(-50%);color:inherit;opacity:.85}
+.today .chev svg{width:22px;height:22px}
+.today.done{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.doors{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin:1rem 0 .4rem}
+.door{
+  display:flex;flex-direction:column;align-items:center;gap:.45rem;min-height:112px;justify-content:center;
+  background:var(--card);border:1px solid var(--line);border-bottom-width:4px;border-radius:16px;
+  padding:.9rem .3rem .75rem;color:var(--ink);
 }
-.block-t{
-  display:block;font-family:'Crimson Pro',Georgia,serif;
-  font-size:1.5rem;font-weight:600;line-height:1.15;
+.door-i{color:var(--cobalt);display:block}
+.door-i svg{width:34px;height:34px;display:block}
+.door-t{font-family:'Crimson Pro',Georgia,serif;font-size:1.2rem;font-weight:600;line-height:1.1;text-align:center}
+.door-t .gl{text-align:center}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin:.2rem 0 .6rem}
+.tool{
+  display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;min-height:104px;text-align:left;
+  background:var(--card);border:1px solid var(--line);border-bottom-width:4px;border-radius:16px;
+  padding:.85rem .9rem .75rem;color:var(--ink);
 }
-.block-e{
-  display:block;font-family:'Karla',sans-serif;font-size:.73rem;
-  letter-spacing:.09em;color:var(--faint);margin-top:.2rem;
-}
-.block-n{display:block;color:var(--ink2);font-size:.85rem;margin-top:.6rem}
-/* İlerleme sits under the two doors, smaller: it is somewhere to look,
-   not somewhere to go and do something. */
-.block.quiet{padding:.9rem 2.4rem .9rem 1.2rem;box-shadow:none;background:none}
-.block.quiet .block-t{font-size:1.2rem}
-.block.quiet .block-n{margin-top:.35rem}
+.tool-i{color:var(--cobalt);display:block}
+.tool-i svg{width:28px;height:28px;display:block}
+.tool-t{font-family:'Crimson Pro',Georgia,serif;font-size:1.15rem;font-weight:600;line-height:1.15}
+/* Nothing in it yet: faded, and says so. The words stay at full contrast
+   because they are still read; only the icon and the ground step back. */
+.tool.idle{background:none;border-bottom-width:1px}
+.tool.idle .tool-i{color:var(--faint)}
+.tool-e{font-size:.75rem;color:var(--faint);font-weight:600}
+.tool-e .gl{font-weight:500}
+.links{display:flex;justify-content:center;gap:1.4rem;margin-top:1rem}
+.links .homelink{margin:0}
+.homelink{display:block;margin:1.2rem auto 0;background:none;border:0;color:var(--cobalt);
+  font-weight:600;font-size:.92rem;text-align:center}
 /* İlerleme's rows, and the line under a sitting's Devam naming what it opens. */
 .prow{padding:.45rem 0}
 .prow+.prow{border-top:1px solid var(--line)}
 .prow b{font-weight:700;font-size:.95rem;flex:0 0 auto}
 .prow .meter{margin-top:.35rem}
 .next-step{text-align:center;margin:.5rem 0 0}
-.block .chev{position:absolute;right:.95rem;top:50%;transform:translateY(-50%)}
 
 /* Nav rows inside a hub carry the same weight as the blocks that lead to
    them, so they are a size up from an ordinary card. */

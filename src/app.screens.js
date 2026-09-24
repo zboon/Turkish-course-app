@@ -20,55 +20,40 @@ function renderHome(){
 
   let h='<div class="bar"><div class="bar-in">'+enBtn()+'<div class="bar-title">Türkçe<small>A1 → C2</small></div>'+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button></div>'+saveWarn()+'</div>';
-  h+='<div class="wrap"><div class="hero">'+crest(76)+
+  h+='<div class="wrap"><div class="hero">'+crest(64)+
    '<h1 class="mark">Türkçe</h1>'+
    clockHero()+'</div>';
-
-  /* Read-then-act on day one; the plan is the whole opinion afterwards. */
-  if(metUnits().length===0){ h+=startCard(); h+=planCard(); }
-  else { h+=planCard(); }
+  /* Four things and no prose: what to do now, where you are, the three
+     ways in, and (while it is useful) how it works. Every paragraph that
+     used to sit here — the orientation card, the plan's summary line and
+     its explanation, the footer — is on the page it explains. */
+  h+=planCard();
   h+=road;
   h+=homeBlocks();
-  if(metUnits().length>0) h+=startCard();
-
-  h+='<p class="foot">'+tx("Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.",
-    "İlerlemen yalnızca bu cihazda saklanır.<br>Metinler özgün, uyarlama ya da telifsizdir; ayrıntısı Hakkında sayfasında.")+'</p></div>';
+  if(tipsOn())h+='<button class="homelink" onclick="go(\'nasil\')">Nasıl çalışır?<span class="gl">how does this work?</span></button>';
+  h+='</div>';
   paint(h);
 }
-/* Two doors, and that is the whole menu.
-   This page used to carry six level cards and fifteen tool rows in one
-   column under a heading apiece. Every one of them was reachable, which
-   is not the same as findable: a list that long reads as texture rather
-   than as choices, and the plan — the one thing that answers "what now"
-   — sat above a wall the eye slides off.
+/* The ways in, as three tiles side by side: big targets, a picture, a
+   word. The course and everything beside it are the two doors; İlerleme
+   is where to look rather than where to go, and sits beside them because
+   a third row of text under them was read as more of the same.
 
-   The line under each door is deliberately NOT a count of work waiting.
-   Two "N waiting" cards lived on this screen once and were removed for
-   good reason: they duplicated the plan's own steps, and one advertised
-   work on day one that the plan correctly said did not exist. The plan
-   owns "what now". A door only says what is behind it. */
+   A tile says only what is behind it. Two "N waiting" cards lived on this
+   screen once and were removed for good reason: they duplicated the
+   plan's own steps, and one advertised work on day one that the plan
+   correctly said did not exist. The plan owns "what now". */
+const DOOR_IC={
+ dersler:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5C5 4 8.5 4 12 6.2c3.5-2.2 7-2.2 9.5-.7V19c-2.5-1.5-6-1.5-9.5.7C8.5 17.5 5 17.5 2.5 19z"/><path d="M12 6.2v13.5"/></svg>',
+ araclar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>',
+ ilerleme:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 20v-7M12 20V5M19 20v-10M2.5 20.5h19"/></svg>'};
 function homeBlocks(){
-  const done=UNITS.filter(u=>isDone(u.id)).length;
-  const lv=currentLevel();
-  return '<h2 class="sec">Nereye · where to</h2>'+
-   '<button class="block" onclick="go(\'dersler\')">'+
-     '<span class="block-t">Dersler</span>'+
-     '<span class="block-e">LESSONS</span>'+
-     '<span class="block-n">'+done+' / '+UNITS.length+' ünite'+(lv?' · şu an '+lv:'')+'</span>'+
-     '<span class="chev">'+IC.chev+'</span></button>'+
-   '<button class="block" onclick="go(\'araclar\')">'+
-     '<span class="block-t">Araçlar</span>'+
-     '<span class="block-e">PRACTICE AND TOOLS</span>'+
-     '<span class="block-n">Konuşma · Dinleme · Tekrar · Kelimeler</span>'+
-     '<span class="chev">'+IC.chev+'</span></button>'+
-   /* Not a third door: nothing behind it is something to do. It is where
-      the state of every mode is read, which used to be repeated at the
-      end of every sitting. Quieter than the doors for that reason. */
-   '<button class="block quiet" onclick="go(\'ilerleme\')">'+
-     '<span class="block-t">İlerleme</span>'+
-     '<span class="block-e">PROGRESS</span>'+
-     '<span class="block-n">'+streak()+' '+tx("day streak","gün üst üste")+' · '+S.star.length+' '+tx("saved words","kayıtlı kelime")+'</span>'+
-     '<span class="chev">'+IC.chev+'</span></button>';
+  const tile=function(id,tr,en){
+    return '<button class="door" onclick="go(\''+id+'\')"><span class="door-i">'+DOOR_IC[id]+'</span>'+
+      '<span class="door-t">'+tr+'<span class="gl">'+en+'</span></span></button>';
+  };
+  return '<div class="doors">'+tile("dersler","Dersler","lessons")+tile("araclar","Araçlar","practice")+
+    tile("ilerleme","İlerleme","progress")+'</div>';
 }
 
 /* ===================== dersler · the course spine ===================== */
@@ -102,58 +87,65 @@ function renderDersler(){
 /* Grouped by what the mode asks of you rather than by when it was built,
    because that is how one is reached for: you know whether you want to
    talk, to listen, to bring something back or to look something up. */
+/* Line icons for the tools, drawn like the landing page's three tiles. */
+const TOOL_IC=(function(){
+  const w=function(p){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';};
+  return {
+   prod:w('<path d="M4 5h16v10H9l-5 4z"/><path d="M8 9.5h8M8 12h5"/>'),
+   yolda:w('<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>'),
+   sor:w('<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.4"/><path d="M12 17h.01"/>'),
+   diyalog:w('<path d="M3 5h11v7H7l-4 3z"/><path d="M10 15v1h7l4 3V9h-4"/>'),
+   ata:w('<path d="M5 17c0-4 1.5-7 5-9M13 17c0-4 1.5-7 5-9"/><circle cx="6.5" cy="16" r="2.5"/><circle cx="14.5" cy="16" r="2.5"/>'),
+   dinle:w('<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2M21 12h0"/>'),
+   sayilar:w('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+   uyku:w('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>'),
+   tekrar:w('<path d="M4 11a8 8 0 0 1 14-4.5L20 8"/><path d="M20 4v4h-4"/><path d="M20 13a8 8 0 0 1-14 4.5L4 16"/><path d="M4 20v-4h4"/>'),
+   gram:w('<rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="8" y="13" width="8" height="7" rx="1.5"/>'),
+   words:w('<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>'),
+   hata:w('<path d="M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6z"/><path d="M6 3v18M9.5 9l4 4M13.5 9l-4 4"/>'),
+   sik:w('<path d="M4 6h2M4 12h2M4 18h2M9 6h11M9 12h8M9 18h5"/>'),
+   dict:w('<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/>'),
+   mine:w('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>')};
+})();
+/* One tile. `ready` false means the mode has nothing to offer yet — a
+   bank that fills as units are read, words saved, mistakes made — and the
+   tile says so rather than open onto an empty screen. Left out, readiness
+   is not the tile's business. */
+function toolTile(ic,name,en,fn,ready){
+  return '<button class="tool'+(ready===false?' idle':'')+'" onclick="'+fn+'"><span class="tool-i">'+TOOL_IC[ic]+'</span>'+
+    '<span class="tool-t">'+esc(name)+'<span class="gl">'+esc(en)+'</span></span>'+
+    (ready===false?'<span class="tool-e">Şimdilik boş<span class="gl">empty for now</span></span>':'')+'</button>';
+}
+/* Araçlar: everything beside the lessons, as tiles in four groups. It was
+   sixteen rows of text under two explanatory paragraphs; the learner asked
+   for it to be as big and clear as the landing page. A tile is an icon, a
+   name and a few words of English, and a mode with nothing in it yet is
+   drawn faded with "Şimdilik boş" — computed live off the same banks the
+   modes check themselves, never a fixed list. Nothing here is required,
+   which Nasıl çalışır says; the page no longer has to. */
 function renderAraclar(){
   let h=bar("Araçlar","tools · beside the lessons",true,"derslerin yanında")+'<div class="wrap">';
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx("Everything here is optional. If you only follow <b>Bugün</b> on the home screen you are using the course correctly — these are for working on one thing in particular.",
-    "Buradakilerin hiçbiri zorunlu değil. Ana ekrandaki <b>Bugün</b> listesini izlemen yeterli; bunlar tek bir beceri üzerinde çalışmak için.")+'</p>';
-  /* Six of these thirteen draw on nothing but themselves — a bank of
-     prefabs, a generator, the whole word list — and are exactly as full
-     on day one as they ever are. The other five start at zero and fill in
-     as units are read, words starred, mistakes made: a curious beginner
-     who wanders in early can open any of them and land on an honest "not
-     yet" card, the same anticlimax renderGram()/renderHata() already
-     handle gracefully one tap in, but one tap too late to save the visit.
-     hazır says which is which before that tap, computed live off the same
-     banks the hubs themselves check — never a fixed list, so it keeps
-     telling the truth as the five fill in. */
-  h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx("A <span class=\"pill turk\">hazır</span> tag means there is something to do here right now, with nothing read yet. The rest fill in on their own as you work through the course.",
-    "<span class=\"pill turk\">hazır</span> etiketi, orada şimdi yapacak bir şey olduğunu gösterir. Ötekiler sen ilerledikçe kendiliğinden dolar.")+'</p>';
-
-  h+='<h2 class="sec">Konuşma · speaking</h2>'+
-   navRow("Üretim","Speak the sentence before the model plays — "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" prompts","go('prod')",true,
-          "Örneği duymadan önce cümleyi sen söyle · "+(UNITS.reduce(function(n,u){return n+u.read.lines.length;},0)+CHUNKS.length)+" cümle")+
-   navRow("Yolda","Hands-free — spoken prompts, nothing to tap, 5 or 10 minutes","go('yolda')",true,"Eller serbest: sesli sorular, dokunmak yok, 5 ya da 10 dakika")+
-   navRow("Sor","Ask the question, not just answer it — wh- and yes/no","go('sor')",true,"Yalnızca cevap verme, soruyu da sen sor")+
-   navRow("Diyalog","A conversation that answers back — and the repair kit","go('diyalog')",true,"Sana cevap veren bir konuşma ve tamir çantası")+
-   navRow("Atasözleri ve deyimler","Said whole, not assembled — "+(ATASOZU.length+DEYIM.length)+" sayings","go('ata')",true,"Parça parça değil, bütün olarak söylenir · "+(ATASOZU.length+DEYIM.length)+" söz");
-
-  h+='<h2 class="sec">Dinleme · listening</h2>'+
-   navRow("Dinleme","Write down what you hear, or understand it with no text — at speed","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0,
-          "Duyduğunu yaz ya da metin olmadan anla, hızlı")+
-   navRow("Sayılar","Numbers, times and prices — against a clock","go('sayilar')",true,"Sayılar, saatler ve fiyatlar, saate karşı")+
-   navRow("Uyumadan önce","Today's words and sentences, said quietly, then it stops — 5 or 10 minutes","go('uyku')",uyBank().items.length>0,
-          "Bugünün kelimeleri ve cümleleri, alçak sesle; sonra kendiliğinden durur · 5 ya da 10 dakika");
-
-  h+='<h2 class="sec">Tekrar · bringing it back</h2>'+
-   navRow("Tekrar motoru","The words the course teaches once — drilled until they stick","go('tekrar')",repBank().length>0,"Kursun bir kez öğrettiği kelimeler, akılda kalana kadar")+
-   navRow("Dilbilgisi tekrarı","The "+UNITS.length+" grammar points, brought back and produced from English","go('gram')",gramBank().length>0,
-          UNITS.length+" dilbilgisi konusu geri gelir; İngilizceden Türkçeye sen kurarsın")+
-   navRow("Sözlüğüm","Saved words ("+S.star.length+") · review queue and flashcards","go('words')",S.star.length>0,"Kayıtlı kelimeler ("+S.star.length+") · tekrar sırası ve kartlar")+
-   navRow("Hata defteri","What you got wrong, why, and what keeps catching you"+(errRepeat().length?" — "+errRepeat().length+" repeating":""),"go('hata')",Object.keys(S.err).length>0,
-          "Neyi yanlış yaptın, neden, ve hangileri tekrar ediyor"+(errRepeat().length?" · "+errRepeat().length+" tekrar eden":""));
-
-  h+='<h2 class="sec">Kelimeler · words</h2>'+
-   navRow("Sık kelimeler","The commonest words the units never teach — ten a day, into your reviews","go('sik')",sikBatch().length>0,"Ünitelerin öğretmediği en sık kelimeler; günde on tane, tekrarına eklenir")+
-   navRow("Sözlük","Every word — course and everyday ("+dictAll().length+") — by type","go('dict')",true,"Bütün kelimeler, kurs ve gündelik ("+dictAll().length+"), türüne göre")+
-   navRow("Kendi kelimelerim","Add a word you met in the wild — it joins the same queue"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""),"mineOpen()",true,
-          "Dışarıda karşılaştığın bir kelimeyi ekle; aynı sıraya girer"+((S.mine&&S.mine.length)?" ("+S.mine.length+")":""));
-
-  h+='<h2 class="sec">Kurs</h2>'+
-   navRow("Nasıl çalışır","How the app works, in plain English","go('nasil')",undefined,"Uygulama nasıl çalışır (İngilizce)")+
-   navRow("Bu kurs hakkında","How the course works, and where the texts come from","go('about')",undefined,"Kurs nasıl işler, metinler nereden gelir (İngilizce)");
-
-  h+='<p class="foot">'+tx("Nothing here has to be done in any order.<br>Reviews draw only on material you have actually met.",
-    "Buradakilerin bir sırası yok.<br>Tekrarlar yalnızca gördüğün konulardan gelir.")+'</p></div>';
+  h+='<h2 class="sec">Konuşma · speaking</h2><div class="tools">'+
+   toolTile("prod","Üretim","say it first","go('prod')")+
+   toolTile("yolda","Yolda","hands-free","go('yolda')")+
+   toolTile("sor","Sor","asking questions","go('sor')")+
+   toolTile("diyalog","Diyalog","conversations","go('diyalog')")+
+   toolTile("ata","Atasözleri ve deyimler","proverbs and idioms","go('ata')")+'</div>';
+  h+='<h2 class="sec">Dinleme · listening</h2><div class="tools">'+
+   toolTile("dinle","Dinleme","write what you hear","go('dinle')",listenBank("d:").length>0||listenBank("a:").length>0)+
+   toolTile("sayilar","Sayılar","numbers at speed","go('sayilar')")+
+   toolTile("uyku","Uyumadan önce","before sleep","go('uyku')",uyBank().items.length>0)+'</div>';
+  h+='<h2 class="sec">Tekrar · bringing it back</h2><div class="tools">'+
+   toolTile("tekrar","Tekrar motoru","word review","go('tekrar')",repBank().length>0)+
+   toolTile("gram","Dilbilgisi tekrarı","grammar review","go('gram')",gramBank().length>0)+
+   toolTile("words","Sözlüğüm","saved words","go('words')",S.star.length>0)+
+   toolTile("hata","Hata defteri","the mistake book","go('hata')",Object.keys(S.err).length>0)+'</div>';
+  h+='<h2 class="sec">Kelimeler · words</h2><div class="tools">'+
+   toolTile("sik","Sık kelimeler","ten common words a day","go('sik')",sikBatch().length>0)+
+   toolTile("dict","Sözlük","every word","go('dict')")+
+   toolTile("mine","Kendi kelimelerim","your own words","mineOpen()")+'</div>';
+  h+='<div class="links"><button class="homelink" onclick="go(\'nasil\')">Nasıl çalışır?<span class="gl">how does this work?</span></button>'+
+   '<button class="homelink" onclick="go(\'about\')">Bu kurs hakkında<span class="gl">about the course</span></button></div></div>';
   paint(h);
 }
 
@@ -166,48 +158,20 @@ function renderAraclar(){
 function tipsOn(){return S.tips!==false&&lvPct("A2")<100;}
 function hideTips(){S.tips=false;save();render();}
 function showTips(){S.tips=true;save();home();}
-/* Five paragraphs of it used to sit inline on the landing page, then two
-   sentences, and now a line that unfolds. It is the right text and a
-   beginner needs it — nothing else explains that an empty Tekrar is
-   correct rather than broken — but it is reading rather than a control.
-
-   OPEN WHILE IT IS INSTRUCTION, FOLDED ONCE IT IS REFERENCE. That is the
-   same rule that already decides where it sits: above the plan while
-   nothing has been met, below it afterwards. On day one it is the only
-   thing telling a learner what any of this is, so it is open; once
-   something has been met the learner has been told, and it folds.
-   TIPSOPEN starts null meaning "whichever that rule says", and only
-   pins a value once the learner has actually tapped it. */
-let TIPSOPEN=null;
-function tipsToggle(){TIPSOPEN=!tipsShown();render();}
-function tipsShown(){return TIPSOPEN===null?metUnits().length===0:TIPSOPEN;}
-function startCard(){
-  if(!tipsOn())return "";
-  const open=tipsShown();
-  let h='<div class="card gram">'+
-   '<button class="disc" onclick="tipsToggle()" aria-expanded="'+(open?"true":"false")+'">'+
-    '<span class="grow"><b>Nasıl çalışır</b><span class="gl">how to use this</span></span>'+
-    '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
-  if(open){
-    h+='<p class="sub" style="margin:0 0 .2rem">Every label is Turkish with the English underneath, and you do not need to read the Turkish to use the app. Follow <b>Bugün</b> and you are using the course correctly — everything in Araçlar is optional.</p>'+
-     /* No "start the first unit" button here: the plan directly below
-        already has one, pointed at the same unit, and two identical
-        primary actions on one screen is the wall in miniature. */
-     '<button class="btn ghost" onclick="go(\'nasil\')">Devamını oku · the rest</button>'+
-     '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button>';
-  }
-  return h+'</div>';
-}
+/* The orientation used to sit on the landing page as a card, open on day
+   one and folded after. It is reading rather than a control, and the
+   landing page is now controls only, so it is a single link there while
+   tipsOn() and the whole text lives on its own screen. */
 function renderNasil(){
   let h=bar("Nasıl çalışır","how to use this",true,"nasıl kullanılır")+'<div class="wrap"><div class="card gram">'+
    '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app. The English stays until A2 is complete, then steps aside so the Turkish does the work; the <b>EN</b> button at the top of every screen turns it off or back on whenever you like.</p>'+
-   '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
+   '<p><b>1 · Follow Bugün.</b> Its <b>Başla</b> button opens the next thing to do today, and each part ends with a <b>Devam</b> button to the one after. If you do only that, you are using the app correctly. The day\'s full list is on <b>İlerleme</b>.</p>'+
    '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
    '<p><b>5 · Everything opens in order.</b> From nothing, <b>Bugün</b> begins with six short lessons before unit one: the letters and their sounds, how words are spelt, stressed and built, and how a sentence is put together. They are in Dersler under <b>Başlarken</b>. Each lesson opens when the one before it is passed, unit one opens when all six are, and every unit after that opens when the one before it is passed.</p>'+
    '<p><b>Already know some Turkish?</b> Nothing has to be sat through. The <b>intro test</b> in Başlarken skips all six lessons at once, the placement test suggests a level in twelve questions, and every level has a <b>test ahead</b> exam: eight out of ten marks the whole level complete and opens the next one.</p>'+
-   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required. <b>İlerleme</b>, under them, is where you see how far you have come in each part — a sitting itself ends on its score and a <b>Devam</b> button to the next step of Bugün.</p>'+
+   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required. <b>İlerleme</b>, beside them, is where you see how far you have come in each part — a sitting itself ends on its score and a <b>Devam</b> button to the next step of Bugün.</p>'+
    startBtn("btn")+
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
    (tipsOn()?'<button class="btn ghost" onclick="hideTips()">Ana ekranda gizle · hide on the home screen</button>':'')+
@@ -215,13 +179,10 @@ function renderNasil(){
   paint(h);
 }
 
-/* ready is omitted everywhere except Araçlar's practice rows: true paints
-   the "hazır" tag, false paints nothing, and leaving it out entirely (as
-   Dersler's two calls do) is a different thing from false — it means
-   readiness is not this row's business, so no pill either way. */
+/* A text row, now only on Dersler; Araçlar's tools are tiles (toolTile).
+   Its callers still pass the old readiness slot as undefined. */
 function navRow(t,s,fn,ready,tr){
-  const tag=ready?' <span class="pill turk" style="vertical-align:.1em">hazır</span>':'';
-  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead nav-t">'+esc(t)+tag+'</p><p class="sub">'+(tr?tx(esc(s),esc(tr)):esc(s))+'</p></div><span class="chev">'+IC.chev+'</span></button>';
+  return '<button class="card nav row" onclick="'+fn+'"><div class="grow"><p class="lead nav-t">'+esc(t)+'</p><p class="sub">'+(tr?tx(esc(s),esc(tr)):esc(s))+'</p></div><span class="chev">'+IC.chev+'</span></button>';
 }
 
 /* ===================== level ===================== */

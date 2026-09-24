@@ -57,6 +57,10 @@ function renderIlerleme(){
      '<div><b>'+streak()+'</b><span>'+tx("day streak","gün üst üste")+'</span></div>'+
      '<div><b>'+S.star.length+'</b><span>'+tx("saved words","kayıtlı kelime")+'</span></div></div>';
 
+  /* Today's plan, step by step: the landing page shows only its first. */
+  const plan=planToday();
+  if(plan.steps.length)h+='<h2 class="sec">Bugün</h2><div class="card" style="padding:.2rem 1rem">'+planRows(plan)+'</div>';
+
   h+='<h2 class="sec">Kurs</h2><div class="card">'+
     ilRow("Başlarken","the lessons before unit one",baslaCount(),BASLA.length);
   LEVELS.forEach(function(l){h+=ilRow(l.id+" · "+l.tr,l.en,lvDone(l.id),unitsOf(l.id).length);});

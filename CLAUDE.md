@@ -1367,7 +1367,7 @@ nothing duplicated in it, which now includes a lesson that shares
 *merhaba* with unit one.
 
 Not in the daily plan: it is optional and only makes sense at night.
-Araçlar has it under Dinleme, tagged hazır when there is something to play.
+Araçlar has it under Dinleme, drawn faded (Şimdilik boş) when there is nothing to play.
 
 ## Hata defteri (the mistake book)
 
@@ -1847,18 +1847,18 @@ backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
 test, run one sitting, and the Tekrar step must tick and the plan must
 lead on to a2u1.
 
-**The list folds; the instruction does not.** The card opens collapsed to
-one line — `5 adım · steps left · ~24 dk` — with the start button still
-outside the fold, so the first step is one tap whether or not the list is
-open. What folds away is five rows of detail answering a question the
-button already answers. Two rules keep it honest:
-
-- **One instruction is not a list**, so a single-step plan does not fold
-  at all. Day one still shows its one row and the sentence explaining why
-  the review steps are not there yet — the whole point of `avail`.
-- **`PLANOPEN` is a module variable, not part of `S`.** Same rule as the
-  rest of the plan: a fold that survived a restart would be a preference
-  the learner never set. It opens closed every time.
+**On the landing page the plan is one button.** Reported by the learner:
+the paragraph above Başla was too busy, and the children's app, big and
+plain, was more appealing even to an adult. It had grown to a heading, a
+folded summary (`5 adım · steps left · ~24 dk`), a sentence on why the
+steps come in this order (or, on day one, why the reviews were absent),
+the step list when unfolded, and then the button. Now `planCard()` is
+**Bugün** and a large **Başla** that names the step it opens (*Tekrar ·
+the words the course forgets*). Nothing else is needed to start, and
+each sitting ends on the next step (see below), so the plan is walked
+without being read. The whole list, ticked, is `planRows()` on İlerleme.
+`PLANOPEN` and the fold went with it; `sim.js` fails on the list, the
+summary, the paragraph or a second copy of the first step coming back.
 
 **Nothing is stored.** A step is done when its own queue is empty, which is
 self-correcting — finish the work and the tick appears, come back tomorrow
@@ -1876,24 +1876,12 @@ chunks as due, so on day one it advertised work while the plan correctly
 said there was none. One place answers "what now", and it is the plan;
 direct access stays in Araçlar.
 
-**Nasıl çalışır** is the plain-English orientation card — above the plan
-while nothing has been met, below it afterwards. It retires itself once A2
-is complete, `Gizle` ends it early, and About offers it back. It exists
-because the interface is Turkish-labelled and a beginner has no way to know
-that an empty Tekrar is by design rather than broken.
-
-It folds on the same rule that decides where it sits: **open while it is
-instruction, folded once it is reference.** On day one it is the only
-thing telling a learner what any of this is, so it is open; once a single
-unit has been opened they have been told, and it collapses to its own
-line. `TIPSOPEN` starts `null` meaning "whatever that rule says" and only
-pins a value once the learner has actually tapped it — and like the
-plan's fold it is a module variable, never stored. `Gizle` is different
-and *is* stored: retiring the card is a setting, folding it is not.
-
-The card also lost its "start the first unit" button. The plan sits
-directly below it pointing at the same unit, and two identical primary
-actions on one screen is the wall in miniature.
+**Nasıl çalışır** is the plain-English orientation, on its own screen.
+On the landing page it is one link, *Nasıl çalışır?*, while `tipsOn()`:
+until A2 is complete, or until the learner taps Gizle on that screen,
+which is stored because retiring it is a setting. It used to be a card on
+the landing page, open on day one and folded after (`TIPSOPEN`); it is
+reading rather than a control, and the landing page is controls only.
 
 
 The last step absorbed the old resume card: mid-unit it returns to the exact
@@ -1948,15 +1936,16 @@ certain length a list stops reading as choices and starts reading as
 texture, and the plan, the one thing that answers "what now", sat at the
 top of a wall the eye slides off.
 
-So the landing page is now four things: the hero with the live clock,
-**Bugün**, the progress road, and two doors. **İlerleme** sits under
-the doors, drawn quieter (`.block.quiet`), because nothing behind it is
-something to do: it is where to look, not where to go.
+So the landing page is now the hero with the live clock, **Bugün** (one
+button), the progress road, and three tiles side by side, with a small
+*Nasıl çalışır?* link under them while it is useful. No paragraph, no
+section heading over the tiles, no footer.
 
-| door | behind it |
+| tile | behind it |
 |---|---|
 | **Dersler** | the six levels and their sixty units, the placement test |
-| **Araçlar** | everything else, grouped: Konuşma · Dinleme · Tekrar · Kelimeler · Kurs |
+| **Araçlar** | everything else, as tiles in four groups: Konuşma · Dinleme · Tekrar · Kelimeler |
+| **İlerleme** | where the learner stands, and today's plan step by step |
 
 Four decisions worth keeping:
 
@@ -1984,11 +1973,13 @@ Four decisions worth keeping:
   or the doors would feel like a detour rather than a place. `HUBV` is
   the list; a new tool screen needs adding to it.
 
-`.block` is the style, and it is drawn from the same palette as
-everything else: a large target, a Crimson Pro title with the English
-underneath in Karla, and one gold hairline down the leading edge — the
-same single stroke that runs out of `h2.sec`, turned ninety degrees.
-Resist adding a second.
+The scale is the children's app's, not its colours: `.today` is a filled
+cobalt button with a 2rem Crimson Pro *Başla*, and `.door` is a tile with
+a line icon (`DOOR_IC`, stroked in cobalt), one word and its English, a
+thumb-sized target in a row of three. A word on a big target reads as a
+choice; a paragraph reads as something to get past. The tiles replaced
+three stacked `.block` rows whose capital-letter English and live
+subtitle lines were more text than choice.
 
 ### Assertions that could not fail
 
@@ -2014,37 +2005,36 @@ believing it.**
 Twenty-one guards on the navigation, each confirmed to fail on a
 deliberate breakage.
 
-### `hazır` — which of Araçlar's sixteen rows have anything to do yet
+### Araçlar as tiles, and "Şimdilik boş"
 
-(Sixteen since Sık kelimeler joined the Kelimeler section; it reads
-`sikBatch().length`, so it is tagged on a fresh install and untagged once
-the day's words are in.)
+By request, after the landing page: Araçlar was sixteen rows of text under
+two explanatory paragraphs, and is now fifteen tiles in a two-column grid
+under the same four headings (Konuşma, Dinleme, Tekrar, Kelimeler), each
+an icon (`TOOL_IC`), a name and a few words of English, built by
+`toolTile()`. The two paragraphs and the footer are gone; Nasıl çalışır
+and Bu kurs hakkında are two links at the foot rather than a fifth group.
 
-Eight draw on nothing but themselves — a prefab bank, a generator, the whole
-word list — and are exactly as full on day one as they will ever be. Five
-start at zero and fill in as units are read, words are starred, mistakes
-are made. A curious beginner who wanders into Araçlar before following
-`Bugün` can open any of the five and land on an honest "not yet" card —
-the same anticlimax `renderGram()`/`renderHata()` already handle
-gracefully one tap in, but one tap too late to have saved the visit.
+Readiness is shown on the exception. It used to be a green **hazır** pill
+on every row with something to do, which needed a paragraph to explain
+it, and nine of the fourteen tools are full from day one anyway. Now a
+tool whose bank is empty is drawn faded (`.tool.idle`) and says
+**Şimdilik boş** (empty for now); the rest carry no mark. The flags are
+the same live booleans as before, computed at the render from the banks
+the modes check themselves (`listenBank()`, `uyBank()`, `repBank()`,
+`gramBank()`, `S.star`, `S.err`, `sikBatch()`), never a hand-typed list.
+"For now" rather than "yet" because Sık kelimeler empties once the day's
+ten are in, as well as before anything has been met.
 
-`hazır` says which is which *before* that tap: a small pill on the row,
-`navRow`'s optional fourth argument, present only where there is
-something to do right now. Nothing here is a hand-typed list, because a
-hand-typed list drifts — each flag is the same boolean the destination
-screen itself would show as empty, computed at the same render:
-`chunkBank()`/`LEX`/`DIYALOG`/`ATASOZU`/`DEYIM`/`dictAll()` never start at
-zero so those six are simply `true`; `listenBank()`, `repBank()`,
-`gramBank()`, `S.star.length` and `Object.keys(S.err).length` are read
-live, so the tag appears on Tekrar motoru the moment `repBank()` first
-returns something and not a render before. Leaving the argument off
-entirely — as Dersler's two `navRow` calls and Araçlar's own Kurs section
-do — is different from passing `false`: it means readiness is not that
-row's business at all, so no pill either way. `sim.js` walks the fourteen
-rows a readiness claim actually applies to — the two Kurs rows separately
-assert they carry no tag at all — then meets a1u1 one tab at a time and
-checks that exactly the row whose bank that tab feeds picks up the tag,
-never the others.
+`sim.js` checks the four headings, fifteen tiles and no text row or
+paragraph; the nine tools ready on a fresh install and the five that are
+not; each of those five turning ready when exactly the tab that feeds it
+is met; that a tile's fade and its label never disagree; and the two
+reference pages being links. Nine deliberate breakages each turned it
+red; one did not at first (the fade dropped while the label stayed),
+because the test read only the label, which is why the fade-and-label
+check exists.
+
+`navRow()` is now only Dersler's; its readiness slot is unused.
 
 ## Sözlük (the word list)
 
