@@ -45,6 +45,7 @@ cat \
   src/app.baslarken.js \
   src/app.uyku.js \
   src/app.adim.js \
+  src/app.ilerleme.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"

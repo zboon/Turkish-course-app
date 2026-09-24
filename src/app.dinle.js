@@ -186,13 +186,11 @@ function renderDinleRun(){
   if(!DK){renderDinle();return;}
   const dikte=DK.mode==="d";
   if(DK.phase==="end"){
-    const left=dinleDue(DK.mode+":");
-    paint(bar("Dinleme","Bitti",true)+'<div class="wrap"><div class="score">'+
-      '<div class="big '+(DK.right*2>=DK.q.length?"pass":"fail")+'">'+DK.right+'/'+DK.q.length+'</div>'+
-      '<p class="sub">'+(dikte?"kelimesi kelimesine · marked by the app":"kendi değerlendirmen · your own marking")+'</p></div>'+
-      '<div class="card"><p class="sub">'+tx(left+' still waiting in this set. The ones you missed come back today.','Bu grupta '+left+' tane daha bekliyor. Yanlış yaptıkların bugün yeniden gelir.')+'</p>'+
-      '<button class="btn" onclick="startDinle(\''+DK.mode+'\')">Devam</button>'+
-      '<button class="btn ghost" onclick="go(\'dinle\')">Dinleme</button></div></div>');
+    /* Dikte is a Bugün step; Ses önce is reached from Araçlar. */
+    endScreen({title:"Dinleme",n:DK.right,of:DK.q.length,
+               label:dikte?"kelimesi kelimesine · marked by the app":"kendi değerlendirmen · your own marking",
+               plan:dikte,again:dinleDue(DK.mode+":")?"startDinle('"+DK.mode+"')":"",
+               hub:"go('dinle')",hubName:"Dinleme"});
     return;
   }
   const it=DK.q[DK.i];

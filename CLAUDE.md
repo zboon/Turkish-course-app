@@ -67,6 +67,7 @@ src/app.sik.js           the frequency layer: ten common words a day
 src/app.baslarken.js     the lessons before unit one
 src/app.uyku.js          before sleep: today's material, quietly
 src/app.adim.js          Derse başla: a unit taught one screen at a time
+src/app.ilerleme.js      İlerleme: the state of every mode, on one page
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
@@ -1900,6 +1901,43 @@ section, and it falls back to the first unfinished unit otherwise. It must
 check `isDone` — a bookmark survives completion, and following it blindly
 pinned the plan to a unit already ticked.
 
+### The end of a sitting, and the way on
+
+Reported by the learner: finishing Tekrar from Bugün landed on the mode's
+whole state (how many words were still under eight encounters, how many
+lines were left in the set) and two buttons, one restarting Tekrar and one
+opening its hub. The next step of the plan was a trip home away, and the
+paragraph was the same one every day.
+
+So a sitting ends on `endScreen()` in `app.tekrar.js`: the score, one
+**Devam** that runs the plan's next step (`planToday().left[0]`, read
+after the sitting's grades are saved, so it is the same step again only
+while that step still has work), and a line under it naming the step.
+With the plan done it says **Bugünlük bitti** and goes home. `plan:true`
+is for the modes Bugün sends a learner to: Tekrar (both runners),
+Dilbilgisi, Dikte, Söyle, Anlat. The Araçlar-only modes that share those
+runners (Ses önce, Kalıplar, Kurma, Dönüştürme, Sor) end on **Bir daha** and
+their hub instead. **Bir oturum daha** appears in a plan mode only when
+it has more due *and* is not already the plan's next step, or the screen
+would offer one thing twice. Sık kelimeler ends on the same `planNext()`,
+and the Anlat step opens the retelling itself rather than the Üretim hub
+(`retelldone` is its end view). Sayılar, Atasözleri, Diyalog, Yolda and
+Uyumadan önce keep their own ends: they are not plan steps, and
+Diyalog's transcript is the reward for finishing.
+
+The state that used to sit on those screens is on **İlerleme**
+(`app.ilerleme.js`, reached from under the two doors): units by level,
+words met and at eight encounters, the encounter chart that used to be on
+the Tekrar motoru hub, grammar points read and holding, sentences,
+prefabs, retellings, dialogues, sayings, dictation, numbers and the
+mistake book. Every number is counted from the schedules as the page is
+drawn and nothing is stored; `sim.js` checks drawing it leaves `S`
+unchanged. Dersler's stat row moved there too. Twelve deliberate
+breakages each turned `sim.js` red; three did not at first, and all
+three were the test: a home-button check satisfied by the bar's own home
+icon, a duplicate-offer check whose fixture never produced the
+duplicate, and a breakage that only renamed a class.
+
 ## Ana ekran (the landing page, and the two doors)
 
 The home screen used to carry, in one column: the hero, a five-paragraph
@@ -1911,11 +1949,13 @@ texture, and the plan, the one thing that answers "what now", sat at the
 top of a wall the eye slides off.
 
 So the landing page is now four things: the hero with the live clock,
-**Bugün**, the progress road, and two doors.
+**Bugün**, the progress road, and two doors. **İlerleme** sits under
+the doors, drawn quieter (`.block.quiet`), because nothing behind it is
+something to do: it is where to look, not where to go.
 
 | door | behind it |
 |---|---|
-| **Dersler** | the six levels and their sixty units, the placement test, the stats |
+| **Dersler** | the six levels and their sixty units, the placement test |
 | **Araçlar** | everything else, grouped: Konuşma · Dinleme · Tekrar · Kelimeler · Kurs |
 
 Four decisions worth keeping:

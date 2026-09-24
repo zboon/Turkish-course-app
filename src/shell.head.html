@@ -214,6 +214,17 @@ h2.sec::after{
   letter-spacing:.09em;color:var(--faint);margin-top:.2rem;
 }
 .block-n{display:block;color:var(--ink2);font-size:.85rem;margin-top:.6rem}
+/* İlerleme sits under the two doors, smaller: it is somewhere to look,
+   not somewhere to go and do something. */
+.block.quiet{padding:.9rem 2.4rem .9rem 1.2rem;box-shadow:none;background:none}
+.block.quiet .block-t{font-size:1.2rem}
+.block.quiet .block-n{margin-top:.35rem}
+/* İlerleme's rows, and the line under a sitting's Devam naming what it opens. */
+.prow{padding:.45rem 0}
+.prow+.prow{border-top:1px solid var(--line)}
+.prow b{font-weight:700;font-size:.95rem;flex:0 0 auto}
+.prow .meter{margin-top:.35rem}
+.next-step{text-align:center;margin:.5rem 0 0}
 .block .chev{position:absolute;right:.95rem;top:50%;transform:translateY(-50%)}
 
 /* Nav rows inside a hub carry the same weight as the blocks that lead to

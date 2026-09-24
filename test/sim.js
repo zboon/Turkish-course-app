@@ -566,6 +566,9 @@ step("üretim · say it three times", () => {
   ev("S.retell[" + q(u.id) + "].d=dayNum()");
   ev("retellDone(" + q(u.id) + ")");
   ok(ev("S.retell[" + q(u.id) + "].n") === 3, "third telling not counted");
+  /* Told: the short end screen, and the task's own page says it is done. */
+  ok(ev("V.view") === "retelldone" && lastPaint.includes("3/3"), "the third telling does not end on its 3/3");
+  ev("startRetell(" + q(u.id) + ")");
   ok(/Üç kez anlatıldı/.test(lastPaint), "no completion state after three tellings");
   ok(ev("retellOpen().length") === 0, "a finished retell is still open");
   ev("retellReset(" + q(u.id) + ")");
@@ -604,7 +607,8 @@ step("kurma · generated drills", () => {
   /* Scheduling is by pattern, so a handful of keys, not a dozen. */
   ok(ev("Object.keys(S.prod).length") <= n, "pattern scheduling stored more keys than items");
   ok(ev("Object.keys(S.prod).every(function(k){return k.indexOf('g:')===0})"), "generated grading wrote a non-pattern key");
-  ok(/never runs out/.test(lastPaint), "the generated score screen still talks about a finite set");
+  /* A generated set never runs dry, so its end always offers another. */
+  ok(lastPaint.includes("startProd('g')"), "the generated end screen does not offer another sitting");
 });
 
 step("dönüştürme · transformations", () => {
@@ -1057,7 +1061,9 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
   ev("wipe()"); meetAll();
   ev("go('tekrar')");
   ok(ev("V.view") === "tekrar", "the tekrar hub did not open");
-  ok(/Karşılaşma/.test(lastPaint), "the hub does not show the distribution");
+  /* The distribution is progress, not a way in: it is on İlerleme now. */
+  ok(!lastPaint.includes("met once"), "the hub still draws the distribution");
+  ok(lastPaint.includes("go('ilerleme')"), "the hub does not point to İlerleme");
 
   ev("startTekrar()");
   ok(ev("V.view") === "tekrarrun", "the run did not start");
@@ -2483,6 +2489,83 @@ step("home · the landing page is the plan, the road and two doors", () => {
   ok(lastPaint.includes('id="hdate"'), "the date under the clock left the landing page");
 });
 
+/* Reported: finishing Tekrar from Bugün ended on a page of the mode's
+   whole state, then a button that restarted Tekrar and one that opened
+   its hub, so the next step of the plan was a trip home away. A sitting
+   now ends on its score and the plan's next step; the state is on
+   İlerleme. */
+step("bugün · a sitting ends on its score and the plan's next step", () => {
+  ev("wipe()");
+  ev("UNITS.slice(0,14).forEach(function(u){S.done[u.id]={score:5,of:5,at:0};S.seen[u.id]={v:1,g:1,r:1,d:1}});S.tips=false;save()");
+  ok(ev("planToday().left[0].k") === "rep", "this fixture needs Tekrar as the plan's first step");
+  ev("startTekrar()");
+  let guard = 0;
+  while (ev("TK.phase") !== "end" && guard++ < 40) {
+    if (ev("TK.phase") === "ask") { doc.getElementById("tbox").value = ev("TK.q[TK.i].c"); ev("tkCheck()"); }
+    else ev("tkNext()");
+  }
+  ok(ev("TK.phase") === "end", "the Tekrar sitting never ended");
+  ok(lastPaint.includes('class="score"'), "the end screen lost its score");
+  ok(!/encounters|karşılaşma/.test(lastPaint), "the end screen still carries the mode's state");
+  ok(!lastPaint.includes("go('tekrar')"), "the end screen still sends the learner to the hub");
+  const nx = ev("planToday().left[0]");
+  ok(nx && lastPaint.includes('onclick="' + nx.go + '">Devam'), "Devam does not open the plan's next step");
+  ok(lastPaint.includes("Sıradaki: " + esc(nx.tr)), "the end screen does not name the next step");
+  /* The same thing twice is not a choice. */
+  ev(nx.go);
+  ok(ev("V.view") !== "tekrarrun" || nx.k === "rep", "Devam did not move on to the next step");
+
+  /* Every Bugün mode ends the same way. */
+  ev("startGram()"); ev("GR.i=GR.q.length; GR.phase='end'; render()");
+  ok(lastPaint.includes(ev("planToday().left[0].go") + '">Devam'), "Dilbilgisi does not end on the plan's next step");
+  ev("startDinle('d')"); ev("DK.i=DK.q.length; DK.phase='end'; render()");
+  ok(lastPaint.includes(ev("planToday().left[0].go") + '">Devam'), "Dikte does not end on the plan's next step");
+  ev("startProd('s')"); ev("PR.i=PR.q.length; PR.phase='end'; render()");
+  ok(lastPaint.includes(ev("planToday().left[0].go") + '">Devam'), "Söyle does not end on the plan's next step");
+  /* A mode from Araçlar ends on another sitting and its hub instead. */
+  ev("startDinle('a')"); ev("DK.i=DK.q.length; DK.phase='end'; render()");
+  ok(lastPaint.includes("go('dinle')") && !lastPaint.includes("next-step"), "Ses önce ends on the plan rather than its hub");
+
+  /* With the plan done, the way on is home. */
+  ev("__pt=planToday; planToday=function(){const p=__pt();p.left=[];return p}");
+  ev("endScreen({title:'Tekrar',n:3,of:4,label:'x',plan:true})");
+  /* The bar carries a home icon on every screen, so the button is checked by its label. */
+  ok(/Bugünlük bitti/.test(lastPaint) && lastPaint.includes('onclick="home()">Ana sayfa'), "a finished plan does not say so and go home");
+  ev("planToday=__pt");
+  /* When the plan's next step is this same mode, it is offered once. */
+  const same = ev("planToday().left[0].go");
+  ev("endScreen({title:'Tekrar',n:3,of:4,label:'x',plan:true,again:" + q(same) + "})");
+  ok(lastPaint.split('onclick="' + same + '"').length === 2, "the plan's next step is offered twice when it is this mode again");
+
+  /* The retell step opens the task itself, not the Üretim hub. */
+  const u = ev("UNITS[0].id");
+  ev("S.retell[" + q(u) + "]={n:1,d:dayNum()}; save()");
+  const rt = ev("planToday().all.find(function(s){return s.k==='retell'})");
+  ok(rt && rt.go === "startRetell(" + "'" + u + "')", "the retell step does not open the task: " + (rt && rt.go));
+});
+
+step("ilerleme · the state of every mode, in one place", () => {
+  ev("wipe()");
+  ev("UNITS.slice(0,14).forEach(function(u){S.done[u.id]={score:5,of:5,at:0};S.seen[u.id]={v:1,g:1,r:1,d:1}});S.tips=false;save()");
+  ev("home()");
+  ok(lastPaint.includes("go('ilerleme')"), "home has no way to İlerleme");
+  ev("go('ilerleme')");
+  ok(ev("V.view") === "ilerleme", "İlerleme did not open");
+  ok(lastPaint.includes("met once"), "İlerleme does not draw the encounter distribution");
+  ok(lastPaint.includes("<b>" + ev("repBank().length") + " / " + ev("repAll()") + "</b>"), "the words-met count disagrees with the bank");
+  ok(lastPaint.includes("<b>10 / 10</b>"), "A1 does not read as complete");
+  ok(lastPaint.includes("<b>" + ev("gramBank().length") + " / " + ev("UNITS.length") + "</b>"), "the grammar-read count disagrees");
+  /* Numbers are read, never stored. */
+  const before = JSON.stringify(ev("S"));
+  ev("render()");
+  ok(JSON.stringify(ev("S")) === before, "drawing İlerleme changed the saved state");
+  ev("back()");
+  ok(ev("V.view") === "home", "back() from İlerleme does not go home");
+  /* Dersler kept only the levels. */
+  ev("go('dersler')");
+  ok(!lastPaint.includes('class="stat"'), "the stat row is still on Dersler");
+});
+
 step("bugün · the step list folds, the instruction does not", () => {
   ev("wipe()");
   ev("UNITS.slice(0,14).forEach(function(u){S.done[u.id]={score:5,of:5,at:0};S.seen[u.id]={v:1,g:1,r:1,d:1}});S.tips=false;save()");
@@ -2785,6 +2868,7 @@ step("söz · a listed variant is accepted, and named after a right answer", () 
     doc.getElementById("abox").value = alt; ev("ataCheck()");
     ok(ev("AT.res.clean") === true, "a listed variant was marked wrong");
     ok(lastPaint.includes("Also said"), "a right answer did not show the other wording");
+    ok(!/\.\.|\?\.|!\./.test(lastPaint.replace(/<[^>]+>/g,"")), "the other wording is printed with a doubled stop");
   }
 });
 

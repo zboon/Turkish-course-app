@@ -75,6 +75,9 @@ function ataAcceptKey(k,pre){
   save();
 }
 
+/* A variant is written as a sentence, full stop and all; the note puts
+   its own stop after the list, so the variant's is dropped. */
+function ataAlts(it){return it.alt.map(function(a){return esc(String(a).replace(/[.!?…]+$/,""));}).join(" · ");}
 function ataForms(it){return [it.c].concat(it.alt||[]);}
 /* Score against every accepted wording and keep the best, so the marked
    line names words against the variant the learner was actually aiming
@@ -233,7 +236,7 @@ function renderAtaRun(){
      (AT.over&&!r.clean?"Kabul edildi":r.clean?"Tam":r.hit+" / "+r.of+" kelime")+'</b>'+
      (AT.over&&!r.clean?tx("Taken as right. It moves out a box.","Doğru kabul edildi. Bir kutu ileri gider.")
       :r.clean?((it.alt&&it.alt.length)
-                 ?tx("Also said: "+it.alt.map(esc).join(" · ")+". Both are real; you will meet either.","Şöyle de söylenir: "+it.alt.map(esc).join(" · ")+". İkisi de gerçek; hangisiyle de karşılaşabilirsin.")
+                 ?tx("Also said: "+ataAlts(it)+". Both are real; you will meet either.","Şöyle de söylenir: "+ataAlts(it)+". İkisi de gerçek; hangisiyle de karşılaşabilirsin.")
                  :tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek."))
               :tx("Red is what the saying has and you did not. A fixed form is the whole point, so this counts as a miss and comes back today.",
                   "Kırmızılar sözde var, sende yok. Bütün mesele kalıbın kendisi; bu yüzden yanlış sayılır ve bugün yeniden gelir."))+'</div>';

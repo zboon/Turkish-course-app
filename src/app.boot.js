@@ -15,6 +15,8 @@ function render(){
   else if(v==="prod")renderProd();
   else if(v==="prodrun")renderProdRun();
   else if(v==="retell")renderRetell();
+  else if(v==="retelldone")renderRetellDone();
+  else if(v==="ilerleme")renderIlerleme();
   else if(v==="dict")renderDict();
   else if(v==="dinle")renderDinle();
   else if(v==="dinlerun")renderDinleRun();
