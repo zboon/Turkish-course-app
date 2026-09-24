@@ -314,7 +314,7 @@ deliberate breakage.
 `localStorage["turkce-course-v1"]`, one object:
 
 ```js
-{done:{unitId:{score,of,at,byTest}}, seen:{unitId:{v,g,r,d,at}},
+{done:{unitId:{score,of,at,byTest,first}}, seen:{unitId:{v,g,r,d,at}},
  place:{u,s}, star:["tr|en"], srs:{"tr|en":{b:box,d:dueDay}},
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
  prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
@@ -326,6 +326,11 @@ deliberate breakage.
  sik:{"zaten":{d}, "ve":{d,k:1}}, basla:{"alfabe":{at,byTest}},
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
+
+`done[id].first` is the day a unit was first passed by its own quiz, set
+once and kept on every later pass; a level test writes none, and records
+from before v3.67 have none. It is what the one-new-unit-a-day pace counts
+(see Bugün).
 
 Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
 `num`, `ata`, `dia` — carries `f`, the day it was first practised, which
@@ -1847,6 +1852,25 @@ backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
 test, run one sitting, and the Tekrar step must tick and the plan must
 lead on to a2u1.
 
+**One new unit a day.** Reported by the learner: two A2 units took an
+afternoon, so the whole level could be ticked in a day, and a unit
+passed on a five-question quiz minutes after the lesson has been
+followed, not kept. The review queues already let in `NEW_DAY` new items
+a day; new units had no pace at all. So the plan offers `UNIT_DAY` (1)
+new unit a day: once `unitsToday()` — units whose `done.first` is today —
+reaches it, the unit step stays in the plan ticked as **Yarın**, naming
+tomorrow's unit, and `planToday().tomorrow` carries it to the landing
+page (*Bugünlük bitti · Yarın: A2 · …*) and to the end screens. The unit
+quiz's pass screen leads on to the rest of today's plan rather than to
+**Sonraki ünite**. It is the plan's pace, not a lock: a unit opened by
+hand from Dersler, or from the landing page's *Yine de devam et*, is
+resumed as normal, and a level test is still the way to skip. A unit
+passed again, or by a level test, is not a new one. `sim.js` checks all
+of it; ten deliberate breakages each turned it red, and an eleventh
+showed a `byTest` guard in `unitsToday()` was dead code, since a level
+test never writes `first`, so it was removed and the test now breaks the
+real path instead.
+
 **On the landing page the plan is one button.** Reported by the learner:
 the paragraph above Başla was too busy, and the children's app, big and
 plain, was more appealing even to an adult. It had grown to a heading, a
@@ -1918,7 +1942,13 @@ The state that used to sit on those screens is on **İlerleme**
 words met and at eight encounters, the encounter chart that used to be on
 the Tekrar motoru hub, grammar points read and holding, sentences,
 prefabs, retellings, dialogues, sayings, dictation, numbers and the
-mistake book. Every number is counted from the schedules as the page is
+mistake book, and under the level rows the words actually held (a
+review box a week or more out, in Tekrar motoru or the starred queue,
+counted once each) against a rough vocabulary for the level being worked
+in (`VOCAB_TARGET`: 500, 1,000, 2,000, 3,500, 5,000, 8,000). That row
+exists because "A2 · 10 / 10" means A2's grammar has been followed, not
+that A2 has been reached; the page says the targets are rough and that
+they measure words, not grammar. Every number is counted from the schedules as the page is
 drawn and nothing is stored; `sim.js` checks drawing it leaves `S`
 unchanged. Dersler's stat row moved there too. Twelve deliberate
 breakages each turned `sim.js` red; three did not at first, and all

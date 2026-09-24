@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.66";
+const APP_VERSION="v3.67";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -80,6 +80,22 @@ function lvPct(lv){const a=unitsOf(lv);return a.length?Math.round(100*lvDone(lv)
 function allPct(){return Math.round(100*UNITS.filter(u=>isDone(u.id)).length/UNITS.length);}
 function currentLevel(){for(const l of LEVELS){if(lvPct(l.id)<100)return l.id;}return "C2";}
 function nextUnit(){for(const u of UNITS){if(!isDone(u.id))return u;}return null;}
+/* A new unit a day. Reported by the learner: two A2 units took an
+   afternoon, so the whole level could be ticked in a day, and a unit
+   passed on a quiz minutes after the lesson is a unit followed, not one
+   kept. Reviews already let in only NEW_DAY new items a day; new units
+   had no pace at all. So the plan offers UNIT_DAY new units a day and
+   then stops, naming tomorrow's. It is the plan's pace, not a lock: a
+   unit opened by hand from Dersler is resumed as normal.
+   A unit counts on the day it was FIRST passed (done.first, set once by
+   the unit quiz); a unit passed again keeps its day, and a level test
+   writes no `first` at all. Records from before this have none either
+   and count as old. */
+const UNIT_DAY=1;
+function unitsToday(){
+  const n=dayNum();
+  return UNITS.filter(function(u){const d=S.done[u.id];return d&&d.first===n;}).length;
+}
 /* The course opens in order: the six lessons of Başlarken one after
    another, then each unit once the one before it is passed. A level's
    test ahead passes every unit in it, so it is the way to skip, as in

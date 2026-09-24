@@ -2612,6 +2612,56 @@ step("nasıl çalışır · a link while it is useful, the text on its own page"
   ok(store.get("turkce-course-v1").indexOf('"tips":false') >= 0, "Gizle did not persist — it is a setting");
 });
 
+/* Reported: two A2 units took an afternoon, so a level could be ticked
+   in a day. The plan now offers one new unit a day and names tomorrow's;
+   a unit opened by hand is resumed as normal. */
+step("pace · one new unit a day, and what counts as new", () => {
+  ev("wipe()");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("S.done.a1u1.first") === ev("dayNum()"), "a first pass does not record its day");
+  ok(ev("unitsToday()") === 1, "a unit passed today is not counted");
+  ok(!lastPaint.includes(">Sonraki ünite"), "the score screen offers a second new unit today");
+  const p = ev("planToday()");
+  const nw = p.steps.find(x => x.k === "new");
+  ok(nw && nw.n === 0 && nw.tr === "Yarın", "the plan's unit step does not wait for tomorrow");
+  ok(p.tomorrow && p.tomorrow.id === "a1u2", "the plan does not name tomorrow's unit");
+  ok(!p.left.some(x => x.go === "go('unit','a1u2','v')"), "the plan still sends the learner on to unit two today");
+
+  /* With the rest of the day done, the landing page says so and names it. */
+  ev("__pt=planToday; planToday=function(){const p=__pt();p.left=[];return p}"); ev("home()");
+  ok(/Bugünlük bitti/.test(lastPaint) && lastPaint.includes(esc(ev("UNITS[1].tr"))), "the finished day does not name tomorrow's unit");
+  ok(lastPaint.includes('class="homelink" onclick="go(\'unit\',\'a1u2\',\'v\')"'), "there is no way to carry on anyway");
+  ev("planToday=__pt");
+
+  /* It is the plan's pace, not a lock: opened by hand, it is resumed. */
+  ev("go('unit','a1u2','v')");
+  const r = ev("planToday()").steps.find(x => x.k === "new");
+  ok(r.tr === "Devam" && r.go.indexOf("a1u2") > -1 && r.n === 1, "a unit opened by hand is not resumed");
+
+  /* The next day, the next unit. */
+  ev("S.done.a1u1.first=dayNum()-1; S.place=null; save()");
+  const t = ev("planToday()").steps.find(x => x.k === "new");
+  ok(t.tr === "Yeni" && t.go === "go('unit','a1u2','v')" && t.n === 1, "the next day does not offer the next unit");
+
+  /* Passing a unit again, or by a level test, is not a new unit. */
+  ev("S.done.a1u1.first=0; save()");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("S.done.a1u1.first") === 0 && ev("unitsToday()") === 0, "passing an old unit again counted as today's new one");
+  ev("wipe()"); ev("startLevelExam('A1')"); while (ev("Q.i<Q.items.length")) answer(true);
+  ok(ev("isDone('a1u5')") && ev("unitsToday()") === 0, "a level test counted its units as today's new one");
+});
+
+step("ilerleme · words held beside a rough target for the level", () => {
+  ev("wipe()");
+  ev("S.rep={kitap:{b:4,d:dayNum()+8,n:5},ev:{b:5,d:dayNum()+16,n:6},masa:{b:6,d:dayNum()+30,n:7},kapi:{b:1,d:dayNum()+1,n:1}}");
+  ev("S.srs={'zaten|already':{b:4,d:dayNum()+8},'kitap|book':{b:5,d:dayNum()+16},'ve|and':{b:2,d:dayNum()+2}}; save()");
+  ok(ev("heldWords()") === 4, "held words should be kitap, ev, masa and zaten, each once: " + ev("heldWords()"));
+  ev("go('ilerleme')");
+  const T = ev("VOCAB_TARGET[curLv()]");
+  ok(lastPaint.includes("<b>4 / " + T + "</b>"), "İlerleme does not set the words held against the level's target");
+  ok(lastPaint.includes("roughly " + T), "the target is not said to be rough");
+});
+
 step("dersler · the course spine, and nothing else", () => {
   ev("go('dersler')");
   ok(ev("V.view") === "dersler", "go('dersler') did not reach the hub");
@@ -3503,7 +3553,9 @@ step("the path opens in order", () => {
   ok(!open("a1u2"), "failing unit one opened unit two");
   ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
   ok(open("a1u2") && !open("a1u3"), "passing unit one did not open unit two alone");
-  ok(lastPaint.includes("go('unit','a1u2','v')"), "the score screen does not lead to the unit it just opened");
+  /* It is open, but it is tomorrow's: a new unit a day. */
+  ok(!lastPaint.includes(">Sonraki ünite"), "the score screen offers the next unit on the day one was already passed");
+  ok(ev("planToday().tomorrow && planToday().tomorrow.id") === "a1u2", "the plan does not name unit two as tomorrow's");
 
   /* A level test skips its whole level, and only that level. */
   ev("startLevelExam('B1')"); for (let i = 0; i < 10; i++) answer(true);
