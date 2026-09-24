@@ -3,14 +3,14 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.70";
+const APP_VERSION="v3.71";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
 let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},rate:0.85,
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
-       num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},coz:{},ada:{n:0,s:[]},tips:true};
+       num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},coz:{},ada:{n:0,s:[]},log:{n:0,e:[],src:[]},tips:true};
 /* Progress lives in this browser and nowhere else, so a save that fails is
    the one silent bug that costs a learner months: every box, every star,
    gone when the tab closes, and nothing said. It used to be swallowed.
@@ -37,6 +37,8 @@ function load(){
   if(!S.coz)S.coz={};
   /* S.ada.s is the learner's own sentences, keyed by a counter. */
   if(!S.ada||!S.ada.s)S.ada={n:0,s:[]};
+  /* S.log is the outside-input record: entries and sources, keyed by a counter. */
+  if(!S.log||!S.log.e)S.log={n:0,e:[],src:[]};
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
 function saveWarn(){
@@ -336,7 +338,7 @@ function go(view,a,b){stopPlay();V={view:view,lv:a,u:a,sec:b}; if(view==="unit")
 function home(){stopPlay();V={view:"home"};window.scrollTo(0,0);render();}
 /* The tool screens all hang off Araçlar; Dersler holds the levels. */
 const HUBV=["prod","dinle","tekrar","gram","yolda","hata","mine","sor",
-            "sayilar","diyalog","ata","words","dict","about","nasil","sik","uyku","coz","ada"];
+            "sayilar","diyalog","ata","words","dict","about","nasil","sik","uyku","coz","ada","gunluk"];
 /* İlerleme is reached from the home screen, so back() from it goes home. */
 function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
@@ -474,7 +476,7 @@ const EN_INLINE=[
  "stop and mark","drill these","review them","walk away","place me","hide on the home screen","mine is said too",
  "how to add one","ten more","where to","caught you twice or more","speaking","listening","bringing it back","words",
  "how it is said","listening and shadowing","the review queue","what the course teaches once","produce the pattern",
- "listening without the text","saying it first","asking","taking a word apart","your own islands","keeping it alive","write","get them checked","copy","correct it","it was right","say your islands","said whole","numbers at speed",
+ "listening without the text","saying it first","asking","taking a word apart","your own islands","keeping it alive","write","get them checked","copy","correct it","it was right","say your islands","the hours outside","log a sitting","caught a word?","said whole","numbers at speed",
  "your own words","the mistake book","hands-free","how many words","the texts","back up",
  "build it","change it","the gap","where sentences come from","write what you hear","audio first","listening speed",
  "replays allowed","the model’s speed","ask the question","write the digits","read it out","how high","the bar",
