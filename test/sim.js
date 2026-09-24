@@ -2321,13 +2321,13 @@ step("the plan says what to do, in the order it should be done", () => {
   ev("home()");
   const dk = ev("planToday()").steps.find(s => s.k === "dinle");
   ok(dk.n === 0, "clearing the dictation queue did not clear its step");
-  /* The step list folds away until asked for, so the ticks are inside
-     the fold now. The rule they pin is unchanged: a step ticks when its
-     own queue empties, with no stored completion flag. */
-  ok(!/tick done/.test(lastPaint), "the folded plan is still painting its step rows");
-  ev("planToggle()");
-  ok(/tick done/.test(lastPaint), "a finished step shows no tick");
-  ev("planToggle()");
+  /* The step list is on İlerleme; the landing page shows one button. The
+     rule the ticks pin is unchanged: a step ticks when its own queue
+     empties, with no stored completion flag. */
+  ok(!/tick done/.test(lastPaint), "the landing page is still painting the step rows");
+  ev("go('ilerleme')");
+  ok(/tick done/.test(lastPaint), "a finished step shows no tick on İlerleme");
+  ev("home()");
 
   /* Every step's tap target has to be a real call. */
   ev("planToday()").steps.forEach(s => {
@@ -2460,6 +2460,8 @@ step("home · the landing page is the plan, the road and two doors", () => {
   ok(/Ara\u00e7lar|Araçlar/.test(lastPaint), "home has no Araçlar door");
   ok(lastPaint.includes("go('dersler')"), "the Dersler door does not open Dersler");
   ok(lastPaint.includes("go('araclar')"), "the Araçlar door does not open Araçlar");
+  ok(lastPaint.includes("go('ilerleme')"), "home has no İlerleme tile");
+  ok((lastPaint.match(/class="door"/g) || []).length === 3, "home should have exactly three tiles");
   /* The wall is gone: the tool rows and the level cards are behind the
      doors, not on the page you see first. */
   ok(!/Seviyeler/.test(lastPaint), "the level list is still on the landing page");
@@ -2566,103 +2568,48 @@ step("ilerleme · the state of every mode, in one place", () => {
   ok(!lastPaint.includes('class="stat"'), "the stat row is still on Dersler");
 });
 
-step("bugün · the step list folds, the instruction does not", () => {
+/* Reported: the landing page was too busy, and the paragraph above Başla
+   most of all. Bugün is now a heading and one button that names its step;
+   the list is on İlerleme, and the orientation is a link. */
+step("bugün · a heading and one button, nothing else", () => {
   ev("wipe()");
   ev("UNITS.slice(0,14).forEach(function(u){S.done[u.id]={score:5,of:5,at:0};S.seen[u.id]={v:1,g:1,r:1,d:1}});S.tips=false;save()");
-  ev("PLANOPEN=false"); ev("home()");
+  ev("home()");
   const p = ev("planToday()");
   ok(p.steps.length > 1, "this fixture needs a plan with more than one step");
-
-  /* Folded: no rows, but the headline and the way in are both there.
-     Collapsing the list is not the same as hiding the instruction — the
-     plan is the one thing this screen exists to say. */
-  ok(!lastPaint.includes('class="unit"'), "the folded plan is still painting its step rows");
-  ok(/Bugün/.test(lastPaint), "the plan heading went with the fold");
-  ok(lastPaint.includes("adım"), "the folded plan does not say how much is left");
-  ok(lastPaint.includes(String(p.left.length) + " adım"),
-     "the summary does not count the steps left");
-  ok(lastPaint.includes(p.left[0].go),
-     "the start button went with the fold — the first step must stay one tap");
-  ok(lastPaint.includes("planToggle()"), "there is no way to unfold the plan");
-
-  /* Unfolded: every step is back, in order. */
-  ev("planToggle()");
-  ok(lastPaint.includes('class="unit"'), "unfolding painted no step rows");
-  p.steps.forEach(x => ok(lastPaint.includes(x.tr), "unfolded plan is missing the " + x.k + " step"));
-  ok(lastPaint.includes(p.left[0].go), "the start button vanished when unfolded");
-  ev("planToggle()");
-  ok(!lastPaint.includes('class="unit"'), "the plan did not fold back");
+  ok(/Bugün/.test(lastPaint), "the landing page lost Bugün");
+  ok(lastPaint.includes('class="today" onclick="' + p.left[0].go + '"'), "Başla does not open the plan's first step");
+  ok(lastPaint.includes(">Başla<"), "the button does not say Başla");
+  ok(lastPaint.includes(esc(p.left[0].tr) + " · "), "Başla does not name the step it opens");
+  /* The busy parts, each checked by what it was. */
+  ok(!lastPaint.includes('class="unit"'), "the step list is back on the landing page");
+  ok(!/ adım|steps left|In this order|review steps appear/.test(lastPaint), "the plan's summary or paragraph is back");
+  ok(!lastPaint.includes('class="foot"'), "the footer is back on the landing page");
+  ok((lastPaint.match(new RegExp('onclick="' + p.left[0].go.replace(/[()'.]/g, "\\$&") + '"', "g")) || []).length === 1,
+     "the landing page offers the first step more than once");
+  /* Every step is still one tap from İlerleme, in order. */
+  ev("go('ilerleme')");
+  p.steps.forEach(x => ok(lastPaint.includes('onclick="' + x.go + '"'), "İlerleme is missing the " + x.k + " step"));
 });
 
-step("nasıl çalışır · open while it is instruction, folded once it is reference", () => {
-  /* Same rule that already decides WHERE the card sits: above the plan
-     while nothing has been met, below it afterwards. On day one it is
-     the only thing telling a learner what any of this is. */
-  /* wipe() keeps settings, and S.tips is one — an earlier step in this
-     file retires the card, so it has to be set back explicitly. Same
-     trap CLAUDE.md records for pscope. */
-  ev("wipe()"); ev("S.tips=true;save()"); ev("TIPSOPEN=null"); ev("home()");
-  ok(/Every label is Turkish/.test(lastPaint),
-     "day one folded away the only thing explaining the app to a beginner");
-  ok(lastPaint.includes("tipsToggle()"), "the orientation card has no fold control");
-
-  /* One unit opened is "you have been told" — it folds to its own line. */
-  ev("go('unit','a1u1','v')"); ev("S.tips=true;save()"); ev("TIPSOPEN=null"); ev("home()");
-  ok(!/Every label is Turkish/.test(lastPaint),
-     "the orientation card is still unfolded after something has been met");
-  ok(/Nasıl çalışır/.test(lastPaint), "the orientation card vanished rather than folding");
-  ok(lastPaint.includes("tipsToggle()"), "the folded card offers no way to open it");
-
-  /* And a tap opens it, from either side. */
-  ev("tipsToggle()");
-  ok(/Every label is Turkish/.test(lastPaint), "tapping did not unfold the card");
-  ok(lastPaint.includes("go('nasil')"), "the unfolded card cannot reach the full text");
-  ok(lastPaint.includes("hideTips()"), "the unfolded card cannot be dismissed for good");
-  ev("tipsToggle()");
-  ok(!/Every label is Turkish/.test(lastPaint), "the card did not fold back");
-
-  /* Gizle still retires it outright, and that IS stored — it is a
-     setting, unlike the fold. */
-  ev("hideTips()");
-  ok(!/Nasıl çalışır/.test(lastPaint), "Gizle did not retire the card");
-  ok(store.get("turkce-course-v1").indexOf('"tips":false') >= 0,
-     "Gizle did not persist — it is a setting, not a fold");
-});
-
-step("nasıl çalışır · the fold is not stored, and does not duplicate the plan", () => {
-  ev("wipe()"); ev("go('unit','a1u1','v')"); ev("TIPSOPEN=null"); ev("S.tips=true;save()");
-  ev("home()"); ev("tipsToggle()");
-  ok(store.get("turkce-course-v1").indexOf("TIPSOPEN") < 0, "the fold state reached localStorage");
-  /* Two identical primary actions on one screen is the wall in
-     miniature: the plan directly below already starts the same unit. */
-  const starts = (lastPaint.match(/ile başla/g) || []).length;
-  ok(starts <= 1, "the landing page offers " + starts + " identical start buttons");
-});
-
-step("bugün · one instruction is not a list, so day one does not fold", () => {
-  ev("wipe()"); ev("PLANOPEN=false"); ev("home()");
+step("bugün · day one is the same button", () => {
+  ev("wipe()"); ev("home()");
   ok(ev("planToday().steps.length") === 1, "day one should be a single step");
-  ok(!lastPaint.includes("planToggle()"), "day one offers a fold for a one-item list");
-  ok(lastPaint.includes('class="unit"'), "day one hid its single instruction behind a fold");
-  ok(/review steps appear here/.test(lastPaint),
-     "the beginner lost the sentence explaining why the reviews are absent");
+  ok(lastPaint.includes('class="today" onclick="' + ev("planToday().left[0].go") + '"'), "day one has no Başla");
+  ok(!lastPaint.includes('class="unit"'), "day one paints a step list");
 });
 
-step("bugün · the fold is not stored", () => {
-  /* Same rule as the rest of the plan: nothing about it is persisted. A
-     fold that survived a restart would be a preference nobody set. */
-  ev("wipe()");
-  ev("UNITS.slice(0,14).forEach(function(u){S.done[u.id]={score:5,of:5,at:0};S.seen[u.id]={v:1,g:1,r:1,d:1}});save()");
-  ev("PLANOPEN=false"); ev("home()"); ev("planToggle()");
-  ok(ev("PLANOPEN") === true, "the fold did not open");
-  /* store is a Map: store["key"] is always undefined, so reading it that
-     way makes every assertion below pass whatever the code does. That is
-     how this was first written, and the breakage run is what caught it. */
-  ok(store.has("turkce-course-v1"), "nothing was written to localStorage at all");
-  const rawS = store.get("turkce-course-v1");
-  ok(rawS.indexOf("PLANOPEN") < 0, "the fold state reached localStorage");
-  const raw = JSON.parse(rawS);
-  ok(!("PLANOPEN" in raw) && !("planopen" in raw), "the fold state reached localStorage");
+step("nasıl çalışır · a link while it is useful, the text on its own page", () => {
+  /* wipe() keeps settings, and S.tips is one, so it is set back here. */
+  ev("wipe()"); ev("S.tips=true;save()"); ev("home()");
+  ok(lastPaint.includes("go('nasil')"), "the landing page has no way to the orientation");
+  ok(!/Every label is Turkish/.test(lastPaint), "the orientation text is back on the landing page");
+  ev("go('nasil')");
+  ok(/Every label is Turkish/.test(lastPaint), "Nasıl çalışır lost its text");
+  ok(lastPaint.includes("hideTips()"), "Nasıl çalışır cannot take the link off the landing page");
+  ev("hideTips()"); ev("home()");
+  ok(!lastPaint.includes("go('nasil')"), "Gizle did not take the link off the landing page");
+  ok(store.get("turkce-course-v1").indexOf('"tips":false') >= 0, "Gizle did not persist — it is a setting");
 });
 
 step("dersler · the course spine, and nothing else", () => {
@@ -3147,7 +3094,7 @@ step("başlarken · the lessons before unit one", () => {
   const p0 = plan();
   ok(p0.steps.length === 1 && p0.left[0].tr === "Giriş" && p0.left[0].go === "go('basla','alfabe')",
      "day one's plan does not point at the first intro lesson: " + JSON.stringify(p0.steps));
-  ok(/short lessons before unit one/.test(lastPaint), "day one's plan does not say what the intro is");
+  ok(lastPaint.includes("Giriş") && lastPaint.includes("the alphabet"), "day one's Başla does not name the intro lesson it opens");
   ev("go('dersler')");
   ok(lastPaint.indexOf('<h2 class="sec">Başlarken') > -1 && lastPaint.indexOf('<h2 class="sec">Başlarken') < lastPaint.indexOf('<h2 class="sec">Seviyeler'),
      "on day one Başlarken is not above the levels");

@@ -1847,18 +1847,18 @@ backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
 test, run one sitting, and the Tekrar step must tick and the plan must
 lead on to a2u1.
 
-**The list folds; the instruction does not.** The card opens collapsed to
-one line — `5 adım · steps left · ~24 dk` — with the start button still
-outside the fold, so the first step is one tap whether or not the list is
-open. What folds away is five rows of detail answering a question the
-button already answers. Two rules keep it honest:
-
-- **One instruction is not a list**, so a single-step plan does not fold
-  at all. Day one still shows its one row and the sentence explaining why
-  the review steps are not there yet — the whole point of `avail`.
-- **`PLANOPEN` is a module variable, not part of `S`.** Same rule as the
-  rest of the plan: a fold that survived a restart would be a preference
-  the learner never set. It opens closed every time.
+**On the landing page the plan is one button.** Reported by the learner:
+the paragraph above Başla was too busy, and the children's app, big and
+plain, was more appealing even to an adult. It had grown to a heading, a
+folded summary (`5 adım · steps left · ~24 dk`), a sentence on why the
+steps come in this order (or, on day one, why the reviews were absent),
+the step list when unfolded, and then the button. Now `planCard()` is
+**Bugün** and a large **Başla** that names the step it opens (*Tekrar ·
+the words the course forgets*). Nothing else is needed to start, and
+each sitting ends on the next step (see below), so the plan is walked
+without being read. The whole list, ticked, is `planRows()` on İlerleme.
+`PLANOPEN` and the fold went with it; `sim.js` fails on the list, the
+summary, the paragraph or a second copy of the first step coming back.
 
 **Nothing is stored.** A step is done when its own queue is empty, which is
 self-correcting — finish the work and the tick appears, come back tomorrow
@@ -1876,24 +1876,12 @@ chunks as due, so on day one it advertised work while the plan correctly
 said there was none. One place answers "what now", and it is the plan;
 direct access stays in Araçlar.
 
-**Nasıl çalışır** is the plain-English orientation card — above the plan
-while nothing has been met, below it afterwards. It retires itself once A2
-is complete, `Gizle` ends it early, and About offers it back. It exists
-because the interface is Turkish-labelled and a beginner has no way to know
-that an empty Tekrar is by design rather than broken.
-
-It folds on the same rule that decides where it sits: **open while it is
-instruction, folded once it is reference.** On day one it is the only
-thing telling a learner what any of this is, so it is open; once a single
-unit has been opened they have been told, and it collapses to its own
-line. `TIPSOPEN` starts `null` meaning "whatever that rule says" and only
-pins a value once the learner has actually tapped it — and like the
-plan's fold it is a module variable, never stored. `Gizle` is different
-and *is* stored: retiring the card is a setting, folding it is not.
-
-The card also lost its "start the first unit" button. The plan sits
-directly below it pointing at the same unit, and two identical primary
-actions on one screen is the wall in miniature.
+**Nasıl çalışır** is the plain-English orientation, on its own screen.
+On the landing page it is one link, *Nasıl çalışır?*, while `tipsOn()`:
+until A2 is complete, or until the learner taps Gizle on that screen,
+which is stored because retiring it is a setting. It used to be a card on
+the landing page, open on day one and folded after (`TIPSOPEN`); it is
+reading rather than a control, and the landing page is controls only.
 
 
 The last step absorbed the old resume card: mid-unit it returns to the exact
@@ -1948,15 +1936,16 @@ certain length a list stops reading as choices and starts reading as
 texture, and the plan, the one thing that answers "what now", sat at the
 top of a wall the eye slides off.
 
-So the landing page is now four things: the hero with the live clock,
-**Bugün**, the progress road, and two doors. **İlerleme** sits under
-the doors, drawn quieter (`.block.quiet`), because nothing behind it is
-something to do: it is where to look, not where to go.
+So the landing page is now the hero with the live clock, **Bugün** (one
+button), the progress road, and three tiles side by side, with a small
+*Nasıl çalışır?* link under them while it is useful. No paragraph, no
+section heading over the tiles, no footer.
 
-| door | behind it |
+| tile | behind it |
 |---|---|
 | **Dersler** | the six levels and their sixty units, the placement test |
 | **Araçlar** | everything else, grouped: Konuşma · Dinleme · Tekrar · Kelimeler · Kurs |
+| **İlerleme** | where the learner stands, and today's plan step by step |
 
 Four decisions worth keeping:
 
@@ -1984,11 +1973,13 @@ Four decisions worth keeping:
   or the doors would feel like a detour rather than a place. `HUBV` is
   the list; a new tool screen needs adding to it.
 
-`.block` is the style, and it is drawn from the same palette as
-everything else: a large target, a Crimson Pro title with the English
-underneath in Karla, and one gold hairline down the leading edge — the
-same single stroke that runs out of `h2.sec`, turned ninety degrees.
-Resist adding a second.
+The scale is the children's app's, not its colours: `.today` is a filled
+cobalt button with a 2rem Crimson Pro *Başla*, and `.door` is a tile with
+a line icon (`DOOR_IC`, stroked in cobalt), one word and its English, a
+thumb-sized target in a row of three. A word on a big target reads as a
+choice; a paragraph reads as something to get past. The tiles replaced
+three stacked `.block` rows whose capital-letter English and live
+subtitle lines were more text than choice.
 
 ### Assertions that could not fail
 

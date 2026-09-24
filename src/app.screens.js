@@ -20,55 +20,40 @@ function renderHome(){
 
   let h='<div class="bar"><div class="bar-in">'+enBtn()+'<div class="bar-title">Türkçe<small>A1 → C2</small></div>'+
    '<button class="icon-btn" onclick="toggleTheme()" aria-label="Theme">'+themeIcon()+'</button></div>'+saveWarn()+'</div>';
-  h+='<div class="wrap"><div class="hero">'+crest(76)+
+  h+='<div class="wrap"><div class="hero">'+crest(64)+
    '<h1 class="mark">Türkçe</h1>'+
    clockHero()+'</div>';
-
-  /* Read-then-act on day one; the plan is the whole opinion afterwards. */
-  if(metUnits().length===0){ h+=startCard(); h+=planCard(); }
-  else { h+=planCard(); }
+  /* Four things and no prose: what to do now, where you are, the three
+     ways in, and (while it is useful) how it works. Every paragraph that
+     used to sit here — the orientation card, the plan's summary line and
+     its explanation, the footer — is on the page it explains. */
+  h+=planCard();
   h+=road;
   h+=homeBlocks();
-  if(metUnits().length>0) h+=startCard();
-
-  h+='<p class="foot">'+tx("Progress is stored on this device only.<br>Texts are original, adapted or public domain — see About.",
-    "İlerlemen yalnızca bu cihazda saklanır.<br>Metinler özgün, uyarlama ya da telifsizdir; ayrıntısı Hakkında sayfasında.")+'</p></div>';
+  if(tipsOn())h+='<button class="homelink" onclick="go(\'nasil\')">Nasıl çalışır?<span class="gl">how does this work?</span></button>';
+  h+='</div>';
   paint(h);
 }
-/* Two doors, and that is the whole menu.
-   This page used to carry six level cards and fifteen tool rows in one
-   column under a heading apiece. Every one of them was reachable, which
-   is not the same as findable: a list that long reads as texture rather
-   than as choices, and the plan — the one thing that answers "what now"
-   — sat above a wall the eye slides off.
+/* The ways in, as three tiles side by side: big targets, a picture, a
+   word. The course and everything beside it are the two doors; İlerleme
+   is where to look rather than where to go, and sits beside them because
+   a third row of text under them was read as more of the same.
 
-   The line under each door is deliberately NOT a count of work waiting.
-   Two "N waiting" cards lived on this screen once and were removed for
-   good reason: they duplicated the plan's own steps, and one advertised
-   work on day one that the plan correctly said did not exist. The plan
-   owns "what now". A door only says what is behind it. */
+   A tile says only what is behind it. Two "N waiting" cards lived on this
+   screen once and were removed for good reason: they duplicated the
+   plan's own steps, and one advertised work on day one that the plan
+   correctly said did not exist. The plan owns "what now". */
+const DOOR_IC={
+ dersler:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5C5 4 8.5 4 12 6.2c3.5-2.2 7-2.2 9.5-.7V19c-2.5-1.5-6-1.5-9.5.7C8.5 17.5 5 17.5 2.5 19z"/><path d="M12 6.2v13.5"/></svg>',
+ araclar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>',
+ ilerleme:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 20v-7M12 20V5M19 20v-10M2.5 20.5h19"/></svg>'};
 function homeBlocks(){
-  const done=UNITS.filter(u=>isDone(u.id)).length;
-  const lv=currentLevel();
-  return '<h2 class="sec">Nereye · where to</h2>'+
-   '<button class="block" onclick="go(\'dersler\')">'+
-     '<span class="block-t">Dersler</span>'+
-     '<span class="block-e">LESSONS</span>'+
-     '<span class="block-n">'+done+' / '+UNITS.length+' ünite'+(lv?' · şu an '+lv:'')+'</span>'+
-     '<span class="chev">'+IC.chev+'</span></button>'+
-   '<button class="block" onclick="go(\'araclar\')">'+
-     '<span class="block-t">Araçlar</span>'+
-     '<span class="block-e">PRACTICE AND TOOLS</span>'+
-     '<span class="block-n">Konuşma · Dinleme · Tekrar · Kelimeler</span>'+
-     '<span class="chev">'+IC.chev+'</span></button>'+
-   /* Not a third door: nothing behind it is something to do. It is where
-      the state of every mode is read, which used to be repeated at the
-      end of every sitting. Quieter than the doors for that reason. */
-   '<button class="block quiet" onclick="go(\'ilerleme\')">'+
-     '<span class="block-t">İlerleme</span>'+
-     '<span class="block-e">PROGRESS</span>'+
-     '<span class="block-n">'+streak()+' '+tx("day streak","gün üst üste")+' · '+S.star.length+' '+tx("saved words","kayıtlı kelime")+'</span>'+
-     '<span class="chev">'+IC.chev+'</span></button>';
+  const tile=function(id,tr,en){
+    return '<button class="door" onclick="go(\''+id+'\')"><span class="door-i">'+DOOR_IC[id]+'</span>'+
+      '<span class="door-t">'+tr+'<span class="gl">'+en+'</span></span></button>';
+  };
+  return '<div class="doors">'+tile("dersler","Dersler","lessons")+tile("araclar","Araçlar","practice")+
+    tile("ilerleme","İlerleme","progress")+'</div>';
 }
 
 /* ===================== dersler · the course spine ===================== */
@@ -166,48 +151,20 @@ function renderAraclar(){
 function tipsOn(){return S.tips!==false&&lvPct("A2")<100;}
 function hideTips(){S.tips=false;save();render();}
 function showTips(){S.tips=true;save();home();}
-/* Five paragraphs of it used to sit inline on the landing page, then two
-   sentences, and now a line that unfolds. It is the right text and a
-   beginner needs it — nothing else explains that an empty Tekrar is
-   correct rather than broken — but it is reading rather than a control.
-
-   OPEN WHILE IT IS INSTRUCTION, FOLDED ONCE IT IS REFERENCE. That is the
-   same rule that already decides where it sits: above the plan while
-   nothing has been met, below it afterwards. On day one it is the only
-   thing telling a learner what any of this is, so it is open; once
-   something has been met the learner has been told, and it folds.
-   TIPSOPEN starts null meaning "whichever that rule says", and only
-   pins a value once the learner has actually tapped it. */
-let TIPSOPEN=null;
-function tipsToggle(){TIPSOPEN=!tipsShown();render();}
-function tipsShown(){return TIPSOPEN===null?metUnits().length===0:TIPSOPEN;}
-function startCard(){
-  if(!tipsOn())return "";
-  const open=tipsShown();
-  let h='<div class="card gram">'+
-   '<button class="disc" onclick="tipsToggle()" aria-expanded="'+(open?"true":"false")+'">'+
-    '<span class="grow"><b>Nasıl çalışır</b><span class="gl">how to use this</span></span>'+
-    '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
-  if(open){
-    h+='<p class="sub" style="margin:0 0 .2rem">Every label is Turkish with the English underneath, and you do not need to read the Turkish to use the app. Follow <b>Bugün</b> and you are using the course correctly — everything in Araçlar is optional.</p>'+
-     /* No "start the first unit" button here: the plan directly below
-        already has one, pointed at the same unit, and two identical
-        primary actions on one screen is the wall in miniature. */
-     '<button class="btn ghost" onclick="go(\'nasil\')">Devamını oku · the rest</button>'+
-     '<button class="btn ghost" onclick="hideTips()">Gizle · hide this</button>';
-  }
-  return h+'</div>';
-}
+/* The orientation used to sit on the landing page as a card, open on day
+   one and folded after. It is reading rather than a control, and the
+   landing page is now controls only, so it is a single link there while
+   tipsOn() and the whole text lives on its own screen. */
 function renderNasil(){
   let h=bar("Nasıl çalışır","how to use this",true,"nasıl kullanılır")+'<div class="wrap"><div class="card gram">'+
    '<p>Every label is Turkish with the English underneath. You do not need to read the Turkish to use the app. The English stays until A2 is complete, then steps aside so the Turkish does the work; the <b>EN</b> button at the top of every screen turns it off or back on whenever you like.</p>'+
-   '<p><b>1 · Follow Bugün.</b> That card lists the day\'s work in order and its button opens the first thing. If you do only that, you are using the app correctly.</p>'+
+   '<p><b>1 · Follow Bugün.</b> Its <b>Başla</b> button opens the next thing to do today, and each part ends with a <b>Devam</b> button to the one after. If you do only that, you are using the app correctly. The day\'s full list is on <b>İlerleme</b>.</p>'+
    '<p><b>2 · A unit has four tabs</b>, left to right: <b>Kelimeler</b> (ten words, tap one to hear it, tap the star to save it), <b>Dilbilgisi</b> (one grammar point), <b>Okuma</b> (a passage — tap any line for the English), <b>Alıştırma</b> (five questions). Four right out of five ticks the unit.</p>'+
    '<p><b>3 · Reviews fill up on their own.</b> Tekrar, Dinle and Söyle draw only on units you have opened, so early on they are empty — that is correct, not broken. There is nothing to bring back until you have met something.</p>'+
    '<p><b>4 · Turkish letters are optional.</b> Type <code>kalkiyorum</code> for <i>kalkıyorum</i>; every answer box ignores ı ş ğ ç ö ü, so a normal keyboard is fine.</p>'+
    '<p><b>5 · Everything opens in order.</b> From nothing, <b>Bugün</b> begins with six short lessons before unit one: the letters and their sounds, how words are spelt, stressed and built, and how a sentence is put together. They are in Dersler under <b>Başlarken</b>. Each lesson opens when the one before it is passed, unit one opens when all six are, and every unit after that opens when the one before it is passed.</p>'+
    '<p><b>Already know some Turkish?</b> Nothing has to be sat through. The <b>intro test</b> in Başlarken skips all six lessons at once, the placement test suggests a level in twelve questions, and every level has a <b>test ahead</b> exam: eight out of ten marks the whole level complete and opens the next one.</p>'+
-   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required. <b>İlerleme</b>, under them, is where you see how far you have come in each part — a sitting itself ends on its score and a <b>Devam</b> button to the next step of Bugün.</p>'+
+   '<p><b>6 · Two doors.</b> <b>Dersler</b> is the course itself — sixty units across six levels. <b>Araçlar</b> is everything beside it: speaking, listening, review and the word lists. None of Araçlar is required. <b>İlerleme</b>, beside them, is where you see how far you have come in each part — a sitting itself ends on its score and a <b>Devam</b> button to the next step of Bugün.</p>'+
    startBtn("btn")+
    '<button class="btn ghost" onclick="startPlacement()">Seviye sınavı · place me</button>'+
    (tipsOn()?'<button class="btn ghost" onclick="hideTips()">Ana ekranda gizle · hide on the home screen</button>':'')+

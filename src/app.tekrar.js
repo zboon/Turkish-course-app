@@ -842,57 +842,34 @@ function planToday(){
   return {steps:shown,left:left,all:steps,
           mins:shown.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
 }
-/* The plan folds to its headline until it is asked for.
-   Bugün is still the first thing on the landing page and its button still
-   opens the first step in one tap — what folds away is the LIST, which
-   was five rows of detail answering a question the button already
-   answers. Collapsing the steps is not the same as hiding the
-   instruction, so the button is outside the fold in both states.
-
-   PLANOPEN is a module variable rather than part of S, for the same
-   reason the plan stores nothing else: a fold that survived a restart
-   would be a preference the learner never set. It reopens closed every
-   time the app is opened, which is the state that wants to be default. */
-let PLANOPEN=false;
-function planToggle(){PLANOPEN=!PLANOPEN;render();}
+/* Bugün on the landing page is one button. It used to be a heading, a
+   folded summary ("6 adım · steps left · ~27 dk"), a paragraph on why the
+   steps come in this order, the step list when unfolded, and then the
+   button; the learner found it busy, and none of it is needed to start.
+   The button names the step it opens, and each sitting ends on the next
+   one (endScreen below), so the plan is walked without being read. The
+   list, with its ticks, is on İlerleme for whoever wants to see it. */
 function planCard(){
-  const p=planToday();
-  const first=metUnits().length===0;
-  let h='<h2 class="sec">Bugün</h2><div class="card">';
-  if(!p.left.length){
-    h+='<p class="lead">Bugünlük bitti</p>'+
-     '<p class="sub">'+tx('Every queue is empty and the course is finished. Anything you open now is revision by choice.',
-       'Bütün sıralar boş ve kurs bitti. Bundan sonra açtığın her şey kendi seçtiğin bir tekrar.')+'</p></div>';
-    return h;
-  }
-  /* One instruction is not a list and does not need folding — which is
-     exactly what day one is, and the beginner still gets the sentence
-     explaining why the review steps are not there yet. */
-  const many=p.steps.length>1;
-  const open=!many||PLANOPEN;
-  if(many){
-    h+='<button class="disc" onclick="planToggle()" aria-expanded="'+(open?"true":"false")+'">'+
-      '<span class="grow"><b>'+p.left.length+' adım</b> · '+
-      tx(p.left.length===1?"step left":"steps left","kaldı")+' · ~'+Math.max(1,p.mins)+' dk</span>'+
-      '<span class="ic">'+(open?IC.caret:IC.chev)+'</span></button>';
-  }
-  if(open){
-    h+='<p class="sub" style="margin:0 0 .5rem">'+
-     (first?tx((baslaPlan()?'Start with the short lessons before unit one: the letters, the sounds and how a sentence is built. Each opens when the one before it is passed. ':'Start with the first unit. ')+'The review steps appear here once you have finished something to review — until then there is nothing to bring back.',
-               (baslaPlan()?'Birinci üniteden önceki kısa derslerle başla: harfler, sesler ve cümlenin nasıl kurulduğu. Her ders bir öncekini geçince açılır. ':'Birinci üniteyle başla. ')+'Tekrar edecek bir şey bitirince tekrar adımları burada görünür; o zamana kadar geri getirilecek bir şey yok.')
-          :tx('In this order: reviews decay on a schedule, new material does not. About '+Math.max(1,p.mins)+' minute'+(p.mins===1?"":"s")+'.',
-              'Bu sırayla: tekrar edilmeyen şey unutulur, yeni konu ise bekleyebilir. Yaklaşık '+Math.max(1,p.mins)+' dakika.'))+'</p>';
-    p.steps.forEach(function(s,i){
-      const done=s.n===0;
-      h+='<button class="unit" onclick="'+s.go+'">'+
-        '<span class="tick '+(done?"done":(s===p.left[0]?"here":""))+'">'+(done?IC.check:(i+1))+'</span>'+
-        '<span class="grow"><span class="unit-t">'+s.tr+(s.n>1?' · '+s.n:'')+'</span>'+
-        '<span class="unit-s">'+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
-        '<span class="chev">'+IC.chev+'</span></button>';
-    });
-  }
-  h+='<button class="btn" onclick="'+p.left[0].go+'">'+
-   (first?"Başla":p.left[0].tr+" ile başla")+'</button></div>';
+  const p=planToday(), s=p.left[0];
+  let h='<h2 class="sec">Bugün</h2>';
+  if(!s)return h+'<div class="today done"><span class="today-t">Bugünlük bitti<span class="gl">done for today</span></span>'+
+    '<span class="today-s">'+tx('Every unit is done and nothing is due.','Bütün üniteler bitti, bekleyen bir şey yok.')+'</span></div>';
+  return h+'<button class="today" onclick="'+s.go+'">'+
+    '<span class="today-t">Başla<span class="gl">start</span></span>'+
+    '<span class="today-s">'+esc(s.tr)+' · '+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+'</span>'+
+    '<span class="chev">'+IC.chev+'</span></button>';
+}
+/* The whole plan as rows, ticked as each queue empties; drawn on İlerleme. */
+function planRows(p){
+  let h='';
+  p.steps.forEach(function(s,i){
+    const done=s.n===0;
+    h+='<button class="unit" onclick="'+s.go+'">'+
+      '<span class="tick '+(done?"done":(s===p.left[0]?"here":""))+'">'+(done?IC.check:(i+1))+'</span>'+
+      '<span class="grow"><span class="unit-t">'+s.tr+(s.n>1?' · '+s.n:'')+'</span>'+
+      '<span class="unit-s">'+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
+      '<span class="chev">'+IC.chev+'</span></button>';
+  });
   return h;
 }
 
