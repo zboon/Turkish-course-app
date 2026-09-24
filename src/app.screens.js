@@ -500,7 +500,10 @@ function renderScore(){
     h+='<div class="score"><div class="big '+(pass?"pass":"fail")+'">'+n+'/'+of+'</div>'+
       '<p class="sub">'+(pass?"Geçtiniz":"Biraz daha çalışmak gerek")+'</p></div>';
     if(pass){
-      if(Q.mode==="unit"){S.done[Q.u]={score:n,of:of,at:Date.now()};}
+      /* first is the day of the first pass, kept on every pass after it;
+         a unit that already had a record (an old pass, a level test)
+         is not new today. */
+      if(Q.mode==="unit"){const prev=S.done[Q.u];S.done[Q.u]={score:n,of:of,at:Date.now(),first:prev?(prev.first||0):dayNum()};}
       else{ unitsOf(Q.lv).forEach(u=>{if(!S.done[u.id])S.done[u.id]={score:n,of:of,at:Date.now(),byTest:true};}); S.tested[Q.lv]=true; }
       save();
     }else if(Q.mode==="unit"&&S.done[Q.u]&&n>S.done[Q.u].score){S.done[Q.u].score=n;save();}
@@ -512,14 +515,20 @@ function renderScore(){
                 "Geçmek için "+Q.pass+" doğru gerekiyor. Konuyu gözden geçir ve yeniden dene; yanlışlar doğrulardan daha çok şey öğretir."))+'</p>';
     if(Q.mode==="unit"){
       const u=unit(Q.u), us=unitsOf(u.lv), i=us.findIndex(x=>x.id===u.id);
-      h+='<button class="btn" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>';
-      if(pass&&i<us.length-1)h+='<button class="btn ghost" onclick="go(\'unit\',\''+us[i+1].id+'\',\'v\')">Sonraki ünite →</button>';
-      else h+='<button class="btn ghost" onclick="go(\'level\',\''+u.lv+'\')">Seviyeye dön</button>';
+      /* Passed: the way on is the rest of today's plan, not the next unit
+         — that is tomorrow's, once today's new unit is done. */
+      if(pass){
+        h+='</div>'+planNext();
+        if(i<us.length-1&&unitsToday()<UNIT_DAY)h+='<button class="btn ghost" onclick="go(\'unit\',\''+us[i+1].id+'\',\'v\')">Sonraki ünite →</button>';
+        h+='<button class="btn ghost" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>';
+      }else{
+        h+='<button class="btn" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>'+
+          '<button class="btn ghost" onclick="go(\'level\',\''+u.lv+'\')">Seviyeye dön</button></div>';
+      }
     }else{
       h+='<button class="btn" onclick="startLevelExam(\''+Q.lv+'\')">Tekrar dene</button>'+
-         '<button class="btn ghost" onclick="go(\'level\',\''+Q.lv+'\')">Seviyeye dön</button>';
+         '<button class="btn ghost" onclick="go(\'level\',\''+Q.lv+'\')">Seviyeye dön</button></div>';
     }
-    h+='</div>';
   }
   h+='</div>';
   paint(h);

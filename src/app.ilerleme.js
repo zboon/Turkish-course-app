@@ -14,6 +14,20 @@
    least once; "oturmuş" means it has reached box 4, about a week out,
    which is the same line Dilbilgisi tekrarı has always called holding. */
 const IL_FIRM=4;
+/* A rough vocabulary for each level, for a learner to set what they hold
+   against. Published estimates vary widely by study and language; these
+   are round figures in the common range, and the page says they are rough. */
+const VOCAB_TARGET={A1:500,A2:1000,B1:2000,B2:3500,C1:5000,C2:8000};
+/* Words held: a review box a week or more out (IL_FIRM), in either queue —
+   Tekrar motoru (S.rep, keyed by the folded word) or the starred words
+   (S.srs, keyed "tr|en"), which is where Sık kelimeler and the learner's
+   own words live. Folded, so a word in both counts once. */
+function heldWords(){
+  const set={};
+  Object.keys(S.rep||{}).forEach(function(k){if(S.rep[k]&&S.rep[k].b>=IL_FIRM)set[k]=1;});
+  Object.keys(S.srs||{}).forEach(function(k){if(S.srs[k]&&S.srs[k].b>=IL_FIRM)set[fold(k.split("|")[0])]=1;});
+  return Object.keys(set).length;
+}
 
 /* One row: a label with its English underneath, a count, and a meter
    when the count is out of something. The English is written as a .gl
@@ -65,6 +79,17 @@ function renderIlerleme(){
     ilRow("Başlarken","the lessons before unit one",baslaCount(),BASLA.length);
   LEVELS.forEach(function(l){h+=ilRow(l.id+" · "+l.tr,l.en,lvDone(l.id),unitsOf(l.id).length);});
   h+='</div>';
+
+  /* What a passed unit does not say. A unit is passed on a quiz minutes
+     after the lesson, so "A2 · 10 / 10" means A2's grammar has been
+     followed, not that A2 has been reached — the learner found the level
+     could be ticked in a day. This sets the words actually held beside a
+     rough vocabulary for the level being worked in. */
+  const lv=curLv(), target=VOCAB_TARGET[lv], held=heldWords();
+  h+='<div class="card">'+
+    ilRow("Akılda tutulan kelimeler","words held, a week out or more · "+lv+" needs roughly "+target,held,target)+
+    '<p class="tiny" style="margin:.5rem 0 0">'+tx('A passed unit means you have followed it. A word counts as held once its reviews have moved it a week or more out. The targets are rough, and they are about words, not grammar.',
+      'Geçilen ünite, onu izlediğin anlamına gelir. Bir kelime, tekrarları onu bir hafta ya da daha ileriye taşıyınca akılda sayılır. Hedefler kabacadır ve dilbilgisini değil kelimeyi ölçer.')+'</p></div>';
 
   /* Words: the course's own, the frequency layer, and the learner's. */
   const met=repBank(), short=repShort().length;

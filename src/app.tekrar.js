@@ -793,6 +793,8 @@ function planToday(){
      already ticked instead of moving on. */
   const resuming=!!at&&!isDone(at.id);
   const nx=resuming?at:nextUnit();
+  /* Today's new unit is done: the step stays, ticked, naming tomorrow's. */
+  const capped=!resuming&&!!nx&&unitsToday()>=UNIT_DAY;
   /* Before any unit is opened, a complete beginner is pointed at the
      intro lessons first. Still one instruction on day one. */
   const intro=baslaPlan();
@@ -821,6 +823,9 @@ function planToday(){
     intro?
     {k:"new",  tr:"Giriş", en:"before unit one · "+intro.en, tt:"birinci üniteden önce · "+intro.tr,
      n:1, mins:8, avail:true, go:"go('basla','"+intro.id+"')"}:
+    capped?
+    {k:"new",  tr:"Yarın", en:"tomorrow: "+nx.lv+" · "+nx.tr, tt:"yarın: "+nx.lv+" · "+nx.tr,
+     n:0, mins:0, avail:true, go:"go('unit','"+nx.id+"','v')"}:
     {k:"new",  tr:resuming?"Devam":"Yeni",
      en:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s):""):"every unit is done",
      tt:nx?nx.lv+" · "+nx.tr+(resuming?" · "+secName(S.place.s).split(" · ")[0]:""):"bütün üniteler bitti",
@@ -839,7 +844,7 @@ function planToday(){
   }
   const shown=steps.filter(function(s){return s.avail;});
   const left=shown.filter(function(s){return s.n>0;});
-  return {steps:shown,left:left,all:steps,
+  return {steps:shown,left:left,all:steps,tomorrow:capped?nx:null,
           mins:shown.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
 }
 /* Bugün on the landing page is one button. It used to be a heading, a
@@ -852,8 +857,15 @@ function planToday(){
 function planCard(){
   const p=planToday(), s=p.left[0];
   let h='<h2 class="sec">Bugün</h2>';
-  if(!s)return h+'<div class="today done"><span class="today-t">Bugünlük bitti<span class="gl">done for today</span></span>'+
-    '<span class="today-s">'+tx('Every unit is done and nothing is due.','Bütün üniteler bitti, bekleyen bir şey yok.')+'</span></div>';
+  if(!s){
+    const t=p.tomorrow;
+    return h+'<div class="today done"><span class="today-t">Bugünlük bitti<span class="gl">done for today</span></span>'+
+      '<span class="today-s">'+(t?tx('Tomorrow: '+esc(t.lv+' · '+t.tr)+'. One new unit a day gives the reviews time to work.',
+                                      'Yarın: '+esc(t.lv+' · '+t.tr)+'. Günde bir yeni ünite, tekrarların işlemesine zaman tanır.')
+                            :tx('Every unit is done and nothing is due.','Bütün üniteler bitti, bekleyen bir şey yok.'))+'</span></div>'+
+      /* The pace is the plan's, not a lock. */
+      (t?'<button class="homelink" onclick="go(\'unit\',\''+t.id+'\',\'v\')">Yine de devam et<span class="gl">carry on anyway</span></button>':'');
+  }
   return h+'<button class="today" onclick="'+s.go+'">'+
     '<span class="today-t">Başla<span class="gl">start</span></span>'+
     '<span class="today-s">'+esc(s.tr)+' · '+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+'</span>'+
@@ -867,7 +879,7 @@ function planRows(p){
     h+='<button class="unit" onclick="'+s.go+'">'+
       '<span class="tick '+(done?"done":(s===p.left[0]?"here":""))+'">'+(done?IC.check:(i+1))+'</span>'+
       '<span class="grow"><span class="unit-t">'+s.tr+(s.n>1?' · '+s.n:'')+'</span>'+
-      '<span class="unit-s">'+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+(done?" · bitti":(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
+      '<span class="unit-s">'+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+(done?(s===p.all[p.all.length-1]&&p.tomorrow?"":" · bitti"):(s.mins?" · ~"+s.mins+" dk":""))+'</span></span>'+
       '<span class="chev">'+IC.chev+'</span></button>';
   });
   return h;
@@ -889,8 +901,10 @@ function planRows(p){
    ticked itself off or not. Nothing is stored. */
 function planNext(){
   const nx=planToday().left[0];
+  const tm=planToday().tomorrow;
   if(!nx)return '<div class="card"><p class="lead">Bugünlük bitti</p><p class="sub">'+
-    tx('Everything in today’s plan is done. Anything more is extra.','Bugünün planındaki her şey bitti. Bundan sonrası fazladan.')+'</p>'+
+    tx('Everything in today’s plan is done. Anything more is extra.','Bugünün planındaki her şey bitti. Bundan sonrası fazladan.')+
+    (tm?' '+tx('Tomorrow: '+esc(tm.lv+' · '+tm.tr)+'.','Yarın: '+esc(tm.lv+' · '+tm.tr)+'.'):'')+'</p>'+
     '<button class="btn" onclick="home()">Ana sayfa</button></div>';
   return '<button class="btn" onclick="'+nx.go+'">Devam</button>'+
     '<p class="tiny next-step">'+tx('Next: '+esc(nx.tr)+' · '+esc(nx.en),'Sıradaki: '+esc(nx.tr)+' · '+esc(nx.tt||nx.en))+'</p>';
