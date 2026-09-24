@@ -301,6 +301,16 @@ ev("wipe()"); ev("go('uyku')"); grab("uyku:empty");
 ev("go('unit','a1u1','v')"); ev("go('unit','a1u1','r')"); ev("go('uyku')"); grab("uyku");
 ev("startUyku(5)"); grab("uyku:run"); ev("uyFinish()"); grab("uyku:end"); ev("stopPlay(); UY=null");
 
+/* Çöz: empty, the hub, a question, a miss, a hit and the end. */
+ev("wipe()"); ev("go('coz')"); grab("coz:empty");
+["a1u2", "a1u3", "a1u5", "a2u1"].forEach(u => ev("go('unit'," + q(u) + ",'g')"));
+ev("go('coz')"); grab("coz");
+reseed(5150); ev("startCoz()"); grab("coz:ask");
+ev("czPick((CZ.q[0].c+1)%4)"); grab("coz:wrong");
+ev("czNext(); czPick(CZ.q[1].c)"); grab("coz:right");
+ev("while(CZ.i<CZ.q.length){if(CZ.sel===null)czPick(CZ.q[CZ.i].c);czNext();}"); grabx("coz:end");
+ev("CZ=null; wipe()");
+
 /* The locked views, with the real rule back. */
 ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen; wipe()");
 ev("go('level','A1')"); grab("locked:level:A1");
@@ -324,6 +334,13 @@ ev("LEX").forEach(e => {
       pure["conj:" + e.t + ":" + t + ":" + p + ":" + n] = ev("conj(" + find + "," + q(t) + "," + p + "," + n + ")");
     })));
 });
+/* Çöz's pieces: every form it can ask, split, labelled and glossed. */
+Object.assign(pure, ev("(function(){var o={};" +
+  "drillable().forEach(function(v){['prog','past','fut','aor','abil','mali','mis','sa'].forEach(function(t){[0,1,2,3,4,5].forEach(function(p){[false,true].forEach(function(n){" +
+  "var r=czVerb(v,t,p,n);o['cz:'+v.t+':'+t+':'+p+':'+n]=r?r.pieces.map(function(x){return x.m+'['+x.a+'|'+x.en+']';}).join('+')+' '+r.notes.join('/')+' '+czVerbEN(v,t,p,n):null;});});});});" +
+  "CZ_NOUNS.forEach(function(n){[false,true].forEach(function(pl){[null,0,1,2,3,4].forEach(function(ps){[null,'loc','abl','dat','ile'].forEach(function(c){" +
+  "if(pl&&ps===2)return;var r=czNoun(n,pl,ps,c);o['czn:'+n.t+':'+pl+':'+ps+':'+c]=r.pieces.map(function(x){return x.m+'['+x.a+'|'+x.en+']';}).join('+')+' '+r.notes.join('/')+' '+czNounEN(n,pl,ps,c);});});});});" +
+  "return o;})()"));
 snap.__pure = hash(JSON.stringify(pure));
 snap.__pureForms = Object.keys(pure).length;
 snap.__screens = Object.keys(snap).length - 2;
