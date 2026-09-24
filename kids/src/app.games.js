@@ -22,16 +22,6 @@ function optsFor(w,pool,n){
 }
 /* A word spelt with tiles: one written word, short enough to build. */
 function spellable(w){return /^[a-zçğıöşüâîû]+$/.test(w.tr)&&w.tr.length<=10;}
-/* The decoys are the letters a beginner confuses: ı for i, ş for s,
-   ç for c — spelling with tiles is where ç and ş get learned. */
-const TWINS={"ı":"i","i":"ı","ş":"s","s":"ş","ç":"c","c":"ç","ğ":"g","g":"ğ","ö":"o","o":"ö","ü":"u","u":"ü","â":"a"};
-function spellTiles(tr){
-  const letters=tr.split(""), decoys=[];
-  letters.forEach(function(l){const t=TWINS[l]; if(decoys.length<2&&t&&letters.indexOf(t)<0&&decoys.indexOf(t)<0)decoys.push(t);});
-  const pool="aeiıoöuübcçdfgğhjklmnprsştvyz";
-  while(decoys.length<2){const c=pool[Math.floor(Math.random()*pool.length)]; if(letters.indexOf(c)<0&&decoys.indexOf(c)<0)decoys.push(c);}
-  return shuffle(letters.concat(decoys));
-}
 let RID=0;
 function R(o){o.rid=++RID;return o;}
 function rLearn(w){return R({t:"learn",w:w});}

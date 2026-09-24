@@ -3193,6 +3193,81 @@ step("reported · the other you counts where the sentence does not say which", (
   ev("wipe(); home()");
 });
 
+/* Adım adım: an A1 unit one screen at a time, then its own exercises.
+   It marks what it shows exactly as the tabs would, and writes nothing
+   else: the checks are practice, not marks. */
+step("adım adım · an A1 unit one screen at a time", () => {
+  drain(60000); ev("stopPlay()");
+  ev("confirm=function(){return true}; wipe(); home()");
+  ev("go('unit','a2u1','v')");
+  ok(!lastPaint.includes("startAdim("), "an A2 unit offers step by step");
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes("startAdim('a1u1')"), "an A1 unit does not offer step by step");
+  ev("wipe(); home()");
+  const before = ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done])");
+  ev("startAdim('a1u1')");
+  const u = UNITS[0];
+  ok(ev("V.view") === "adim" && ev("AD.q[0].t") === "word", "step by step does not open on the first word");
+  ok(voice.spoken[voice.spoken.length - 1] === ev("AD.q[0].w.say"), "the first word is not said as it arrives");
+  const said = voice.said; ev("render()");
+  ok(voice.said === said, "a redraw said the word again");
+  ok(lastPaint.includes(ev("RESIM[" + q(u.vocab[0][0]) + "]")), "a pictured word shows no picture");
+  ok(ev("!!(S.seen.a1u1&&S.seen.a1u1.v)") && !ev("!!S.seen.a1u1.g") && !ev("!!S.seen.a1u1.r"),
+     "the words marked more than the word list as seen");
+  /* Walk it: miss the first check once, get everything else right. */
+  let missed = false, guard = 0;
+  const n0 = ev("AD.q.length");
+  while (ev("adCur().t") !== "end" && guard++ < 80) {
+    const s = ev("adCur()");
+    if (s.t === "hear") {
+      const right = missed || !(missed = true);
+      ev("adPick(" + (right ? s.w.i : s.opts.find(o => o.i !== s.w.i).i) + ")");
+      ok(ev("AD.ok") === right, "a listening check was marked the other way");
+      ev("adNext()");
+    } else if (s.t === "spell") {
+      const used = [];
+      s.w.say.split("").forEach(l => { const i = s.tiles.findIndex((t, j) => t === l && !used.includes(j)); used.push(i); ev("adAdd(" + i + ")"); });
+      ev("adSpell()");
+      ok(ev("AD.ok") === true, "a word spelt right from its tiles was marked wrong: " + s.w.say);
+      ev("adNext()");
+    } else {
+      if (s.t === "gram") ok(lastPaint.includes(esc(u.gram.t)) && ev("!!S.seen.a1u1.g"), "the grammar step did not show the point, or mark it read");
+      if (s.t === "line") {
+        ok(voice.spoken[voice.spoken.length - 1] === u.read.lines[s.i][0], "a passage line was not read aloud as it arrived");
+        ok(!lastPaint.includes(esc(u.read.lines[s.i][1])), "a line's English was shown before it was asked for");
+        ev("adShow()");
+        ok(lastPaint.includes(esc(u.read.lines[s.i][1])), "asking for the English did not show it");
+      }
+      ev("adNext()");
+    }
+  }
+  ok(ev("adCur().t") === "end", "step by step did not reach its end");
+  ok(ev("AD.q.length") === n0 + 1, "a missed check did not come back exactly once");
+  ok(ev("!!S.seen.a1u1.r"), "the reading was not marked read");
+  ok(lastPaint.includes("startUnitQuiz('a1u1')"), "the end does not lead to the unit's exercises");
+  ok(ev("JSON.stringify([S.star,S.srs,S.prod,S.rep,S.gram,S.err,S.dinle,S.done])") === before, "step by step scheduled, marked or ticked something");
+  ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
+  ok(ev("isDone('a1u1')"), "the exercises after step by step did not tick the unit");
+  /* Every A1 unit walks to the end. */
+  ev("unitsOf('A1')").forEach(v => {
+    ev("startAdim(" + q(v.id) + ")");
+    let g = 0;
+    while (ev("adCur().t") !== "end" && g++ < 80) {
+      const s = ev("adCur()");
+      if (s.t === "hear") ev("adPick(" + s.w.i + ")");
+      else if (s.t === "spell") { const used = []; s.w.say.split("").forEach(l => { const i = s.tiles.findIndex((t, j) => t === l && !used.includes(j)); used.push(i); ev("adAdd(" + i + ")"); }); ev("adSpell()"); }
+      ev("adNext()");
+    }
+    ok(ev("adCur().t") === "end" && ev("AD.q.filter(function(s){return s.t==='spell'}).length") === 3, v.id + " did not walk to its end with three spellings");
+  });
+  /* Leaving goes back to the unit; a locked unit cannot be walked. */
+  ev("startAdim('a1u2')"); ev("back()");
+  ok(ev("V.view") === "unit" && ev("V.u") === "a1u2", "back from step by step does not return to the unit");
+  ev("unitOpen=__unitOpen; wipe(); startAdim('a1u3')");
+  ok(ev("V.view") !== "adim", "a locked unit was walked step by step");
+  ev(LIFT + "; wipe(); home()");
+});
+
 /* Uyumadan önce: only what was studied today, Turkish only, each said
    twice, quieter as it goes, and it stops by itself, in silence. */
 step("uyumadan önce · today, once more, then quiet", () => {

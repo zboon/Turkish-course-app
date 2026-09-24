@@ -75,7 +75,7 @@ try {
     "numText:numText,hourAcc:hourAcc,hourDat:hourDat,timeText:timeText,timeAt:timeAt,priceText:priceText," +
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
-    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK,BASLA:BASLA," +
+    "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK,BASLA:BASLA,RESIM:RESIM," +
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf};", sandbox, { filename: file });
@@ -317,6 +317,22 @@ let diagChecked = 0;
     diagChecked++;
     if (w && D(w, w)) err("teşhis", u.id + ": " + JSON.stringify(w) + " is diagnosed against itself");
   })));
+}
+
+/* ---------- resim (pictures for Adım adım) ---------- */
+/* Keyed by the vocabulary entry exactly as written: a key that matches no
+   A1 word is a picture that will never be shown, and usually a typo. Each
+   A1 unit also needs three words that can be spelt from letter tiles. */
+{
+  const A1 = UNITS.filter(u => u.lv === "A1"), words = new Set([].concat(...A1.map(u => u.vocab.map(w => w[0]))));
+  Object.keys(M.RESIM).forEach(k => {
+    if (!words.has(k)) err("RESIM", '"' + k + '" is not an A1 vocabulary entry');
+    if (!str(M.RESIM[k])) err("RESIM", '"' + k + '" has no picture');
+  });
+  A1.forEach(u => {
+    const sp = u.vocab.filter(w => { const s = String(w[0]).replace(/\([^)]*\)/g, " ").split("/")[0].trim().replace(/[?.!]+$/, ""); return /^[a-zçğıöşüâîû]+$/.test(s) && s.length <= 10; });
+    if (sp.length < 3) err(u.id, "has " + sp.length + " words that can be spelt from tiles; Adım adım spells three");
+  });
 }
 
 /* ---------- sen / siz ---------- */

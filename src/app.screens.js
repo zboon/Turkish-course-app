@@ -246,6 +246,9 @@ function renderUnit(){
   }
   markSeen(u.id,sec);
   let h=bar(u.tr,u.lv+" · Ünite "+u.n,true)+'<div class="wrap">';
+  /* A1 offers the guided way through as well as the tabs. */
+  if(adimFor(u))h+='<button class="card nav row adim-go" onclick="startAdim(\''+u.id+'\')"><div class="grow"><p class="lead nav-t">Adım adım</p>'+
+    '<p class="sub">The words, the grammar and the reading one screen at a time, then the exercises. The tabs below still let you move around freely.</p></div><span class="chev">'+IC.chev+'</span></button>';
   h+='<div class="segs">';
   SECS.forEach(s=>{
     const on=s[0]===sec, seen=S.seen[u.id]&&S.seen[u.id][s[0]];
@@ -283,14 +286,17 @@ function starAll(uid){
   save(); render();
 }
 function secGram(u){
+  return gramCard(u)+spokenCard(u)+'<button class="btn" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Okumaya geç →</button>';
+}
+/* The grammar point itself, shared by the tab and by Adım adım. */
+function gramCard(u){
   const g=u.gram;
   let h='<div class="card gram"><p class="lead">'+esc(g.t)+'</p><p class="tiny" style="margin:.1rem 0 .6rem">'+esc(g.en)+'</p>';
   g.body.forEach(p=>{h+='<p>'+p+'</p>';});
   if(g.tbl){h+='<table class="table">';g.tbl.forEach(r=>{h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';});h+='</table>';}
   h+='<div class="egs">';
   g.eg.forEach(e=>{h+='<div class="eg"><b>'+esc(e[0])+'</b><span>'+esc(e[1])+'</span></div>';});
-  h+='</div></div>'+spokenCard(u)+'<button class="btn" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Okumaya geç →</button>';
-  return h;
+  return h+'</div></div>';
 }
 /* How the unit's Turkish is actually said, where that differs from how it
    is written. Beside the grammar rather than inside it: the written form

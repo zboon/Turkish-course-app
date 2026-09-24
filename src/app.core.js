@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.63";
+const APP_VERSION="v3.64";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -312,6 +312,7 @@ function back(){
      the back arrow and the Bitir button do the same thing, which is what
      a learner expects of a mode whose whole point is not touching it. */
   else if(V.view==="uykurun"){uyStop();UY=null;go("uyku");}
+  else if(V.view==="adim"){go("unit",AD?AD.u:V.u,"v");}
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
   else if(V.view==="retell"){go("unit",V.u,"r");}
   /* The back arrow retraces the menu you came through. Before the two
@@ -362,7 +363,7 @@ function themeIcon(){
    decided rather than left to chance. */
 const EN_UI={
  "Başla":"start","Devam":"continue","Kontrol et":"check","Sonuç":"see the result","Tekrar dene":"try again",
- "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
+ "Sonraki":"next","Sonraki ünite →":"next unit","Sonraki ders →":"next lesson","Kilitli":"locked","Adım adım":"step by step","Yeni kelime":"new word","Ne duydun?":"what did you hear?","Harfleri diz":"spell it","İngilizcesi":"show the English","Alıştırmalara hazırsın":"ready for the exercises","Dur":"stop","Tamam":"okay","İyi geceler":"good night","Henüz bir şey yok":"nothing yet","kelime ve cümle":"words and sentences","Uyumadan önce":"before sleep","Giriş sınavı":"intro test","Giriş dersleri":"the lessons before unit one","Giriş derslerine başla":"start the lessons before unit one","Derse dön":"back to the lesson","Bir daha dinle":"listen again","Sonraki parça":"next piece","Bitir":"finish","Baştan":"start over",
  "Seviyeye dön":"back to the level","Üniteye dön":"back to the unit","Bugüne dön":"back to today","Ana sayfa":"home",
  "Dilbilgisine geç →":"on to the grammar","Okumaya geç →":"on to the reading","Alıştırmalara geç →":"on to the exercises",
  "Tüm kelimeleri tekrara ekle":"add all the words to my reviews","Tümü listede ✓":"all on my list",

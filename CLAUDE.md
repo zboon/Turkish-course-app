@@ -46,6 +46,7 @@ src/data/diyalog.js      const DIYALOG=[…];  // branching service encounters
 src/data/atasozu.js      const ATASOZU=[…]; const DEYIM=[…];  // sayings
 src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
 src/data/baslarken.js    const BASLA=[…];    // six lessons before unit one
+src/data/resim.js        const RESIM={…};    // a picture for A1 words, for Adım adım
 src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
@@ -65,11 +66,12 @@ src/app.atasozu.js       proverbs and idioms, against an exact judge
 src/app.sik.js           the frequency layer: ten common words a day
 src/app.baslarken.js     the lessons before unit one
 src/app.uyku.js          before sleep: today's material, quietly
+src/app.adim.js          Adım adım: an A1 unit one screen at a time
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is seventeen files rather than one because it grew past the point
+The app is eighteen files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -1635,6 +1637,62 @@ opens in order**, puts them back and tests the rule; `snap.js` grabs the
 locked views at the end the same way. Sixteen deliberate breakages,
 ten on the lock and six on the intro test, each turned `sim.js` red. A new test that is about the lock has to restore
 the real functions first, or it is testing the stub.
+
+## Adım adım (an A1 unit one screen at a time)
+
+Built, by request, after the children's app: asked whether its shape
+suited adults too, the honest answer was *partly*. The drills in a kids'
+game are the wrong thing to copy, since an adult course needs recall and
+explanation. What transfers is the **pacing**. A unit is four tabs a
+learner moves between freely. That suits someone who knows what they
+want, and it is easy to drift through for a beginner: the word list gets
+skimmed, the grammar tab never gets opened, and there is no clear moment
+when the unit is done.
+
+`startAdim(id)` walks the unit's own material in order. First the ten
+words, each on a card with a picture from `RESIM`, said as it arrives.
+Then four listening checks (hear, pick the meaning), three spellings
+from letter tiles, the grammar point (`gramCard()`, split out of
+`secGram()` for this), and the passage one line at a time, English
+behind a tap. The end hands over to `startUnitQuiz`, the unit's own five
+exercises, which are what tick it. An entry card sits at the top of
+every A1 unit; the tabs stay underneath, unchanged.
+
+Four decisions:
+
+- **It adds no material and no storage.** Each part calls `markSeen()`
+  for its own tab as it is shown: `v` for the words, `g` for the grammar,
+  `r` for the passage. So the reviews open at exactly the grain they
+  would if the tabs had been read. Walking the words does not count as
+  reading the passage (see "Nothing reviews what has not been met").
+- **The checks are practice, not marks.** Nothing is scheduled, starred
+  or written to the mistake book. A missed check goes back into the line
+  *before the grammar*, at most `ADIM_RETRY` (2) times, so the words are
+  settled before the unit moves on from them. The unit is ticked only by
+  its real exercises.
+- **A1 only (`ADIM_LV`).** This is where drifting through tabs costs the
+  most, and where a picture can stand for a word. From A2 the vocabulary
+  turns abstract, and the tabs are the better tool once a learner knows
+  the routine.
+- **The lock applies.** `startAdim` refuses a unit `unitOpen()` refuses.
+  The guided way is a second door to the same room, not a way round the
+  path.
+
+`RESIM` is keyed by the exact vocab entry (`"ad / isim"`, not a fold of
+it), and abstract words are left out rather than given a picture that
+misleads. `validate.js` fails on a key that is not an A1 entry, which is
+how a spelling edit would strand one, and requires at least three
+spellable words in every A1 unit. `sim.js` walks all ten A1 units. It
+checks the autoplay happens once and a redraw does not repeat it, the
+seen-flag grain, that a missed check comes back exactly once, that the
+English stays hidden until asked for, that `S` is untouched apart from
+`seen`, the quiz handoff, `back()`, and the lock. Twelve deliberate
+breakages each turned a test red.
+
+A related fix that shipped with it: `button.card` set `display:block`
+and outranked `.row`, so every navigation row in the app had its
+chevron wrapped under the text instead of beside it. Fixed with
+`button.card.row{display:flex}`.
 
 ## Kendi kelimelerim (your own words)
 

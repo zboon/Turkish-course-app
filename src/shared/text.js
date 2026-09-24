@@ -10,3 +10,17 @@ function fold(s){
    .replace(/Ç/g,"c").replace(/ç/g,"c").replace(/[âÂ]/g,"a").replace(/[îÎ]/g,"i").replace(/[ûÛ]/g,"u")
    .toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
 }
+
+/* ===================== ortak · letter tiles ===================== */
+/* Spelling a word from letter tiles, used by the children's app and by the
+   course's Adım adım. */
+/* The decoys are the letters a beginner confuses: ı for i, ş for s,
+   ç for c — spelling with tiles is where ç and ş get learned. */
+const TWINS={"ı":"i","i":"ı","ş":"s","s":"ş","ç":"c","c":"ç","ğ":"g","g":"ğ","ö":"o","o":"ö","ü":"u","u":"ü","â":"a"};
+function spellTiles(tr){
+  const letters=tr.split(""), decoys=[];
+  letters.forEach(function(l){const t=TWINS[l]; if(decoys.length<2&&t&&letters.indexOf(t)<0&&decoys.indexOf(t)<0)decoys.push(t);});
+  const pool="aeiıoöuübcçdfgğhjklmnprsştvyz";
+  while(decoys.length<2){const c=pool[Math.floor(Math.random()*pool.length)]; if(letters.indexOf(c)<0&&decoys.indexOf(c)<0)decoys.push(c);}
+  return shuffle(letters.concat(decoys));
+}

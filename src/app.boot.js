@@ -41,6 +41,7 @@ function render(){
   else if(v==="basla")renderBasla();
   else if(v==="uyku")renderUyku();
   else if(v==="uykurun")renderUykuRun();
+  else if(v==="adim")renderAdim();
   else renderHome();
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */
