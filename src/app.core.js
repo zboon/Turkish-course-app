@@ -298,7 +298,7 @@ function srsDrop(k){if(S.srs)delete S.srs[k];}
    current box and returns the new one. */
 function isDue(map,k){const r=map&&map[k];return !r||r.d<=dayNum();}
 function bump(map,k,next){
-  const r=map[k]||{b:0,d:dayNum()};
+  const r=map[k]||{b:0,d:dayNum(),f:dayNum()};   /* f: the day it was first practised */
   r.b=Math.max(0,Math.min(next(r.b),STEPS.length-1));
   r.d=dayNum()+STEPS[r.b];
   map[k]=r; return r;
@@ -321,15 +321,33 @@ function grade(k,g){
    rather than sampling it at random. Üretim and Dinleme keep separate
    schedules — the same sentence can be easy to recognise and hard to
    produce — so the map is passed in rather than assumed. */
-function dueQueue(map,bank,limit){
+/* New items per day, per review queue. Reviews of what has been practised
+   come due without limit; what has never been practised is let in only so
+   fast. Without it, meeting many units at once — a level test passes ten —
+   put a hundred words "due" in Tekrar at once, and the plan, which puts
+   reviews before new material, asked for ten after ten after ten and never
+   reached the next unit. A learner reported exactly that. Counted from the
+   f stamp bump() puts on a record the day it is created; records from
+   before the stamp existed count as old, which only errs toward one more
+   sitting on the day this shipped. */
+const NEW_DAY={rep:10,gram:3,dinle:8,prod:12};
+function newToday(map,pfx){
+  const n=dayNum(); let c=0;
+  if(map)for(const k in map){const r=map[k]; if(r&&r.f===n&&(!pfx||k.indexOf(pfx)===0))c++;}
+  return c;
+}
+/* Everything due now: reviews oldest first, then as many never-practised
+   items, in the bank's own order, as today's allowance still admits. */
+function dueItems(map,bank,cap,pfx){
   const n=dayNum(), old=[], fresh=[];
   bank.forEach(function(it){
     const r=map&&map[it.k];
     if(r){if(r.d<=n)old.push(it);}else fresh.push(it);
   });
   old.sort(function(x,y){return map[x.k].d-map[y.k].d;});
-  return old.concat(fresh).slice(0,limit);
+  return old.concat(cap===undefined?fresh:fresh.slice(0,Math.max(0,cap-newToday(map,pfx))));
 }
+function dueQueue(map,bank,limit,cap,pfx){return dueItems(map,bank,cap,pfx).slice(0,limit);}
 
 function starKey(tr,en){return tr+"|"+en;}
 function isStarred(tr,en){return S.star.indexOf(starKey(tr,en))>-1;}

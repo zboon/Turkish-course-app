@@ -449,7 +449,8 @@ function renderQuiz(){
   if(Q.sel!==null){
     const ok=Q.res[Q.i];
     h+='<div class="fb '+(ok?"ok":"no")+'"><b>'+(ok?"Doğru":"Yanlış")+'</b>'+
-      (ok?'':(it.t==="mc"?esc(it.a[it.c]):esc(it.c))+(it.why?' — ':''))+esc(it.why||"")+'</div>';
+      (ok?'':(it.t==="mc"?esc(it.a[it.c]):esc(it.c))+(it.why?' — ':''))+esc(it.why||"")+'</div>'+
+      (ok&&it.t==="fill"&&Q.siz?sizBox(Q.siz,it.c):'');
     h+='<button class="btn" onclick="nextQ()">'+(Q.i+1>=Q.items.length?"Sonuç":"Devam")+'</button>';
   }
   h+='</div>';
@@ -466,6 +467,12 @@ function answerFill(){
   const v=fin.value; Q.typed=v; Q.sel=0;
   const it=Q.items[Q.i];
   Q.res[Q.i]=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,"");
+  /* The other you, where the sentence does not say which. */
+  Q.siz=null;
+  if(!Q.res[Q.i]){
+    const sz=sizToward(v,it.c,it.q,"");
+    if(sz.used.length&&sz.text===fold(it.c)){Q.res[Q.i]=true;Q.siz=sz.used;}
+  }
   if(!Q.res[Q.i])quizNote(it,v);
   render();
 }
@@ -477,7 +484,7 @@ function answerOrder(){
   if(!Q.res[Q.i])quizNote(it,Q.built.join(" "));
   render();
 }
-function nextQ(){Q.i++;Q.sel=null;Q.built=[];Q.bidx=[];Q.pool=null;Q.used=[];Q.typed="";window.scrollTo(0,0);render();}
+function nextQ(){Q.i++;Q.sel=null;Q.siz=null;Q.built=[];Q.bidx=[];Q.pool=null;Q.used=[];Q.typed="";window.scrollTo(0,0);render();}
 function renderScore(){
   const n=Q.res.filter(Boolean).length, of=Q.items.length;
   touchDay();

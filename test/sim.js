@@ -449,10 +449,11 @@ step("üretim · sentences", () => {
   ok(/kendi değerlendirmen/.test(lastPaint), "no score screen after üretim");
   ok(ev("Object.keys(S.prod).length") === n, "graded " + n + " but stored " + ev("Object.keys(S.prod).length"));
 
-  /* Due today should now be the missed ones, not the whole bank. */
-  const due = ev("prodDue(sentenceBank()).length"), all = ev("sentenceBank().length");
-  ok(due === all - ev("Object.keys(S.prod).filter(function(k){return S.prod[k].b>0}).length"),
-    "the sentences answered right are still due today");
+  /* Due today should now be the missed ones: a sitting of SESSION new
+     sentences has spent the day's allowance of new ones. */
+  const due = ev("prodDue(sentenceBank()).length");
+  ok(n === ev("NEW_DAY.prod") && due === ev("Object.keys(S.prod).filter(function(k){return S.prod[k].b===0}).length"),
+    "the sentences answered right are still due today, or new ones came past the day's allowance");
 });
 
 step("üretim · the English prompt", () => {
@@ -513,7 +514,7 @@ step("üretim · chunks", () => {
   ok(ev("PR.q[0].k").indexOf("k:") === 0, "chunk keys are not namespaced: " + ev("PR.q[0].k"));
   for (let i = 0; i < n; i++) produce(true);
   ok(phase() === "end", "chunk session did not finish");
-  ok(ev("prodDue(chunkBank()).length") === ev("CHUNKS.length") - n, "graded chunks are still due today");
+  ok(ev("prodDue(chunkBank()).length") === 0, "graded chunks are still due today, or new ones came past the day's allowance");
 
   /* The bank is the roadmap's first item, grown from 50 to 300+. Two
      things had to survive that: the sitting stays a sitting, and the hub
@@ -874,7 +875,7 @@ step("audio first reveals only after the decision", () => {
   const line = ev("DK.q[0].k").slice(2);
   ev("wipe()"); ev("S.pscope='all'");
   ev("S.dinle={'d:" + line + "':{b:4,d:0}}"); ev("save()");
-  ok(ev("dinleDue('a:')") === ev("listenBank('a:').length"),
+  ok(ev("dinleDue('a:')") === Math.min(ev("listenBank('a:').length"), ev("NEW_DAY.dinle")),
      "a dictation box changed what audio-first thinks is due");
   ev("setDrate(1)");
 });
@@ -1173,6 +1174,10 @@ step("grammar comes back, and is produced rather than recognised", () => {
   /* A sitting over the whole course. */
   ev("wipe()"); ev("UNITS.forEach(function(u){S.seen[u.id]={g:1}}); save()");
   ok(ev("gramBank().length") === UNITS.length, "not every point is in the bank once all are read");
+  ok(ev("gramDue().length") === ev("NEW_DAY.gram"), "sixty points never practised all came due at once");
+  /* The rest of this walks a full sitting, so the points are made due
+     reviews rather than new ones, which the daily allowance would cap. */
+  ev("UNITS.forEach(function(u){S.gram['y:'+u.id]={b:0,d:0}}); save()");
   ev("startGram()");
   ok(ev("GR.q.length") === ev("GRAM_SESSION"), "a sitting is " + ev("GR.q.length") +
      " points, expected " + ev("GRAM_SESSION"));
@@ -3123,6 +3128,69 @@ step("başlarken · the lessons before unit one", () => {
   ok(ev("Q.items.every(function(it){return !it.say})") && ev("Q.items.length") === BASLA[0].check.filter(i => !i.say).length,
      "with no speech a heard question was still asked");
   ev("window.speechSynthesis=__ss; wipe(); home()");
+});
+
+/* Two things a learner reported, pinned as they were reported.
+   1. Testing out of A1 put a hundred words "due" at once, and the plan,
+      which puts reviews before new material, asked for ten after ten and
+      never reached A2. New items now come in at NEW_DAY a day per queue.
+   2. "Pleased to meet you. How are you?" refused Nasılsınız. Where the
+      sentence does not say which you, the other one counts. */
+step("reported · a level test does not bury the plan in reviews", () => {
+  ev("unitOpen=__unitOpen; baslaOpen=__baslaOpen");
+  drain(60000); ev("stopPlay()");
+  ev("confirm=function(){return true}; wipe(); S.pscope='done'; save(); home()");
+  ev("startLevelExam('A1')"); for (let i = 0; i < 10; i++) answer(true);
+  ok(ev("lvPct('A1')") === 100, "the A1 test did not pass A1");
+  const step = k => ev("planToday()").steps.find(s => s.k === k);
+  ok(ev("repShort().length") > 50, "the scenario needs a large backlog to mean anything: " + ev("repShort().length"));
+  ok(step("rep").n === ev("NEW_DAY.rep"), "Tekrar asks for " + step("rep").n + " after a level test, not a day's worth");
+  ok(step("gram").n <= ev("NEW_DAY.gram") && step("dinle").n <= ev("NEW_DAY.dinle") && step("prod").n <= ev("NEW_DAY.prod"),
+     "a review step asks for more new items than a day's allowance");
+  /* One sitting of Tekrar, all right: the step ticks, and does not refill. */
+  ev("startTekrar()");
+  const n = ev("TK.q.length");
+  for (let i = 0; i < n; i++) { doc.getElementById("tbox").value = ev("TK.q[TK.i].c"); ev("tkCheck()"); ev("tkNext()"); }
+  ok(step("rep").n === 0, "after a full sitting Tekrar still asks for " + step("rep").n + " — the loop that was reported");
+  ok(ev("planToday()").left.every(s => s.k !== "rep"), "the plan's next step is still Tekrar");
+  ok(step("new") && step("new").go === "go('unit','a2u1','v')" && ev("unitOpen('a2u1')"), "the plan does not lead on to A2");
+  ok(ev("Object.keys(S.rep).every(function(k){return S.rep[k].f===dayNum()})"), "a first practice is not stamped with its day");
+  /* Tomorrow, the next ten — and the reviews of today's come due as they fall. */
+  ev("Object.keys(S.rep).forEach(function(k){S.rep[k].f--;S.rep[k].d--}); save()");
+  ok(step("rep").n === ev("REP_SESSION"), "the next day does not bring the next words");
+  ev("S.pscope=undefined; unitOpen=function(){return true}; baslaOpen=function(){return true}; wipe(); home()");
+});
+
+step("reported · the other you counts where the sentence does not say which", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  const cloze = (qtext, typed) => {
+    ev("TK={q:[{k:'nasilsin',u:'a1u1',tr:'nasılsın?',en:'how are you? (informal)',kind:'cloze',q:" + q(qtext) +
+       ",c:'Nasılsın',alts:['nasilsin'],hint:'Pleased to meet you. How are you?',from:'A1'}],i:0,phase:'ask',typed:'',res:null,right:0}; V={view:'tekrarrun'}; render()");
+    doc.getElementById("tbox").value = typed; ev("tkCheck()");
+    return ev("TK.res");
+  };
+  ok(cloze("— Memnun oldum. ___?", "nasılsınız") === true, "Nasılsınız was refused for “Pleased to meet you. How are you?” — the reported case");
+  ok(/Sen · siz/.test(lastPaint), "accepting the other you does not say why it counts");
+  ok(cloze("— Memnun oldum. ___?", "nasılsın") === true && !/Sen · siz/.test(lastPaint), "the answer itself was explained as the other you");
+  ok(cloze("— İyiyim, teşekkür ederim. Sen ___?", "nasılsınız") === false, "Nasılsınız was accepted after Sen, which decides it");
+  ok(cloze("— Memnun oldum. ___?", "nasıl") === false, "a word that is not the other you was accepted");
+  ev("TK=null");
+
+  /* Dilbilgisi: a real example, reached through its own rotation. */
+  ev("wipe(); S.seen.a1u5={g:1}; S.gram['y:a1u5']={b:0,d:0,n:2}; save(); startGram()");
+  ok(ev("GR.q[0].c") === "Ne yapıyorsun?", "the rotation did not reach the example under test: " + ev("GR.q[0].c"));
+  doc.getElementById("gbox").value = "Ne yapıyorsunuz"; ev("grCheck()");
+  ok(ev("GR.res.same") === true && /Sen · siz/.test(lastPaint), "Dilbilgisi refused Ne yapıyorsunuz for “What are you doing?”");
+  ev("GR=null");
+
+  /* A unit's own gap-fill, and the command that only looks alike. */
+  ev("startUnitQuiz('b2u2')");
+  const at = ev("unit('b2u2').drill.findIndex(function(d){return d.t==='fill'})");
+  for (let i = 0; i < at; i++) ev("nextQ()");
+  doc.getElementById("fin").value = "malısınız"; ev("answerFill()");
+  ok(ev("Q.res[Q.i]") === true && /Sen · siz/.test(lastPaint), "the gap-fill refused malısınız for “you ought to work”");
+  ok(ev("sizToward('Kolay gelsiniz','Kolay gelsin','','').used.length") === 0, "gelsiniz was taken for Kolay gelsin");
+  ev("wipe(); home()");
 });
 
 /* Uyumadan önce: only what was studied today, Turkish only, each said

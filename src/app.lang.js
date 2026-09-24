@@ -567,6 +567,48 @@ function spokenToward(typed,answer){
   return {text:out.join(" "),used:used};
 }
 
+/* Sen or siz. "How are you?" is Nasılsın to a friend and Nasılsınız to
+   anyone else, and English cannot say which, so where nothing in the
+   sentence decides it the other you is right too. A learner who wrote
+   the polite form to "Pleased to meet you. How are you?" was marked
+   wrong for it.
+   Only -sIn ↔ -sInIz, and only after what makes -sIn certainly "you":
+   the present -yor, the future, -mAlI, -mIş, the question particle, and
+   a short list of words said of a person. The same ending on a bare verb
+   is the third-person command — Kolay gelsin, Geçmiş olsun — where
+   gelsiniz would be wrong, and the aorist (gelirsin, but otursun) cannot
+   be told from a verb stem in r, so both are left alone: a miss is the
+   safe direction. Nothing moves when the sentence already has a sen or
+   siz word, or the English names the register. Works on folded text,
+   like spokenToward, and only ever toward a word the answer has. */
+const SIZ_BASE=/(yor|..cak|..cek|meli|mali|mis|mus)$/;
+const SIZ_WORDS=["nasil","iyi","hazir","emin","hasta","yorgun","kim","nerede","nereli","memnun","mutlu","evli","musait","mesgul","mi","mu"];
+const SIZ_PRON=/^(sen|siz|seni|sizi|sana|size|senin|sizin|senden|sizden|sende|sizde|seninle|sizinle)$/;
+function sizSwap(w){
+  let m=/^(.+)s([iu])n\2z$/.exec(w);
+  if(m&&(SIZ_BASE.test(m[1])||SIZ_WORDS.indexOf(m[1])>-1))return m[1]+"s"+m[2]+"n";
+  m=/^(.+)s([iu])n$/.exec(w);
+  if(m&&(SIZ_BASE.test(m[1])||SIZ_WORDS.indexOf(m[1])>-1))return w+m[2]+"z";
+  return null;
+}
+function sizToward(typed,answer,ctx,en){
+  const A=fold(answer).split(" ").filter(Boolean), used=[];
+  const blocked=fold((ctx||"")+" "+answer).split(" ").some(function(t){return SIZ_PRON.test(t);})||
+    /\b(informal|formal|polite|politely|friend|several|plural)\b/i.test(en||"");
+  const out=[];
+  String(typed).split(/\s+/).forEach(function(raw){
+    let hit=false;
+    fold(raw).split(" ").filter(Boolean).forEach(function(t){
+      if(blocked||A.indexOf(t)>-1){out.push(t);return;}
+      const w=sizSwap(t);
+      if(w&&A.indexOf(w)>-1){out.push(w);hit=true;return;}
+      out.push(t);
+    });
+    if(hit)used.push(raw.replace(/^[^\p{L}]+|[^\p{L}']+$/gu,""));
+  });
+  return {text:out.join(" "),used:used};
+}
+
 /* ===================== başka türlü · the other ways to say it ===================== */
 /* A typed answer is one way of saying the thing, and often not the only
    one. Whatever the learner gives, the others are shown beside it: the

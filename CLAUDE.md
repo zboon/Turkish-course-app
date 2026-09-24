@@ -257,6 +257,11 @@ deliberate breakage.
  gap, prompten, pscope, drate, dreplay, ygap, yrate, nmax, ncap, tips, en}
 ```
 
+Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
+`num`, `ata`, `dia` — carries `f`, the day it was first practised, which
+is what the daily allowance of new items counts (see Bugün). Records from
+before v3.63 have none and count as old.
+
 Üretim and Dinleme keys are as permanent as unit ids and for the same
 reason: `s:<unitId>#<lineIndex>` for a passage line and `k:<index>` for a
 chunk in Üretim; `d:<unitId>#<lineIndex>` for dictation and
@@ -1412,6 +1417,30 @@ brother", not "mate"), a subtler note on *abi / abla / hocam / efendim*,
 vowel-stem futures above. New spoken material should go the same way
 before it ships.
 
+### Sen ya da siz (the other you)
+
+Reported by the learner: a Tekrar gap-fill built from *Memnun oldum.
+Nasılsın?* — "Pleased to meet you. How are you?" — refused *Nasılsınız*,
+which is at least as likely to be said to someone just met. English
+cannot say which you, so where the sentence does not decide it the other
+one is right. `sizToward()` in `app.lang.js` turns a typed *-sInIz* into
+the answer's *-sIn* or the reverse, only toward a word the answer has,
+in Tekrar motoru, Dilbilgisi tekrarı and a unit's gap-fill, and the
+feedback says why under **Sen · siz**.
+
+It is narrow on purpose. The same ending on a bare verb is the
+third-person command — *Kolay gelsin*, *Geçmiş olsun* — where *gelsiniz*
+is wrong, so the swap applies only after what makes *-sIn* certainly
+"you": *-yor*, the future, *-mAlI*, *-mIş*, the question particle and a
+short list of words said of a person (`SIZ_BASE`, `SIZ_WORDS`). The
+aorist is left out because *gelirsin* and *otursun* cannot be told apart
+in folded text. Nothing moves when the sentence has a *sen* or *siz* word
+or the English names the register ("informal"). `validate.js` holds both
+halves, including every command it must refuse, and checks that every
+*-sIn* word the course writes swaps back to itself; `sim.js` replays the
+reported case in all three places. Ten deliberate breakages each turned
+a test red.
+
 ### Başka türlü (the other ways to say it)
 
 By request: whatever form a learner types, short or long, spoken or
@@ -1600,6 +1629,23 @@ Kelime — the day's ten common words — after that, once a unit is finished.
 Before any unit has been opened, the last step is **Giriş**, the next of
 the lessons before unit one (see Başlarken below); it is still the only
 step on day one.
+
+**New items come in at a daily rate.** `NEW_DAY` caps how many
+never-practised items each review queue lets in per day — Tekrar 10,
+Dilbilgisi 3, Dinle 8, Söyle 12, prefabs and passage lines counted
+separately — while reviews of what has been practised come due without
+limit, the way Anki's new-cards-per-day works. `dueItems()` in
+`app.core.js` is the one place it happens, and `repDue`, `gramDue`,
+`dinleDue`, `prodDue` all go through it, so the runner, the hub, the
+end-of-sitting count and the plan read the same number.
+
+It exists because a learner reported it: after passing the A1 test,
+every A1 unit counted as met, a hundred words were "due" in Tekrar, and
+the plan — which puts reviews before new material — asked for ten after
+ten and never reached A2. Nothing was wrong with any one sitting; the
+backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
+test, run one sitting, and the Tekrar step must tick and the plan must
+lead on to a2u1.
 
 **The list folds; the instruction does not.** The card opens collapsed to
 one line — `5 adım · steps left · ~24 dk` — with the start button still
