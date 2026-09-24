@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.71";
+const APP_VERSION="v3.72";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -476,7 +476,7 @@ const EN_INLINE=[
  "stop and mark","drill these","review them","walk away","place me","hide on the home screen","mine is said too",
  "how to add one","ten more","where to","caught you twice or more","speaking","listening","bringing it back","words",
  "how it is said","listening and shadowing","the review queue","what the course teaches once","produce the pattern",
- "listening without the text","saying it first","asking","taking a word apart","your own islands","keeping it alive","write","get them checked","copy","correct it","it was right","say your islands","the hours outside","log a sitting","caught a word?","said whole","numbers at speed",
+ "listening without the text","saying it first","asking","taking a word apart","your own islands","keeping it alive","write","get them checked","copy","correct it","it was right","say your islands","once more","the hours outside","log a sitting","caught a word?","said whole","numbers at speed",
  "your own words","the mistake book","hands-free","how many words","the texts","back up",
  "build it","change it","the gap","where sentences come from","write what you hear","audio first","listening speed",
  "replays allowed","the model’s speed","ask the question","write the digits","read it out","how high","the bar",

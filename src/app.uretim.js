@@ -127,7 +127,7 @@ function startProd(mode){
   /* Sor rides this runner but is not Üretim, and a sitting that calls
      itself by the wrong name is the sort of small lie that makes a
      learner distrust the rest. */
-  PR={mode:mode,q:q,i:0,phase:"gap",left:prodGap(),tid:null,right:0,build:null,bi:0,
+  PR={mode:mode,q:q,n0:q.length,i:0,phase:"gap",left:prodGap(),tid:null,right:0,build:null,bi:0,
       title:(mode==="q"||mode==="e")?"Sor":mode==="i"?"Adacıklar":"Üretim"};
   V={view:"prodrun"};window.scrollTo(0,0);
   touchDay();prodStep();
@@ -155,13 +155,23 @@ function prodModel(){
   const it=PR.q[PR.i];if(it)say(it.tr);
 }
 function prodSay(){const it=PR&&PR.q[PR.i];if(it)say(it.tr);}
+/* Yanlış moves on, and the sentence comes back once at the end of the
+   sitting, while it is still half remembered. It used to open the
+   backward buildup instead, which the learner found stopped the sitting
+   dead; building up is now a choice, on its own button, before marking.
+   The retry is graded like any try, so getting it right the second time
+   sends it to tomorrow rather than leaving today's plan step open; but
+   it is not scored or booked again, since it is the same miss. */
 function prodMark(good){
   const it=PR&&PR.q[PR.i];if(!it)return;
   prodGradeKey(it.k,good);
-  if(good)PR.right++;
-  else errNote(it.k,{m:"s",q:it.en,c:it.tr,to:errUnitOf(it.k)});
-  /* A sentence you could not produce is the one worth building up. */
-  if(!good&&clauseSplit(it.tr).length>1){prodBuild();return;}
+  if(!it.again){
+    if(good)PR.right++;
+    else{
+      errNote(it.k,{m:"s",q:it.en,c:it.tr,to:errUnitOf(it.k)});
+      PR.q.push(Object.assign({},it,{again:true}));
+    }
+  }
   prodNext();
 }
 function prodBuild(){
@@ -173,7 +183,8 @@ function prodBuild(){
 function prodBuildNext(){
   if(!PR||!PR.build)return;
   PR.bi++;
-  if(PR.bi>=PR.build.length){prodNext();return;}
+  /* Built up, the sentence is back where it was: marked by the learner. */
+  if(PR.bi>=PR.build.length){PR.phase="model";PR.build=null;PR.bi=0;render();return;}
   render();say(PR.build[PR.bi]);
 }
 function prodNext(){
@@ -289,7 +300,7 @@ function renderProdRun(){
     const banked=PR.mode==="s"||PR.mode==="k"||PR.mode==="i";
     const left=banked?prodDue(PR.mode==="k"?chunkBank():PR.mode==="i"?adaBank():sentenceBank()).length:1;
     const sor=PR.mode==="q"||PR.mode==="e", ada=PR.mode==="i";
-    endScreen({title:PR.title,n:PR.right,of:PR.q.length,label:"kendi değerlendirmen · your own marking",
+    endScreen({title:PR.title,n:PR.right,of:PR.n0||PR.q.length,label:"kendi değerlendirmen · your own marking",
                plan:PR.mode==="s",again:left?"startProd('"+PR.mode+"')":"",
                hub:sor?"go('sor')":ada?"adaGo('ada')":"go('prod')",hubName:sor?"Sor":ada?"Adacıklar":"Üretim"});
     return;
@@ -297,7 +308,7 @@ function renderProdRun(){
   const it=PR.q[PR.i];
   let h=bar(PR.title,(PR.i+1)+" / "+PR.q.length,true)+'<div class="wrap">';
   h+='<div class="prog">'+PR.q.map(function(_,i){return '<i class="'+(i<PR.i?"ok":"")+'"></i>';}).join('')+'</div>';
-  h+='<p class="qn">'+(PR.phase==="build"?"Sondan başa · backward buildup":"Söyle · say it")+'</p>';
+  h+='<p class="qn">'+(PR.phase==="build"?"Sondan başa · backward buildup":it.again?"Bir daha · once more":"Söyle · say it")+'</p>';
   h+='<div class="card" style="text-align:center;padding:1.8rem 1rem">';
   if(it.given){
     h+='<p style="font-family:\'Crimson Pro\',serif;font-size:1.35rem;margin:0 0 .5rem">'+esc(it.given)+'</p>'+
