@@ -7,7 +7,7 @@ is generated. Never hand-edit `dist/`.
 
 ```bash
 ./build.sh              # concatenate src/ → dist/index.html, parse-check it
-node test/validate.js   # data integrity + 339 morphology forms + 872 number forms + 54 contrast pairs + mistake naming
+node test/validate.js   # data integrity + 339 morphology forms + 872 number forms + 54 contrast pairs + mistake naming + the tales
 node test/sim.js        # headless render of all 346 screens + every runtime path
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 node kids/test/validate.js   # the children's app: data and contrast
@@ -48,6 +48,8 @@ src/data/konusma.js      const SPOKEN={…};   // how a unit's Turkish is said
 src/data/baslarken.js    const BASLA=[…];    // six lessons before unit one
 src/data/resim.js        const RESIM={…};    // a picture for A1 words, for the guided lesson
 src/data/ada.js          const ADA=[…];      // the questions a language island is built from
+src/data/okuma.js        const OKW={…};      // the words worth a tap in each passage
+src/data/hikaye.js       const HIKAYE=[…];   // Nasreddin Hoca tales for the reading shelf
 src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
@@ -1135,9 +1137,34 @@ capitalised headword only at the start of a line, a headword at a word's
 start and never inside it, and the escaped bubble. Seventeen deliberate
 breakages each turned a check red.
 
-More to read is still to come: sixty passages is thin, and nothing at A1 is
-a story; an A1–A2 Nasreddin series is the natural addition, once a
-native speaker can check it.
+**The Nasreddin Hoca tales** (v3.78, by request). Sixty passages was
+thin and nothing at A1 was a story, so the shelf now opens with twelve
+short Hoca tales, `HIKAYE` in `src/data/hikaye.js`: six at A1 told in
+the present tense (the way a fıkra is told aloud, and the tense A1
+teaches), six at A2 in the past. None repeats the three the units
+already retell (*Ye kürküm ye*, *Kazan doğurdu*, *Parayı veren düdüğü
+çalar*). They are anonymous folklore, so their `kind:` is *yeniden
+anlatım*, and the folk filter lists them.
+
+- **A tale is not a unit.** No drill, no schedule, no progress key, and
+  `unit()` never returns one, so nothing that walks `UNITS` can meet it.
+  `readable(id)` in `app.core.js` is the one lookup that knows both, and
+  only the reader and playback use it. A tale carries its own words to
+  tap in `w:`, in `OKW`'s shape; `okwOf(u)` reads either.
+- **Ahead until its grammar is read.** Each tale names the unit it leans
+  on in `u:` (`a1u5` for the present tense, `a2u2` for the future), and
+  the shelf marks it *ileride* until `metGram(u)`, the grain the reviews
+  use. It still reads, like any passage ahead, and says which grammar it
+  waits on; the words to tap carry the rest.
+- **Ids are permanent and lines append-only**, as a unit's are: the
+  shelf and the review answers (below) name them. `validate.js` pins the
+  twelve by name and in order, and holds each to a real unit of its own
+  level, the folk `kind:`, six to ten lines, no title shared with a
+  unit's passage and every word to tap checked as `OKW`'s are.
+
+The tales are the author's Turkish, written simple on purpose, and they
+are the first section of the review page. More stories at A1–A2, and a
+second text per unit for lesson three, should go the same way.
 
 `sim.js` checks the shelf lists every passage under every level, all
 *ileride* on day one and all but unit one's once the intro is passed;
@@ -1145,7 +1172,49 @@ the folk filter lists exactly the folk tales; a locked passage shows its
 lines and English, says it is ahead, plays line by line and from the
 top, and leaves `S` byte for byte and the unit locked; next follows the
 filter; `back()` both ways; the tick; the link into an open unit. Nine
-deliberate breakages each turned it red.
+deliberate breakages each turned it red. For the tales it checks they
+come first, in order, under their heading; that none reaches `unit()`
+or the sentence bank; that each is ahead on day one and exactly the ones
+leaning on a unit open when its grammar is read; that a tale's lines,
+English and words to tap are drawn, its lines play, reading it writes
+nothing, and one still ahead names its grammar; and that the last tale
+leads on to unit one's passage. Fifteen deliberate breakages, ten of the
+code and five of the data, each turned a test red.
+
+## Kurs Türkçesi Kontrolü (the review page)
+
+Built, by request: the second native speaker's review, after the spoken
+material's in v3.61. `node tools/review.js` builds it from `src/` into
+`dist/review.html`, which is published as its own artifact,
+**https://claude.ai/artifact/A2tFmg7VMcCNF1kipjvh19**, and is not part
+of the app or of Pages. Republish to that URL, never a new one: the
+reviewer's answers are saved in their browser against it. The first
+round, the spoken material, was a separate page (*Konuşma Dili
+Kontrolü*) and is finished. It gathers what no native speaker has
+read, in the order a learner meets it:
+
+| section | items | ids |
+|---|---|---|
+| the Nasreddin Hoca tales | titles and lines | `hk:nh01#3`, `hk:nh01#t` |
+| Başlarken | prose, headings, letters, examples, questions | `bs:alfabe#r1.2`, `bs:cumle#c0` |
+| instructions | every `tx()`/`txt()` pair, `bar()`/`navRow()` Turkish subtitles | `tx:<hash of tr and en>` |
+| buttons and headings | `EN_UI` keys, and the Turkish before each `EN_INLINE` English | `ui:<hash>` |
+| Adacıklar | islands, questions, model answers | `ada:ben.ad` |
+| words to tap, three sections | every `OKW` and tale entry, with its line | `ok:a1u5:kahvaltıda` |
+
+`tools/strings.js` finds the interface Turkish by reading the source,
+not by drawing screens, so a string no test happens to reach is still
+found; an argument that is not a literal (a count, a unit's name) shows
+as "…", and the page says so.
+
+**The reviewer flags only what is wrong.** About 2,500 items is too many
+to give each a verdict, so each has *Düzelt* and *?*, and a section is
+closed with *Bu bölüm bitti*, which says the rest of it is fine. Answers
+live in the reviewer's browser and come back as text from *Cevapları
+kopyala*: sections finished, then each flag with its id, the Turkish and
+the note. The ids are what map an answer back to the source; a changed
+string changes its `tx:` hash, so rebuild and republish the page only
+between rounds, not while someone is part-way through it.
 
 ## Sayılar (numbers at speed)
 

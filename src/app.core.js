@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.77";
+const APP_VERSION="v3.78";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -80,6 +80,9 @@ function isMet(id){return !!(S.seen&&S.seen[id])||isDone(id);}
 function metUnits(){return UNITS.filter(u=>isMet(u.id));}
 function unitsOf(lv){return UNITS.filter(u=>u.lv===lv);}
 function unit(id){return UNITS.find(u=>u.id===id);}
+/* A passage to read and play: a unit's, or a tale on the shelf. Only the
+   reader and playback ask for this; everything else wants a unit. */
+function readable(id){return unit(id)||HIKAYE.find(function(h){return h.id===id;});}
 function isDone(id){return !!S.done[id];}
 function lvDone(lv){return unitsOf(lv).filter(u=>isDone(u.id)).length;}
 function lvPct(lv){const a=unitsOf(lv);return a.length?Math.round(100*lvDone(lv)/a.length):0;}
@@ -233,7 +236,7 @@ if(ttsOK()){try{
 }catch(e){}}
 function sayLine(i){
   stopPlay();
-  const u=unit(V.u); if(!u)return;
+  const u=readable(V.u); if(!u)return;
   hilite(i,true); say(u.read.lines[i][0]);
 }
 function sayWord(t){stopPlay();say(t,0.8);}
@@ -251,7 +254,7 @@ function playFrom(i,mode){
   VOICE.mode=mode; VOICE.idx=i||0; markMode(); stepPlay();
 }
 function stepPlay(){
-  const u=unit(V.u); if(!u||!VOICE.mode)return stopPlay();
+  const u=readable(V.u); if(!u||!VOICE.mode)return stopPlay();
   const lines=u.read.lines;
   if(VOICE.idx>=lines.length){vstat("Bitti · finished");return stopPlay();}
   const i=VOICE.idx, t0=Date.now();

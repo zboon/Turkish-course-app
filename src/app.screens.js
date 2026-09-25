@@ -355,6 +355,8 @@ function glossify(txt,gl,words){
 
 /* The passage itself: title, what it is, the voice bar, the lines and
    their glosses. Shared by a unit's Okuma tab and the Okuma shelf. */
+/* A unit's words live in OKW; a tale carries its own. */
+function okwOf(u){return OKW[u.id]||u.w;}
 function readPassage(u){
   const r=u.read;
   let h='<p class="lead" style="font-family:\'Crimson Pro\',serif;font-size:1.4rem">'+esc(r.t)+'</p>'+
@@ -366,7 +368,7 @@ function readPassage(u){
   r.lines.forEach((ln,i)=>{
     h+='<p class="ln" id="ln'+i+'" onclick="lineTap(event,'+i+')">'+
       '<button class="sbtn ln-spk" onclick="event.stopPropagation();sayLine('+i+')" aria-label="Listen">'+IC.spk+'</button>'+
-      glossify(ln[0],r.gloss,OKW[u.id])+'<em style="display:none">'+esc(ln[1])+'</em></p>';
+      glossify(ln[0],r.gloss,okwOf(u))+'<em style="display:none">'+esc(ln[1])+'</em></p>';
   });
   h+='</div>';
   if(r.gloss){
@@ -375,7 +377,7 @@ function readPassage(u){
     h+='</div>';
   }
   /* The passage's own words, in the order they come. */
-  const ow=OKW[u.id];
+  const ow=okwOf(u);
   if(ow){
     h+='<h2 class="sec">Metindeki kelimeler</h2><div class="card" style="padding:.3rem 1rem">';
     Object.keys(ow).forEach(function(k){

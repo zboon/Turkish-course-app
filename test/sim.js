@@ -4029,18 +4029,19 @@ step("okuma · every passage on one shelf, read for fun, writing nothing", () =>
   ev("unitOpen=__unitOpen; confirm=function(){return true}; wipe(); home()");
   ev("okumaOpen(); okSet('all')");
   const rows = (lastPaint.match(/onclick="okRead\(/g) || []).length;
-  ok(rows === UNITS.length, "the shelf lists " + rows + " passages, not all " + UNITS.length);
+  const HK = ev("HIKAYE");
+  ok(rows === UNITS.length + HK.length, "the shelf lists " + rows + " passages, not all " + UNITS.length + " and the " + HK.length + " tales");
   ok(LEVELS.every(l => lastPaint.includes('class="sec">' + esc(l.id + " · " + l.tr) + '</h2>')), "a level heading is missing on the shelf");
   /* Unit one waits on the lessons before it, so on day one all are ahead. */
   const ahead = () => (lastPaint.match(/class="pill">ileride</g) || []).length;
-  ok(ahead() === UNITS.length, "on a fresh install every passage should read as ahead: " + ahead());
+  ok(ahead() === UNITS.length + HK.length, "on a fresh install every passage should read as ahead: " + ahead());
   ev("BASLA.forEach(function(b){S.basla[b.id]={at:Date.now()}}); save(); render()");
-  ok(ahead() === UNITS.length - 1, "with the intro passed, unit one's passage still reads as ahead: " + ahead());
+  ok(ahead() === UNITS.length - 1 + HK.length, "with the intro passed, unit one's passage still reads as ahead: " + ahead());
   /* The folk thread. */
   ev("okSet('folk')");
   const folk = UNITS.filter(u => /Halk|Dede Korkut|Karagöz|Mesnev|halk hikâyesi/.test(u.read.kind));
   const frows = (lastPaint.match(/onclick="okRead\(/g) || []).length;
-  ok(frows === folk.length && folk.length >= 8 && folk.every(u => lastPaint.includes("okRead('" + u.id + "')")), "the folk-tale filter does not list exactly the folk tales");
+  ok(frows === folk.length + HK.length && folk.length >= 8 && folk.concat(HK).every(u => lastPaint.includes("okRead('" + u.id + "')")), "the folk-tale filter does not list exactly the folk tales");
   ok(folk.some(u => /Nasreddin/.test(u.read.kind)) && !lastPaint.includes(esc("A1 · Temel")), "the folk thread lost Nasreddin Hoca, or shows a level with none");
   /* A locked passage reads, plays, and writes nothing. */
   const before = JSON.stringify(ev("S"));
@@ -4121,6 +4122,51 @@ step("okuma · the words worth a tap, and the gloss that stopped matching inside
   ok(lastPaint.includes("Metindeki kelimeler") && /<span class="gw"[^>]*data-p="ıstırab-ı"/.test(lastPaint), "a C2 passage does not show its tappable words");
   ev("okRead('a2u1')");
   ok(/<span class="gw"[^>]*data-p="kürk-ü-nü"/.test(lastPaint), "the shelf does not show the passage's tappable words");
+});
+
+step("okuma · the Nasreddin Hoca tales, above the units, reading only", () => {
+  ev("confirm=function(){return true}; wipe(); home(); okumaOpen(); okSet('all')");
+  const HK = ev("HIKAYE"), ids = HK.map(x => x.id);
+  /* First on the shelf, in order, under their own heading. */
+  const at = ids.map(id => lastPaint.indexOf("okRead('" + id + "')"));
+  const lv1 = lastPaint.indexOf('class="sec">' + esc("A1 · "));
+  ok(lastPaint.includes('class="sec">Nasreddin Hoca</h2>') && at.every((x, i) => x > -1 && (!i || x > at[i - 1])) && at[at.length - 1] < lv1,
+     "the tales are not listed first, in order, under their heading");
+  ev("var __ps=S.pscope; S.pscope='all'");
+  ok(ev("unit('nh01')") === undefined && !ev("sentenceBank()").some(x => /^s:nh/.test(x.k)), "a tale leaked into the units or the sentence bank");
+  ev("S.pscope=__ps");
+  /* Ahead until the grammar each leans on is read, and no longer. */
+  const row = id => { const i = lastPaint.indexOf("okRead('" + id + "')"); return lastPaint.slice(i, lastPaint.indexOf("</button>", i)); };
+  ok(ids.every(id => /ileride/.test(row(id))), "on a fresh install a tale does not read as ahead");
+  ev("go('unit','a1u5','g'); okumaOpen()");
+  const open5 = HK.filter(x => x.u === "a1u5").map(x => x.id);
+  ok(open5.length >= 2 && open5.every(id => !/ileride/.test(row(id))) && HK.filter(x => x.u !== "a1u5").every(x => /ileride/.test(row(x.id))),
+     "reading a unit's grammar does not open exactly the tales that lean on it");
+  /* A tale reads, plays and taps like a passage, and writes nothing. */
+  const before = JSON.stringify(ev("S"));
+  const t = HK[0];
+  ev("okRead('" + t.id + "')");
+  const bare = lastPaint.replace(/<[^>]+>/g, "");
+  ok(ev("V.view") === "okumaoku" && t.read.lines.every(l => bare.includes(esc(l[0])) && bare.includes(esc(l[1]))), "a tale's lines or English are not on the page");
+  ok(/<span class="gw"[^>]*data-p="hak-lı-sın"/.test(lastPaint) && lastPaint.includes("Metindeki kelimeler"), "a tale's words to tap are missing");
+  ok(!lastPaint.includes("Üniteye git") && !/Ahead of where you are|grammar you have not read/.test(lastPaint), "an open tale links into a unit, or says it is ahead");
+  ev("sayLine(2)");
+  ok(voice.spoken[voice.spoken.length - 1] === t.read.lines[2][0], "a tale's line speaker did not say that line");
+  ev("playFrom(0,'listen')");
+  ok(voice.spoken[voice.spoken.length - 1] === t.read.lines[0][0], "Dinle did not start on the tale's first line");
+  ev("stopPlay()");
+  ok(JSON.stringify(ev("S")) === before, "reading a tale wrote progress");
+  /* One still ahead says which grammar it waits on. */
+  const lk = HK.find(x => x.u === "a1u8"), g = UNITS.find(u => u.id === lk.u);
+  ev("okRead('" + lk.id + "')");
+  ok(lastPaint.includes(esc(g.lv + " · " + g.tr)) && /grammar you have not read/.test(lastPaint), "a tale ahead does not name the grammar it waits on");
+  /* The last tale leads on to the first unit's passage; the first has nothing before it. */
+  ev("okRead('" + ids[ids.length - 1] + "')");
+  ok(lastPaint.includes("okRead('" + UNITS[0].id + "')"), "the last tale does not lead on to the units");
+  ev("okRead('" + ids[0] + "')");
+  ok(lastPaint.includes("okRead('" + ids[1] + "')") && !/‹ /.test(lastPaint), "the first tale has a previous, or no next");
+  ev("back()");
+  ok(ev("V.view") === "okuma", "back() from a tale did not return to the shelf");
 });
 
 step("reported · Tekrar in Bugün is twenty words a day, and new words share five", () => {
