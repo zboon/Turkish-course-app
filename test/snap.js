@@ -327,6 +327,7 @@ ev("wipe()");
 ev("okumaOpen(); okSet('all')"); grab("okuma");
 ev("okSet('folk')"); grab("okuma:folk");
 ev("okRead('a2u1')"); grab("okuma:read");
+ev("okSet('all'); okRead('nh01')"); grab("okuma:tale");
 ev("okSet('all'); wipe()");
 
 /* Dinleme günlüğü: empty, the form, and a log with sources. */

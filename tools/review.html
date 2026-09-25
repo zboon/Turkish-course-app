@@ -1,0 +1,223 @@
+<title>Kurs Türkçesi Kontrolü</title>
+<meta name="description" content="A native speaker's check of the Turkish in a course for learners.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Karla:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#EFEADC; --card:#F8F5EC; --sunk:#E6E0CF; --ink:#1D2230; --ink2:#454C5A; --faint:#606977;
+  --line:#D6CFBD; --cobalt:#173A6B; --turk:#1C716E; --bole:#9E3327; --gold:#AF7F32; --gold-ink:#7A561C;
+  --on-accent:#FFFFFF; --fix-bg:#F4E1DD; --uns-bg:#F2E8D3; --ok-bg:#E1EEEC;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#15181F; --card:#1E222B; --sunk:#191C24; --ink:#ECE7DA; --ink2:#C3BDAF; --faint:#9C978B;
+    --line:#343944; --cobalt:#9DB8E6; --turk:#7CCFC9; --bole:#EE9A8C; --gold:#D2A55B; --gold-ink:#E3BE7B;
+    --on-accent:#15181F; --fix-bg:#3A2320; --uns-bg:#352C1B; --ok-bg:#1D3432;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#15181F; --card:#1E222B; --sunk:#191C24; --ink:#ECE7DA; --ink2:#C3BDAF; --faint:#9C978B;
+  --line:#343944; --cobalt:#9DB8E6; --turk:#7CCFC9; --bole:#EE9A8C; --gold:#D2A55B; --gold-ink:#E3BE7B;
+  --on-accent:#15181F; --fix-bg:#3A2320; --uns-bg:#352C1B; --ok-bg:#1D3432;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 Karla,system-ui,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:0 96px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+.bar .in{max-width:760px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+.bar .t{font:600 14px Karla,sans-serif;color:var(--ink2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.meter{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--turk);transition:width .2s}
+h1{font:600 2.1rem/1.15 "Crimson Pro",Georgia,serif;margin:28px 0 4px;color:var(--cobalt);text-wrap:balance}
+.lede{color:var(--faint);margin:0 0 20px}
+.intro p{margin:0 0 4px;max-width:68ch}
+.en{color:var(--faint);font-size:.9rem}
+.intro .en{margin:0 0 14px}
+h2{font:600 1.55rem/1.2 "Crimson Pro",Georgia,serif;margin:32px 0 6px;color:var(--cobalt);display:flex;align-items:center;gap:12px;text-wrap:balance}
+h2::after{content:"";flex:1;height:1px;background:var(--gold);opacity:.7;min-width:24px}
+.toc{display:grid;gap:6px;margin:8px 0 0}
+.toc button{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;text-align:left;width:100%;
+  font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer;min-height:48px}
+.toc button[aria-current="true"]{border-color:var(--cobalt);box-shadow:inset 0 0 0 1px var(--cobalt)}
+.toc .nm{font-weight:600}
+.toc .nm small{display:block;font-weight:400;color:var(--faint);font-size:.85rem}
+.toc .st{font-size:.8rem;color:var(--faint);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip{display:inline-block;font-size:.75rem;font-weight:600;border-radius:999px;padding:1px 8px;border:1px solid currentColor;margin-left:6px}
+.chip.done{color:var(--turk)} .chip.fl{color:var(--bole)}
+.sec-p{max-width:68ch;margin:0 0 4px}
+.sec-p + .en{max-width:68ch;margin:0 0 10px}
+h3{font:600 1.15rem/1.3 "Crimson Pro",Georgia,serif;color:var(--ink2);margin:26px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+.gn{font-size:.9rem;color:var(--ink2);background:var(--sunk);border:1px dashed var(--line);border-radius:8px;padding:8px 12px;margin:6px 0 4px}
+.it{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:10px 12px;margin:6px 0;border-radius:10px;border:1px solid transparent;border-left:4px solid transparent}
+.it:hover{background:var(--card)}
+.it.v-fix{background:var(--fix-bg);border-left-color:var(--bole)}
+.it.v-unsure{background:var(--uns-bg);border-left-color:var(--gold)}
+.tr{font:1.22rem/1.35 "Crimson Pro",Georgia,serif;color:var(--ink);overflow-wrap:anywhere}
+.it .en{margin-top:1px}
+.q{font-size:.98rem;color:var(--ink)}
+.prose{font-size:.98rem;color:var(--ink);max-width:66ch}
+.prose i,.q i{font-family:"Crimson Pro",Georgia,serif;font-size:1.1em}
+dl{margin:6px 0 0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.88rem}
+dt{color:var(--faint);text-transform:uppercase;letter-spacing:.05em;font-size:.7rem;padding-top:.2rem}
+dd{margin:0;color:var(--ink2);overflow-wrap:anywhere}
+dd.trx{font-family:"Crimson Pro",Georgia,serif;font-size:1.02rem;color:var(--ink)}
+.acts{display:flex;gap:6px;align-items:flex-start}
+.acts button{font:600 .85rem Karla,sans-serif;border:1px solid var(--line);background:var(--card);color:var(--ink2);border-radius:8px;padding:6px 10px;cursor:pointer;min-height:36px;white-space:nowrap}
+.acts button[aria-pressed="true"].fix{background:var(--bole);border-color:var(--bole);color:var(--on-accent)}
+.acts button[aria-pressed="true"].unsure{background:var(--gold-ink);border-color:var(--gold-ink);color:var(--on-accent)}
+.it textarea{grid-column:1/-1}
+textarea{width:100%;font:16px/1.4 Karla,sans-serif;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:44px;resize:vertical}
+textarea:focus,button:focus-visible{outline:2px solid var(--cobalt);outline-offset:1px}
+.foot{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:28px}
+.foot p{margin:0 0 6px}
+.go{font:600 1rem Karla,sans-serif;background:var(--cobalt);color:var(--on-accent);border:0;border-radius:8px;padding:12px 16px;cursor:pointer;margin:10px 8px 0 0;min-height:46px}
+.go.alt{background:transparent;color:var(--cobalt);border:1px solid var(--cobalt)}
+.go[aria-pressed="true"]{background:var(--turk)}
+#out{min-height:180px;font-size:.85rem;margin-top:10px}
+#msg{color:var(--turk);font-weight:600;margin-top:8px;min-height:1.2em}
+@media (max-width:560px){
+  .it{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+</style>
+
+<div class="bar"><div class="in"><span class="t" id="count">0 / 0 bölüm</span><div class="meter"><i id="fill"></i></div><span class="t" id="flags"></span></div></div>
+<div class="wrap">
+<h1>Kurs Türkçesi Kontrolü</h1>
+<p class="lede">Türkçe öğrenenler için bir uygulamanın metinleri · a native speaker's check, part two</p>
+
+<div class="intro">
+<p>Merhaba, ve bu kontrol için şimdiden teşekkürler. Bu sayfada, Türkçe öğrenenler için yazılmış bir uygulamanın henüz ana dili Türkçe olan birinin okumadığı metinleri var: yeni Nasreddin Hoca fıkraları, ilk dersler, uygulamanın öğrenciye verdiği talimatlar ve metinlerdeki kelime açıklamaları. Hepsini bir yapay zekâ yazdı. Uygulamayı açmana gerek yok, her şey burada.</p>
+<p class="en">Thank you for doing this. This page holds the Turkish in a learners' app that no native speaker has read yet: new Nasreddin Hoca tales, the first lessons, the app's instructions and the notes on words in the reading passages. An AI wrote all of it. You do not need the app.</p>
+<p>Her maddeye tek tek cevap vermen gerekmiyor. Yalnızca yanlış ya da tuhaf olanları işaretle: <b>Düzelt</b>’e bas ve doğrusunu yaz, ya da emin değilsen <b>?</b>’e bas ve kısa bir not yaz. Bir bölümü bitirince en alttaki <b>Bu bölüm bitti</b> düğmesine bas; bu, işaretlemediğin her şeyin doğru olduğu anlamına gelir.</p>
+<p class="en">You only need to mark what is wrong or odd: Düzelt and write the fix, or ? and a short note if you are not sure. When you finish a section, press “Bu bölüm bitti” at its end; that says everything you did not mark is fine.</p>
+<p>Bölümler önem sırasına göre dizildi. Hepsini yapmak gerekmez; ilk ikisi bile çok işe yarar. Cevapların bu cihazda saklanır, ara verip sonra devam edebilirsin. İstediğin zaman en alttaki <b>Cevapları kopyala</b> ile metni al ve mesajla gönder.</p>
+<p class="en">The sections are in order of importance, and even the first two help a great deal. Your answers stay on this device, so you can stop and come back. Whenever you like, “Cevapları kopyala” at the bottom gives you the text to send back.</p>
+</div>
+
+<h2>Bölümler</h2>
+<div class="toc" id="toc"></div>
+<div id="sec"></div>
+
+<div class="foot">
+<h2 style="margin-top:0">Cevapları gönder</h2>
+<p>Bu düğme, bitirdiğin bölümleri ve işaretlediğin her maddeyi düz metin olarak hazırlar. Kopyala ve mesajla gönder. Kopyalama çalışmazsa kutudaki metni elle seçip kopyala.</p>
+<p class="en">This turns the sections you finished and everything you marked into plain text to send back. If copying fails, select the text in the box by hand.</p>
+<button class="go" id="copy" type="button">Cevapları kopyala · copy answers</button>
+<div id="msg" role="status"></div>
+<textarea id="out" readonly hidden aria-label="Cevaplar"></textarea>
+</div>
+</div>
+
+<script>
+const DATA=/*DATA*/null;
+const KEY="tr-review-v2";
+let A={it:{},done:{},note:{},at:null};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&s.it)A=Object.assign(A,s);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(A));}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+/* The lessons' prose carries <b> and <i> and nothing else. */
+function rich(s){return esc(s).replace(/&lt;(\/?)(b|i)&gt;/g,"<$1$2>");}
+const BY={}; DATA.forEach(s=>s.it.forEach(i=>{BY[i.id]=i;i.sec=s.k;}));
+function flagsIn(k){return Object.keys(A.it).filter(id=>A.it[id].v&&BY[id]&&BY[id].sec===k).length;}
+function toc(){
+  document.getElementById("toc").innerHTML=DATA.map((s,n)=>{
+    const f=flagsIn(s.k);
+    return '<button type="button" data-sec="'+s.k+'" aria-current="'+(s.k===A.at)+'"><span class="nm">'+(n+1)+'. '+esc(s.tr)+'<small>'+esc(s.en)+'</small></span>'+
+      '<span class="st">'+s.it.length.toLocaleString("tr-TR")+' madde · ~'+s.min+' dk'+
+      (A.done[s.k]?'<span class="chip done">bitti</span>':'')+(f?'<span class="chip fl">'+f+' işaret</span>':'')+'</span></button>';
+  }).join("");
+}
+function itemHtml(i){
+  const a=A.it[i.id]||{}, v=a.v||"";
+  let b='';
+  if(i.prose)b+='<div class="prose">'+rich(i.prose)+'</div>';
+  if(i.q)b+='<div class="q">'+rich(i.q)+'</div>';
+  if(i.tr)b+='<div class="tr">'+esc(i.tr)+'</div>';
+  if(i.en)b+='<div class="en">'+esc(i.en)+'</div>';
+  if(i.x&&i.x.length)b+='<dl>'+i.x.map(x=>'<dt>'+esc(x[0])+'</dt><dd'+(/^(metinde|örnek cevap|duyulan|şıklar|kelimeler|cevap)$/.test(x[0])?' class="trx"':'')+'>'+esc(x[1])+'</dd>').join("")+'</dl>';
+  return '<div class="it'+(v?' v-'+v:'')+'" id="i-'+esc(i.id)+'"><div>'+b+'</div>'+
+    '<div class="acts"><button type="button" class="fix" data-id="'+esc(i.id)+'" data-v="fix" aria-pressed="'+(v==="fix")+'">Düzelt</button>'+
+    '<button type="button" class="unsure" data-id="'+esc(i.id)+'" data-v="unsure" aria-pressed="'+(v==="unsure")+'" aria-label="Emin değilim">?</button></div>'+
+    '<textarea data-id="'+esc(i.id)+'" id="t-'+esc(i.id)+'" '+(v?'':'hidden ')+'placeholder="'+(v==="unsure"?"Kısa bir not · a short note":"Doğrusu nasıl? · how should it be?")+'">'+esc(a.t||"")+'</textarea></div>';
+}
+function section(){
+  const s=DATA.find(x=>x.k===A.at)||DATA[0]; A.at=s.k;
+  let h='<h2 id="s-'+s.k+'">'+esc(s.tr)+'</h2><p class="sec-p">'+esc(s.p)+'</p><p class="en">'+esc(s.e)+'</p>';
+  let g=null;
+  s.it.forEach(i=>{
+    if(i.g&&i.g!==g){g=i.g;h+='<h3>'+esc(g)+'</h3>'+(i.gn?'<div class="gn">'+esc(i.gn)+'</div>':'');}
+    h+=itemHtml(i);
+  });
+  const n=DATA.indexOf(s), next=DATA[n+1];
+  h+='<div class="foot"><p><b>Bu bölüm hakkında genel bir not</b> <span class="en">· anything about the section as a whole</span></p>'+
+    '<textarea data-note="'+s.k+'" id="n-'+s.k+'" placeholder="İstersen · optional">'+esc(A.note[s.k]||"")+'</textarea>'+
+    '<button type="button" class="go" data-done="'+s.k+'" aria-pressed="'+!!A.done[s.k]+'">'+(A.done[s.k]?'Bitti ✓ · done':'Bu bölüm bitti · the rest is fine')+'</button>'+
+    (next?'<button type="button" class="go alt" data-sec="'+next.k+'">Sonraki bölüm · '+esc(next.tr)+'</button>':'')+'</div>';
+  document.getElementById("sec").innerHTML=h;
+}
+function count(){
+  const d=DATA.filter(s=>A.done[s.k]).length, f=Object.keys(A.it).filter(id=>A.it[id].v).length;
+  document.getElementById("count").textContent=d+" / "+DATA.length+" bölüm";
+  document.getElementById("fill").style.width=(100*d/DATA.length)+"%";
+  document.getElementById("flags").textContent=f?f+" işaret":"";
+}
+function draw(){toc();section();count();}
+function go(k){A.at=k;save();draw();const el=document.getElementById("s-"+k);if(el)el.scrollIntoView({block:"start"});}
+document.addEventListener("click",function(e){
+  const s=e.target.closest("button[data-sec]"); if(s){go(s.dataset.sec);return;}
+  const d=e.target.closest("button[data-done]");
+  if(d){const k=d.dataset.done;A.done[k]=!A.done[k];save();toc();count();
+    d.setAttribute("aria-pressed",String(!!A.done[k]));d.textContent=A.done[k]?"Bitti ✓ · done":"Bu bölüm bitti · the rest is fine";return;}
+  const b=e.target.closest("button[data-v]"); if(!b)return;
+  const id=b.dataset.id, v=b.dataset.v, a=A.it[id]||(A.it[id]={});
+  a.v=a.v===v?"":v;                       /* a second tap takes the mark back */
+  if(!a.v&&!(a.t&&a.t.trim()))delete A.it[id];
+  save();
+  const box=document.getElementById("i-"+id);
+  box.className="it"+(a.v?" v-"+a.v:"");
+  box.querySelectorAll("button[data-v]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===a.v)));
+  const ta=box.querySelector("textarea");
+  ta.hidden=!a.v; ta.placeholder=a.v==="unsure"?"Kısa bir not · a short note":"Doğrusu nasıl? · how should it be?";
+  if(a.v)ta.focus();
+  toc();count();
+});
+let tmr=null;
+document.addEventListener("input",function(e){
+  const t=e.target;
+  if(t.dataset.note){A.note[t.dataset.note]=t.value;}
+  else if(t.dataset.id){(A.it[t.dataset.id]||(A.it[t.dataset.id]={v:"fix"})).t=t.value;}
+  else return;
+  clearTimeout(tmr); tmr=setTimeout(save,400);
+});
+function line(i){return i.tr||i.q||i.prose.replace(/<[^>]+>/g,"");}
+function report(){
+  const L=["Kurs Türkçesi Kontrolü — cevaplar",""];
+  const done=DATA.filter(s=>A.done[s.k]), open=DATA.filter(s=>!A.done[s.k]);
+  L.push("Biten bölümler ("+done.length+"/"+DATA.length+"): "+(done.map(s=>s.k).join(", ")||"—"));
+  if(open.length)L.push("Bitmeyen: "+open.map(s=>s.k).join(", "));
+  DATA.forEach(s=>{
+    const its=s.it.filter(i=>A.it[i.id]&&A.it[i.id].v), note=(A.note[s.k]||"").trim();
+    if(!its.length&&!note)return;
+    L.push("","== "+s.tr+" ("+s.k+") ==");
+    if(note)L.push("Not: "+note);
+    its.forEach(i=>{
+      const a=A.it[i.id];
+      L.push("["+i.id+"] "+(a.v==="fix"?"✗":"?")+" "+line(i)+(i.w?"  ("+i.w+")":""));
+      if(a.t&&a.t.trim())L.push("   → "+a.t.trim().replace(/\n+/g," / "));
+    });
+  });
+  return L.join("\n");
+}
+document.getElementById("copy").addEventListener("click",function(){
+  const t=report(), out=document.getElementById("out"), msg=document.getElementById("msg");
+  out.value=t; out.hidden=false;
+  const fail=function(){out.focus();out.select();msg.textContent="Kopyalanamadı; kutudaki metni seçip kopyala · copy it from the box";};
+  try{navigator.clipboard.writeText(t).then(function(){msg.textContent="Kopyalandı. Şimdi mesaja yapıştırabilirsin · copied";},fail);}catch(e){fail();}
+});
+if(!A.at){const f=DATA.find(s=>!A.done[s.k]);A.at=(f||DATA[0]).k;}
+draw();
+</script>

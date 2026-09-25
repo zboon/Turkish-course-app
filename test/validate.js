@@ -79,7 +79,7 @@ try {
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf," +
-    "ADA:ADA,OKW:OKW,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
+    "ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -1347,42 +1347,85 @@ let contrastPairs = 0;
    pieces must join back to the word, or the tooltip teaches a split that
    is not the word on the page. Levels whose passages have been done are
    listed, and every unit in them must have its words. */
-let okwChecks = 0;
+let okwChecks = 0, hkChecks = 0;
 {
   const OKW = M.OKW, DONE = ["A1", "A2", "B1", "B2", "C1", "C2"];
   const low = s => String(s).replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
   const WORD = /[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+(?:'[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+)?/g;
   const inv = /[­​‌‍⁠﻿]/;
+  /* One passage's words: every key a whole word of its lines, pieces
+     that join back to it. Units keep theirs in OKW, tales carry w. */
+  const words = (at0, lines, w) => {
+    const toks = new Set();
+    lines.forEach(l => (l[0].match(WORD) || []).forEach(t => toks.add(low(t))));
+    const n = Object.keys(w).length;
+    if (n < 4 || n > 40) err(at0, n + " words to tap, wanted 4 to 40");
+    Object.keys(w).forEach(k => {
+      const at = at0 + " " + k, e = w[k];
+      okwChecks++;
+      if (low(k) !== k) err(at, "the key must be written in lower case");
+      if (!toks.has(k)) err(at, "is not a whole word of the passage, so it can never be tapped");
+      if (!Array.isArray(e) || e.length !== 4 || e.some(x => typeof x !== "string")) { err(at, "must be [form, meaning, pieces, sense]"); return; }
+      if (!str(e[0]) || !str(e[1])) err(at, "needs its dictionary form and meaning");
+      if (e[2]) {
+        const parts = e[2].split("-");
+        if (parts.some(p => !p)) err(at, "has an empty piece in " + e[2]);
+        if (low(parts.join("")) !== k) err(at, "pieces " + e[2] + " do not join back to the word");
+        if (parts.length < 2) err(at, "has one piece; leave the pieces empty instead");
+      }
+      e.forEach(x => {
+        if (inv.test(x)) err(at, "contains an invisible character");
+        if (/!/.test(x)) err(at, "has an exclamation mark");
+      });
+    });
+  };
   if (!OKW || typeof OKW !== "object") err("okuma", "OKW is missing");
   else {
     Object.keys(OKW).forEach(id => { if (!UNITS.some(u => u.id === id)) err("okuma", id + " is not a unit"); });
     UNITS.forEach(u => {
       const w = OKW[u.id];
       if (!w) { if (DONE.indexOf(u.lv) > -1) err("okuma " + u.id, "has no words to tap, and its level is marked done"); return; }
-      const toks = new Set();
-      u.read.lines.forEach(l => (l[0].match(WORD) || []).forEach(t => toks.add(low(t))));
-      const n = Object.keys(w).length;
-      if (n < 4 || n > 40) err("okuma " + u.id, n + " words to tap, wanted 4 to 40");
-      Object.keys(w).forEach(k => {
-        const at = "okuma " + u.id + " " + k, e = w[k];
-        okwChecks++;
-        if (low(k) !== k) err(at, "the key must be written in lower case");
-        if (!toks.has(k)) err(at, "is not a whole word of the passage, so it can never be tapped");
-        if (!Array.isArray(e) || e.length !== 4 || e.some(x => typeof x !== "string")) { err(at, "must be [form, meaning, pieces, sense]"); return; }
-        if (!str(e[0]) || !str(e[1])) err(at, "needs its dictionary form and meaning");
-        if (e[2]) {
-          const parts = e[2].split("-");
-          if (parts.some(p => !p)) err(at, "has an empty piece in " + e[2]);
-          if (low(parts.join("")) !== k) err(at, "pieces " + e[2] + " do not join back to the word");
-          if (parts.length < 2) err(at, "has one piece; leave the pieces empty instead");
-        }
-        e.forEach(x => {
-          if (inv.test(x)) err(at, "contains an invisible character");
-          if (/!/.test(x)) err(at, "has an exclamation mark");
-        });
-      });
+      words("okuma " + u.id, u.read.lines, w);
     });
   }
+
+/* ---------- nasreddin hoca · the tales on the shelf ---------- */
+/* A tale's id names it on the shelf and in the review answers, so the
+   twelve are pinned by name and in order. Each leans on one unit's
+   grammar (the shelf marks it ahead until that is read), so u must be a
+   real unit at the tale's own level; and each is anonymous folklore, so
+   its kind must say so, in the words the shelf's folk filter reads. */
+{
+  const HK = M.HIKAYE, PIN = ["nh01", "nh02", "nh03", "nh04", "nh05", "nh06", "nh07", "nh08", "nh09", "nh10", "nh11", "nh12"];
+  if (!Array.isArray(HK) || !HK.length) err("hikaye", "HIKAYE is empty");
+  else {
+    PIN.forEach((id, i) => { hkChecks++; if (!HK[i] || HK[i].id !== id) err("hikaye", id + " is missing or out of place at " + i); });
+    const titles = new Set(UNITS.map(u => u.read.t));
+    HK.forEach((x, i) => {
+      const at = "hikaye " + x.id;
+      hkChecks++;
+      if (x.n !== i + 1) err(at, "n should be " + (i + 1));
+      if (x.lv !== "A1" && x.lv !== "A2") err(at, "a tale is A1 or A2, not " + x.lv);
+      const g = UNITS.find(u => u.id === x.u);
+      if (!g) err(at, "leans on " + x.u + ", which is not a unit");
+      else if (g.lv !== x.lv) err(at, "leans on " + x.u + ", a unit of another level");
+      if (i && HK[i - 1].lv === "A2" && x.lv === "A1") err(at, "an A1 tale after an A2 one");
+      const r = x.read || {};
+      if (!str(r.t) || !str(r.src)) err(at, "needs a title and a src line");
+      if (titles.has(r.t)) err(at, "has the same title as a unit's passage: " + r.t);
+      if (!/^Halk anlatısı · Nasreddin Hoca \(anonim\), yeniden anlatım$/.test(r.kind || "")) err(at, "kind must say it is a retold folk tale");
+      if (!pairs(r.lines) || r.lines.length < 6 || r.lines.length > 10) err(at, "needs 6 to 10 lines, each [Turkish, English]");
+      else r.lines.forEach((l, k) => {
+        if (inv.test(l[0] + l[1])) err(at + " line " + k, "contains an invisible character");
+        if (/!/.test(l[1])) err(at + " line " + k, "the English has an exclamation mark");
+        if (TAGS.test(l[0] + l[1])) err(at + " line " + k, "has markup, which esc() prints as text");
+      });
+      if (r.note && /!/.test(r.note)) err(at, "the note has an exclamation mark");
+      if (!x.w) err(at, "has no words to tap");
+      else if (pairs(r.lines)) words(at, r.lines, x.w);
+    });
+  }
+}
 }
 
 /* ---------- adacıklar ---------- */
@@ -1689,6 +1732,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

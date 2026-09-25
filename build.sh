@@ -27,6 +27,7 @@ cat \
   src/data/resim.js \
   src/data/ada.js \
   src/data/okuma.js \
+  src/data/hikaye.js \
   src/shared/text.js \
   src/shared/voice.js \
   src/shared/srs.js \

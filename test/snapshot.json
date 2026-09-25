@@ -263,7 +263,7 @@
  "unit:c2u10:g": "3be857f14f05137e",
  "unit:c2u10:r": "c81ec9cc53b66871",
  "unit:c2u10:d": "fa6ec82e77c30a83",
- "about": "a4eb0ce1574b0131",
+ "about": "795c4a576e8e66de",
  "words:empty": "0fba95a13a857b5f",
  "dict": "b1bba4d0882bcaa7",
  "dict:n": "39121fd9bd97b4e0",
@@ -362,7 +362,7 @@
  "dersler:underway": "37cfedb4b083c7c6",
  "araclar:underway": "9a44c8e0f1740f15",
  "ilerleme:underway": "80a6c200dfa208cf",
- "about:tips-hidden": "d6749f07d29fce80",
+ "about:tips-hidden": "8ecbce503aaf73f4",
  "words:full": "d8e8870f77cc7ac7",
  "cards": "363c40f96dd050cd",
  "cards:flip": "1fd36b0394a59d10",
@@ -404,9 +404,10 @@
  "ada:fix": "2ba8fdd619c497df",
  "ada": "1bc48682593ca27d",
  "ada:isl:checked": "fcb738ec614f7896",
- "okuma": "6461085ba9419d91",
- "okuma:folk": "0d24f4bab1a5dd55",
- "okuma:read": "f23b8dfd4dbacf30",
+ "okuma": "7d830dd4f79707c7",
+ "okuma:folk": "a2c4954498834370",
+ "okuma:read": "2dfa2fc67f2b5248",
+ "okuma:tale": "4d8773461351a4bd",
  "gunluk:empty": "3e7449d3309c388e",
  "gunluk:form": "4eec276b41b88d79",
  "gunluk": "15154e283c9ecdea",
@@ -419,5 +420,5 @@
  "locked:basla:cumle": "aaa4acb2b609ed8e",
  "__pure": "33107c57e0820888",
  "__pureForms": 6659,
- "__screens": 418
+ "__screens": 419
 }
