@@ -4113,9 +4113,12 @@ step("okuma · the words worth a tap, and the gloss that stopped matching inside
   ok(bh && bh.innerHTML.includes('class="bpc">kürk-ü-nü') && bh.innerHTML.includes("his fur coat (as object)") && bh.innerHTML.includes("&lt;i&gt;"),
      "the bubble does not show the pieces and the sense, or does not escape them");
   ev("hideBubble()");
-  /* A level not yet done has no word layer; the shelf has the same one. */
-  ev("go('unit','c2u1','r')");
-  ok(!lastPaint.includes("Metindeki kelimeler"), "a passage with no words listed shows an empty list");
+  /* Every passage has words now, so one is taken away to check that a
+     passage without them draws no empty list; the shelf has the same layer. */
+  ev("var __okw=OKW.c2u1; delete OKW.c2u1; go('unit','c2u1','r')");
+  ok(!lastPaint.includes("Metindeki kelimeler") && !/<span class="gw"[^>]*data-p=/.test(lastPaint), "a passage with no words listed shows an empty list");
+  ev("OKW.c2u1=__okw; go('unit','c2u1','r')");
+  ok(lastPaint.includes("Metindeki kelimeler") && /<span class="gw"[^>]*data-p="ıstırab-ı"/.test(lastPaint), "a C2 passage does not show its tappable words");
   ev("okRead('a2u1')");
   ok(/<span class="gw"[^>]*data-p="kürk-ü-nü"/.test(lastPaint), "the shelf does not show the passage's tappable words");
 });

@@ -1349,7 +1349,7 @@ let contrastPairs = 0;
    listed, and every unit in them must have its words. */
 let okwChecks = 0;
 {
-  const OKW = M.OKW, DONE = ["A1", "A2", "B1", "B2"];
+  const OKW = M.OKW, DONE = ["A1", "A2", "B1", "B2", "C1", "C2"];
   const low = s => String(s).replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
   const WORD = /[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+(?:'[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+)?/g;
   const inv = /[­​‌‍⁠﻿]/;
