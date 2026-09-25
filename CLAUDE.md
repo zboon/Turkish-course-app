@@ -1184,11 +1184,22 @@ code and five of the data, each turned a test red.
 ## Kurs Türkçesi Kontrolü (the review page)
 
 Built, by request: the second native speaker's review, after the spoken
-material's in v3.61. `node tools/review.js` builds it from `src/` into
-`dist/review.html`, which is published as its own artifact,
-**https://claude.ai/artifact/A2tFmg7VMcCNF1kipjvh19**, and is not part
-of the app or of Pages. Republish to that URL, never a new one: the
-reviewer's answers are saved in their browser against it. The first
+material's in v3.61. `node tools/review.js` builds it from `src/`, and
+it lives in two places:
+
+- **Pages, at `/kontrol/`** (by request, so a friend without a Claude
+  account can open it). `build.sh` runs the generator, which writes a
+  whole document to `dist/kontrol/index.html`, so it deploys with the
+  app and a data change that breaks it fails the build.
+- **An artifact, https://claude.ai/artifact/A2tFmg7VMcCNF1kipjvh19.**
+  The platform wraps the page itself, so it wants the page without
+  `<html>`, `<head>` and `<body>`: `node tools/review.js --artifact
+  <file>` writes that copy, and it is published with `url` set.
+
+They are different origins, so answers saved in one are not seen by the
+other: give a reviewer one link, not both. Republish either one only to
+its own address, never a new one, since the answers are saved in the
+reviewer's browser against it. The first
 round, the spoken material, was a separate page (*Konuşma Dili
 Kontrolü*) and is finished. It gathers what no native speaker has
 read, in the order a learner meets it:
