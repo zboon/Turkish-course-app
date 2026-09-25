@@ -132,10 +132,17 @@ wrong answer key — c1u8's *Kar kapıda* headline was marked with the
 second option when the first is right — which is the argument for
 reading every item rather than bulk-editing them.
 
-Gloss keys are dictionary headwords. `glossify()` wraps the first literal match
-(and tries a capitalised sentence-initial form); unmatched keys still appear in
-the Sözlük list under the passage. That's intended — don't "fix" it by changing
-headwords to inflected forms.
+Gloss keys are dictionary headwords. `glossify()` wraps the first match on
+each line where a word *begins* with the key, so `kol` reaches `koluna`; a
+two-letter key must be the whole word, and the capitalised form counts only
+at the start of the line. Unmatched keys still appear in the Sözlük list
+under the passage. That's intended — don't "fix" it by changing headwords
+to inflected forms. (It used to match anywhere in the line, so `de` lit up
+inside *ederim*, `ada` inside *kadar* and `il` inside *Yetkililer*, and the
+capitalised form it claimed to try was never tried. Both fixed in v3.74.)
+
+A second, richer layer sits on top: `OKW` in `src/data/okuma.js`, the
+words in a passage worth a tap. See Okuma.
 
 **a1u1's Dilbilgisi tab used to open with two named rules back to back** —
 two-way harmony, then four-way harmony, both stated abstractly before a
@@ -1085,10 +1092,35 @@ unit's tab is ticked on the shelf; an open unit's passage links to it.
 On day one every passage is *ileride*, since unit one waits on the
 lessons before it.
 
-Every word tappable (hand-written glosses for all ~3,500 running words,
-since the app's dictionaries find only 35–50% exactly and a guessing
-stemmer is wrong often enough to teach something false) is step two, not
-built. So is more to read: sixty passages is thin, and nothing at A1 is
+**Step two: the words worth a tap** (v3.74, A1–A2 so far). Not every
+word: the learner asked for the harder, less common ones and the ones
+built up from a known root, and a tap on *ve* or *bir* is noise. So
+`OKW[unitId]` lists, by hand, the words not yet taught and not among the
+commonest, and the ones with endings stacked on a known root: 233 words
+across the twenty A1–A2 passages, about ten to fifteen a passage. Each
+is keyed by the word exactly as written, lower case, matched as a whole
+word every time it occurs, and is `[dictionary form, meaning, pieces,
+sense]`: *kürkünü* is kürk · fur coat · `kürk-ü-nü` · his fur coat (as
+object). The tooltip shows all four; the list under the passage,
+*Metindeki kelimeler*, shows them in text order. It wins over a unit's
+headword gloss on the same word. Guessing was measured and rejected:
+the app's dictionaries find only 35–50% of passage words exactly, and a
+stemmer that strips endings to guess the root reaches about 80% but is
+wrong often enough (*ev* in *evet*) to teach something false.
+`validate.js` requires every key to be a whole word of its passage,
+pieces that join back to it, no one-piece split, 4 to 40 words, and
+every unit of a level marked done to have its words; `DONE` lists the
+levels, A1 and A2, and grows as B1–B2 and C1–C2 are written (about 20
+and 30 a passage). The words are the author's, on the native-speaker
+list with the rest. `sim.js` checks the layer on the page (form, pieces
+and sense on the span; every occurrence; the headword never splitting a
+covered word; the list; the shelf) and each matching rule by direct
+call, since the passages do not reach them all: the two-letter rule, a
+capitalised headword only at the start of a line, a headword at a word's
+start and never inside it, and the escaped bubble. Seventeen deliberate
+breakages each turned a check red.
+
+More to read is still to come: sixty passages is thin, and nothing at A1 is
 a story; an A1–A2 Nasreddin series is the natural addition, once a
 native speaker can check it.
 

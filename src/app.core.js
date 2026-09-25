@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.73";
+const APP_VERSION="v3.74";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -434,7 +434,7 @@ const EN_UI={
  "Kurma ve Dönüştürme":"build and change",
  /* section headings */
  "Bugün":"today","Çalış":"study","Ayarlar":"settings","Konular":"topics","Seviyeler":"levels","Başlarken":"getting started",
- "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","İleri test":"test ahead","Üç kez anlat":"say it three times",
+ "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","Metindeki kelimeler":"words in the text","İleri test":"test ahead","Üç kez anlat":"say it three times",
  "Karşılaşma sayısı":"times met","Nerede zayıfsın":"where you are weak","Son hatalar":"recent mistakes","Ekle":"add",
  "Listem":"my list","Düzenle":"edit","Soru kelimeleri":"question words","Şekiller":"shapes","Durumlar":"situations",
  "Tamir çantası":"repair kit","Anlamadıysan":"if you did not catch it","Ne konuşuldu":"what was said",

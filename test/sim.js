@@ -4064,6 +4064,51 @@ step("okuma · every passage on one shelf, read for fun, writing nothing", () =>
   ev(LIFT);
 });
 
+step("okuma · the words worth a tap, and the gloss that stopped matching inside words", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  /* A built-up word carries its form, pieces and sense, once, whatever
+     headword it also starts with. */
+  ev("go('unit','a1u5','r')");
+  const k5 = lastPaint.match(/<span class="gw"[^>]*>Kahvaltıda<\/span>/);
+  ok(k5 && /data-p="kahvaltı-da"/.test(k5[0]) && /data-g="kahvaltı · breakfast"/.test(k5[0]) && /data-s="at breakfast"/.test(k5[0]),
+     "a tapped word does not carry its form, pieces and sense");
+  ok(!/<span class="gw"[^>]*>Kahvaltı<\/span>da/.test(lastPaint), "the headword gloss split a word the word layer already covers");
+  ok(lastPaint.includes("Metindeki kelimeler") && lastPaint.includes(esc("kahvaltı·da")), "the passage's words are not listed under it");
+  /* Every occurrence, not only the first. */
+  ev("go('unit','a2u4','r')");
+  ok((lastPaint.match(/<span class="gw"[^>]*>kazanı<\/span>/g) || []).length === 2, "a word used twice is tappable only once");
+  /* The gloss that matched inside words: de in ederim, and De in Deniz. */
+  ev("go('unit','a1u1','r')");
+  ok(!/>de<\/span>rim/.test(lastPaint), "the gloss for de still lights up inside ederim");
+  ok(!/>De<\/span>niz/.test(lastPaint), "the gloss for de lights up the start of Deniz");
+  ok((lastPaint.match(/<span class="gw"[^>]*>de<\/span>/g) || []).length === 2, "de is not glossed where it is the word");
+  ev("go('unit','b1u5','r')");
+  ok(!/>ada<\/span>r/.test(lastPaint) && /<span class="gw"[^>]*>ada<\/span>ya/.test(lastPaint), "ada matched inside kadar, or no longer reaches adaya");
+  ev("go('unit','a2u5','r')");
+  ok(/<span class="gw"[^>]*>Bence<\/span>/.test(lastPaint), "a capitalised headword at the start of a line is not glossed");
+  /* The rules by construction, since the passages do not reach them all. */
+  const G = (t, g, w) => ev("glossify(" + q(t) + "," + JSON.stringify(g) + (w ? "," + JSON.stringify(w) : "") + ")");
+  ok(G("Bu değil, bu da değil de o.", { de: "too" }) === "Bu değil, bu da değil <span class=\"gw\" data-g=\"too\" data-w=\"de\">de</span> o.",
+     "a two-letter gloss matched the start of a longer word, or missed the word itself");
+  ok(!G("Bizim Deniz geldi.", { deniz: "sea" }).includes("gw"), "a capitalised headword matched a name in the middle of a line");
+  ok(G("— Deniz güzel.", { deniz: "sea" }).includes(">Deniz</span>"), "a capitalised headword at the start of a line is not glossed");
+  ok(!G("Ne kadar güzel.", { ada: "island" }).includes("gw") && G("Bir adaya çıktı.", { ada: "island" }).includes(">ada</span>ya"),
+     "a headword matched inside a word, or stopped reaching its inflected form");
+  const g2 = G("Kazanı aldı, kazanı verdi.", { kazan: "cauldron" }, { "kazanı": ["kazan", "cauldron", "kazan-ı", "the cauldron"] });
+  ok((g2.match(/data-p="kazan-ı"/g) || []).length === 2 && !g2.includes('data-g="cauldron" data-w'), "a word layer entry is not tapped every time, or the headword split it");
+  /* The bubble shows the pieces and the sense, escaped. */
+  ev("showBubble({},{getAttribute:function(k){return {'data-w':'kürkünü','data-g':'kürk · fur <i>coat</i>','data-p':'kürk-ü-nü','data-s':'his fur coat (as object)'}[k]||null},getBoundingClientRect:function(){return{top:10,left:10,width:30,height:20,bottom:30}}})");
+  const bh = bodyEl.querySelectorAll(".bubble")[0];
+  ok(bh && bh.innerHTML.includes('class="bpc">kürk-ü-nü') && bh.innerHTML.includes("his fur coat (as object)") && bh.innerHTML.includes("&lt;i&gt;"),
+     "the bubble does not show the pieces and the sense, or does not escape them");
+  ev("hideBubble()");
+  /* A level not yet done has no word layer; the shelf has the same one. */
+  ev("go('unit','c2u1','r')");
+  ok(!lastPaint.includes("Metindeki kelimeler"), "a passage with no words listed shows an empty list");
+  ev("okRead('a2u1')");
+  ok(/<span class="gw"[^>]*data-p="kürk-ü-nü"/.test(lastPaint), "the shelf does not show the passage's tappable words");
+});
+
 step("english layer", () => {
   const html = () => ev("document.documentElement.classList.contains('noen')");
   /* Day one: on, with no choice made. wipe() keeps S.en like any setting,
