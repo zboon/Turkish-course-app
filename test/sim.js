@@ -2748,7 +2748,7 @@ step("araçlar · every tool is still reachable", () => {
   ok(heads === 4, "Araçlar has " + heads + " groups, wanted 4 — a flat list is what this replaced");
   /* Reported: the page was sixteen rows of text under two paragraphs.
      Every tool is a tile now, and the page carries no prose. */
-  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 18, "Araçlar should have eighteen tool tiles");
+  ok((lastPaint.match(/class="tool( idle)?"/g) || []).length === 19, "Araçlar should have nineteen tool tiles");
   ok(!lastPaint.includes("card nav row"), "a text row is back on Araçlar");
   ok(!/Everything here is optional|tag means|class="foot"/.test(lastPaint), "the explanatory paragraphs are back on Araçlar");
   /* The two reference pages are links, not tools. */
@@ -2774,7 +2774,7 @@ step("araçlar · hazır is honest, and lives, and dies", () => {
      or the log of listening done elsewhere. These carry the tag from the
      very first paint. */
   ["go('prod')", "go('yolda')", "go('sor')", "go('diyalog')", "go('ata')",
-   "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')", "logOpen()"].forEach(fn => {
+   "go('sayilar')", "go('dict')", "mineOpen()", "go('sik')", "logOpen()", "okumaOpen()"].forEach(fn => {
     ok(tagged(fn), fn + " should be ready on a fresh install — it needs nothing met");
   });
   /* The fade and the words go together: a tile drawn faded says why, and
@@ -4014,6 +4014,54 @@ step("üretim · a miss moves on, comes back once, and building up is a choice",
     ok(ev("PR.phase") === "model" && ev("PR.q[PR.i].k") === k && !ev("S.prod[" + q(k) + "]"),
        "building up did not hand the sentence back to be marked, or marked it for the learner");
   }
+});
+
+step("okuma · every passage on one shelf, read for fun, writing nothing", () => {
+  ev("unitOpen=__unitOpen; confirm=function(){return true}; wipe(); home()");
+  ev("okumaOpen(); okSet('all')");
+  const rows = (lastPaint.match(/onclick="okRead\(/g) || []).length;
+  ok(rows === UNITS.length, "the shelf lists " + rows + " passages, not all " + UNITS.length);
+  ok(LEVELS.every(l => lastPaint.includes('class="sec">' + esc(l.id + " · " + l.tr) + '</h2>')), "a level heading is missing on the shelf");
+  /* Unit one waits on the lessons before it, so on day one all are ahead. */
+  const ahead = () => (lastPaint.match(/class="pill">ileride</g) || []).length;
+  ok(ahead() === UNITS.length, "on a fresh install every passage should read as ahead: " + ahead());
+  ev("BASLA.forEach(function(b){S.basla[b.id]={at:Date.now()}}); save(); render()");
+  ok(ahead() === UNITS.length - 1, "with the intro passed, unit one's passage still reads as ahead: " + ahead());
+  /* The folk thread. */
+  ev("okSet('folk')");
+  const folk = UNITS.filter(u => /Halk|Dede Korkut|Karagöz|Mesnev|halk hikâyesi/.test(u.read.kind));
+  const frows = (lastPaint.match(/onclick="okRead\(/g) || []).length;
+  ok(frows === folk.length && folk.length >= 8 && folk.every(u => lastPaint.includes("okRead('" + u.id + "')")), "the folk-tale filter does not list exactly the folk tales");
+  ok(folk.some(u => /Nasreddin/.test(u.read.kind)) && !lastPaint.includes(esc("A1 · Temel")), "the folk thread lost Nasreddin Hoca, or shows a level with none");
+  /* A locked passage reads, plays, and writes nothing. */
+  const before = JSON.stringify(ev("S"));
+  const lk = folk.find(u => u.lv === "B1");
+  ev("okRead(" + q(lk.id) + ")");
+  ok(ev("V.view") === "okumaoku" && lastPaint.includes(esc(lk.read.lines[0][0])) && lastPaint.includes(esc(lk.read.lines[0][1])),
+     "the passage or its English is not on the page");
+  ok(/ileride|Ahead of where you are/.test(lastPaint) && !lastPaint.includes("go('unit','" + lk.id + "','r')"), "a locked passage does not say it is ahead, or links into the locked unit");
+  ev("sayLine(1)");
+  ok(voice.spoken[voice.spoken.length - 1] === lk.read.lines[1][0], "a line's speaker did not say that line");
+  ev("playFrom(0,'listen')");
+  ok(voice.spoken[voice.spoken.length - 1] === lk.read.lines[0][0], "Dinle did not start on the passage's first line");
+  ev("stopPlay()");
+  ok(JSON.stringify(ev("S")) === before && !ev("unitOpen(" + q(lk.id) + ")"), "reading on the shelf wrote progress or opened the unit");
+  /* Next and back walk the filtered shelf. */
+  const i = folk.indexOf(lk), nx = folk[i + 1];
+  ok(nx && lastPaint.includes("okRead('" + nx.id + "')"), "the next button does not go to the next folk tale");
+  ev("okRead(" + q(nx.id) + ")");
+  ok(ev("V.u") === nx.id, "the next button went somewhere else");
+  ev("back()");
+  ok(ev("V.view") === "okuma", "back() from a passage did not return to the shelf");
+  ev("back()");
+  ok(ev("V.view") === "araclar", "back() from the shelf did not return to Araçlar");
+  /* A passage read on its unit's tab is ticked. */
+  ev("go('unit','a1u1','r'); okumaOpen(); okSet('all')");
+  const r1 = lastPaint.slice(lastPaint.indexOf("okRead('a1u1')"), lastPaint.indexOf("</button>", lastPaint.indexOf("okRead('a1u1')")));
+  ok(/✓/.test(r1), "a passage read on its tab is not ticked on the shelf");
+  ev("okRead('a1u1')");
+  ok(lastPaint.includes("go('unit','a1u1','r')"), "an open unit's passage offers no way into the unit");
+  ev(LIFT);
 });
 
 step("english layer", () => {

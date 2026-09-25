@@ -50,6 +50,7 @@ cat \
   src/app.coz.js \
   src/app.ada.js \
   src/app.gunluk.js \
+  src/app.okuma.js \
   src/app.boot.js \
   src/shell.foot.html \
   > "$OUT"

@@ -323,6 +323,12 @@ ev("document.getElementById('adatr').value='Sabah yedide kalkıyorum.'; adaSave(
 ev("adaGo('adaisl','gun')"); grab("ada:isl:checked");
 ev("wipe()");
 
+/* Okuma: the shelf, the folk thread, and a passage read ahead. */
+ev("okumaOpen(); okSet('all')"); grab("okuma");
+ev("okSet('folk')"); grab("okuma:folk");
+ev("okRead('a2u1')"); grab("okuma:read");
+ev("okSet('all'); wipe()");
+
 /* Dinleme günlüğü: empty, the form, and a log with sources. */
 ev("logOpen()"); grab("gunluk:empty");
 ev("logNew()"); grab("gunluk:form");
