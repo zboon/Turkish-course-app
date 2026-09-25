@@ -358,6 +358,10 @@ from `ADA`, as permanent as unit ids). Its drill schedule is `i:<id>` in
 sources share the counter `log.n`, and an entry keeps its source's name
 in `nm`, so removing a source orphans nothing. Progress, like the rest.
 
+Word records in `rep` and `srs` also carry `l`, the last day they were
+reviewed, and a starred word's `f` is set on its first review (starring
+does not set it); the daily word budget is read off them (see Bugün).
+
 Every schedule record `bump()` creates — `rep`, `prod`, `dinle`, `gram`,
 `num`, `ata`, `dia` — carries `f`, the day it was first practised, which
 is what the daily allowance of new items counts (see Bugün). Records from
@@ -2259,6 +2263,29 @@ ten and never reached A2. Nothing was wrong with any one sitting; the
 backlog simply had no bottom. `sim.js` replays exactly that: pass the A1
 test, run one sitting, and the Tekrar step must tick and the plan must
 lead on to a2u1.
+
+**Twenty words a day in Tekrar.** Reported by the learner at A2: a third
+Tekrar sitting in a row. Only new words had a cap. Reviews had none, a
+miss came back the same day, the starred queue had no sitting size, and
+the lessons' common words (about twelve a lesson, see Sık kelimeler)
+all fell due in that queue the next morning: twenty-odd new words a day
+between the two queues, which grows to about a hundred reviews a day
+within two months. So the words have one budget. The plan's Tekrar step
+asks for `REV_DAY` (20, the learner's choice of 10, 20 or 30) words a
+day across Tekrar motoru and the starred queue, half from each while
+both have some (`repFirst`), and ticks once they are done; a miss counts
+toward it. What is left waits for tomorrow, and an end screen still
+offers **Bir oturum daha** by choice. Words never reviewed come in at
+`WORDS_NEW_DAY` (5) a day, shared: `repDue()` passes `dueItems` what the
+starred queue has not used, and `dueList()` puts reviews first, oldest
+due first, then never-reviewed starred words in the order they were
+starred, as many as `wordsNewLeft()` admits. A word waiting to be let in
+is not a burden: it was seen in its lesson and joins the reviews when
+there is room. A starred sitting is `REP_SESSION` words, like Tekrar
+motoru's. "Reviewed today" is read off `l` on each record, so nothing
+else is stored. `sim.js` replays the report (twenty, split ten and ten,
+a miss counting, more by choice, the budget back the next day) and the
+shared allowance; eight deliberate breakages each turned it red.
 
 **One new lesson a day.** Reported by the learner: two A2 units took an
 afternoon, so the whole level could be ticked in a day, and a unit

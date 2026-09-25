@@ -351,7 +351,8 @@ step("flashcards", () => {
 
 step("review queue", () => {
   const due = ev("dueList().length");
-  ok(due === ev("S.star.length"), "new words are not all due today");
+  /* Never-reviewed words come in at the day's shared allowance. */
+  ok(due === Math.min(ev("S.star.length"), ev("wordsNewLeft()")), "never-reviewed starred words are not let in at the day's allowance: " + due);
   ev("startReview()");
   ok(ev("V.view") === "review", "review did not open");
 
@@ -1101,6 +1102,10 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
   ok(!lastPaint.includes("met once"), "the hub still draws the distribution");
   ok(lastPaint.includes("go('ilerleme')"), "the hub does not point to İlerleme");
 
+  /* A fresh day lets in WORDS_NEW_DAY new words; reviews fill the rest of
+     a sitting, so seed some missed yesterday. */
+  ok(ev("repDue().length") === ev("WORDS_NEW_DAY"), "a fresh day lets in " + ev("repDue().length") + " new words, not WORDS_NEW_DAY");
+  ev("repShort().slice(20,32).forEach(function(e){S.rep[e.k]={b:0,d:dayNum(),f:dayNum()-3,l:dayNum()-1}}); save()");
   ev("startTekrar()");
   ok(ev("V.view") === "tekrarrun", "the run did not start");
   const n = ev("TK.q.length");
@@ -1179,7 +1184,8 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
     else ev("tkNext()");
   }
   ok(ev("TK.phase") === "end", "the sitting never ended");
-  ok(ev("Object.keys(S.rep).length") === n, "graded " + n + " but stored " + ev("Object.keys(S.rep).length"));
+  ok(ev("revToday(S.rep)") === n && ev("TK.q.every(function(x){return S.rep[x.k]&&S.rep[x.k].l===dayNum()})"),
+     "graded " + n + " but " + ev("revToday(S.rep)") + " carry today as their last review");
 
   /* Drilling has to actually move the number this engine exists to move. */
   const before = ev("repShort().length");
@@ -3162,7 +3168,10 @@ step("sık · ten common words a day, into the ordinary reviews", () => {
   /* The next day starts where the last one stopped, and yesterday's words are due. */
   ev("SIKX={d:0,n:0}; Object.keys(S.sik).forEach(function(k){S.sik[k].d--}); SIK.slice(1,11).forEach(function(e){S.srs[starKey(e[0],e[1])].d--}); save(); home()");
   ok(sikStep().n === 10, "a new day did not offer ten more");
-  ok(ev("SIK.slice(1,11).every(function(e){return dueList().indexOf(starKey(e[0],e[1]))>-1})"), "yesterday's words are not in today's reviews");
+  /* Yesterday's words join today's reviews at the day's allowance, in the
+     order they were starred; the rest wait their turn. */
+  ok(ev("dueList().length") === ev("WORDS_NEW_DAY") &&
+     ev("SIK.slice(1,1+WORDS_NEW_DAY).every(function(e){return dueList().indexOf(starKey(e[0],e[1]))>-1})"), "yesterday's words are not in today's reviews at the day's allowance");
   ev("go('sik')");
   ok(shows(ev("SIK[11][0]")) && !shows(ev("SIK[1][0]")), "the new day did not start after yesterday's batch");
 
@@ -3309,7 +3318,7 @@ step("reported · a level test does not bury the plan in reviews", () => {
   ok(ev("lvPct('A1')") === 100, "the A1 test did not pass A1");
   const step = k => ev("planToday()").steps.find(s => s.k === k);
   ok(ev("repShort().length") > 50, "the scenario needs a large backlog to mean anything: " + ev("repShort().length"));
-  ok(step("rep").n === ev("NEW_DAY.rep"), "Tekrar asks for " + step("rep").n + " after a level test, not a day's worth");
+  ok(step("rep").n === ev("WORDS_NEW_DAY"), "Tekrar asks for " + step("rep").n + " after a level test, not a day's worth");
   ok(step("gram").n <= ev("NEW_DAY.gram") && step("dinle").n <= ev("NEW_DAY.dinle") && step("prod").n <= ev("NEW_DAY.prod"),
      "a review step asks for more new items than a day's allowance");
   /* One sitting of Tekrar, all right: the step ticks, and does not refill. */
@@ -4107,6 +4116,45 @@ step("okuma · the words worth a tap, and the gloss that stopped matching inside
   ok(!lastPaint.includes("Metindeki kelimeler"), "a passage with no words listed shows an empty list");
   ev("okRead('a2u1')");
   ok(/<span class="gw"[^>]*data-p="kürk-ü-nü"/.test(lastPaint), "the shelf does not show the passage's tappable words");
+});
+
+step("reported · Tekrar in Bugün is twenty words a day, and new words share five", () => {
+  ev("confirm=function(){return true}; wipe(); home()");
+  ["a1u1", "a1u2", "a1u3", "a1u4", "a1u5", "a1u6", "a1u7", "a1u8", "a1u9", "a1u10"].forEach(u => ev("go('unit'," + q(u) + ",'v')"));
+  const step = () => ev("planToday()").steps.find(s => s.k === "rep");
+  /* Plenty due in both queues: thirty Tekrar reviews, thirty starred. */
+  ev("repShort().slice(0,30).forEach(function(e){S.rep[e.k]={b:1,d:dayNum(),f:dayNum()-5,l:dayNum()-2}});" +
+     "SIK.slice(0,30).forEach(function(e){var k=starKey(e[0],e[1]);S.star.push(k);S.srs[k]={b:1,d:dayNum(),f:dayNum()-5,l:dayNum()-2}}); save(); home()");
+  ok(step().n === ev("REV_DAY") && step().go === "startTekrar()", "with plenty due the step does not ask for REV_DAY, Tekrar motoru first: " + JSON.stringify(step()));
+  /* First sitting: Tekrar motoru, ten. */
+  ev("startTekrar()");
+  ok(ev("TK.q.length") === ev("REP_SESSION"), "the first sitting is not REP_SESSION words");
+  let g = 0;
+  while (ev("TK.phase") !== "end" && g++ < 40) {
+    if (ev("TK.phase") === "ask") { doc.getElementById("tbox").value = ev("TK.q[TK.i].c"); ev("tkCheck()"); } else ev("tkNext()");
+  }
+  ok(step().n === ev("REV_DAY") - ev("REP_SESSION") && step().go === "startReview()", "after ten Tekrar words the step does not turn to the starred words: " + JSON.stringify(step()));
+  ok(lastPaint.includes("startReview()"), "the end of the first sitting does not lead on to the starred words");
+  /* Second sitting: starred, ten, some missed. A miss still counts. */
+  ev("startReview()");
+  ok(ev("RV.q.length") === ev("REP_SESSION"), "a starred sitting is " + ev("RV.q.length") + " words, not REP_SESSION");
+  for (let i = 0; i < 10; i++) { ev("rvFlip()"); ev("rvGrade(" + (i % 3 ? 1 : 0) + ")"); }
+  ok(step().n === 0 && ev("planToday()").left.every(s => s.k !== "rep"), "after twenty words the Tekrar step still asks for more: the reported third sitting");
+  ok(ev("repDue().length") > 0 && ev("dueList().length") > 0, "the scenario should leave words due, waiting for tomorrow");
+  ok(lastPaint.includes("Bir oturum daha") && lastPaint.includes("startReview()"), "more by choice is not offered at the end");
+  /* A new day: the budget is back. */
+  ev("Object.keys(S.rep).forEach(function(k){if(S.rep[k].l)S.rep[k].l--});Object.keys(S.srs).forEach(function(k){if(S.srs[k].l)S.srs[k].l--}); save()");
+  ok(step().n === ev("REV_DAY"), "the next day does not bring the budget back");
+
+  /* New words: five a day, shared between the two queues. */
+  ev("wipe(); go('unit','a1u1','v'); go('unit','a1u2','v')");
+  ev("SIK.slice(0,12).forEach(function(e){sikTake(e,false)}); SIK.slice(0,12).forEach(function(e){S.srs[starKey(e[0],e[1])].d--}); save()");
+  ok(ev("dueList().length") === ev("WORDS_NEW_DAY"), "twelve starred words from a lesson all fell due at once: " + ev("dueList().length"));
+  ok(ev("repDue().length") === ev("WORDS_NEW_DAY"), "Tekrar motoru's new words are not the same five-a-day allowance");
+  ev("startReview()"); for (let i = 0; i < 3; i++) { ev("rvFlip()"); ev("rvGrade(1)"); }
+  ok(ev("starNewToday()") === 3 && ev("repDue().length") === ev("WORDS_NEW_DAY") - 3, "three new starred words did not use three of Tekrar motoru's allowance");
+  ok(ev("dueList().length") === ev("WORDS_NEW_DAY") - 3, "the starred queue let in more than the allowance left");
+  ev("wipe(); home()");
 });
 
 step("english layer", () => {
