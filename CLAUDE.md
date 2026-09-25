@@ -72,11 +72,12 @@ src/app.ilerleme.js      İlerleme: the state of every mode, on one page
 src/app.coz.js           Çöz: a word taken apart into its endings
 src/app.ada.js           Adacıklar: the learner's own sentences, checked, then drilled
 src/app.gunluk.js        Dinleme günlüğü: hours of Turkish outside the app, logged
+src/app.okuma.js         Okuma: every passage on one shelf, to read for its own sake
 src/app.boot.js          render() dispatch and start-up
 src/shell.foot.html      </script></body></html>
 ```
 
-The app is twenty-two files rather than one because it grew past the point
+The app is twenty-three files rather than one because it grew past the point
 where one was navigable. Order still matters: `app.boot.js` runs code, so
 it goes last, and everything it names must already be declared. Within a
 file, sections are separated by `/* ===== name ===== */` banners —
@@ -1054,6 +1055,50 @@ were the test: the zero-minutes refusal was tried with no source named,
 so the missing-source refusal fired first and hid it; and "a new entry
 starts on the last source" was checked with one source, where the last
 and the first are the same.
+
+## Okuma (the reading shelf)
+
+Built, by request: "is there a section where I can just read the
+passages for fun". There was not. Each unit's one passage lived only on
+its Okuma tab, so the sixty texts, Nasreddin Hoca to the Mesnevî, could
+be reached one unit at a time and not at all ahead of the path.
+
+`okumaOpen()` is the shelf, the first tile under Kelimeler: every
+passage, grouped by level in course order, each row its title, level,
+unit number and what it is (the `kind:` label up to its first ` · `).
+**Halk anlatıları** filters to the folk thread (`OK_FOLK`: Nasreddin
+Hoca, the tales, Dede Korkut, Karagöz, the Mesnevî story, the *halk
+hikâyesi* retelling), eight passages from A2 to C2. A passage opens in
+`okumaoku` exactly as on its tab, because `readPassage(u)` was factored
+out of `secRead()` for it (a pure move that `snap.js` passed unchanged):
+the voice bar, a line's English on a tap, the glossed words. Playback
+reads `unit(V.u)`, which the reader sets. Previous and next walk the
+filtered shelf.
+
+**Reading ahead is allowed, and the shelf writes nothing.** A locked
+unit's passage reads here, marked *ileride* in the list and on the
+page, with no way into the unit. The shelf never calls `markSeen()`, so
+reading does not open a unit, count its lines as met, or feed Üretim and
+Dinleme: the path and "nothing reviews what has not been met" both hold,
+and reading for fun stays free of consequences. A passage read on its
+unit's tab is ticked on the shelf; an open unit's passage links to it.
+On day one every passage is *ileride*, since unit one waits on the
+lessons before it.
+
+Every word tappable (hand-written glosses for all ~3,500 running words,
+since the app's dictionaries find only 35–50% exactly and a guessing
+stemmer is wrong often enough to teach something false) is step two, not
+built. So is more to read: sixty passages is thin, and nothing at A1 is
+a story; an A1–A2 Nasreddin series is the natural addition, once a
+native speaker can check it.
+
+`sim.js` checks the shelf lists every passage under every level, all
+*ileride* on day one and all but unit one's once the intro is passed;
+the folk filter lists exactly the folk tales; a locked passage shows its
+lines and English, says it is ahead, plays line by line and from the
+top, and leaves `S` byte for byte and the unit locked; next follows the
+filter; `back()` both ways; the tick; the link into an open unit. Nine
+deliberate breakages each turned it red.
 
 ## Sayılar (numbers at speed)
 
@@ -2381,7 +2426,7 @@ deliberate breakage.
 ### Araçlar as tiles, and "Şimdilik boş"
 
 By request, after the landing page: Araçlar was sixteen rows of text under
-two explanatory paragraphs, and is now eighteen tiles in a two-column grid
+two explanatory paragraphs, and is now nineteen tiles in a two-column grid
 under the same four headings (Konuşma, Dinleme, Tekrar, Kelimeler), each
 an icon (`TOOL_IC`), a name and a few words of English, built by
 `toolTile()`. The two paragraphs and the footer are gone; Nasıl çalışır
@@ -2398,8 +2443,9 @@ the modes check themselves (`listenBank()`, `uyBank()`, `repBank()`,
 "For now" rather than "yet" because Sık kelimeler empties once the day's
 ten are in, as well as before anything has been met.
 
-`sim.js` checks the four headings, eighteen tiles and no text row or
-paragraph; the ten tools ready on a fresh install (the log is the tenth)
+`sim.js` checks the four headings, nineteen tiles and no text row or
+paragraph; the eleven tools ready on a fresh install (the log and the
+reading shelf are the last two)
 and the seven that are
 not (Çöz and Adacıklar, added later, are the last two); each of those seven turning ready when exactly the tab that feeds it
 is met; that a tile's fade and its label never disagree; and the two

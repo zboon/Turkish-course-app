@@ -50,6 +50,8 @@ function render(){
   else if(v==="adaisl")renderAdaIsl();
   else if(v==="adakontrol")renderAdaKontrol();
   else if(v==="gunluk")renderLog();
+  else if(v==="okuma")renderOkuma();
+  else if(v==="okumaoku")renderOkumaOku();
   else renderHome();
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */
