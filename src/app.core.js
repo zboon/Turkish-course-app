@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.73";
+const APP_VERSION="v3.75";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -297,13 +297,25 @@ function setRate(r){VOICE.rate=r;S.rate=r;save();const m=VOICE.mode,i=VOICE.idx;
 /* ===================== review queue (SRS) ===================== */
 function srsAdd(k){if(!S.srs)S.srs={};if(!S.srs[k])S.srs[k]={b:0,d:dayNum()};}
 function srsDrop(k){if(S.srs)delete S.srs[k];}
+/* Starred words due: every one reviewed before, oldest due first, then
+   words never reviewed, in the order they were starred, as many as the
+   day's shared allowance of new words still admits. */
 function dueList(){
   if(!S.srs)S.srs={};
-  return S.star.filter(function(k){return isDue(S.srs,k);});
+  const n=dayNum(), old=[], fresh=[];
+  S.star.forEach(function(k){
+    const r=S.srs[k];
+    if(r&&(r.l||r.b>0)){if(r.d<=n)old.push(k);}
+    else if(!r||r.d<=n)fresh.push(k);
+  });
+  old.sort(function(a,b){return S.srs[a].d-S.srs[b].d;});
+  return old.concat(fresh.slice(0,wordsNewLeft()));
 }
 function grade(k,g){
   if(!S.srs)S.srs={};
-  bump(S.srs,k,function(b){return g===0?0:g===1?b+1:b+2;});
+  const r=bump(S.srs,k,function(b){return g===0?0:g===1?b+1:b+2;});
+  if(!r.l&&!r.f)r.f=dayNum();        /* first review: counts against the day's new words */
+  r.l=dayNum();
   save();
 }
 
@@ -325,6 +337,21 @@ function grade(k,g){
    before the stamp existed count as old, which only errs toward one more
    sitting on the day this shipped. */
 const NEW_DAY={rep:10,gram:3,dinle:8,prod:12};
+/* Reported: a third Tekrar sitting in a row at A2. Only NEW words had a
+   cap; reviews had none, a miss came back the same day, and the lessons'
+   common words (about twelve a lesson) all fell due the next morning in
+   the starred queue, which had no sitting size either. So the words have
+   one daily budget across both queues: REV_DAY words in Bugün's Tekrar
+   step (more by choice), and WORDS_NEW_DAY never-reviewed words let in,
+   shared between Tekrar motoru and the starred queue. The learner chose
+   twenty. A word waiting to be let in is not a burden; it has been seen
+   in its lesson and joins the reviews when there is room. */
+const REV_DAY=20, WORDS_NEW_DAY=5;
+/* A word's record carries l, the last day it was reviewed, set by the two
+   graders below; "reviewed today" is read off it, nothing else is kept. */
+function revToday(map){const n=dayNum();let c=0;if(map)for(const k in map)if(map[k]&&map[k].l===n)c++;return c;}
+function starNewToday(){const n=dayNum();let c=0;for(const k in (S.srs||{}))if(S.srs[k]&&S.srs[k].f===n)c++;return c;}
+function wordsNewLeft(){return Math.max(0,WORDS_NEW_DAY-newToday(S.rep)-starNewToday());}
 
 function starKey(tr,en){return tr+"|"+en;}
 function isStarred(tr,en){return S.star.indexOf(starKey(tr,en))>-1;}
@@ -434,7 +461,7 @@ const EN_UI={
  "Kurma ve Dönüştürme":"build and change",
  /* section headings */
  "Bugün":"today","Çalış":"study","Ayarlar":"settings","Konular":"topics","Seviyeler":"levels","Başlarken":"getting started",
- "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","İleri test":"test ahead","Üç kez anlat":"say it three times",
+ "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","Metindeki kelimeler":"words in the text","İleri test":"test ahead","Üç kez anlat":"say it three times",
  "Karşılaşma sayısı":"times met","Nerede zayıfsın":"where you are weak","Son hatalar":"recent mistakes","Ekle":"add",
  "Listem":"my list","Düzenle":"edit","Soru kelimeleri":"question words","Şekiller":"shapes","Durumlar":"situations",
  "Tamir çantası":"repair kit","Anlamadıysan":"if you did not catch it","Ne konuşuldu":"what was said",

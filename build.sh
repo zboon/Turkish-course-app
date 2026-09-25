@@ -26,6 +26,7 @@ cat \
   src/data/baslarken.js \
   src/data/resim.js \
   src/data/ada.js \
+  src/data/okuma.js \
   src/shared/text.js \
   src/shared/voice.js \
   src/shared/srs.js \

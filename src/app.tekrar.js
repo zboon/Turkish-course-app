@@ -177,8 +177,11 @@ function repAll(){return wordIndex().words.length;}
 function repShort(){                 /* still under the target */
   return repBank().filter(function(e){return repTotal(e)<REP_TARGET;});
 }
+/* New words share one allowance with the starred queue (WORDS_NEW_DAY);
+   dueItems subtracts Tekrar's own, so the cap passed is what the starred
+   queue has not used. */
 function repDue(){
-  return dueItems(S.rep,repShort(),NEW_DAY.rep);
+  return dueItems(S.rep,repShort(),WORDS_NEW_DAY-starNewToday());
 }
 /* Reviews first, oldest due first, then the worst-served words never
    drilled — the same shape as Üretim and Dinleme, over a different bank. */
@@ -189,6 +192,7 @@ function repGrade(k,good){
   if(!S.rep)S.rep={};
   const r=bump(S.rep,k,function(b){return good?b+1:0;});
   r.n=(r.n||0)+1;                    /* a drill is an encounter either way */
+  r.l=dayNum();
   save();
 }
 /* The distribution, so the thing this engine exists to move is visible. */
@@ -360,8 +364,8 @@ function renderTekrar(){
 
   h+='<h2 class="sec">Çalış</h2><div class="card">'+
    '<p class="lead">'+now+' kelime · bu oturum</p>'+
-   '<p class="tiny" style="margin:.1rem 0 .4rem">'+tx(short+' of '+total+' are still short of '+REP_TARGET+' encounters. This works through them '+REP_SESSION+' at a time, and brings in at most '+NEW_DAY.rep+' words it has not asked before each day, so a level test does not arrive as a hundred at once. It is a floor being raised, not a backlog to clear in one go.',
-     total+' kelimeden '+short+' tanesi henüz '+REP_TARGET+' kez geçmedi. Bunlar '+REP_SESSION+' kelimelik oturumlarla çalışılır; her gün en fazla '+NEW_DAY.rep+' yeni kelime eklenir, böylece bir seviye sınavı yüz kelimeyi birden getirmez.')+'</p>'+
+   '<p class="tiny" style="margin:.1rem 0 .4rem">'+tx(short+' of '+total+' are still short of '+REP_TARGET+' encounters. This works through them '+REP_SESSION+' at a time, and brings in at most '+WORDS_NEW_DAY+' words a day that have never been reviewed, shared with your starred words, so a level test does not arrive as a hundred at once. It is a floor being raised, not a backlog to clear in one go.',
+     total+' kelimeden '+short+' tanesi henüz '+REP_TARGET+' kez geçmedi. Bunlar '+REP_SESSION+' kelimelik oturumlarla çalışılır; yıldızlı kelimelerinle birlikte her gün en fazla '+WORDS_NEW_DAY+' yeni kelime eklenir, böylece bir seviye sınavı yüz kelimeyi birden getirmez.')+'</p>'+
    '<p class="sub">'+tx('Where the word appears in a passage, the line comes back with it blanked, and the answer is the form the sentence uses. Where it appears nowhere, the English comes first and you type the Turkish. Up to '+REP_SESSION+' in a sitting.',
      'Kelime bir metinde geçiyorsa o satır kelime boş bırakılarak gelir; cümledeki biçimini yazarsın. Hiçbir yerde geçmiyorsa İngilizcesi gelir, sen Türkçesini yazarsın. Bir oturumda en fazla '+REP_SESSION+' kelime.')+'</p>'+
    (due?'<button class="btn" onclick="startTekrar()">Başla</button>'
@@ -777,8 +781,13 @@ function diagBox(ds){
    flag, would need its own state and could disagree with the queues. */
 const PLAN_MIN=[15,30,20,25];        /* seconds per item: tekrar, dikte, üretim, dilbilgisi */
 function planToday(){
-  const rep=Math.min(repDue().length,REP_SESSION);
-  const words=dueList().length;
+  /* Tekrar asks for REV_DAY words a day across its two queues, half
+     from each while both have some, and ticks once they are done. */
+  const doneRep=revToday(S.rep), doneStar=revToday(S.srs), revLeft=Math.max(0,REV_DAY-doneRep-doneStar);
+  const repAll=repDue().length, starAll=dueList().length;
+  const rep=Math.min(repAll,REP_SESSION,revLeft);
+  const words=Math.min(starAll,Math.max(0,revLeft-rep));
+  const repFirst=repAll>0&&(doneRep<REV_DAY/2||!starAll);
   const gr=Math.min(gramDue().length,GRAM_SESSION);
   const dic=Math.min(dinleDue("d:"),DSESSION);
   const pr=Math.min(prodDue(sentenceBank()).length,SESSION);
@@ -809,7 +818,7 @@ function planToday(){
     {k:"rep",  tr:"Tekrar",  en:"the words the course forgets", tt:"kursun unuttuğu kelimeler", n:rep+words,
      avail:repBank().length>0||S.star.length>0,
      mins:Math.round((rep*PLAN_MIN[0]+words*10)/60),
-     go:rep?"startTekrar()":"startReview()"},
+     go:repFirst?"startTekrar()":"startReview()"},
     /* Grammar sits second: it decays like the words do, and unlike Dinle
        and Söyle it is the one step that asks for a form rather than a
        sentence already met. */

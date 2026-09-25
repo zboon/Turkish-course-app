@@ -79,7 +79,7 @@ try {
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf," +
-    "ADA:ADA,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
+    "ADA:ADA,OKW:OKW,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -1341,6 +1341,50 @@ let contrastPairs = 0;
   if (/color:\s*(#fff\b|#ffffff\b|white\b)/i.test(rules)) err("contrast", "a rule paints literal white text — use var(--on-accent), which flips in dark mode");
 }
 
+/* ---------- okuma · the words worth a tap ---------- */
+/* Each entry is keyed by a word exactly as its passage writes it, lower
+   case, and must be there as a whole word, or the tap never appears. Its
+   pieces must join back to the word, or the tooltip teaches a split that
+   is not the word on the page. Levels whose passages have been done are
+   listed, and every unit in them must have its words. */
+let okwChecks = 0;
+{
+  const OKW = M.OKW, DONE = ["A1", "A2"];
+  const low = s => String(s).replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
+  const WORD = /[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+(?:'[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+)?/g;
+  const inv = /[­​‌‍⁠﻿]/;
+  if (!OKW || typeof OKW !== "object") err("okuma", "OKW is missing");
+  else {
+    Object.keys(OKW).forEach(id => { if (!UNITS.some(u => u.id === id)) err("okuma", id + " is not a unit"); });
+    UNITS.forEach(u => {
+      const w = OKW[u.id];
+      if (!w) { if (DONE.indexOf(u.lv) > -1) err("okuma " + u.id, "has no words to tap, and its level is marked done"); return; }
+      const toks = new Set();
+      u.read.lines.forEach(l => (l[0].match(WORD) || []).forEach(t => toks.add(low(t))));
+      const n = Object.keys(w).length;
+      if (n < 4 || n > 40) err("okuma " + u.id, n + " words to tap, wanted 4 to 40");
+      Object.keys(w).forEach(k => {
+        const at = "okuma " + u.id + " " + k, e = w[k];
+        okwChecks++;
+        if (low(k) !== k) err(at, "the key must be written in lower case");
+        if (!toks.has(k)) err(at, "is not a whole word of the passage, so it can never be tapped");
+        if (!Array.isArray(e) || e.length !== 4 || e.some(x => typeof x !== "string")) { err(at, "must be [form, meaning, pieces, sense]"); return; }
+        if (!str(e[0]) || !str(e[1])) err(at, "needs its dictionary form and meaning");
+        if (e[2]) {
+          const parts = e[2].split("-");
+          if (parts.some(p => !p)) err(at, "has an empty piece in " + e[2]);
+          if (low(parts.join("")) !== k) err(at, "pieces " + e[2] + " do not join back to the word");
+          if (parts.length < 2) err(at, "has one piece; leave the pieces empty instead");
+        }
+        e.forEach(x => {
+          if (inv.test(x)) err(at, "contains an invisible character");
+          if (/!/.test(x)) err(at, "has an exclamation mark");
+        });
+      });
+    });
+  }
+}
+
 /* ---------- adacıklar ---------- */
 /* Every sentence a learner writes is filed under "<island>.<question>",
    so those ids are as permanent as a unit id: a rename strands what was
@@ -1645,6 +1689,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));
