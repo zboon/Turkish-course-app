@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /* The native speaker's review page, built from the source.
 
-     node tools/review.js [out.html]      (default dist/review.html)
+     node tools/review.js                     dist/kontrol/index.html, for Pages
+     node tools/review.js --artifact <file>   and the artifact's copy too
 
    Everything in the course is written by the author, and only the spoken
    material (Konuşma dili, v3.61) has been read by a native speaker. This
@@ -142,9 +143,18 @@ const total = DATA.reduce((n, s) => n + s.it.length, 0);
 const ids = new Set();
 DATA.forEach(s => s.it.forEach(i => { if (ids.has(i.id)) throw new Error("review: id " + i.id + " is used twice"); ids.add(i.id); }));
 
-const out = process.argv[2] || path.join(ROOT, "dist", "review.html");
+/* Two outputs from one template. Pages serves a whole document at
+   dist/kontrol/index.html, which build.sh makes, so the page deploys with
+   the app. The artifact wants the same page without <html>, <head> and
+   <body>, because the platform wraps it; --artifact <file> writes that. */
 const tpl = fs.readFileSync(path.join(__dirname, "review.html"), "utf8");
 const json = JSON.stringify(DATA).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-fs.mkdirSync(path.dirname(out), { recursive: true });
-fs.writeFileSync(out, tpl.replace("/*DATA*/null", json).replace(/__TOTAL__/g, total.toLocaleString("tr-TR")));
-console.log("review: " + DATA.map(s => s.k + " " + s.it.length).join(" · ") + " · " + total + " items → " + path.relative(ROOT, out));
+const page = tpl.replace("/*DATA*/null", () => json).replace(/__TOTAL__/g, total.toLocaleString("tr-TR"));
+const cut = page.indexOf("</style>") + "</style>".length;
+const doc = '<!doctype html>\n<html lang="tr">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n' +
+  page.slice(0, cut) + "\n</head>\n<body>" + page.slice(cut) + "</body>\n</html>\n";
+const write = (file, text) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); return path.relative(ROOT, file); };
+const ai = process.argv.indexOf("--artifact");
+const outs = [write(path.join(ROOT, "dist", "kontrol", "index.html"), doc)];
+if (ai > -1) outs.push(write(path.resolve(process.argv[ai + 1]), page));
+console.log("review: " + DATA.map(s => s.k + " " + s.it.length).join(" · ") + " · " + total + " items → " + outs.join(", "));

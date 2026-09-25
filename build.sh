@@ -68,3 +68,6 @@ echo "built $OUT ($(wc -c < "$OUT") bytes)"
 
 # The children's app, Türkçe Macera, served at /kids/ beside the course.
 ./kids/build.sh
+
+# The native speaker's review page, served at /kontrol/ beside the course.
+node tools/review.js
