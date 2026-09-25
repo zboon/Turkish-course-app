@@ -4046,7 +4046,9 @@ step("okuma · every passage on one shelf, read for fun, writing nothing", () =>
   const before = JSON.stringify(ev("S"));
   const lk = folk.find(u => u.lv === "B1");
   ev("okRead(" + q(lk.id) + ")");
-  ok(ev("V.view") === "okumaoku" && lastPaint.includes(esc(lk.read.lines[0][0])) && lastPaint.includes(esc(lk.read.lines[0][1])),
+  /* The words to tap break up the markup, so read the text without tags. */
+  const bare = lastPaint.replace(/<[^>]+>/g, "");
+  ok(ev("V.view") === "okumaoku" && bare.includes(esc(lk.read.lines[0][0])) && bare.includes(esc(lk.read.lines[0][1])),
      "the passage or its English is not on the page");
   ok(/ileride|Ahead of where you are/.test(lastPaint) && !lastPaint.includes("go('unit','" + lk.id + "','r')"), "a locked passage does not say it is ahead, or links into the locked unit");
   ev("sayLine(1)");
@@ -4092,7 +4094,7 @@ step("okuma · the words worth a tap, and the gloss that stopped matching inside
   ok(!/>De<\/span>niz/.test(lastPaint), "the gloss for de lights up the start of Deniz");
   ok((lastPaint.match(/<span class="gw"[^>]*>de<\/span>/g) || []).length === 2, "de is not glossed where it is the word");
   ev("go('unit','b1u5','r')");
-  ok(!/>ada<\/span>r/.test(lastPaint) && /<span class="gw"[^>]*>ada<\/span>ya/.test(lastPaint), "ada matched inside kadar, or no longer reaches adaya");
+  ok(!/>ada<\/span>r/.test(lastPaint) && /<span class="gw"[^>]*>adaya<\/span>/.test(lastPaint), "ada matched inside kadar, or adaya cannot be tapped");
   ev("go('unit','a2u5','r')");
   ok(/<span class="gw"[^>]*>Bence<\/span>/.test(lastPaint), "a capitalised headword at the start of a line is not glossed");
   /* The rules by construction, since the passages do not reach them all. */

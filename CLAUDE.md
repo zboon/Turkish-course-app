@@ -1096,12 +1096,17 @@ unit's tab is ticked on the shelf; an open unit's passage links to it.
 On day one every passage is *ileride*, since unit one waits on the
 lessons before it.
 
-**Step two: the words worth a tap** (v3.74, A1–A2 so far). Not every
+**Step two: the words worth a tap** (A1–A2 in v3.74, B1–B2 in v3.76). Not every
 word: the learner asked for the harder, less common ones and the ones
 built up from a known root, and a tap on *ve* or *bir* is noise. So
 `OKW[unitId]` lists, by hand, the words not yet taught and not among the
 commonest, and the ones with endings stacked on a known root: 233 words
-across the twenty A1–A2 passages, about ten to fifteen a passage. Each
+across the twenty A1–A2 passages, about ten to fifteen a passage, and
+494 across B1–B2, about twenty to thirty. A first B1–B2 pass also took
+in everyday words a learner there already has (*şeker*, *bardak*,
+*süt*, *bilgi*) and bare plurals (*yıllar*); they were taken out, since
+the learner asked for the harder words and a tap on the easy ones is
+noise. Each
 is keyed by the word exactly as written, lower case, matched as a whole
 word every time it occurs, and is `[dictionary form, meaning, pieces,
 sense]`: *kürkünü* is kürk · fur coat · `kürk-ü-nü` · his fur coat (as
@@ -1114,8 +1119,8 @@ wrong often enough (*ev* in *evet*) to teach something false.
 `validate.js` requires every key to be a whole word of its passage,
 pieces that join back to it, no one-piece split, 4 to 40 words, and
 every unit of a level marked done to have its words; `DONE` lists the
-levels, A1 and A2, and grows as B1–B2 and C1–C2 are written (about 20
-and 30 a passage). The words are the author's, on the native-speaker
+levels, A1 to B2, and grows when C1–C2 are written (about 30 a
+passage). The words are the author's, on the native-speaker
 list with the rest. `sim.js` checks the layer on the page (form, pieces
 and sense on the span; every occurrence; the headword never splitting a
 covered word; the list; the shelf) and each matching rule by direct
