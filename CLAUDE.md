@@ -12,9 +12,11 @@ node test/sim.js        # headless render of all 346 screens + every runtime pat
 node test/snap.js       # nothing drawn or generated changed (--write to re-record)
 node kids/test/validate.js   # the children's app: data and contrast
 node kids/test/sim.js        # the children's app, every lesson played through
+node test/sync.js            # progress across devices: two copies of the app, one fake database
+node test/sync.js dist/kids/index.html   # the same for the children's app
 ```
 
-Run all four before every commit; they take a second each. `build.sh` already
+Run all of them before every commit; they take a second each. `build.sh` already
 runs the parse check.
 
 `snap.js` is the one to reach for when moving code rather than changing it. It
@@ -53,6 +55,7 @@ src/data/hikaye.js       const HIKAYE=[…];   // Nasreddin Hoca tales for the r
 src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
+src/shared/sync.js       syncStart, syncTouch, syncNow — progress across devices, shared with kids/
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -270,6 +273,11 @@ both builds concatenate them, so a fix there reaches both apps.
   and a small chime made with Web Audio, no files. Praise is in Turkish
   (Harika, Aferin, Süper), which teaches it. The course's house rule
   against exclamation marks does not apply here; everything else does.
+- **Sync across devices** — the course's `src/shared/sync.js`, in the
+  Claude account the artifact is open in (see Hesapla eşitleme). A
+  unit's record and a review box merge one by one, the days as a set;
+  the theme and the answer sounds stay on the device. The grown-ups
+  page says where progress is kept.
 - **Separate storage** — `localStorage["turkce-kids-v1"]`
   `{name,u:{kN:{l:[s,s,s],cup:{at,score}}},srs,xp,days,theme,snd}`. It
   never reads or writes the course's key, and `sim.js` checks that.
@@ -428,7 +436,120 @@ it, so the strip claims only what it can see.
 
 The artifact link and a GitHub Pages copy are different origins, so progress
 does not travel between them. That's why About has backup/restore
-(`exportBox`/`importBox`) — keep it working.
+(`exportBox`/`importBox`) — keep it working. Within the artifact, the same
+Claude account on several devices shares one progress: see Hesapla
+eşitleme below. Its own record sits beside `S` in
+`localStorage["turkce-course-v1:sync"]` (the base and the stamps), never
+inside it, so `S`, `wipe()` and a backup are exactly as before.
+
+## Hesapla eşitleme (the same progress on every device)
+
+Built, by request: "users can use the same app on different devices".
+Two ways in were weighed, and the learner chose both, in order:
+
+1. **The Claude account, in the artifact** (built, v3.79 and k1.01).
+   The artifact runtime's `db` capability gives every signed-in viewer a
+   private subtree, `data/users/<id>/`, that nobody else can read (the
+   owner included), and `user.id()` is the key to it. So the Claude
+   account is the login and there is no server to run.
+2. **Public accounts on Pages** (not built). A hosted backend with email
+   sign-in (Supabase, say), for anyone without a Claude account. It
+   needs the learner to create the project and its keys, and the sandbox
+   to be allowed to reach it; see Next, below.
+
+`src/shared/sync.js` is one layer both apps use. Each app hands
+`syncStart()` a description of its `S`, `save()` calls `syncTouch()`,
+and nothing else in either app knows sync exists.
+
+**localStorage stays the truth on the device.** The app works exactly as
+before with no platform, no network or a refused write; a sync is a copy
+out and a merge back. Where `window.claude` is absent (Pages, a saved
+file, every test but `test/sync.js`) `SYNC.st` is `off` and nothing runs.
+
+**Merged at the grain of the data, never overwritten.** One person on
+two devices, one of them offline, is the case that matters, and "newest
+save wins" would throw away a whole sitting. So each key of `S` merges
+as a *map* (entry by entry: `srs`, `done`, `err`, …), a *set* (element by
+element: `star`, `days`, `mine` by tr|en) or *whole* (a setting, the
+bookmark), and the later change wins. The change times are not in `S`:
+the layer keeps the base (`S` as last synced) and stamps beside it, and
+at each sync compares `S` with the base to stamp what changed. A deleted
+entry keeps its stamp as a tombstone, so an unstar or a wipe travels.
+`theme` and `rate` (the kids app: `theme`, `snd`) are `local`, never
+synced: they belong to the screen and the voice at hand.
+
+Decisions worth keeping:
+
+- **After a merge the base moves, nothing is restamped.** Stamping what
+  just arrived as a local change was the first version; it made every
+  device that only *received* a change write it back with a newer
+  stamp, so a clock a little ahead could beat a real later change.
+  `syncRebase()` sets the base to the merged `S` and stamps only entries
+  with no time at all.
+- **The first sync from a device joins, and the account wins a tie.**
+  Nothing on a device is stamped before its first sync, so where both
+  sides hold an entry the account's is kept, and an entry only the device
+  has is added. A laptop with months of progress linking to an empty
+  account uploads it; a phone linking afterwards receives it and adds
+  whatever it had of its own.
+- **Deciding what to write is order-blind.** A map read back may list
+  its entries in another order; `syncSame()` compares entry by entry, or
+  the first version rewrote every key on every first link.
+- **Another account's progress on the same browser is left alone.** The
+  record beside `S` carries the account id; a different account signed
+  in on the same browser gets `other` and no sync, rather than one
+  person's progress poured into another's account.
+- **A refused write is said, once.** A viewer below Contributor may read
+  but not write their own subtree; `invalid_argument` on a write sets
+  `ro` and stops the pushes. About (and the grown-ups page) says so in
+  words; it is `#syncst`, poked in place by the status hook, never a
+  re-render.
+- **A save syncs `SYNC_WAIT` (8 s) later, once**, so a burst of saves in
+  a sitting is one write; leaving or returning to the tab
+  (`visibilitychange`) syncs at once. A merge that changes `S` redraws
+  only a screen with nothing typed on it (home, the lists, About).
+
+**The store.** One document per key under
+`data/users/<id>/<app>/k/`, ids `<key>.<bucket>.<chunk>`. A map larger
+than `SYNC_BIG` is split into eight buckets by a hash of the entry id, so
+a sitting that changes three review boxes rewrites one bucket, not the
+whole map; any bucket longer than `SYNC_CHUNK` characters is split into
+chunks, which keeps every document well under the 256 KiB limit even
+when escaping doubles it. A chunk carries a hash of its bucket: a bucket
+cut off halfway is not merged, and this device writes its copy back
+whole. A bucket missing altogether needs no guard (its entries are absent
+with no stamp, so the device that has them keeps and rewrites them); a
+guard for it was written, survived its breakage, and was removed.
+
+**Limits, said plainly.** `db` makes an artifact organization-internal:
+it cannot be shared by public link, and only people in the owner's
+organization at Contributor or above (or an Editor invited by email)
+can save to their own subtree. With a personal Claude account that is
+the owner, on every device. The children's app syncs in whichever
+Claude account it is open in, which for a child is a grown-up's. An
+artifact's database holds at most 5,000 documents, about fifty a
+person here. `ada` and `log` merge whole, so two devices each adding a
+sentence offline keep the later list; rare, and recorded here rather
+than solved.
+
+`test/sync.js` boots two (and more) copies of the built app through
+`test/dom.js` against one fake database that enforces the real one's
+rules (each account sees only its own subtree, 256 KiB a document, the
+path grammar). It checks: no platform, `off`; a first device uploading
+into its own subtree only, device settings left out, every document under
+the cap; a fresh second device receiving everything; idle devices
+writing nothing, and one that only received a change writing nothing;
+changes made on both before either syncs all surviving, a deletion
+travelling, star and srs in step; a save syncing after the pause and not
+at once; a device with its own progress joined, the account winning a
+shared entry, the days kept in order; a large store bucketed and chunked
+and a torn chunk repaired; wipe travelling; a refused account, another
+account's browser and a signed-out viewer each said. The same file runs
+the children's app. Eighteen deliberate breakages: fourteen turned it
+red at once; three did not, and all three were the test (restamping was
+invisible without the receive-only check, "no buckets" counted chunks,
+the first-link check had no entry on both sides); one was the guard
+above.
 
 ## Deploying
 
@@ -480,7 +601,17 @@ word and every SRS box. There is no undo for that.
 
 Publish the icon files alongside the page (`manifest.json`, `icon.svg`,
 `icon-192.png`, `icon-512.png`) so the tab icon and "add to home screen"
-work there too. Do **not** publish `sw.js`: the artifact has no worker by
+work there too.
+
+**The artifact declares `db` and `user`** (since v3.79), for Hesapla
+eşitleme: `capabilities: {db: {rules: [{path: "", read: "admin", write:
+"admin"}, {path: "data/users/{self}", read: "interact", write:
+"interact"}]}, user: {}}`. Nothing is kept in shared documents, so the
+root is locked to editors and each person reads and writes only their
+own subtree. It was declared once; a redeploy **omits** `capabilities`,
+which keeps the stored declaration (an empty object would clear it and
+switch sync off for everyone). The children's artifact declares the
+same. Do **not** publish `sw.js`: the artifact has no worker by
 design, the registration call is wrapped and fails silently, and a stale
 worker there would be unfixable from here.
 
@@ -2746,7 +2877,18 @@ as what is most interesting to build.
    a consolation; see its section above. It does not replace this item.
    Kütüphane is verbatim authored prose with an orijinal toggle, which is
    a different thing and still wants the network.
-2. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
+2. **Public accounts on Pages** — the second half of Hesapla eşitleme.
+   `sync.js` talks to the store through five calls (`collection(path)`,
+   `.get()`, `.doc(id)`, `.set(data)`, `.delete()`) and asks for one id,
+   so a hosted backend only needs an adapter with those shapes and a
+   sign-in screen. With Supabase: a table `sync_docs(user_id uuid,
+   path text, data jsonb, primary key (user_id, path))` under row-level
+   security `user_id = auth.uid()`, email magic-link sign-in, and the
+   project URL and anon key (public by design) in the page. Needs the
+   learner to create the project, and `<project>.supabase.co` allowed in
+   the environment's network settings to test it from here. The
+   children's app should sign in a grown-up, not a child.
+3. **Osmanlıca** — Arabic-script Turkish. The learner already reads the
    script, so it is orthography and vocabulary rather than letters.
    Interesting, and orthogonal to speaking.
 

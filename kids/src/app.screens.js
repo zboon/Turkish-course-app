@@ -246,11 +246,12 @@ function renderParents(){
   let h=topbar("Veliler için","for grown-ups")+'<main class="wrap">';
   h+='<div class="card prose"><p><b>What this is.</b> Twelve short units of beginner Turkish for 11–13 year olds starting from English: words, useful phrases, one grammar tip each and a short comic, played as small games. It is the children’s companion to a full A1–C2 course.</p>'+
     '<p><b>How it works.</b> Each unit has three lessons and a trophy challenge. Winning the trophy (8 of 10, first try only) opens the next unit, and it can be tried straight away to skip a unit already known. Words from finished lessons come back in a daily review, spaced further apart each time they are remembered.</p>'+
-    '<p><b>Privacy.</b> No account, no adverts, nothing sent anywhere. Progress is stored in this browser only.</p>'+
+    '<p><b>Privacy.</b> No adverts, and nothing is sent to anyone. Progress is stored in this browser'+(SYNC.st==="on"?', and in the private storage of the Claude account this page is open in, which only that account can read.':' only.')+'</p>'+
     '<p><b>The voice.</b> Words are spoken by the device’s own Turkish voice. '+
     (voiceState()==="ok"?'This device has one.':voiceState()==="notr"?'This device has no Turkish voice yet, so Turkish is read with the wrong accent. On iPhone and iPad: Settings → Accessibility → Spoken Content → Voices → Turkish. On Android: Settings → Text-to-speech → install Turkish. On Windows: Settings → Time & language → Speech → add Turkish. Then reload.':voiceState()==="none"?'This browser has no speech at all; try another browser.':'')+'</p></div>';
   h+='<h2>'+lbl("Ayarlar","settings")+'</h2><div class="card"><label class="sw"><input type="checkbox" '+(S.snd?"checked":"")+' onchange="S.snd=this.checked;save()"> Answer sounds</label>'+
     '<div class="row"><input id="rname" class="inp" maxlength="20" value="'+esc(S.name)+'" placeholder="Name"><button class="btn sm" onclick="rename()">'+lbl("Kaydet","save")+'</button></div></div>';
+  h+='<h2>'+lbl("Cihazlar","devices")+'</h2><div class="card" id="syncst">'+syncNote()+'</div>';
   h+='<h2>'+lbl("Yedek","backup")+'</h2><div class="card"><p class="small">To move progress to another browser: copy it here, then paste it into the same box there.</p>'+
     '<textarea id="iobox" class="inp" rows="3"></textarea><div class="two"><button class="btn ghost" onclick="exportBox()">'+lbl("Kopyala","copy")+'</button>'+
     '<button class="btn ghost" onclick="importBox()">'+lbl("Geri yükle","restore")+'</button></div><p class="small" id="iomsg"></p></div>';
@@ -275,8 +276,24 @@ function importBox(){
   S=Object.assign({name:"",u:{},srs:{},xp:0,days:[],theme:S.theme,snd:S.snd},o);
   load2(); save(); home();
 }
+/* Where progress is kept, for the grown-up reading this page. */
+function syncNote(){
+  const st=SYNC.st, at=SYNC.at?new Date(SYNC.at):null;
+  const hm=at?String(at.getHours()).padStart(2,"0")+":"+String(at.getMinutes()).padStart(2,"0"):"";
+  const t={
+    off:"Progress is kept in this browser only. To move it to another device, use the backup below.",
+    wait:"Connecting to the Claude account…",
+    on:"Synced with the Claude account this page is open in. Open it on another device signed in to the same account and the progress is there."+(hm?" Last synced at "+hm+".":""),
+    noid:"Sign in to Claude to keep progress in the account. Until then it stays in this browser.",
+    ro:"This Claude account can open the page but not save to it, so progress stays in this browser.",
+    full:"The storage is full, so this device could not save to the account. Progress is safe in this browser.",
+    other:"This browser already holds another Claude account's progress, so it is not synced here. Progress stays in this browser.",
+    err:"The account could not be reached just now. Progress is safe in this browser and will sync next time."
+  }[st]||"";
+  return '<p class="small">'+esc(t)+'</p>'+(st==="on"||st==="err"?'<button class="btn ghost" onclick="syncNow()">'+lbl("Şimdi eşitle","sync now")+'</button>':'');
+}
 function load2(){if(!S.u)S.u={}; if(!S.srs)S.srs={}; if(!S.days)S.days=[]; if(typeof S.xp!=="number")S.xp=0;}
 function wipe(){
-  if(typeof confirm==="function"&&!confirm("Delete all progress in Türkçe Macera? This cannot be undone."))return;
+  if(typeof confirm==="function"&&!confirm(SYNC.st==="on"?"Delete all progress in Türkçe Macera, on every device signed in to this Claude account? This cannot be undone.":"Delete all progress in Türkçe Macera? This cannot be undone."))return;
   S={name:"",u:{},srs:{},xp:0,days:[],theme:S.theme,snd:S.snd}; save(); home();
 }

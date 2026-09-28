@@ -3,7 +3,7 @@
    uses, so a fix there reaches both apps. Nothing here draws a screen. */
 
 /* ===================== macera · app ===================== */
-const KAPP_VERSION="k1.00";
+const KAPP_VERSION="k1.01";
 
 /* ===================== macera · storage ===================== */
 /* Its own key: a child's progress and a grown-up's course never share a
@@ -18,7 +18,17 @@ function load(){
   if(!S.u)S.u={}; if(!S.srs)S.srs={}; if(!S.days)S.days=[];
   if(typeof S.xp!=="number")S.xp=0;
 }
-function save(){try{localStorage.setItem(KKEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;}}
+function save(){try{localStorage.setItem(KKEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} syncTouch();}
+/* Sync across devices (src/shared/sync.js), in the Claude account the
+   page is open in, which for a child is a grown-up's. A unit's record
+   and a word's review box merge one by one; the days as a set. The
+   theme and the answer sounds belong to the device. */
+const SYNC_KIDS={app:"kids",key:KKEY,
+  get:function(){return S;}, set:function(k,v){S[k]=v;},
+  maps:["u","srs"], sets:{days:null}, local:["theme","snd"],
+  fix:function(s){s.days=(s.days||[]).filter(function(d,i,a){return a.indexOf(d)===i;}).sort(); load2();},
+  after:function(){try{localStorage.setItem(KKEY,JSON.stringify(S));}catch(e){} if(V.view==="home"||V.view==="parents")render();},
+  status:function(){const e=document.getElementById("syncst"); if(e)e.innerHTML=syncNote();}};
 
 /* ===================== macera · helpers ===================== */
 const app=()=>document.getElementById("app");

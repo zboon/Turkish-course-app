@@ -13,6 +13,7 @@ cat \
   src/shared/text.js \
   src/shared/voice.js \
   src/shared/srs.js \
+  src/shared/sync.js \
   kids/src/data/units.js \
   kids/src/app.core.js \
   kids/src/app.games.js \
