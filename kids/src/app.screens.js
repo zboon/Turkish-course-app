@@ -62,7 +62,7 @@ function renderHome(){
   });
   h+='</div>';
   h+='<button class="link" onclick="go(\'parents\')">For grown-ups · Veliler için</button>';
-  h+='<p class="foot">Türkçe Macera '+KAPP_VERSION+' · progress stays on this device</p></main>';
+  h+='<p class="foot">Türkçe Macera '+KAPP_VERSION+' · '+(SYNC.st==="on"?'progress synced to this Claude account':'progress stays on this device')+'</p></main>';
   paint(h);
 }
 function setName(){
