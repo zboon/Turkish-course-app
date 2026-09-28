@@ -55,6 +55,11 @@ jobs:
       - name: Kids app played through
         run: node kids/test/sim.js
 
+      # Progress across devices: two copies of each app against one fake
+      # claude.ai database (src/shared/sync.js).
+      - name: Sync across devices
+        run: node test/sync.js && node test/sync.js dist/kids/index.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

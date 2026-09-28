@@ -31,6 +31,7 @@ cat \
   src/shared/text.js \
   src/shared/voice.js \
   src/shared/srs.js \
+  src/shared/sync.js \
   src/app.core.js \
   src/app.lang.js \
   src/app.screens.js \

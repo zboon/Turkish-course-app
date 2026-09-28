@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.78";
+const APP_VERSION="v3.79";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -11,7 +11,8 @@ let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},ra
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
        num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},coz:{},ada:{n:0,s:[]},log:{n:0,e:[],src:[]},tips:true};
-/* Progress lives in this browser and nowhere else, so a save that fails is
+/* Progress lives in this browser first (the sync to a Claude account,
+   where there is one, copies it from here), so a save that fails is
    the one silent bug that costs a learner months: every box, every star,
    gone when the tab closes, and nothing said. It used to be swallowed.
    Now it raises a strip in the top bar of every screen until a save goes
@@ -22,6 +23,10 @@ let SAVEFAIL=false;
 function load(){
   try{const r=localStorage.getItem(KEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object") S=Object.assign(S,o);}}
   catch(e){SAVEFAIL=true;}
+  load2();
+}
+/* Every key the screens expect, put back if a restore or a merge left it out. */
+function load2(){
   if(!S.done)S.done={}; if(!S.seen)S.seen={}; if(!S.star)S.star=[]; if(!S.tested)S.tested={}; if(!S.days)S.days=[]; if(!S.srs)S.srs={};
   if(!S.prod)S.prod={}; if(!S.retell)S.retell={}; if(!S.dinle)S.dinle={}; if(!S.rep)S.rep={};
   /* S.gram is the grammar schedule, keyed by unit id — not a unit's own
@@ -40,7 +45,19 @@ function load(){
   /* S.log is the outside-input record: entries and sources, keyed by a counter. */
   if(!S.log||!S.log.e)S.log={n:0,e:[],src:[]};
 }
-function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} syncTouch(); }
+/* Sync across devices (src/shared/sync.js): which keys of S merge entry
+   by entry, which as sets, and which stay on this device. The theme and
+   the speech rate depend on the screen and the voice at hand. */
+const SYNC_COURSE={app:"course",key:KEY,
+  get:function(){return S;}, set:function(k,v){S[k]=v;},
+  maps:["done","seen","tested","srs","prod","retell","dinle","rep","gram","err","num","dia","ata","sik","basla","ders","coz"],
+  sets:{star:null,days:null,mine:function(x){return x&&x.tr+"|"+x.en;}},
+  local:["theme","rate"],
+  fix:function(s){s.days=(s.days||[]).filter(function(d,i,a){return a.indexOf(d)===i;}).sort(); load2();},
+  after:function(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+    if(["home","dersler","araclar","ilerleme","level","about","okuma","dict"].indexOf(V.view)>-1)render();},
+  status:function(){const e=document.getElementById("syncst"); if(e)e.innerHTML=syncNote();}};
 function saveWarn(){
   if(!SAVEFAIL)return "";
   return '<div class="savewarn"><div class="savewarn-in"><span class="grow"><b>Kaydedilmiyor</b> · '+tx('this browser is not saving your progress. What you do now is lost when the page closes.','bu tarayıcı ilerlemeni kaydetmiyor. Şimdi yaptıkların sayfa kapanınca kaybolur.')+'</span>'+
@@ -518,7 +535,8 @@ const EN_INLINE=[
  "put it in the past","ask the question this answers","make it a yes-no question",
  "say it","backward buildup","then say whether it landed","recall it","type what you hear","read it out loud",
  "say it, then tap it","type what they said","what do you say?","which idiom?","show the answer",
- "between friends","with anyone","told","make it positive","proverb","idiom"
+ "between friends","with anyone","told","make it positive","proverb","idiom",
+ "your devices","sync now"
 ];
 const EN_EL=/^(button|h2|p|div|span)$/, EN_CLS=/\b(btn|sec|lead|qn|sub|pill|big|empty|tiny|sbtn|tab)\b/,
       EN_SKIP=/\b(opt|tile|icon-btn|spd|vtr|ven|gw|dw|mark|tr|nav-t|lvl-badge|bar-title|block-t|block-e|unit-s|unit-t|gl)\b/;

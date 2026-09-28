@@ -215,6 +215,12 @@ sandbox.window.innerHeight = 780;
 sandbox.window.scrollTo = () => {};
 sandbox.window.addEventListener = () => {};
 sandbox.window.matchMedia = () => ({ matches: false, addListener() {}, addEventListener() {} });
+/* A stand-in for the claude.ai viewer's window.claude, when a test gives
+   one (test/sync.js); without it the page runs as it does on Pages. And
+   a store to start from, so a test can boot a device that already has
+   progress. */
+if (opts.claude) sandbox.claude = opts.claude;
+if (opts.store) Object.keys(opts.store).forEach(k => store.set(k, opts.store[k]));
 
 vm.createContext(sandbox);
 const ev = expr => vm.runInContext(expr, sandbox, { filename: "sandbox" });

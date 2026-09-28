@@ -61,6 +61,7 @@ if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="u
   try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(e){}
 }
 load();
+syncStart(SYNC_COURSE);
 if(S.rate)VOICE.rate=S.rate;
 if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
 touchDay();

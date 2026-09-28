@@ -17,5 +17,6 @@ if(ttsOK()){try{
   speechSynthesis.getVoices();
 }catch(e){}}
 load();
+syncStart(SYNC_KIDS);
 if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);
 render();
