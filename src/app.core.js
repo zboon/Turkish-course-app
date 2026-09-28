@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.79";
+const APP_VERSION="v3.80";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -11,6 +11,9 @@ let S={done:{},seen:{},place:null,star:[],tested:{},days:[],theme:null,srs:{},ra
        prod:{},retell:{},gap:4,prompten:false,pscope:"done",
        dinle:{},drate:1,dreplay:2,rep:{},gram:{},ygap:5,yrate:1,err:{},mine:[],
        num:{},nmax:999,ncap:5,dia:{},ata:{},sik:{},coz:{},ada:{n:0,s:[]},log:{n:0,e:[],src:[]},tips:true};
+/* S as a fresh install has it, before load(): the sync layer's test for
+   an untouched default. */
+const S_BLANK=JSON.parse(JSON.stringify(S));
 /* Progress lives in this browser first (the sync to a Claude account,
    where there is one, copies it from here), so a save that fails is
    the one silent bug that costs a learner months: every box, every star,
@@ -53,7 +56,7 @@ const SYNC_COURSE={app:"course",key:KEY,
   get:function(){return S;}, set:function(k,v){S[k]=v;},
   maps:["done","seen","tested","srs","prod","retell","dinle","rep","gram","err","num","dia","ata","sik","basla","ders","coz"],
   sets:{star:null,days:null,mine:function(x){return x&&x.tr+"|"+x.en;}},
-  local:["theme","rate"],
+  local:["theme","rate"], blank:S_BLANK,
   fix:function(s){s.days=(s.days||[]).filter(function(d,i,a){return a.indexOf(d)===i;}).sort(); load2();},
   after:function(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     if(["home","dersler","araclar","ilerleme","level","about","okuma","dict"].indexOf(V.view)>-1)render();},

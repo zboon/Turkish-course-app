@@ -492,6 +492,16 @@ Decisions worth keeping:
   has is added. A laptop with months of progress linking to an empty
   account uploads it; a phone linking afterwards receives it and adds
   whatever it had of its own.
+- **…except that an untouched default never replaces real progress.**
+  Found after the first release, by asking what happens in the other
+  order: a fresh phone linked *first* uploads its defaults, and a key
+  kept whole (the kids' XP and name, the course's Adacıklar sentences
+  and listening log) would then have gone to the phone's empty value on
+  the laptop that linked second. On a first sync a whole key keeps the
+  device's own value when it differs from a fresh install's (`blank`,
+  the `S` each app starts with, captured before `load()`) and the
+  account's is still that default. `test/sync.js` links a fresh device
+  first in both apps; with the rule removed both runs go red.
 - **Deciding what to write is order-blind.** A map read back may list
   its entries in another order; `syncSame()` compares entry by entry, or
   the first version rewrote every key on every first link.

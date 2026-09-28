@@ -3,7 +3,7 @@
    uses, so a fix there reaches both apps. Nothing here draws a screen. */
 
 /* ===================== macera · app ===================== */
-const KAPP_VERSION="k1.01";
+const KAPP_VERSION="k1.02";
 
 /* ===================== macera · storage ===================== */
 /* Its own key: a child's progress and a grown-up's course never share a
@@ -11,6 +11,7 @@ const KAPP_VERSION="k1.01";
    positions are permanent, as in the course — see units.js. */
 const KKEY="turkce-kids-v1";
 let S={name:"",u:{},srs:{},xp:0,days:[],theme:null,snd:true};
+const S_BLANK=JSON.parse(JSON.stringify(S));
 let SAVEFAIL=false;
 function load(){
   try{const r=localStorage.getItem(KKEY); if(r){const o=JSON.parse(r); if(o&&typeof o==="object")S=Object.assign(S,o);}}
@@ -25,7 +26,7 @@ function save(){try{localStorage.setItem(KKEY,JSON.stringify(S));SAVEFAIL=false;
    theme and the answer sounds belong to the device. */
 const SYNC_KIDS={app:"kids",key:KKEY,
   get:function(){return S;}, set:function(k,v){S[k]=v;},
-  maps:["u","srs"], sets:{days:null}, local:["theme","snd"],
+  maps:["u","srs"], sets:{days:null}, local:["theme","snd"], blank:S_BLANK,
   fix:function(s){s.days=(s.days||[]).filter(function(d,i,a){return a.indexOf(d)===i;}).sort(); load2();},
   after:function(){try{localStorage.setItem(KKEY,JSON.stringify(S));}catch(e){} if(V.view==="home"||V.view==="parents")render();},
   status:function(){const e=document.getElementById("syncst"); if(e)e.innerHTML=syncNote();}};
