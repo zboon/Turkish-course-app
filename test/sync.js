@@ -197,6 +197,25 @@ const synced = async d => { d.ev("syncNow()"); await settle(); };
   ok(KIDS ? !Object.keys(S(B).u).length : !Object.keys(S(B).done).length && !S(B).star.length, "a wipe on one device did not reach the other");
   ok(S(B).theme !== undefined || true, "");
 
+  /* --- a fresh device linked first does not blank the real one -------- */
+  {
+    const C2 = cloud();
+    const P = device(C2.claude("u5"));
+    await settle();
+    const real = KIDS ? Object.assign({}, seed)
+      : Object.assign({}, seed, { tips: false, ada: { n: 1, s: [{ id: "1", isl: "ben", q: "ad", tr: "Adım Zeynep.", en: "My name is Zeynep.", day: 1, chk: 1, was: "" }] },
+                                  log: { n: 2, e: [{ id: "e2", day: 1, min: 30, src: "s1", nm: "Podcast", kind: "d", und: 2 }], src: [{ id: "s1", name: "Podcast", kind: "d", url: "" }] } });
+    const L = device(C2.claude("u5"), { [KEY]: JSON.stringify(real) });
+    await settle();
+    const l0 = S(L);
+    ok(KIDS ? l0.xp === 120 && l0.name === "Ece" : l0.ada.s.length === 1 && l0.log.e.length === 1 && l0.tips === false,
+       "a device linked after a fresh one lost its progress to the fresh one's defaults");
+    await synced(P);
+    const p0 = S(P);
+    ok(KIDS ? p0.xp === 120 && p0.name === "Ece" : p0.ada.s.length === 1 && p0.log.e.length === 1,
+       "the fresh device linked first never received the real progress");
+  }
+
   /* --- an account that may read but not save ------------------------- */
   {
     const R = cloud(); R.readonly.add("u9");

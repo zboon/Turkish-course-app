@@ -122,6 +122,12 @@ function syncMergeKey(o,k,loc,lm,rem){
   const mode=syncMode(o,k);
   if(mode==="whole"){
     if(!rem||!rem.has)return {v:loc,m:lm||0};
+    /* This device's first sync, where nothing here has a time yet: the
+       account wins, except that an untouched default never replaces
+       real progress. Otherwise a fresh phone linked first would upload
+       an empty XP, name or list of sentences, and the laptop linked
+       after it would take the empty one. */
+    if(!lm&&o.blank&&syncJson(loc)!==syncJson(o.blank[k])&&syncJson(rem.v)===syncJson(o.blank[k]))return {v:loc,m:0};
     return (rem.m||0)>(lm||0)?{v:rem.v,m:rem.m}:{v:loc,m:lm||0};
   }
   const ls=syncSubs(o,k,mode,loc), rs=rem&&rem.subs||{}, lt=lm&&typeof lm==="object"?lm:{}, rt=rem&&rem.m||{};
@@ -188,7 +194,8 @@ function syncMetaSave(){try{localStorage.setItem(SYNC.o.key+":sync",JSON.stringi
 function syncSay(st,msg){SYNC.st=st;SYNC.msg=msg||"";if(SYNC.o&&SYNC.o.status)try{SYNC.o.status();}catch(e){}}
 
 /* o: {app, key, get:()=>S, set:(k,v)=>…, maps:[…], sets:{k: idFn|null},
-   local:[…], fix(S), after(changed), status()}. Called once, after load(). */
+   local:[…], blank: S as a fresh install has it, fix(S), after(changed),
+   status()}. Called once, after load(). */
 function syncStart(o){
   SYNC={st:"off",at:0,msg:"",o:o,db:null,uid:null,meta:null,timer:0,busy:false,again:false,ro:false};
   if(typeof window==="undefined"||!window.claude||typeof window.claude.use!=="function")return;
