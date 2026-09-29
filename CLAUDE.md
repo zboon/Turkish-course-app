@@ -1304,7 +1304,13 @@ anlatım*, and the folk filter lists them.
   unit's passage and every word to tap checked as `OKW`'s are.
 
 The tales are the author's Turkish, written simple on purpose, and they
-are the first section of the review page. More stories at A1–A2, and a
+were the first section of the review page. The first answers (v3.81)
+passed every Turkish line as natural and marked six English lines: *Thank
+God* for *çok şükür*, a translation kept closer to the Turkish for a
+learner (*Why did the fight start?*, *Because of our quilt*), *utanmak*
+as *embarrassed* rather than *ashamed* in *Hırsız* (so its next line
+changed with it), and *restaurant* for *lokanta*. The word notes on the
+same words moved with them. More stories at A1–A2, and a
 second text per unit for lesson three, should go the same way.
 
 `sim.js` checks the shelf lists every passage under every level, all
