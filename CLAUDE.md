@@ -2020,6 +2020,70 @@ Clearing an entry or the whole book changes no schedule, which the
 screen says and `sim.js` checks. `S.err` is progress, not a setting:
 `wipe()` clears it and a backup carries it.
 
+## Second chances (neredeyse, and the misses again)
+
+Built, by request: "if spelling is more of the issue than word order, give
+users a second chance; and at the end of a lesson repeat the questions with
+wrong answers." Asked whether it would help or hinder, the honest answer was
+that it helps if it is built so that **the first try stays the record**. A
+second attempt that replaces the first is an easy way to look as though a
+form is known: the retrieval that matters is the first, cold one, and an
+answer typed a moment after being told it was nearly right shows short-term
+memory, not learning. So both features are practice around a mark that has
+already been made, and neither can raise a score, pass a unit or move a box.
+
+**Neredeyse (a slip of one letter).** `nearMiss(typed, answers)` in
+`app.lang.js` is true when one word is one letter away from the answer
+(a letter changed, missing, added, or two swapped) and every other word is
+right. Silence is the default, as in `diagnose()`, because a different word
+is not a slip: nothing under four letters (*gül* and *gel*, *ev* and *el*),
+nothing with a digit in it (2024 and 2025), never two wrong words, and
+nothing `fold()` already accepts. It is compared folded, so a missing
+diacritic never reaches it. It does not claim a cause: a wrong case ending
+is also one letter (*okula* for *okulu*), so the message says "one letter is
+off" and not "check the spelling".
+
+On a typed answer the app then says **Neredeyse** and leaves the box open
+with what was typed, without showing the answer or the explanation. It
+stands in the unit quiz and level tests (`answerFill`), Tekrar motoru
+(`tkCheck`) and the typed checks of Derse başla (`adType`). The first try is
+marked, scheduled and booked in the mistake book **at once**, exactly as
+before; the second is only shown as *İkinci denemede doğru* / *Right, on the
+second try*, with "not scored" where a score exists, and writes nothing.
+Guided lessons still send the miss round again later in the lesson, once;
+a second look does not add a second copy.
+
+**No instant second try on a choice or a built sentence.** With four options
+a second try is elimination, and tiles are the same guess by another road.
+Only typed recall gets it.
+
+**The misses again.** The score screen of a unit quiz or a level test offers
+**Yanlışları bir daha dene** (`startRedo()`): a new round, mode `redo`, on
+just the items missed, in a new order with a multiple-choice's options
+shuffled so it is not answered by position. It is practice only: it writes
+no `S.done`, no schedule and nothing to the mistake book (`quizNote()` stands
+down while `Q.mode` is `redo`, and `sim.js` compares `S` byte for byte before
+and after). A miss in it can be offered again, without limit; the misses come
+back on later days through the schedules that already hold them. It ends on
+the plan's next step when the quiz was passed, and on **Tekrar dene** when
+it was not. A perfect score offers nothing. `back()` from it returns to the
+unit or the level.
+
+`validate.js` holds a hand-checked table (nineteen calls and refusals) and
+sweeps every passage word: against itself it is never a near miss, and with
+its last letter dropped it is one whenever it is five letters or more.
+`sim.js` walks the unit quiz (the box stays open with what was typed, the
+answer and explanation are absent, the first try is a miss and in the book
+once, the corrected second try is closed as such and not booked again, a
+second miss is a miss, an unrelated answer and a missing diacritic take no
+second look, and a wrong choice takes none), the second rounds (a perfect
+score offers none, the ids are the misses, the key follows a shuffled option,
+progress identical before and after, offered again after a miss, `back()`
+for both a unit and a level test), Tekrar and the lesson checks.
+Sixteen deliberate breakages each turned a check red; one did not at first
+and was the test's fault: two words each one letter off was never tried, so
+letting a second wrong word through passed. It is in the table now.
+
 ## Teşhis (naming a mistake)
 
 Built. A typed answer marked wrong used to show only the right answer,

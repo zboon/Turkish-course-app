@@ -294,6 +294,92 @@ step("fill answers fold diacritics", () => {
   ev("wipe()");
 });
 
+/* A second look at a slip of one letter, and a second round on the misses.
+   The first try is what counts; the second look and the second round are
+   practice, and this step holds both halves of that. */
+step("a slip of one letter is given a second look; the first try still counts", () => {
+  ev("wipe()");
+  let uf = null, at = -1;
+  UNITS.some(u => { const i = u.drill.findIndex(d => d.t === "fill" && !/\s/.test(d.c) && asciify(d.c).length >= 5); if (i >= 0) { uf = u; at = i; return true; } return false; });
+  ok(!!uf, "no unit has a fill answer long enough to be given a second look");
+  const it = uf.drill[at], key = "q:" + uf.id + "#" + at;
+  const start = () => { ev("startUnitQuiz(" + q(uf.id) + ")"); for (let i = 0; i < at; i++) ev("nextQ()"); };
+  const type = t => { doc.getElementById("fin").value = t; ev("answerFill()"); };
+
+  start(); type(it.c.slice(0, -1));
+  ok(ev("Q.near") === true && ev("Q.sel") === null, "a one-letter slip did not keep the question open");
+  ok(/Neredeyse/.test(lastPaint) && /One letter is off/.test(lastPaint), "a one-letter slip was not called one");
+  ok(!lastPaint.includes(esc(it.why)) && !/Yanlış/.test(lastPaint), "the answer was shown before the second look");
+  ok(ev("Q.res[Q.i]") === false, "the first try was not marked a miss");
+  ok(ev("S.err[" + q(key) + "].n") === 1, "the first try was not booked in the mistake book");
+  ok(!!doc.getElementById("fin") && /value="/.test(lastPaint), "the second look has no box, or lost what was typed");
+
+  type(it.c);
+  ok(ev("Q.res[Q.i]") === false && ev("Q.second") === true && ev("Q.sel") !== null, "a corrected second try was not closed as such");
+  ok(/second try/.test(lastPaint) && /not scored/.test(lastPaint), "the second try did not say it is not scored");
+  ok(ev("S.err[" + q(key) + "].n") === 1, "the second try booked the mistake again");
+  ev("nextQ()");
+  ok(ev("Q.near") === false && ev("Q.second") === false, "the second look leaked into the next question");
+
+  start(); type(it.c.slice(0, -1)); type(it.c.slice(0, -1));
+  ok(ev("Q.second") === false && /Yanlış/.test(lastPaint), "a second miss was not marked as one");
+
+  start(); type("zzz");
+  ok(ev("Q.near") !== true && ev("Q.sel") !== null, "an unrelated answer was given a second look");
+  start(); type(asciify(it.c).slice(0, -1) === it.c.slice(0, -1) ? it.c : asciify(it.c));
+  ok(ev("Q.res[Q.i]") === true && ev("Q.near") !== true, "a right answer without diacritics went through the second look");
+
+  /* No instant second try on a choice or a tile-built sentence: a second
+     try there is elimination, not recall. */
+  UNITS.some(u => { const i = u.drill.findIndex(d => d.t === "mc"); if (i < 0) return false;
+    ev("startUnitQuiz(" + q(u.id) + ")"); for (let k = 0; k < i; k++) ev("nextQ()");
+    const d = u.drill[i]; ev("answerMC(" + ((d.c + 1) % d.a.length) + ")");
+    ok(ev("Q.sel") !== null && ev("Q.near") !== true, "a wrong choice was given a second try"); return true; });
+  ev("wipe()");
+});
+
+step("the misses again: practice, and nothing else moves", () => {
+  ev("wipe()");
+  const u = UNITS.find(x => x.drill.filter(d => d.t === "mc").length >= 2) || UNITS[0];
+  ev("startUnitQuiz(" + q(u.id) + ")");
+  for (let i = 0; i < u.drill.length; i++) answer(true);
+  ok(!/startRedo/.test(lastPaint), "a perfect score offered the misses again");
+
+  ev("wipe()");
+  ev("startUnitQuiz(" + q(u.id) + ")");
+  answer(false); answer(false);
+  for (let i = 2; i < u.drill.length; i++) answer(true);
+  ok(/startRedo/.test(lastPaint) && /Practice only/.test(lastPaint), "a score with misses did not offer them again as practice");
+  const before = ev("JSON.stringify(S)");
+
+  ev("startRedo()");
+  ok(ev("Q.mode") === "redo" && ev("Q.items.length") === 2, "the second round is not the two misses");
+  const ids = ev("Q.items.map(function(x){return x.uid+'#'+x.di}).sort()");
+  ok(ids.join() === [u.id + "#0", u.id + "#1"].join(), "the second round is not the items that were missed: " + ids);
+  ev("Q.items.forEach(function(x){if(x.t==='mc'&&x.a[x.c]!==UNITS.find(function(u){return u.id===x.uid}).drill[x.di].a[UNITS.find(function(u){return u.id===x.uid}).drill[x.di].c])throw new Error('the key moved off the right option')})");
+  answer(false); answer(true);
+  ok(/İkinci tur/.test(lastPaint) && /1\/2/.test(lastPaint), "the second round did not score itself");
+  ok(/startRedo/.test(lastPaint), "a miss in the second round was not offered again");
+  ok(ev("JSON.stringify(S)") === before, "the second round changed saved progress");
+
+  ev("startRedo()");
+  ok(ev("Q.items.length") === 1, "the third round is not the one remaining miss");
+  answer(true);
+  ok(!/startRedo/.test(lastPaint), "a clean second round still offered more");
+  ok(ev("JSON.stringify(S)") === before, "a clean second round changed saved progress");
+  ev("back()");
+  ok(ev("V.view") === "unit", "back() from the second round did not return to the unit");
+
+  /* A level test's misses ride the same round and come back to the level. */
+  ev("startLevelExam('A1')");
+  answer(false); for (let i = 1; i < 10; i++) answer(true);
+  ok(/startRedo/.test(lastPaint), "a level test with a miss did not offer it again");
+  ev("startRedo()"); answer(true);
+  ev("back()");
+  ok(ev("V.view") === "level", "back() from a level test's second round did not return to the level");
+  ev("wipe()");
+});
+
 /* ===================== 6 · level exams and placement ===================== */
 LEVELS.forEach(l => step("exam " + l.id, () => {
   ev("startLevelExam(" + q(l.id) + ")");
@@ -1134,6 +1220,11 @@ step("a sitting grades, schedules, and counts the encounter either way", () => {
   ev("TK.q[TK.i].c='okulda'; TK.q[TK.i].alts=[fold('okulda')]");
   doc.getElementById("tbox").value = "okulde"; ev("tkCheck()");
   ok(ev("TK.res") === false, "okulde was accepted for okulda");
+  /* One letter off, so the answer waits for a second look; the same slip
+     twice is then explained. */
+  ok(ev("TK.near") === true && ev("TK.phase") === "ask", "a one-letter slip was not given a second try");
+  ev("tkCheck()");
+  ok(ev("TK.near") === false && ev("TK.phase") === "check", "the second try did not close the question");
   ok(/Neden\? · why/.test(lastPaint) && /harmony/.test(lastPaint), "a harmony slip was not named as one");
   ok(/harmony/.test(ev("S.err['r:'+TK.q[TK.i].k].w")), "the mistake book did not keep the rule");
   ev("tkNext()");
@@ -3565,6 +3656,25 @@ step("derse başla · a unit in three lessons, checks by level", () => {
   const nq = ev("AD.q.length"); ev("adNext()"); doc.getElementById("abox") && (doc.getElementById("abox").value = "");
   ev("adType()");
   ok(ev("AD.phase") === "ask" && ev("AD.q.length") === nq, "an empty answer was marked");
+
+  /* A slip of one letter is given a second look, in a word and in a
+     sentence. The miss is booked and comes back like any other; the
+     second look only says whether the correction landed. */
+  ev("startAdim('a2u1',0); AD.q.splice(AD.i,0,{t:'type',id:96,w:{i:0,tr:'merhaba',say:'merhaba',en:'hello',em:''},c:'merhaba',alts:['merhaba']}); render()");
+  const nq0 = ev("AD.q.length");
+  doc.getElementById("abox").value = "merhab"; ev("adType()");
+  ok(ev("AD.near") === true && ev("AD.phase") === "ask" && /Neredeyse/.test(lastPaint) && !!doc.getElementById("abox"), "a one-letter slip in a lesson did not keep the question open");
+  ok(ev("AD.q.length") === nq0 + 1, "a one-letter slip in a lesson was not sent round again");
+  doc.getElementById("abox").value = "merhaba"; ev("adType()");
+  ok(ev("AD.near") === false && ev("AD.second") === true && ev("AD.ok") === false && ev("AD.phase") === "fb" && /second try/.test(lastPaint), "a corrected second try in a lesson was not closed as one");
+  ok(ev("AD.q.length") === nq0 + 1, "the second try sent the question round a second time");
+  ev("adNext()");
+  ok(ev("AD.near") === false && ev("AD.second") === false, "the second look leaked into the next check");
+  ev("AD.q.splice(AD.i,0,{t:'gex',id:95,c:'Ben yarın gideceğim.',en:'I will go tomorrow.'}); render()");
+  doc.getElementById("abox").value = "ben yarin gidecegm"; ev("adType()");
+  ok(ev("AD.near") === true && ev("AD.phase") === "ask", "a one-letter slip in an example sentence did not keep it open");
+  doc.getElementById("abox").value = "ben dun gittim"; ev("adType()");
+  ok(ev("AD.near") === false && ev("AD.second") === false && ev("AD.ok") === false && /class="fb no"/.test(lastPaint), "a second miss in a lesson was not marked as one");
 
   /* Leaving goes back to the unit; a locked unit cannot be walked. */
   ev("startAdim('a1u2')"); ev("back()");

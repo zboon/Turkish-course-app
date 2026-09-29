@@ -76,7 +76,7 @@ try {
     "parsePlain:parsePlain,parseTime:parseTime,parsePrice:parsePrice," +
     "MONTHS:MONTHS,WEEKDAYS:WEEKDAYS,dateWords:dateWords,dateDigits:dateDigits," +
     "DIYALOG:DIYALOG,DIA_REPAIR:DIA_REPAIR,ATASOZU:ATASOZU,DEYIM:DEYIM,SIK:SIK,BASLA:BASLA,RESIM:RESIM," +
-    "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny," +
+    "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny,nearMiss:nearMiss," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf," +
     "ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
@@ -317,6 +317,54 @@ let diagChecked = 0;
   UNITS.forEach(u => u.read.lines.forEach(l => l[0].split(/\s+/).forEach(w => {
     diagChecked++;
     if (w && D(w, w)) err("teşhis", u.id + ": " + JSON.stringify(w) + " is diagnosed against itself");
+  })));
+}
+
+/* ---------- nearMiss: one letter off, in one word, and nothing else ---------- */
+/* Silence is the default. A different word is not a slip: nothing under four
+   letters, nothing with a digit, a second wrong word is not one slip, and
+   what fold() already accepts never gets here. Both halves are held, the
+   slips it must call and the ones it must leave alone. */
+let nearChecked = 0;
+{
+  const NM = M.nearMiss;
+  [["okulde", "okulda", true],           /* one letter changed */
+   ["kitab", "kitap", true],
+   ["gidiyorm", "gidiyorum", true],      /* one letter missing */
+   ["gidiyorumm", "gidiyorum", true],    /* one letter too many */
+   ["merahba", "merhaba", true],         /* two letters swapped */
+   ["Okula gidiyorm", "Okula gidiyorum", true],
+   ["isin", ["ad", "isim"], true],       /* against the alternatives */
+   ["gül", "gel", false],                /* short words differ as words */
+   ["ev", "el", false],
+   ["2024", "2025", false],
+   ["okulda", "okulda", false],          /* the answer itself */
+   ["sicak", "sıcak", false],            /* diacritics are forgiven, not a slip */
+   ["okulde çok", "okulda çalışıyorum", false],
+   ["okulde gidiyorm", "okulda gidiyorum", false],   /* two slips are not one */
+   ["okul gittim", "okula gidiyorum", false],
+   ["gidiyorsun", "gidiyorum", false],   /* two letters */
+   ["okul", "kapı", false],
+   ["iyi gun", "iyigun", false],
+   ["", "merhaba", false],
+   ["isim", ["ad", "isim"], false]
+  ].forEach(([typed, answer, want]) => {
+    nearChecked++;
+    const got = NM(typed, answer);
+    if (got !== want) err("neredeyse", JSON.stringify(typed) + " against " + JSON.stringify(answer) + " is " + got + ", hand-checked answer is " + want);
+  });
+  /* Every written word of every passage, against itself, is right and so
+     never a near miss; and dropping its last letter is one whenever the
+     word is long enough to be a word. */
+  UNITS.forEach(u => u.read.lines.forEach(l => l[0].split(/\s+/).forEach(w => {
+    const f = M.fold(w);
+    if (!f || f.includes(" ")) return;
+    nearChecked++;
+    if (NM(w, w)) err("neredeyse", u.id + ": " + JSON.stringify(w) + " is a near miss of itself");
+    if (f.length >= 5 && !/\d/.test(f)) {
+      nearChecked++;
+      if (!NM(f.slice(0, -1), w)) err("neredeyse", u.id + ": " + JSON.stringify(f.slice(0, -1)) + " is not a near miss of " + JSON.stringify(w));
+    }
   })));
 }
 
@@ -1732,6 +1780,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + nearChecked + " near-miss checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));
