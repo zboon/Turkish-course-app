@@ -32,6 +32,7 @@ cat \
   src/shared/voice.js \
   src/shared/srs.js \
   src/shared/sync.js \
+  src/shared/nav.js \
   src/app.core.js \
   src/app.lang.js \
   src/app.screens.js \

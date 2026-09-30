@@ -7,6 +7,7 @@ function render(){
   else if(v==="play")renderPlay();
   else if(v==="parents")renderParents();
   else renderHome();
+  navSync();
 }
 /* A voice list that arrives after the first paint may change the voice
    note. Redraw for it only where nothing is being typed or played. */
@@ -16,6 +17,7 @@ if(ttsOK()){try{
   };
   speechSynthesis.getVoices();
 }catch(e){}}
+navInit(function(){return V.view==="home";},back);
 load();
 syncStart(SYNC_KIDS);
 if(S.theme)document.documentElement.setAttribute("data-theme",S.theme);

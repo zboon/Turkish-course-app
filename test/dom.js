@@ -213,7 +213,21 @@ sandbox.globalThis = sandbox;
 sandbox.window.innerWidth = 390;
 sandbox.window.innerHeight = 780;
 sandbox.window.scrollTo = () => {};
-sandbox.window.addEventListener = () => {};
+/* A history to press back on. pressBack() is the phone's button: it goes
+   to the entry before this one and fires popstate, or, with nothing before
+   it, leaves the app (left). The app's own history.back() is the same. */
+const winEv = {};
+sandbox.window.addEventListener = (t, fn) => { (winEv[t] = winEv[t] || []).push(fn); };
+const hist = { entries: [null], pos: 0, left: false };
+sandbox.history = {
+  pushState(s) { hist.entries.length = hist.pos + 1; hist.entries.push(s); hist.pos++; },
+  back() { pressBack(); }
+};
+function pressBack() {
+  if (hist.pos === 0) { hist.left = true; return; }
+  hist.pos--;
+  (winEv.popstate || []).forEach(fn => fn({ state: hist.entries[hist.pos] }));
+}
 sandbox.window.matchMedia = () => ({ matches: false, addListener() {}, addEventListener() {} });
 /* A stand-in for the claude.ai viewer's window.claude, when a test gives
    one (test/sync.js); without it the page runs as it does on Pages. And
@@ -229,7 +243,7 @@ try { vm.runInContext(code, sandbox, { filename: file }); }
 catch (e) { console.error("the app threw while booting\n  " + (e && e.stack || e)); process.exit(1); }
 
   return {
-    ev, doc, appEl, bodyEl, documentEl, voice, drain, clock, store,
+    ev, doc, appEl, bodyEl, documentEl, voice, drain, clock, store, hist, pressBack,
     /* The app paints once while booting, before any caller can listen,
        so the last screen is always readable after the fact. */
     lastHTML: () => lastHTML,
