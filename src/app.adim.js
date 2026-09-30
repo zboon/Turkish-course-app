@@ -143,7 +143,7 @@ function adNext(){
   if(!AD)return;
   stopPlay();
   AD.i=Math.min(AD.i+1,AD.q.length-1);
-  AD.phase="ask";AD.sel=null;AD.built=[];AD.ok=null;AD.shown=false;AD.txt=false;AD.typed="";AD.j=null;AD.diag=null;AD.known={};
+  AD.phase="ask";AD.near=false;AD.second=false;AD.sel=null;AD.built=[];AD.ok=null;AD.shown=false;AD.txt=false;AD.typed="";AD.j=null;AD.diag=null;AD.known={};
   window.scrollTo(0,0);render();
 }
 /* What is said once a check is answered: the word, the whole line, or the
@@ -153,7 +153,7 @@ function adSaid(s){return s.t==="cloze"?s.full:s.t==="gex"?s.c:s.w?s.w.say:"";}
    moves on from the words: the grammar, the lines said aloud, the common
    words, the speaking task, or the end. */
 const AD_STOP={gram:1,say:1,sik:1,speak:1,end:1};
-function adJudge(ok){
+function adJudge(ok,stay){
   const s=adCur(); if(!s)return;
   const n=(AD.tries[s.id]=(AD.tries[s.id]||0)+1);
   if(!ok&&n<=ADIM_RETRY){
@@ -163,6 +163,9 @@ function adJudge(ok){
     const at=AD.q.findIndex(function(x,k){return k>AD.i&&AD_STOP[x.t];});
     AD.q.splice(at<0?AD.q.length-1:at,0,again);
   }
+  /* stay: a typed answer one letter off. The miss is booked and comes
+     back later like any other, and the question stays open for one look. */
+  if(stay){AD.near=true;render();return;}
   AD.ok=ok;AD.phase="fb";render();
   if(s.t!=="hear")say(adSaid(s),0.85);
 }
@@ -177,16 +180,26 @@ function adType(){
   const s=adCur(); if(!s||AD.phase!=="ask")return;
   const box=document.getElementById("abox"); if(box)AD.typed=box.value;
   if(!fold(AD.typed))return;
+  let ok;
   if(s.t==="gex"){
     AD.j=sentOk(s.c,AD.typed,s.en);
     AD.diag=AD.j.res.same?[]:diagnoseLine(s.c,AD.typed,2);
-    adJudge(AD.j.res.same);
+    ok=AD.j.res.same;
   }else{
     AD.j=wordOk(AD.typed,s.alts,s.t==="cloze"?s.q:"",s.t==="cloze"?s.hint:s.w.en);
     const d=AD.j.ok?null:diagAny(AD.typed,s.c);
     AD.diag=d?[d]:[];
-    adJudge(AD.j.ok);
+    ok=AD.j.ok;
   }
+  /* The second try after "neredeyse": already booked, so it only says
+     whether the correction landed. */
+  if(AD.near){
+    AD.near=false;AD.second=ok;AD.ok=false;AD.phase="fb";render();
+    say(adSaid(s),0.85);
+    return;
+  }
+  const close=!ok&&nearMiss(AD.typed,s.t==="gex"?s.c:s.alts);
+  adJudge(ok,close);
 }
 function adShow(){if(AD){AD.shown=true;render();}}
 /* Said first, then heard: the Turkish is revealed and played. */
@@ -299,6 +312,7 @@ function renderAdim(){
       '<button class="btn ghost" onclick="go(\'unit\',\''+u.id+'\',\'v\')">Üniteye dön</button></div>';
   }
   if(typed&&AD.phase==="ask"){
+    if(AD.near)h+=nearBox();
     h+='<input class="inp" id="abox" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Türkçe yaz…" value="'+esc(AD.typed)+'">'+
       '<button class="btn" onclick="adType()">Kontrol et</button>';
   }
@@ -330,6 +344,6 @@ function adFeedback(s){
   if(AD.j){
     notes=AD.ok?spokenBox(AD.j.spoken,s.c)+sizBox(AD.j.siz,s.c):diagBox(AD.diag);
   }
-  return '<div class="fb '+(AD.ok?"ok":"no")+'"><b>'+(AD.ok?"Doğru":"Yanlış")+'</b>'+ans+back+notes+'</div>'+
+  return '<div class="fb '+(AD.ok||AD.second?"ok":"no")+'"><b>'+(AD.ok?"Doğru":AD.second?tx("Right, on the second try","İkinci denemede doğru"):"Yanlış")+'</b>'+ans+back+notes+'</div>'+
     '<button class="btn" onclick="adNext()">Devam</button>';
 }

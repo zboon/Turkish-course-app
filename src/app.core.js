@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.81";
+const APP_VERSION="v3.82";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -394,6 +394,7 @@ function back(){
   if(V.view==="unit"){go("level",unit(V.u).lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="unit"){go("unit",Q.u,"d");}
   else if(V.view==="quiz"&&Q&&Q.mode==="level"){go("level",Q.lv);}
+  else if(V.view==="quiz"&&Q&&Q.mode==="redo"){Q.of==="unit"?go("unit",Q.u,"d"):go("level",Q.lv);}
   else if(V.view==="quiz"&&Q&&Q.mode==="intro"){go("basla",Q.b);}
   else if(V.view==="quiz"&&Q&&Q.mode==="introtest"){go("baslarken");}
   else if(V.view==="basla"){go("baslarken");}

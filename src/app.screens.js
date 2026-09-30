@@ -496,7 +496,8 @@ function renderQuiz(){
       h+='<button class="'+cls+'" '+(Q.sel===null?'onclick="answerMC('+i+')"':'')+'>'+esc(o)+'</button>';
     });
   }else if(it.t==="fill"){
-    h+='<input class="inp" id="fin" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="yazın…" '+(Q.sel!==null?'disabled value="'+esc(Q.typed||"")+'"':'')+'>';
+    if(Q.near&&Q.sel===null)h+=nearBox();
+    h+='<input class="inp" id="fin" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="yazın…" '+(Q.sel!==null?'disabled value="'+esc(Q.typed||"")+'"':(Q.near?'value="'+esc(Q.typed||"")+'"':''))+'>';
     if(Q.sel===null)h+='<button class="btn" onclick="answerFill()">Kontrol et</button>';
   }else{
     h+='<div class="slot" id="slot">'+Q.built.map((w,i)=>'<button class="tile" '+(Q.sel===null?'onclick="unbuild('+i+')"':'')+'>'+esc(w)+'</button>').join('')+'</div>';
@@ -506,8 +507,9 @@ function renderQuiz(){
     if(Q.sel===null)h+='<button class="btn" onclick="answerOrder()" '+(Q.built.length?'':'disabled')+'>Kontrol et</button>';
   }
   if(Q.sel!==null){
-    const ok=Q.res[Q.i];
-    h+='<div class="fb '+(ok?"ok":"no")+'"><b>'+(ok?"Doğru":"Yanlış")+'</b>'+
+    const ok=Q.res[Q.i], late=!ok&&Q.second;
+    h+='<div class="fb '+(ok||late?"ok":"no")+'"><b>'+(ok?"Doğru":late?tx("Right, on the second try","İkinci denemede doğru"):"Yanlış")+'</b>'+
+      (late?'<span class="tiny">'+tx("The first try is the one that counts, so this one is not scored.","Sayılan ilk denemedir; bu soru puana girmez.")+'</span> ':'')+
       (ok?'':(it.t==="mc"?esc(it.a[it.c]):esc(it.c))+(it.why?' — ':''))+esc(it.why||"")+'</div>'+
       (ok&&it.t==="fill"&&Q.siz?sizBox(Q.siz,it.c):'');
     h+='<button class="btn" onclick="nextQ()">'+(Q.i+1>=Q.items.length?"Sonuç":"Devam")+'</button>';
@@ -523,8 +525,15 @@ function answerMC(i){const it=Q.items[Q.i];Q.sel=i;Q.res[Q.i]=(i===it.c);
   render();}
 function answerFill(){
   const fin=document.getElementById("fin"); if(!fin)return;
-  const v=fin.value; Q.typed=v; Q.sel=0;
+  const v=fin.value; Q.typed=v;
   const it=Q.items[Q.i];
+  /* A second try: the first answer has already been marked and booked,
+     so this one only says whether the correction landed. */
+  if(Q.near){
+    Q.near=false; Q.sel=0; Q.second=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,"");
+    render(); return;
+  }
+  Q.sel=0;
   Q.res[Q.i]=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,"");
   /* The other you, where the sentence does not say which. */
   Q.siz=null;
@@ -532,8 +541,19 @@ function answerFill(){
     const sz=sizToward(v,it.c,it.q,"");
     if(sz.used.length&&sz.text===fold(it.c)){Q.res[Q.i]=true;Q.siz=sz.used;}
   }
-  if(!Q.res[Q.i])quizNote(it,v);
+  if(!Q.res[Q.i]){
+    quizNote(it,v);
+    /* One letter off, in a unit quiz or a level test: say so and look
+       again. The miss stands; the answer stays hidden until the second
+       try is in. */
+    if(nearMiss(v,it.c)){Q.sel=null;Q.near=true;}
+  }
   render();
+}
+/* The message over the box while a second try is open. */
+function nearBox(){
+  return '<div class="fb no"><b>'+tx("Almost","Neredeyse")+'</b>'+
+    tx("One letter is off. Look again and try once more.","Bir harf yanlış. Tekrar bak ve bir kez daha dene.")+'</div>';
 }
 function build(i){if(Q.used[i])return;Q.used[i]=1;Q.built.push(Q.pool[i]);Q.bidx=Q.bidx||[];Q.bidx.push(i);render();}
 function unbuild(i){const src=Q.bidx[i];Q.used[src]=0;Q.built.splice(i,1);Q.bidx.splice(i,1);render();}
@@ -543,7 +563,32 @@ function answerOrder(){
   if(!Q.res[Q.i])quizNote(it,Q.built.join(" "));
   render();
 }
-function nextQ(){Q.i++;Q.sel=null;Q.siz=null;Q.built=[];Q.bidx=[];Q.pool=null;Q.used=[];Q.typed="";window.scrollTo(0,0);render();}
+function nextQ(){Q.i++;Q.sel=null;Q.siz=null;Q.near=false;Q.second=false;Q.built=[];Q.bidx=[];Q.pool=null;Q.used=[];Q.typed="";window.scrollTo(0,0);render();}
+/* The misses again, as practice. A new round on the items missed, in a new
+   order with the options shuffled, that changes nothing: no score, no pass,
+   no schedule and no mistake book (quizNote stands down while it runs).
+   The misses come back on later days through the schedules that already
+   hold them; this is only the chance to get them right while the
+   explanation is still on the screen. */
+function startRedo(){
+  const miss=[]; Q.items.forEach(function(it,i){if(Q.res[i]===false)miss.push(it);});
+  if(!miss.length)return;
+  const items=shuffle(miss).map(function(it){
+    if(it.t!=="mc")return Object.assign({},it);
+    const right=it.a[it.c], a=shuffle(it.a);
+    return Object.assign({},it,{a:a,c:a.indexOf(right)});
+  });
+  const from=Q.mode==="redo"?Q.of:Q.mode;
+  Q={mode:"redo",of:from,u:Q.u,lv:Q.lv,items:items,i:0,res:[],sel:null,built:[],title:Q.title,pass:0,
+     passed:Q.mode==="redo"?Q.passed:Q.res.filter(Boolean).length>=Q.pass};
+  V={view:"quiz"}; window.scrollTo(0,0); render();
+}
+function redoBtn(){
+  const miss=Q.res.filter(function(r){return r===false;}).length;
+  if(!miss)return "";
+  return '<button class="btn ghost" onclick="startRedo()">'+tx("Try the ones you missed again ("+miss+")","Yanlışları bir daha dene ("+miss+")")+'</button>'+
+    '<p class="tiny" style="margin:.1rem 0 .5rem">'+tx("Practice only: your score and your reviews stay as they are.","Sadece alıştırma: puanın ve tekrarların olduğu gibi kalır.")+'</p>';
+}
 function renderScore(){
   const n=Q.res.filter(Boolean).length, of=Q.items.length;
   touchDay();
@@ -562,6 +607,18 @@ function renderScore(){
       "Bu kaba bir yerleştirme, belge değil. Üniteler sırayla açılır; daha ileri bir seviyeden başlamak için ondan önceki her seviyenin sınavını geç: ondan sekiz doğru o seviyeyi tamamlar.")+'</p>'+
       '<button class="btn" onclick="go(\'level\',\''+start+'\')">'+start+' ile başla</button>'+
       '<button class="btn ghost" onclick="home()">Ana sayfa</button></div>';
+  }else if(Q.mode==="redo"){
+    h+='<div class="score"><div class="big '+(n===of?"pass":"")+'">'+n+'/'+of+'</div>'+
+      '<p class="sub">'+tx("Second round","İkinci tur")+'</p></div>'+
+      '<div class="card"><p class="sub">'+tx("Practice only: your score, the unit and your reviews are unchanged. A miss here still comes back on its usual day.",
+        "Sadece alıştırma: puanın, ünite durumun ve tekrarların değişmedi. Buradaki bir yanlış yine her zamanki günde geri gelir.")+'</p>'+redoBtn();
+    if(Q.of==="unit"){
+      h+='</div>'+(Q.passed?planNext():'<button class="btn" onclick="startUnitQuiz(\''+Q.u+'\')">Tekrar dene</button>')+
+         '<button class="btn ghost" onclick="go(\'unit\',\''+Q.u+'\',\'d\')">Üniteye dön</button>';
+    }else{
+      h+='<button class="btn" onclick="startLevelExam(\''+Q.lv+'\')">Tekrar dene</button>'+
+         '<button class="btn ghost" onclick="go(\'level\',\''+Q.lv+'\')">Seviyeye dön</button></div>';
+    }
   }else{
     const pass=n>=Q.pass;
     h+='<div class="score"><div class="big '+(pass?"pass":"fail")+'">'+n+'/'+of+'</div>'+
@@ -580,6 +637,7 @@ function renderScore(){
                                  "Seviye tamamlandı: "+Q.lv+" seviyesindeki bütün üniteler işaretlendi. Yine de istediğin üniteyi açıp okuyabilirsin."))
            : tx("You need "+Q.pass+" to pass. Review the section and try again — wrong answers are worth more than right ones.",
                 "Geçmek için "+Q.pass+" doğru gerekiyor. Konuyu gözden geçir ve yeniden dene; yanlışlar doğrulardan daha çok şey öğretir."))+'</p>';
+    h+=redoBtn();
     if(Q.mode==="unit"){
       const u=unit(Q.u), us=unitsOf(u.lv), i=us.findIndex(x=>x.id===u.id);
       /* Passed: the way on is the rest of today's plan, not the next unit

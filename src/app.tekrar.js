@@ -325,6 +325,13 @@ function tkCheck(){
   const it=TK.q[TK.i]; if(!it)return;
   tkKeep();
   const j=wordOk(TK.typed,it.alts||[fold(it.c)],it.kind==="cloze"?it.q:"",it.kind==="cloze"?it.hint:it.en);
+  /* The second try after "neredeyse": the first answer was marked and
+     scheduled when it came in, so this one only shows whether the
+     correction landed, and moves nothing. */
+  if(TK.near){
+    TK.near=false;TK.second=j.ok;TK.spoken=null;TK.siz=null;
+    TK.phase="check";render();return;
+  }
   const good=j.ok;
   TK.spoken=j.spoken;TK.siz=j.siz;
   TK.res=good;
@@ -333,6 +340,8 @@ function tkCheck(){
   repGrade(it.k,good);
   if(good)TK.right++;
   else errNote("r:"+it.k,{m:"r",q:it.q,c:it.c,a:TK.typed,w:TK.diag?TK.diag.t:"",to:it.u||""});
+  /* One letter off: say so and stay on the question. The miss stands. */
+  if(!good&&nearMiss(TK.typed,it.alts||[fold(it.c)])){TK.near=true;render();return;}
   TK.phase="check";render();
 }
 function tkSay(){
@@ -341,7 +350,7 @@ function tkSay(){
 }
 function tkNext(){
   if(!TK)return;
-  TK.i++;TK.typed="";TK.res=null;TK.phase="ask";window.scrollTo(0,0);
+  TK.i++;TK.typed="";TK.res=null;TK.near=false;TK.second=false;TK.phase="ask";window.scrollTo(0,0);
   if(TK.i>=TK.q.length){TK.phase="end";}
   render();
 }
@@ -403,6 +412,7 @@ function renderTekrarRun(){
   }
 
   if(TK.phase==="ask"){
+    if(TK.near)h+=nearBox();
     h+='<input class="inp" id="tbox" autocapitalize="off" autocomplete="off" autocorrect="off" '+
      'spellcheck="false" placeholder="yaz…" value="'+esc(TK.typed||"")+'">'+
      '<button class="btn" onclick="tkCheck()">Kontrol et</button>';
@@ -411,7 +421,7 @@ function renderTekrarRun(){
      '<p style="font-family:\'Crimson Pro\',serif;font-size:1.5rem;margin:0">'+esc(it.c)+'</p>'+
      '<p class="sub" style="margin-top:.3rem">'+esc(it.tr+" · "+it.en)+'</p>'+
      '<button class="sbtn" style="margin-top:.4rem" onclick="tkSay()">'+IC.spk+' dinle</button></div>';
-    h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?"Doğru":"Yanlış")+'</b>'+
+    h+='<div class="fb '+(TK.res||TK.second?"ok":"no")+'"><b>'+(TK.res?"Doğru":TK.second?tx("Right, on the second try","İkinci denemede doğru"):"Yanlış")+'</b>'+
      (TK.res?tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek.")
             :tx("Wrong answers come back today. Being asked still counts as an encounter.","Yanlışlar bugün yeniden gelir. Sorulmak yine de bir karşılaşma sayılır."))+
      (TK.res?spokenBox(TK.spoken,it.c)+sizBox(TK.siz,it.c):diagBox(TK.diag?[TK.diag]:[]))+altBox(tkAlts(it))+'</div>';

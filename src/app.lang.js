@@ -478,6 +478,46 @@ function diagAny(typed,answer){
   return null;
 }
 
+/* ===================== neredeyse · a slip of one letter ===================== */
+/* A typed answer that is one letter away from the right one, in one word,
+   with every other word right. The app says so and lets the learner look
+   again before it says what the answer is; the first try is still what is
+   scored. Silence is the default, as in diagnose(): a different word is not
+   a slip, so nothing shorter than four letters qualifies (gel and gül, ev
+   and el), nothing with a digit in it (2024 and 2025), and a second wrong
+   word is not one slip. Diacritics never reach it: fold() has already
+   accepted them, and it is compared folded. */
+function editOne(a,b){
+  if(a===b)return false;
+  const d=a.length-b.length;
+  if(d>1||d<-1)return false;
+  if(d===0){
+    let i=0; while(i<a.length&&a[i]===b[i])i++;
+    if(a.slice(i+1)===b.slice(i+1))return true;
+    return a[i]===b[i+1]&&a[i+1]===b[i]&&a.slice(i+2)===b.slice(i+2);
+  }
+  const l=d>0?a:b, s=d>0?b:a;
+  let i=0; while(i<s.length&&l[i]===s[i])i++;
+  return l.slice(i+1)===s.slice(i);
+}
+function nearMiss(typed,answers){
+  const t=fold(typed).split(" ");
+  if(!t[0])return false;
+  const list=Array.isArray(answers)?answers:[answers];
+  return list.some(function(a){
+    const w=fold(a).split(" ");
+    if(w.length!==t.length)return false;
+    let bad=-1;
+    for(let i=0;i<w.length;i++){
+      if(w[i]!==t[i]){if(bad>=0)return false;bad=i;}
+    }
+    if(bad<0)return false;
+    const x=w[bad];
+    if(x.length<4||/\d/.test(x))return false;
+    return editOne(x,t[bad]);
+  });
+}
+
 /* ===================== konuşma dili · spoken forms ===================== */
 /* Written Turkish and spoken Turkish spell some words differently, and the
    spoken spelling is also how people text: gidicem for gideceğim, bi for

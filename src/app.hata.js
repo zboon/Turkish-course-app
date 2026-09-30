@@ -137,6 +137,8 @@ function errUnitOf(k){
    questions by position in PLACEMENT. */
 function quizNote(it,given){
   if(!it)return;
+  /* The second round after a quiz is practice; it books nothing. */
+  if(typeof Q!=="undefined"&&Q&&Q.mode==="redo")return;
   const c=it.t==="mc"?it.a[it.c]:it.c;
   const key=it.uid?("q:"+it.uid+"#"+it.di):(it.pi!==undefined?"p:"+it.pi:"");
   if(!key)return;
