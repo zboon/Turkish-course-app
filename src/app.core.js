@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.83";
+const APP_VERSION="v3.84";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -136,6 +136,16 @@ function dersMark(id,k){
   const d=dersOf(id).slice(); if(d[k])return;
   d[k]=dayNum(); S.ders[id]=d; save();
 }
+/* How far through a level's lessons: three a unit, so thirty a level. A unit
+   passed without its lessons (a level test, or before there were lessons)
+   counts all three, so testing out of A1 does not read as nothing done. The
+   unit count is still what opens the next level; this is what moves while a
+   level is being worked, because a unit is only passed after its third
+   lesson and its exercises. */
+function lvLessons(lv){let n=0;unitsOf(lv).forEach(function(u){n+=isDone(u.id)?LESSONS:dersOf(u.id).filter(Boolean).length;});return n;}
+function lvLessonsOf(lv){return unitsOf(lv).length*LESSONS;}
+/* The bar's fill: lessons, but never full until every unit is passed. */
+function lvFrac(lv){const t=lvLessonsOf(lv),p=t?Math.round(100*lvLessons(lv)/t):0;return p>=100&&lvPct(lv)<100?99:p;}
 function dersCount(){let n=0;for(const id in (S.ders||{}))n+=S.ders[id].filter(Boolean).length;return n;}
 function lessonsNewToday(){
   const n=dayNum();
