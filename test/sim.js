@@ -2688,7 +2688,7 @@ step("ilerleme · the state of every mode, in one place", () => {
   ok(ev("V.view") === "ilerleme", "İlerleme did not open");
   ok(lastPaint.includes("met once"), "İlerleme does not draw the encounter distribution");
   ok(lastPaint.includes("<b>" + ev("repBank().length") + " / " + ev("repAll()") + "</b>"), "the words-met count disagrees with the bank");
-  ok(lastPaint.includes("<b>10 / 10</b>"), "A1 does not read as complete");
+  ok(lastPaint.includes("<b>30 / 30</b>") && lastPaint.includes("10 of 10 units passed"), "A1 does not read as complete");
   ok(lastPaint.includes("<b>" + ev("gramBank().length") + " / " + ev("UNITS.length") + "</b>"), "the grammar-read count disagrees");
   /* Numbers are read, never stored. */
   const before = JSON.stringify(ev("S"));
@@ -2825,6 +2825,42 @@ step("the phone's back button retraces the app", () => {
   /* A redraw holds nothing more. */
   const at = H.pos; ev("render()"); ev("render()");
   ok(H.pos === at, "redrawing added history entries");
+  ev("wipe()");
+});
+
+/* Reported: A2 still said 0 / 10 in the course progress while its lessons
+   were being done. A unit is only passed after its third lesson and the
+   exercises, so counting units read nothing for a level well under way. A
+   level is thirty lessons, and the rows now count those; the units passed
+   are the words under them, and still what opens the next level. */
+step("kurs · a level is thirty lessons, counted as they are finished", () => {
+  ev("wipe()");
+  const a2 = ev("unitsOf('A2').map(function(u){return u.id})");
+  ok(a2.length === 10 && ev("lvLessonsOf('A2')") === 30, "a level is not thirty lessons");
+  ev("dersMark(" + q(a2[0]) + ",0);dersMark(" + q(a2[0]) + ",1);dersMark(" + q(a2[1]) + ",0);dersMark(" + q(a2[1]) + ",1);dersMark(" + q(a2[1]) + ",2)");
+  ok(ev("lvLessons('A2')") === 5 && ev("lvDone('A2')") === 0 && ev("lvPct('A2')") === 0, "five lessons did not read as five, or opened something a passed unit opens");
+  ev("go('ilerleme')");
+  ok(lastPaint.includes("<b>5 / 30</b>") && lastPaint.includes("0 of 10 units passed"), "İlerleme does not count A2's lessons: " + (/A2 ·[\s\S]{0,300}/.exec(lastPaint) || [""])[0].slice(0, 200));
+  ev("go('dersler')");
+  ok(lastPaint.includes("5/30 ders") && !lastPaint.includes("0/10 ünite"), "Dersler's level card does not count lessons");
+  ev("go('level','A2')");
+  ok(lastPaint.includes("5 of 30 lessons") && lastPaint.includes("0 of 10 units passed"), "the level page does not say where the level stands");
+  ok(lastPaint.includes('style="width:17%"'), "the level's bar does not follow its lessons");
+  /* A passed unit is its three lessons, taken or not; a level tested out of
+     is all thirty. */
+  ev("S.done[" + q(a2[2]) + "]={score:5,of:5,at:0}");
+  ok(ev("lvLessons('A2')") === 8 && ev("lvDone('A2')") === 1, "a unit passed without its lessons did not count all three");
+  ev("unitsOf('A1').forEach(function(u){S.done[u.id]={score:8,of:10,at:0,byTest:true}})");
+  ok(ev("lvLessons('A1')") === 30, "a level tested out of does not read as thirty");
+  /* Full lessons are not a passed level: the bar waits for the units. */
+  ev("wipe()");
+  ev("unitsOf('A2').forEach(function(u){for(var k=0;k<3;k++)dersMark(u.id,k)})");
+  ok(ev("lvLessons('A2')") === 30 && ev("lvPct('A2')") === 0 && ev("lvFrac('A2')") === 99, "thirty lessons with no unit passed filled the bar or passed the level");
+  ev("unitsOf('A2').forEach(function(u){S.done[u.id]={score:5,of:5,at:0,first:0}})");
+  ok(ev("lvFrac('A2')") === 100 && ev("lvPct('A2')") === 100, "a finished level does not fill the bar");
+  /* Read, never stored. */
+  const st = JSON.stringify(ev("S")); ev("go('ilerleme')"); ev("home()");
+  ok(JSON.stringify(ev("S")) === st, "drawing the level counts changed the saved state");
   ev("wipe()");
 });
 

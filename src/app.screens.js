@@ -74,8 +74,8 @@ function renderDersler(){
     const p=lvPct(l.id), t=S.tested[l.id];
     h+='<button class="card" onclick="go(\'level\',\''+l.id+'\')"><div class="row">'+
       '<span class="lvl-badge '+(p===100?"on":(t?"tested":""))+'">'+l.id+'</span>'+
-      '<div class="grow"><p class="lead">'+esc(l.tr)+'</p><p class="sub">'+esc(l.en)+' · '+lvDone(l.id)+'/'+unitsOf(l.id).length+' ünite</p></div>'+
-      '<span class="chev">'+IC.chev+'</span></div><div class="meter"><i style="width:'+p+'%"></i></div></button>';
+      '<div class="grow"><p class="lead">'+esc(l.tr)+'</p><p class="sub">'+esc(l.en)+' · '+lvLessons(l.id)+'/'+lvLessonsOf(l.id)+' ders</p></div>'+
+      '<span class="chev">'+IC.chev+'</span></div><div class="meter"><i style="width:'+lvFrac(l.id)+'%"></i></div></button>';
   });
   if(!first)h+=start;
   h+='<p class="foot">'+tx("A unit is ticked at four right out of five.<br>Each level also has a test-ahead exam that skips it outright.",
@@ -198,7 +198,9 @@ function renderLevel(){
   const l=LEVELS.find(x=>x.id===V.lv), us=unitsOf(l.id), p=lvPct(l.id);
   let h=bar(l.tr,l.id+" · "+l.en,true)+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+esc(l.blurb)+'</p>';
-  h+='<div class="meter" style="margin-bottom:1.2rem"><i style="width:'+p+'%"></i></div>';
+  h+='<div class="meter" style="margin-bottom:.3rem"><i style="width:'+lvFrac(l.id)+'%"></i></div>'+
+     '<p class="tiny" style="margin:0 .2rem 1.1rem">'+tx(lvLessons(l.id)+' of '+lvLessonsOf(l.id)+' lessons · '+lvDone(l.id)+' of '+us.length+' units passed',
+       lvLessonsOf(l.id)+' dersin '+lvLessons(l.id)+' tanesi · '+us.length+' ünitenin '+lvDone(l.id)+' tanesi geçildi')+'</p>';
   if(!unitOpen(us[0].id))h+=lockCard(us[0]);
   h+='<div class="card" style="padding:.2rem 1rem">';
   us.forEach(u=>{

@@ -2706,6 +2706,23 @@ three were the test: a home-button check satisfied by the bar's own home
 icon, a duplicate-offer check whose fixture never produced the
 duplicate, and a breakage that only renamed a class.
 
+### A level is thirty lessons
+
+Reported by the learner: İlerleme's Kurs section still said *A2 · 0 / 10* while
+A2's lessons were being done. A unit is only passed after its third lesson and
+its five exercises, so counting units read nothing for a level well under way,
+and the pace is thirty lessons a level (ten units of three, one a day).
+`lvLessons(lv)` counts them: the lessons finished, with a unit passed without
+them (a level test, or before there were lessons) counting all three, so
+testing out of A1 reads 30 / 30 and not nothing. The rows on İlerleme, the level
+cards on Dersler and the bar on each level page use it, with the units passed
+as the words beside it (*5 of 30 lessons · 0 of 10 units passed*). The bar
+(`lvFrac`) never fills on lessons alone: thirty lessons with no unit passed
+reads 99%, because the units are what open the next level. Nothing is stored,
+and `lvDone`/`lvPct` are untouched, since they are what gates the next level,
+the English default and the orientation link. Five deliberate breakages each
+turned `sim.js` red.
+
 ## Ana ekran (the landing page, and the two doors)
 
 The home screen used to carry, in one column: the hero, a five-paragraph

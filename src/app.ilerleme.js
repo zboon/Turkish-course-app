@@ -77,8 +77,13 @@ function renderIlerleme(){
 
   h+='<h2 class="sec">Kurs</h2><div class="card">'+
     ilRow("Başlarken","the lessons before unit one",baslaCount(),BASLA.length)+
-    ilRow("Dersler","lessons finished, three a unit",dersCount(),UNITS.length*LESSONS);
-  LEVELS.forEach(function(l){h+=ilRow(l.id+" · "+l.tr,l.en,lvDone(l.id),unitsOf(l.id).length);});
+    ilRow("Dersler","lessons finished, three a unit · a unit tested out counts all three",
+          LEVELS.reduce(function(a,l){return a+lvLessons(l.id);},0),UNITS.length*LESSONS);
+  /* A level is thirty lessons, ten units of three; the units passed are the
+     English under it. A unit is only passed after its third lesson and the
+     exercises, so counting units alone read 0 / 10 for a level well under
+     way. */
+  LEVELS.forEach(function(l){h+=ilRow(l.id+" · "+l.tr,l.en+" · "+lvDone(l.id)+" of "+unitsOf(l.id).length+" units passed",lvLessons(l.id),lvLessonsOf(l.id));});
   h+='</div>';
 
   /* What a passed unit does not say. A unit is passed on a quiz minutes
