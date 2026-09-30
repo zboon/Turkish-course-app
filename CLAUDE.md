@@ -56,6 +56,7 @@ src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
 src/shared/sync.js       syncStart, syncTouch, syncNow — progress across devices, shared with kids/
+src/shared/nav.js        navInit, navSync — the phone's back button, shared with kids/
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
@@ -2816,6 +2817,55 @@ because the test read only the label, which is why the fade-and-label
 check exists.
 
 `navRow()` is now only Dersler's; its readiness slot is unused.
+
+## Where you are (today's strip, the lesson's count, and the back button)
+
+Reported by the learner: it was hard to see where the day's progress is and how
+far through the lesson you are, and the phone's back button took you out of the
+app instead of to the previous page. Neither needed anything stored.
+
+**Today, as a strip.** `planStrip(p)` in `app.tekrar.js` is one segment for each
+step of the plan, filled as its queue empties, with the next step ringed and a
+count under it (*3 of 5 steps done today* / *5 adımdan 3 tanesi bitti*). It sits
+under Başla on the landing page (and under *Bugünlük bitti*) and above the way on
+at the end of every sitting and lesson, because `planNext()` draws it. It reads
+the same `planToday()` steps the button and İlerleme read, so the three cannot
+disagree; day one is one step and gets no strip. It is a pure function of the
+plan, so `sim.js` calls it directly for the finished day rather than trying to
+empty every queue.
+
+**The lesson, as a count.** Derse başla had a thin bar and no number. It now has
+a taller bar with *7 / 21* beside it. A missed check sent round again adds a
+step, so the total can grow by one; that is honest, and the bar is read off the
+same `AD.q`.
+
+**The back button.** The app is one page that redraws itself, so the browser has
+one history entry for all of it, and the phone's back button, which walks that
+history, left the app from any screen. `src/shared/nav.js` (shared with the
+children's app) holds one extra entry above the app's own while the learner is
+anywhere but home: `navSync()` at the end of `render()` pushes it, and
+`navPop()` answers a back press by calling the app's own `back()`, the same as
+the arrow, so the menu is retraced. When the arrow's answer is home the entry is
+not put back and the next press leaves, which is what back on home is for. If
+the learner reached home by the home button with the entry still held, the press
+spends it and passes on to `history.back()`, so it never needs two presses.
+Nothing is added to the address and nothing stored; with no history to use it
+does nothing. It has one weakness, said plainly: a reload while on a held entry
+starts the app at home with a stale entry under it, so that one back press does
+not leave.
+
+`test/dom.js` has a history and `pressBack()` for it. `sim.js` walks the course
+(a unit back to its level, to Dersler, to home, and a further press leaving; the
+home button then one press; a tool back to Araçlar; a lesson back to its unit;
+redraws adding nothing) and the plan strip (one segment for each step, the
+filled count and the ring against `planToday()`, after a change, after a
+sitting, day one, a finished day, drawing it writing nothing) and the lesson
+count. `kids/test/sim.js` walks the back button in the children's app. Eleven
+deliberate breakages each turned a test red. It could not be tried in the
+claude.ai viewer from here: the page runs in a frame there, and whether the
+phone's back button reaches the frame's history is for the learner to see on
+their phone. Pages, where the page is the top-level document, is the
+straightforward case.
 
 ## Sözlük (the word list)
 

@@ -235,7 +235,10 @@ function renderAdim(){
   if(s.t==="end")dersMark(u.id,AD.k);
   const typed=s.t==="type"||s.t==="cloze"||s.t==="gex";
   let h=bar(u.tr,u.lv+" · Ünite "+u.n+" · ders "+(AD.k+1)+" / "+LESSONS,true)+'<div class="wrap">';
-  h+='<div class="abar"><i style="width:'+Math.round(100*AD.i/(AD.q.length-1))+'%"></i></div>';
+  /* How far through the lesson, as a bar and as a count. A miss sent round
+     again adds a step, so the count can grow by one; that is honest. */
+  h+='<div class="arow"><div class="abar"><i style="width:'+Math.round(100*AD.i/Math.max(1,AD.q.length-1))+'%"></i></div>'+
+     '<span class="acnt">'+(AD.i+1)+' / '+AD.q.length+'</span></div>';
   if(s.t==="word"){
     h+='<p class="qn">Yeni kelime</p><div class="card adw">'+(s.w.em?'<div class="pic">'+s.w.em+'</div>':'')+
       '<div class="vtr">'+esc(s.w.tr)+'</div><div class="ven">'+esc(s.w.en)+'</div>'+spkBtn(s.w.say,{aria:"Listen"})+'</div>'+

@@ -56,10 +56,13 @@ function render(){
   /* The live clock arms itself where it is drawn and stops where it is
      not, so this one call covers every screen. */
   clockTick();
+  /* Away from home the phone's back button has to have something to spend. */
+  navSync();
 }
 if(typeof navigator!=="undefined"&&navigator.serviceWorker&&typeof location!=="undefined"&&/^https?:/.test(location.protocol)){
   try{navigator.serviceWorker.register("sw.js").catch(function(){});}catch(e){}
 }
+navInit(function(){return V.view==="home";},back);
 load();
 syncStart(SYNC_COURSE);
 if(S.rate)VOICE.rate=S.rate;

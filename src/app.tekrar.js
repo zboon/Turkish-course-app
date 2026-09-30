@@ -867,6 +867,19 @@ function planToday(){
   return {steps:shown,left:left,all:steps,tomorrow:capped?Object.assign({id:nx.id},dl):null,
           mins:shown.reduce(function(a,s){return a+(s.n?s.mins:0);},0)};
 }
+/* Where today stands: one segment for each step of the plan, filled as its
+   queue empties, and the count under it. Nothing is stored; it is read off
+   the same steps the button and İlerleme read, so it cannot disagree with
+   them. One step (day one) is not a strip. The step that comes next is
+   ringed, so the eye finds it. */
+function planStrip(p){
+  const n=p.steps.length;
+  if(n<2)return "";
+  const d=p.steps.filter(function(s){return s.n===0;}).length;
+  let h='<div class="pstrip" role="img" aria-label="'+d+' / '+n+'">';
+  p.steps.forEach(function(s){h+='<i class="'+(s.n===0?"ok":(s===p.left[0]?"here":""))+'"></i>';});
+  return h+'</div><p class="tiny pcount">'+tx(d+' of '+n+' steps done today',n+' adımdan '+d+' tanesi bitti')+'</p>';
+}
 /* Bugün on the landing page is one button. It used to be a heading, a
    folded summary ("6 adım · steps left · ~27 dk"), a paragraph on why the
    steps come in this order, the step list when unfolded, and then the
@@ -884,12 +897,13 @@ function planCard(){
                                       'Yarın: '+esc(t.tt)+'. Günde bir ders, tekrarların işlemesine zaman tanır.')
                             :tx('Every unit is done and nothing is due.','Bütün üniteler bitti, bekleyen bir şey yok.'))+'</span></div>'+
       /* The pace is the plan's, not a lock. */
+      planStrip(p)+
       (t?'<button class="homelink" onclick="'+t.go+'">Yine de devam et<span class="gl">carry on anyway</span></button>':'');
   }
   return h+'<button class="today" onclick="'+s.go+'">'+
     '<span class="today-t">Başla<span class="gl">start</span></span>'+
     '<span class="today-s">'+esc(s.tr)+' · '+(s.tt&&s.tt!==s.en?tx(esc(s.en),esc(s.tt)):esc(s.en))+'</span>'+
-    '<span class="chev">'+IC.chev+'</span></button>';
+    '<span class="chev">'+IC.chev+'</span></button>'+planStrip(p);
 }
 /* The whole plan as rows, ticked as each queue empties; drawn on İlerleme. */
 function planRows(p){
@@ -920,13 +934,13 @@ function planRows(p){
    sitting's grades are saved, so the step just finished has already
    ticked itself off or not. Nothing is stored. */
 function planNext(){
-  const nx=planToday().left[0];
-  const tm=planToday().tomorrow;
-  if(!nx)return '<div class="card"><p class="lead">Bugünlük bitti</p><p class="sub">'+
+  const p=planToday(), nx=p.left[0];
+  const tm=p.tomorrow;
+  if(!nx)return planStrip(p)+'<div class="card"><p class="lead">Bugünlük bitti</p><p class="sub">'+
     tx('Everything in today’s plan is done. Anything more is extra.','Bugünün planındaki her şey bitti. Bundan sonrası fazladan.')+
     (tm?' '+tx('Tomorrow: '+esc(tm.en)+'.','Yarın: '+esc(tm.tt)+'.'):'')+'</p>'+
     '<button class="btn" onclick="home()">Ana sayfa</button></div>';
-  return '<button class="btn" onclick="'+nx.go+'">Devam</button>'+
+  return planStrip(p)+'<button class="btn" onclick="'+nx.go+'">Devam</button>'+
     '<p class="tiny next-step">'+tx('Next: '+esc(nx.tr)+' · '+esc(nx.en),'Sıradaki: '+esc(nx.tr)+' · '+esc(nx.tt||nx.en))+'</p>';
 }
 /* o: {title, n, of, label, plan, again, hub, hubName}. `plan` is true for

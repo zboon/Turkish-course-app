@@ -199,6 +199,30 @@ step("backup and restore", () => {
   ok(store.get("turkce-kids-v1") && !store.get("turkce-course-v1"), "the app saved under the wrong key — it must never touch the course's progress");
 });
 
+/* The phone's back button took you out of the app from any screen. One
+   history entry is held above the app's own while you are away from home,
+   and back spends it the way the arrow does. */
+step("the phone's back button retraces the app", () => {
+  const H = env.hist;
+  H.left = false; H.entries = [null]; H.pos = 0; ev("NAV.held=false");
+  ev("wipe()"); ev("home()");
+  ok(H.pos === 0, "home holds a history entry it does not need");
+  ev("go('unit','k1')");
+  ok(H.pos === 1, "leaving home did not hold an entry for the back button");
+  ev("startLesson('k1',0)");
+  ok(H.pos === 1, "another screen added another entry");
+  env.pressBack();
+  ok(ev("V.view") === "unit" && !H.left, "back from a lesson did not go to its unit (" + ev("V.view") + ")");
+  env.pressBack();
+  ok(ev("V.view") === "home" && !H.left && H.pos === 0, "back from a unit did not go home");
+  env.pressBack();
+  ok(H.left === true, "back on the home screen did not leave the app");
+  H.left = false; H.entries = [null]; H.pos = 0; ev("NAV.held=false");
+  ev("go('unit','k1')"); ev("home()");
+  env.pressBack();
+  ok(H.left === true, "back after the home button needed a second press");
+});
+
 step("no voice", () => {
   ev("__ss=window.speechSynthesis; delete window.speechSynthesis; home()");
   ok(/can’t speak/.test(last), "home does not say the browser cannot speak");

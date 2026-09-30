@@ -2716,7 +2716,7 @@ step("bugün · a heading and one button, nothing else", () => {
   ok(lastPaint.includes(esc(p.left[0].tr) + " · "), "Başla does not name the step it opens");
   /* The busy parts, each checked by what it was. */
   ok(!lastPaint.includes('class="unit"'), "the step list is back on the landing page");
-  ok(!/ adım|steps left|In this order|review steps appear/.test(lastPaint), "the plan's summary or paragraph is back");
+  ok(!/\d adım ·|steps left|In this order|review steps appear/.test(lastPaint), "the plan's summary or paragraph is back");
   ok(!lastPaint.includes('class="foot"'), "the footer is back on the landing page");
   ok((lastPaint.match(new RegExp('onclick="' + p.left[0].go.replace(/[()'.]/g, "\\$&") + '"', "g")) || []).length === 1,
      "the landing page offers the first step more than once");
@@ -2730,6 +2730,102 @@ step("bugün · day one is the same button", () => {
   ok(ev("planToday().steps.length") === 1, "day one should be a single step");
   ok(lastPaint.includes('class="today" onclick="' + ev("planToday().left[0].go") + '"'), "day one has no Başla");
   ok(!lastPaint.includes('class="unit"'), "day one paints a step list");
+});
+
+/* Reported: it was hard to see where the day's progress is, and how far
+   through the lesson you are. Today is one segment for each step of the
+   plan, filled as its queue empties, with the count under it; a lesson
+   shows its place as a count beside the bar. Both are read off what the
+   plan and the lesson already know. */
+step("bugün · where today stands, and how far through the lesson", () => {
+  ev("wipe()");
+  ev("UNITS.slice(0,14).forEach(function(u){S.done[u.id]={score:5,of:5,at:0};S.seen[u.id]={v:1,g:1,r:1,d:1}});S.tips=false;save()");
+  ev("home()");
+  let p = ev("planToday()");
+  const n = p.steps.length, d = p.steps.filter(x => x.n === 0).length;
+  ok(n > 1 && d < n, "this fixture needs a plan that is partly to do");
+  const segs = h => (h.match(/<div class="pstrip"[^>]*>([\s\S]*?)<\/div>/) || [, ""])[1].match(/<i[ >]/g) || [];
+  ok(lastPaint.includes('class="pstrip"'), "the landing page has no strip for today");
+  ok(segs(lastPaint).length === n, "the strip is not one segment for each step: " + segs(lastPaint).length + " of " + n);
+  ok((lastPaint.match(/<i class="ok">/g) || []).length === d, "the strip does not fill one segment for each step done");
+  ok((lastPaint.match(/<i class="here">/g) || []).length === 1, "the strip does not ring the step that is next");
+  ok(lastPaint.indexOf('<i class="here">') === lastPaint.indexOf('<i class="ok">') || d === 0 || lastPaint.indexOf('<i class="ok">') < lastPaint.indexOf('<i class="here">'),
+     "the ring is not after the steps that are done");
+  ok(lastPaint.includes(d + " of " + n + " steps done today") && lastPaint.includes(n + " adımdan " + d + " tanesi bitti"), "the strip's count is missing or wrong");
+  /* Clearing a step moves it. */
+  ev("S.rep={};S.srs={};S.star=[]");
+  const before = segs(lastPaint).length;
+  ev("home()");
+  p = ev("planToday()");
+  ok((lastPaint.match(/<i class="ok">/g) || []).length === p.steps.filter(x => x.n === 0).length, "the strip disagrees with the plan after a change");
+  /* The end of a sitting shows it too, above the way on. */
+  ev("go('ilerleme')"); ev("home()");
+  ok(ev("planNext()").includes('class="pstrip"'), "the way on after a sitting does not show where today stands");
+  /* Drawing it writes nothing. */
+  const st = JSON.stringify(ev("S")); ev("render()");
+  ok(JSON.stringify(ev("S")) === st, "drawing the strip changed the saved state");
+  /* Day one is a single instruction, not a strip. */
+  ev("wipe()"); ev("home()");
+  ok(!lastPaint.includes('class="pstrip"'), "day one shows a strip for one step");
+  /* Done for today: every segment filled, none ringed, however the day
+     came to be done. */
+  const fin = ev("planStrip({steps:[{n:0},{n:0},{n:0}],left:[]})");
+  ok((fin.match(/<i class="ok">/g) || []).length === 3 && !/here/.test(fin) && fin.includes("3 of 3 steps done today"), "a finished day is not filled");
+  const one = ev("planStrip({steps:[{n:0}],left:[]})");
+  ok(one === "", "a plan of one step drew a strip");
+
+  /* The lesson: a count beside the bar, moving with each step. */
+  ev("wipe()"); ev("startAdim('a1u1',0)");
+  const q0 = ev("AD.q.length");
+  ok(lastPaint.includes('class="acnt">1 / ' + q0 + "<"), "the lesson does not say where it is");
+  ev("adNext()");
+  ok(lastPaint.includes('class="acnt">2 / ' + ev("AD.q.length") + "<"), "the lesson count did not move on");
+  ok(lastPaint.includes('class="arow"'), "the lesson bar lost its row");
+  ev("wipe()");
+});
+
+/* Reported: the phone's back button took you out of the app instead of to
+   the previous page. One entry is held above the app's own while you are
+   anywhere but home, and back spends it the way the arrow does. */
+step("the phone's back button retraces the app", () => {
+  const H = env.hist;
+  H.left = false; H.entries = [null]; H.pos = 0; ev("NAV.held=false");
+  ev("wipe()"); ev("home()");
+  ok(H.pos === 0, "home holds a history entry it does not need");
+  ev("go('dersler')");
+  ok(H.pos === 1, "leaving home did not hold an entry for the back button");
+  ev("go('level','A1')"); ev("go('unit','a1u1','v')");
+  ok(H.pos === 1, "every screen away from home added another entry");
+  env.pressBack();
+  ok(ev("V.view") === "level" && !H.left, "back from a unit did not go to its level (" + ev("V.view") + ")");
+  ok(H.pos === 1, "the entry was not held again after back");
+  env.pressBack();
+  ok(ev("V.view") === "dersler" && !H.left, "back from a level did not go to Dersler");
+  env.pressBack();
+  ok(ev("V.view") === "home" && !H.left, "back from Dersler did not go home");
+  ok(H.pos === 0, "an entry is still held at home");
+  env.pressBack();
+  ok(H.left === true, "back on the home screen did not leave the app");
+
+  /* The arrow home from deep in the app leaves nothing to trip over. */
+  H.left = false; H.entries = [null]; H.pos = 0; ev("NAV.held=false");
+  ev("go('dersler')"); ev("go('level','A1')"); ev("home()");
+  ok(ev("V.view") === "home", "the home button did not go home");
+  env.pressBack();
+  ok(H.left === true && ev("V.view") === "home", "back after the home button needed a second press");
+
+  /* From a tool, and mid-lesson: the same answer as the arrow. */
+  H.left = false; H.entries = [null]; H.pos = 0; ev("NAV.held=false");
+  ev("home()"); ev("go('araclar')"); ev("go('sik')");
+  env.pressBack();
+  ok(ev("V.view") === "araclar", "back from a tool did not go to Araçlar");
+  ev("startAdim('a1u1',0)");
+  env.pressBack();
+  ok(ev("V.view") === "unit" && !H.left, "back from a lesson did not go to its unit");
+  /* A redraw holds nothing more. */
+  const at = H.pos; ev("render()"); ev("render()");
+  ok(H.pos === at, "redrawing added history entries");
+  ev("wipe()");
 });
 
 step("nasıl çalışır · a link while it is useful, the text on its own page", () => {
