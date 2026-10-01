@@ -96,11 +96,18 @@ function dikteCheck(){
   if(!DK)return;
   const it=DK.q[DK.i]; if(!it)return;
   keepTyped();
+  /* The second look after "neredeyse": already marked and booked. */
+  if(DK.near){
+    DK.near=false;DK.second=dictPass(dictScore(it.tr,DK.typed))?1:-1;
+    DK.phase="check";window.scrollTo(0,0);render();return;
+  }
   DK.res=dictScore(it.tr,DK.typed);
   const good=dictPass(DK.res);
   dinleGrade(it.k,good);
   if(good)DK.right++;
   else errNote(it.k,{m:"d",q:it.en,c:it.tr,a:DK.typed,to:errUnitOf(it.k)});
+  /* One letter off in one word: say so and look again. The miss stands. */
+  if(!good&&nearMiss(DK.typed,it.tr)){DK.near=true;render();return;}
   DK.phase="check";window.scrollTo(0,0);render();
 }
 function hearReveal(){
@@ -123,7 +130,7 @@ function dinleSay(){
 function dinleNext(){
   dinleStop();
   if(!DK)return;
-  DK.i++;window.scrollTo(0,0);
+  DK.i++;DK.near=false;DK.second=0;DK.typed="";window.scrollTo(0,0);
   if(DK.i>=DK.q.length){DK.phase="end";render();return;}
   dinleStep();
 }
@@ -205,6 +212,7 @@ function renderDinleRun(){
      '<p class="tiny" id="dplays" style="margin:.5rem 0 0">'+dplaysText()+'</p>'+
      '<p class="tiny" style="margin:.2rem 0 0">'+drate()+'× · '+tx('nothing is shown until you commit','karar verene kadar hiçbir şey gösterilmez')+'</p></div>';
     if(dikte){
+      if(DK.near)h+=nearBox();
       h+='<input class="inp" id="dbox" autocapitalize="off" autocomplete="off" autocorrect="off" '+
        'spellcheck="false" placeholder="duyduğunu yaz…" value="'+esc(DK.typed||"")+'">'+
        '<button class="btn" onclick="dikteCheck()">Kontrol et</button>';
@@ -213,6 +221,7 @@ function renderDinleRun(){
     }
   }else if(DK.phase==="check"){
     const r=DK.res, pass=dictPass(r);
+    if(DK.second)h+=secondBox(DK.second>0);
     h+='<div class="card"><p class="dline">'+r.ops.map(function(o){
       return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';
     }).join(" ")+'</p>'+

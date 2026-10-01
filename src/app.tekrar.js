@@ -572,6 +572,11 @@ function grCheck(){
   if(!GR)return;
   const it=GR.q[GR.i]; if(!it)return;
   grKeep();
+  /* The second look after "neredeyse": already marked and booked. */
+  if(GR.near){
+    GR.near=false;GR.second=sentOk(it.c,GR.typed,it.en).res.same?1:-1;
+    GR.phase="check";render();return;
+  }
   /* Every word, in any order — not dikte's four in five. The examples run
      four words at the median and the whole question is whether the form
      came out right, so forgiving one word in four would forgive the
@@ -586,6 +591,8 @@ function grCheck(){
   if(GR.res.same)GR.right++;
   else errNote(it.k,{m:"y",q:it.t+" · "+it.en,c:it.c,a:GR.typed,
                      w:it.focus+(GR.diag.length?" — "+GR.diag[0].t:""),to:it.id});
+  /* One letter off in one word: say so and look again. The miss stands. */
+  if(!GR.res.same&&nearMiss(GR.typed,it.c)){GR.near=true;render();return;}
   GR.phase="check";render();
 }
 /* A word-level judge can mark words; it cannot mark Turkish. Where the
@@ -595,7 +602,7 @@ function grCheck(){
    self-graded for exactly that reason. This is the escape hatch, and it
    is deliberately one tap rather than the default. */
 function grAccept(){
-  if(!GR||GR.phase!=="check"||GR.res.same||GR.over)return;
+  if(!GR||GR.phase!=="check"||GR.res.same||GR.over||GR.second>0)return;
   const it=GR.q[GR.i];
   gramAccept(it.k,GR.pre);
   /* Overruled is not missed: the entry the mark just wrote comes back out
@@ -606,7 +613,7 @@ function grAccept(){
 function grSay(){const it=GR&&GR.q[GR.i];if(it)say(it.c);}
 function grNext(){
   if(!GR)return;
-  GR.i++;GR.typed="";GR.res=null;GR.hint=false;GR.over=false;GR.pre=-1;GR.phase="ask";window.scrollTo(0,0);
+  GR.i++;GR.typed="";GR.res=null;GR.near=false;GR.second=0;GR.hint=false;GR.over=false;GR.pre=-1;GR.phase="ask";window.scrollTo(0,0);
   if(GR.i>=GR.q.length)GR.phase="end";
   render();
 }
@@ -678,6 +685,7 @@ function renderGramRun(){
   h+='<p class="q">'+esc(it.en)+'</p>';
 
   if(GR.phase==="ask"){
+    if(GR.near)h+=nearBox();
     h+='<input class="inp" id="gbox" autocapitalize="off" autocomplete="off" autocorrect="off" '+
      'spellcheck="false" placeholder="Türkçe yaz…" value="'+esc(GR.typed||"")+'">'+
      '<button class="btn" onclick="grCheck()">Kontrol et</button>';
@@ -690,6 +698,7 @@ function renderGramRun(){
     }
   }else{
     const r=GR.res;
+    if(GR.second)h+=secondBox(GR.second>0);
     h+='<div class="card"><p class="dline">'+r.ops.map(function(o){
       return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';
     }).join(" ")+'</p>'+
@@ -705,7 +714,7 @@ function renderGramRun(){
              :tx((r.extra?"Struck-through words are not in the sentence. ":"")+"Red is what the model has and you did not. This point comes back today.",
                  (r.extra?"Üstü çizili kelimeler cümlede yok. ":"")+"Kırmızı olanlar örnekte var, sende yok. Bu konu bugün yeniden gelecek."))+
      (won?(r.same?spokenBox(GR.spoken,it.c)+sizBox(GR.siz,it.c):""):diagBox(GR.diag))+altBox(grAlts(it),GR.pron&&r.same?PRON_NOTE:"")+'</div>';
-    if(!won)h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
+    if(!won&&!(GR.second>0))h+='<button class="btn ghost" onclick="grAccept()">Benimki de doğru · mine was right too</button>';
     h+='<button class="btn ghost" onclick="go(\'unit\',\''+it.id+'\',\'g\')">Konuyu aç · read the point again</button>';
     h+='<button class="btn" onclick="grNext()">'+(GR.i+1>=GR.q.length?"Sonuç":"Devam")+'</button>';
   }

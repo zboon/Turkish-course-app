@@ -552,6 +552,12 @@ function answerFill(){
   }
   render();
 }
+/* After a second look: what the second try came to. The first try has
+   already been marked, so this only says whether the correction landed. */
+function secondBox(ok){
+  return '<div class="fb '+(ok?"ok":"no")+'"><b>'+(ok?tx("Right, on the second try","İkinci denemede doğru"):tx("Still not right","Yine olmadı"))+'</b>'+
+    tx("The first try is the one that counts, so the mark below stands.","Sayılan ilk denemedir; aşağıdaki not geçerli.")+'</div>';
+}
 /* The message over the box while a second try is open. */
 function nearBox(){
   return '<div class="fb no"><b>'+tx("Almost","Neredeyse")+'</b>'+
