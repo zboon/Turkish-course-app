@@ -338,6 +338,60 @@ step("a slip of one letter is given a second look; the first try still counts", 
   ev("wipe()");
 });
 
+/* Reported: "bulaşmak" for "buluşmak" was marked wrong with no second look.
+   It was one letter off, but in a mode the second look had not reached:
+   grammar repetition, dictation and the sayings mark typed Turkish too. */
+step("a slip of one letter gets a second look in every mode that marks typing", () => {
+  ev("wipe()");
+  ev("UNITS.slice(0,12).forEach(function(u){S.seen[u.id]={v:1,g:1,r:1,d:1}});save()");
+  const target = "Seninle buluşmak istiyorum.", slip = "Seninle bulaşmak istiyorum";
+  /* Dilbilgisi tekrarı */
+  ev("startGram()");
+  ev("GR.q[GR.i].c=" + q(target) + "; render()");
+  const gk = ev("GR.q[GR.i].k");
+  doc.getElementById("gbox").value = slip; ev("grCheck()");
+  ok(ev("GR.near") === true && ev("GR.phase") === "ask" && /Neredeyse/.test(lastPaint) && !lastPaint.includes(target), "Dilbilgisi: the reported slip was not given a second look");
+  ok(ev("gramBox(" + q(gk) + ")") === 0 && !!ev("S.err[" + q(gk) + "]"), "Dilbilgisi: the first try was not marked and booked");
+  const n0 = ev("S.err[" + q(gk) + "].n");
+  doc.getElementById("gbox").value = target; ev("grCheck()");
+  ok(ev("GR.second") === 1 && ev("GR.phase") === "check" && /Right, on the second try/.test(lastPaint), "Dilbilgisi: the corrected second try was not said");
+  ok(ev("gramBox(" + q(gk) + ")") === 0 && ev("S.err[" + q(gk) + "].n") === n0, "Dilbilgisi: the second try moved the schedule or booked again");
+  ok(!lastPaint.includes("grAccept()"), "Dilbilgisi: a right second try still offers to overrule the mark");
+  ev("grNext()");
+  ok(ev("GR.near") !== true && !ev("GR.second"), "Dilbilgisi: the second look leaked into the next item");
+
+  /* Dikte */
+  ev("startDinle('d')");
+  ev("DK.q[DK.i].tr=" + q(target) + "; render()");
+  const dk = ev("DK.q[DK.i].k");
+  doc.getElementById("dbox").value = "Seninle bulaşmak"; ev("dikteCheck()");
+  ok(ev("DK.near") !== true && ev("DK.phase") === "check", "Dikte: a missing word took a second look");
+  ev("dinleNext()");
+  ev("DK.q[DK.i].tr=" + q(target) + "; render()");
+  const dk2 = ev("DK.q[DK.i].k");
+  doc.getElementById("dbox").value = slip; ev("dikteCheck()");
+  ok(ev("DK.near") === true && /Neredeyse/.test(lastPaint) && ev("DK.phase") === "play", "Dikte: the reported slip was not given a second look");
+  ok(!!ev("S.err[" + q(dk2) + "]"), "Dikte: the first try was not booked");
+  doc.getElementById("dbox").value = target; ev("dikteCheck()");
+  ok(ev("DK.second") === 1 && ev("DK.phase") === "check" && /Right, on the second try/.test(lastPaint), "Dikte: the corrected second try was not said");
+  ok(ev("S.dinle[" + q(dk2) + "].b") === 0, "Dikte: the second try moved the schedule");
+
+  /* Atasözleri: a fixed saying is still judged exactly, and the first try
+     still counts, but a slip of one letter gets its look too. */
+  ev("startAta('a')");
+  const ac = ev("AT.q[AT.i].c"), ak = ev("AT.q[AT.i].k");
+  const w = ac.replace(/[.,!?]/g, "").split(" "), at = w.findIndex(x => x.length >= 5);
+  if (at >= 0) {
+    const bad = w.slice(); bad[at] = bad[at].slice(0, -1);
+    doc.getElementById("abox").value = bad.join(" "); ev("ataCheck()");
+    ok(ev("AT.near") === true && /Neredeyse/.test(lastPaint), "Atasözleri: a slip of one letter was not given a second look");
+    doc.getElementById("abox").value = "böyle bir söz yok"; ev("ataCheck()");
+    ok(ev("AT.second") === -1 && /Still not right/.test(lastPaint) && lastPaint.includes("ataAccept()"), "Atasözleri: a wrong second try was not said, or lost the overrule");
+    ok(ev("ataBox(" + q(ak) + ")") === 0, "Atasözleri: the first try was not marked");
+  }
+  ev("GR=null;DK=null;AT=null;wipe();home()");
+});
+
 step("the misses again: practice, and nothing else moves", () => {
   ev("wipe()");
   const u = UNITS.find(x => x.drill.filter(d => d.t === "mc").length >= 2) || UNITS[0];
@@ -1387,6 +1441,11 @@ step("grammar comes back, and is produced rather than recognised", () => {
   ev("grNext()");
   ev("GR.q[GR.i].c='Kitabı okudum.'");
   doc.getElementById("gbox").value = "Kitapı okudum"; ev("grCheck()");
+  /* One letter off: a second look first, and the same slip twice is
+     then explained. */
+  ok(ev("GR.near") === true && ev("GR.phase") === "ask" && /Neredeyse/.test(lastPaint), "a one-letter slip in Dilbilgisi was not given a second look");
+  ev("grCheck()");
+  ok(ev("GR.second") === -1 && /Still not right/.test(lastPaint), "a second miss in Dilbilgisi was not said");
   ok(/Neden\? · why/.test(lastPaint) && /soft/i.test(lastPaint), "a softening slip was not named in Dilbilgisi");
   ok(/soft/i.test(ev("S.err[GR.q[GR.i].k].w")), "the book entry does not carry the rule");
   ev("grAccept()");

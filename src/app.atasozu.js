@@ -128,6 +128,11 @@ function ataCheck(){
   if(!AT)return;
   const it=AT.q[AT.i]; if(!it)return;
   ataKeep();
+  /* The second look after "neredeyse": already marked and booked. */
+  if(AT.near){
+    AT.near=false;AT.second=ataJudge(it,AT.typed).clean?1:-1;
+    AT.phase="check";render();return;
+  }
   AT.pre=ataBox(it.k);
   AT.over=false;
   AT.res=ataJudge(it,AT.typed);
@@ -135,10 +140,12 @@ function ataCheck(){
   if(AT.res.clean)AT.right++;
   else errNote(it.k,{m:"z",q:it.q,c:it.c,a:AT.typed,
                      w:it.kind==="a"?it.en:it.lit,to:""});
+  /* One letter off in one word: say so and look again. The miss stands. */
+  if(!AT.res.clean&&nearMiss(AT.typed,ataForms(it))){AT.near=true;render();return;}
   AT.phase="check";render();
 }
 function ataAccept(){
-  if(!AT||AT.phase!=="check"||AT.res.clean||AT.over)return;
+  if(!AT||AT.phase!=="check"||AT.res.clean||AT.over||AT.second>0)return;
   const it=AT.q[AT.i];
   ataAcceptKey(it.k,AT.pre);
   /* Overruled is not missed — the entry the mark just wrote comes back
@@ -150,7 +157,7 @@ function ataSay(){const it=AT&&AT.q[AT.i];if(it)say(it.c);}
 function ataSayEx(){const it=AT&&AT.q[AT.i];if(it&&it.ex)say(it.ex[0]);}
 function ataNext(){
   if(!AT)return;
-  AT.i++;AT.typed="";AT.res=null;AT.over=false;AT.pre=-1;AT.phase="ask";
+  AT.i++;AT.typed="";AT.res=null;AT.near=false;AT.second=0;AT.over=false;AT.pre=-1;AT.phase="ask";
   window.scrollTo(0,0);
   if(AT.i>=AT.q.length)AT.phase="end";
   render();
@@ -210,11 +217,13 @@ function renderAtaRun(){
   h+='<p class="q">'+esc(it.q)+'</p>';
 
   if(AT.phase==="ask"){
+    if(AT.near)h+=nearBox();
     h+='<input class="inp" id="abox" autocapitalize="off" autocomplete="off" autocorrect="off" '+
      'spellcheck="false" placeholder="Türkçe yaz…" value="'+esc(AT.typed||"")+'">'+
      '<button class="btn" onclick="ataCheck()">Kontrol et</button>';
   }else{
     const r=AT.res, won=r.clean||AT.over;
+    if(AT.second)h+=secondBox(AT.second>0);
     h+='<div class="card"><p class="dline">'+r.ops.map(function(o){
       return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';
     }).join(" ")+'</p>';
@@ -240,7 +249,7 @@ function renderAtaRun(){
                  :tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek."))
               :tx("Red is what the saying has and you did not. A fixed form is the whole point, so this counts as a miss and comes back today.",
                   "Kırmızılar sözde var, sende yok. Bütün mesele kalıbın kendisi; bu yüzden yanlış sayılır ve bugün yeniden gelir."))+'</div>';
-    if(!won)h+='<button class="btn ghost" onclick="ataAccept()">Benimki de söyleniyor · mine is said too</button>';
+    if(!won&&!(AT.second>0))h+='<button class="btn ghost" onclick="ataAccept()">Benimki de söyleniyor · mine is said too</button>';
     h+='<button class="btn" onclick="ataNext()">'+(AT.i+1>=AT.q.length?"Sonuç":"Devam")+'</button>';
   }
   h+='<p class="tiny" style="text-align:center;margin-top:.7rem">'+esc(it.from)+'</p></div>';

@@ -2054,6 +2054,19 @@ second try*, with "not scored" where a score exists, and writes nothing.
 Guided lessons still send the miss round again later in the lesson, once;
 a second look does not add a second copy.
 
+**Every mode that marks typed Turkish has it** (v3.85). Reported by the
+learner: *bulaşmak* for *buluşmak* was marked wrong with no second look. It
+was one letter off; it was typed in a mode the first version had not reached.
+Dilbilgisi tekrarı (`grCheck`), Dikte (`dikteCheck`) and Atasözleri
+(`ataCheck`) now do the same, and `secondBox()` in `app.screens.js` says what
+the second try came to above the first try's marked line, which stands. The
+overrule (*Benimki de doğru*) is withdrawn only when the second try was right;
+after a wrong one the learner can still say the first was right. Dikte's own
+bar (four words in five) still decides the mark, so a slip in a long line that
+passes anyway gets no second look. Sayılar and Diyalog type digits, not
+Turkish, and keep their own judges. Nine deliberate breakages each turned
+`sim.js` red.
+
 **No instant second try on a choice or a built sentence.** With four options
 a second try is elimination, and tiles are the same guess by another road.
 Only typed recall gets it.
