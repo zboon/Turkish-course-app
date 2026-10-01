@@ -509,9 +509,8 @@ function renderQuiz(){
     if(Q.sel===null)h+='<button class="btn" onclick="answerOrder()" '+(Q.built.length?'':'disabled')+'>Kontrol et</button>';
   }
   if(Q.sel!==null){
-    const ok=Q.res[Q.i], late=!ok&&Q.second;
-    h+='<div class="fb '+(ok||late?"ok":"no")+'"><b>'+(ok?"Doğru":late?tx("Right, on the second try","İkinci denemede doğru"):"Yanlış")+'</b>'+
-      (late?'<span class="tiny">'+tx("The first try is the one that counts, so this one is not scored.","Sayılan ilk denemedir; bu soru puana girmez.")+'</span> ':'')+
+    const ok=Q.res[Q.i];
+    h+='<div class="fb '+(ok?"ok":"no")+'"><b>'+(ok?(Q.second?tx("Right, on the second try","İkinci denemede doğru"):"Doğru"):"Yanlış")+'</b>'+
       (ok?'':(it.t==="mc"?esc(it.a[it.c]):esc(it.c))+(it.why?' — ':''))+esc(it.why||"")+'</div>'+
       (ok&&it.t==="fill"&&Q.siz?sizBox(Q.siz,it.c):'');
     h+='<button class="btn" onclick="nextQ()">'+(Q.i+1>=Q.items.length?"Sonuç":"Devam")+'</button>';
@@ -529,34 +528,27 @@ function answerFill(){
   const fin=document.getElementById("fin"); if(!fin)return;
   const v=fin.value; Q.typed=v;
   const it=Q.items[Q.i];
-  /* A second try: the first answer has already been marked and booked,
-     so this one only says whether the correction landed. */
-  if(Q.near){
-    Q.near=false; Q.sel=0; Q.second=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,"");
-    render(); return;
-  }
-  Q.sel=0;
-  Q.res[Q.i]=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,"");
+  const retry=Q.near; Q.near=false;
+  let ok=fold(v)===fold(it.c)||fold(v).replace(/ /g,"")===fold(it.c).replace(/ /g,""), siz=null;
   /* The other you, where the sentence does not say which. */
-  Q.siz=null;
-  if(!Q.res[Q.i]){
+  if(!ok){
     const sz=sizToward(v,it.c,it.q,"");
-    if(sz.used.length&&sz.text===fold(it.c)){Q.res[Q.i]=true;Q.siz=sz.used;}
+    if(sz.used.length&&sz.text===fold(it.c)){ok=true;siz=sz.used;}
   }
-  if(!Q.res[Q.i]){
-    quizNote(it,v);
-    /* One letter off, in a unit quiz or a level test: say so and look
-       again. The miss stands; the answer stays hidden until the second
-       try is in. */
-    if(nearMiss(v,it.c)){Q.sel=null;Q.near=true;}
-  }
+  /* One letter off on the first try is taken as a typo, not an answer:
+     nothing is marked, the box stays open with what was typed, and the
+     second try is marked as if it were the first. */
+  if(!ok&&!retry&&nearMiss(v,it.c)){Q.near=true;render();return;}
+  Q.sel=0; Q.res[Q.i]=ok; Q.siz=siz; Q.second=retry;
+  if(!ok)quizNote(it,v);
   render();
 }
-/* After a second look: what the second try came to. The first try has
-   already been marked, so this only says whether the correction landed. */
+/* After a second look: what the second try came to. A slip of one letter
+   was not marked, so the second try is the one that counts. */
 function secondBox(ok){
   return '<div class="fb '+(ok?"ok":"no")+'"><b>'+(ok?tx("Right, on the second try","İkinci denemede doğru"):tx("Still not right","Yine olmadı"))+'</b>'+
-    tx("The first try is the one that counts, so the mark below stands.","Sayılan ilk denemedir; aşağıdaki not geçerli.")+'</div>';
+    (ok?tx("One letter was off the first time. It counts as right.","İlk seferde bir harf yanlıştı. Doğru sayılır.")
+       :tx("Two tries, so this one is marked as a miss.","İki deneme oldu; bu yanlış sayılır."))+'</div>';
 }
 /* The message over the box while a second try is open. */
 function nearBox(){

@@ -2025,13 +2025,17 @@ screen says and `sim.js` checks. `S.err` is progress, not a setting:
 
 Built, by request: "if spelling is more of the issue than word order, give
 users a second chance; and at the end of a lesson repeat the questions with
-wrong answers." Asked whether it would help or hinder, the honest answer was
-that it helps if it is built so that **the first try stays the record**. A
-second attempt that replaces the first is an easy way to look as though a
-form is known: the retrieval that matters is the first, cold one, and an
-answer typed a moment after being told it was nearly right shows short-term
-memory, not learning. So both features are practice around a mark that has
-already been made, and neither can raise a score, pass a unit or move a box.
+wrong answers." The first version (v3.82) kept **the first try as the
+record**: a slip was marked and booked at once and the second try only said
+whether the correction landed, on the argument that the retrieval that
+matters is the first, cold one. The learner then asked for the other rule
+(v3.86): *a slip of one letter is a typo, not an answer, so do not mark it;
+if the second try is right, mark it right.* That is what is built now. The
+case for it is that a one-letter slip in a word otherwise produced whole
+usually is a typo, and marking it trains distrust of the judge rather than
+the form. The cost, stated once and left: a second try after being told
+"nearly" is easier than a cold one, so a form known only nearly can now pass
+on the second go. The second round after the quiz stays practice only.
 
 **Neredeyse (a slip of one letter).** `nearMiss(typed, answers)` in
 `app.lang.js` is true when one word is one letter away from the answer
@@ -2047,21 +2051,24 @@ off" and not "check the spelling".
 On a typed answer the app then says **Neredeyse** and leaves the box open
 with what was typed, without showing the answer or the explanation. It
 stands in the unit quiz and level tests (`answerFill`), Tekrar motoru
-(`tkCheck`) and the typed checks of Derse başla (`adType`). The first try is
-marked, scheduled and booked in the mistake book **at once**, exactly as
-before; the second is only shown as *İkinci denemede doğru* / *Right, on the
-second try*, with "not scored" where a score exists, and writes nothing.
-Guided lessons still send the miss round again later in the lesson, once;
-a second look does not add a second copy.
+(`tkCheck`), the typed checks of Derse başla (`adType`), Dilbilgisi tekrarı
+(`grCheck`), Dikte (`dikteCheck`) and Atasözleri (`ataCheck`). **The slip
+itself writes nothing**: no score, no schedule, no mistake-book entry, and a
+lesson does not send it round again. The second try is then marked exactly as
+a first try would be. Right, it scores, moves its box and says *İkinci
+denemede doğru* / *Right, on the second try*; wrong, it is a miss like any
+other, booked once and (in a lesson) sent round again. There is only one
+second look: a second slip is marked as a miss, not offered a third.
+Each check works the same way: judge the answer, and if it is wrong, a first
+try (`!retry`) and a `nearMiss()`, set `near` and return before any grading.
 
 **Every mode that marks typed Turkish has it** (v3.85). Reported by the
 learner: *bulaşmak* for *buluşmak* was marked wrong with no second look. It
 was one letter off; it was typed in a mode the first version had not reached.
 Dilbilgisi tekrarı (`grCheck`), Dikte (`dikteCheck`) and Atasözleri
 (`ataCheck`) now do the same, and `secondBox()` in `app.screens.js` says what
-the second try came to above the first try's marked line, which stands. The
-overrule (*Benimki de doğru*) is withdrawn only when the second try was right;
-after a wrong one the learner can still say the first was right. Dikte's own
+the second try came to above its marked line. The overrule (*Benimki de
+doğru*) is still offered after a wrong second try. Dikte's own
 bar (four words in five) still decides the mark, so a slip in a long line that
 passes anyway gets no second look. Sayılar and Diyalog type digits, not
 Turkish, and keep their own judges. Nine deliberate breakages each turned
@@ -2087,10 +2094,15 @@ unit or the level.
 sweeps every passage word: against itself it is never a near miss, and with
 its last letter dropped it is one whenever it is five letters or more.
 `sim.js` walks the unit quiz (the box stays open with what was typed, the
-answer and explanation are absent, the first try is a miss and in the book
-once, the corrected second try is closed as such and not booked again, a
-second miss is a miss, an unrelated answer and a missing diacritic take no
-second look, and a wrong choice takes none), the second rounds (a perfect
+answer and explanation are absent, the slip is neither marked nor booked,
+the corrected second try is right and counts toward the score, a second miss
+is a miss booked once, an unrelated answer and a missing diacritic take no
+second look, and a wrong choice takes none), every other mode the same way
+(the slip moving no schedule and booking nothing, the corrected second try
+moving the box up), and v3.86's ten deliberate breakages each turned it red;
+two did not at first, and both were the breakage: it booked an entry with no
+answer, which `errNote()` ignores, and the Tekrar check gained a schedule
+comparison for the half it had not covered. Also the second rounds (a perfect
 score offers none, the ids are the misses, the key follows a shuffled option,
 progress identical before and after, offered again after a miss, `back()`
 for both a unit and a level test), Tekrar and the lesson checks.

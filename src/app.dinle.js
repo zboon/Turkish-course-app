@@ -96,18 +96,16 @@ function dikteCheck(){
   if(!DK)return;
   const it=DK.q[DK.i]; if(!it)return;
   keepTyped();
-  /* The second look after "neredeyse": already marked and booked. */
-  if(DK.near){
-    DK.near=false;DK.second=dictPass(dictScore(it.tr,DK.typed))?1:-1;
-    DK.phase="check";window.scrollTo(0,0);render();return;
-  }
-  DK.res=dictScore(it.tr,DK.typed);
-  const good=dictPass(DK.res);
+  const retry=DK.near; DK.near=false;
+  const res=dictScore(it.tr,DK.typed), good=dictPass(res);
+  /* One letter off on the first try is a typo: nothing is marked, and the
+     second try is marked as if it were the first. */
+  if(!good&&!retry&&nearMiss(DK.typed,it.tr)){DK.near=true;render();return;}
+  DK.second=retry?(good?1:-1):0;
+  DK.res=res;
   dinleGrade(it.k,good);
   if(good)DK.right++;
   else errNote(it.k,{m:"d",q:it.en,c:it.tr,a:DK.typed,to:errUnitOf(it.k)});
-  /* One letter off in one word: say so and look again. The miss stands. */
-  if(!good&&nearMiss(DK.typed,it.tr)){DK.near=true;render();return;}
   DK.phase="check";window.scrollTo(0,0);render();
 }
 function hearReveal(){
