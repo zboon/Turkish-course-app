@@ -128,20 +128,19 @@ function ataCheck(){
   if(!AT)return;
   const it=AT.q[AT.i]; if(!it)return;
   ataKeep();
-  /* The second look after "neredeyse": already marked and booked. */
-  if(AT.near){
-    AT.near=false;AT.second=ataJudge(it,AT.typed).clean?1:-1;
-    AT.phase="check";render();return;
-  }
+  const retry=AT.near; AT.near=false;
+  const res=ataJudge(it,AT.typed);
+  /* One letter off on the first try is a typo: nothing is marked, and the
+     second try is marked as if it were the first. */
+  if(!res.clean&&!retry&&nearMiss(AT.typed,ataForms(it))){AT.near=true;render();return;}
+  AT.second=retry?(res.clean?1:-1):0;
   AT.pre=ataBox(it.k);
   AT.over=false;
-  AT.res=ataJudge(it,AT.typed);
+  AT.res=res;
   ataGrade(it.k,AT.res.clean);
   if(AT.res.clean)AT.right++;
   else errNote(it.k,{m:"z",q:it.q,c:it.c,a:AT.typed,
                      w:it.kind==="a"?it.en:it.lit,to:""});
-  /* One letter off in one word: say so and look again. The miss stands. */
-  if(!AT.res.clean&&nearMiss(AT.typed,ataForms(it))){AT.near=true;render();return;}
   AT.phase="check";render();
 }
 function ataAccept(){

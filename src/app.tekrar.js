@@ -325,13 +325,11 @@ function tkCheck(){
   const it=TK.q[TK.i]; if(!it)return;
   tkKeep();
   const j=wordOk(TK.typed,it.alts||[fold(it.c)],it.kind==="cloze"?it.q:"",it.kind==="cloze"?it.hint:it.en);
-  /* The second try after "neredeyse": the first answer was marked and
-     scheduled when it came in, so this one only shows whether the
-     correction landed, and moves nothing. */
-  if(TK.near){
-    TK.near=false;TK.second=j.ok;TK.spoken=null;TK.siz=null;
-    TK.phase="check";render();return;
-  }
+  const retry=TK.near; TK.near=false;
+  /* One letter off on the first try is a typo, not an answer: nothing is
+     marked, and the second try is marked as if it were the first. */
+  if(!j.ok&&!retry&&nearMiss(TK.typed,it.alts||[fold(it.c)])){TK.near=true;render();return;}
+  TK.second=retry;
   const good=j.ok;
   TK.spoken=j.spoken;TK.siz=j.siz;
   TK.res=good;
@@ -340,8 +338,6 @@ function tkCheck(){
   repGrade(it.k,good);
   if(good)TK.right++;
   else errNote("r:"+it.k,{m:"r",q:it.q,c:it.c,a:TK.typed,w:TK.diag?TK.diag.t:"",to:it.u||""});
-  /* One letter off: say so and stay on the question. The miss stands. */
-  if(!good&&nearMiss(TK.typed,it.alts||[fold(it.c)])){TK.near=true;render();return;}
   TK.phase="check";render();
 }
 function tkSay(){
@@ -421,7 +417,7 @@ function renderTekrarRun(){
      '<p style="font-family:\'Crimson Pro\',serif;font-size:1.5rem;margin:0">'+esc(it.c)+'</p>'+
      '<p class="sub" style="margin-top:.3rem">'+esc(it.tr+" · "+it.en)+'</p>'+
      '<button class="sbtn" style="margin-top:.4rem" onclick="tkSay()">'+IC.spk+' dinle</button></div>';
-    h+='<div class="fb '+(TK.res||TK.second?"ok":"no")+'"><b>'+(TK.res?"Doğru":TK.second?tx("Right, on the second try","İkinci denemede doğru"):"Yanlış")+'</b>'+
+    h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?(TK.second?tx("Right, on the second try","İkinci denemede doğru"):"Doğru"):"Yanlış")+'</b>'+
      (TK.res?tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek.")
             :tx("Wrong answers come back today. Being asked still counts as an encounter.","Yanlışlar bugün yeniden gelir. Sorulmak yine de bir karşılaşma sayılır."))+
      (TK.res?spokenBox(TK.spoken,it.c)+sizBox(TK.siz,it.c):diagBox(TK.diag?[TK.diag]:[]))+altBox(tkAlts(it))+'</div>';
@@ -572,11 +568,12 @@ function grCheck(){
   if(!GR)return;
   const it=GR.q[GR.i]; if(!it)return;
   grKeep();
-  /* The second look after "neredeyse": already marked and booked. */
-  if(GR.near){
-    GR.near=false;GR.second=sentOk(it.c,GR.typed,it.en).res.same?1:-1;
-    GR.phase="check";render();return;
-  }
+  const retry=GR.near; GR.near=false;
+  const j=sentOk(it.c,GR.typed,it.en);
+  /* One letter off on the first try is a typo: nothing is marked, and the
+     second try is marked as if it were the first. */
+  if(!j.res.same&&!retry&&nearMiss(GR.typed,it.c)){GR.near=true;render();return;}
+  GR.second=retry?(j.res.same?1:-1):0;
   /* Every word, in any order — not dikte's four in five. The examples run
      four words at the median and the whole question is whether the form
      came out right, so forgiving one word in four would forgive the
@@ -584,15 +581,12 @@ function grCheck(){
      the part worth reading. */
   GR.pre=gramBox(it.k);
   GR.over=false;
-  const j=sentOk(it.c,GR.typed,it.en);
   GR.res=j.res;GR.spoken=j.spoken;GR.pron=j.pron;GR.siz=j.siz;
   GR.diag=GR.res.same?[]:diagnoseLine(it.c,GR.typed,2);
   gramGrade(it.k,GR.res.same);
   if(GR.res.same)GR.right++;
   else errNote(it.k,{m:"y",q:it.t+" · "+it.en,c:it.c,a:GR.typed,
                      w:it.focus+(GR.diag.length?" — "+GR.diag[0].t:""),to:it.id});
-  /* One letter off in one word: say so and look again. The miss stands. */
-  if(!GR.res.same&&nearMiss(GR.typed,it.c)){GR.near=true;render();return;}
   GR.phase="check";render();
 }
 /* A word-level judge can mark words; it cannot mark Turkish. Where the
