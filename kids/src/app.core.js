@@ -3,7 +3,7 @@
    uses, so a fix there reaches both apps. Nothing here draws a screen. */
 
 /* ===================== macera · app ===================== */
-const KAPP_VERSION="k1.03";
+const KAPP_VERSION="k1.04";
 
 /* ===================== macera · storage ===================== */
 /* Its own key: a child's progress and a grown-up's course never share a

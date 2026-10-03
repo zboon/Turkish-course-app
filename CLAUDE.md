@@ -2659,6 +2659,22 @@ without being read. The whole list, ticked, is `planRows()` on İlerleme.
 `PLANOPEN` and the fold went with it; `sim.js` fails on the list, the
 summary, the paragraph or a second copy of the first step coming back.
 
+**The day is the learner's, not UTC's** (v3.87). Reported by the learner:
+"I finished all of today's lessons and after a few minutes it says 0/6 done."
+`dayNum()` in `src/shared/srs.js`, which every schedule, the word budget and
+the lesson pace count in, was `Date.now()/86400000`, a UTC day, while
+`today()` (the streak) was already local. So the plan turned over at UTC
+midnight, 8pm in New York and 3am in Istanbul, and an evening's finished
+plan came due again minutes later. It now counts days on the local calendar
+(the time-zone offset taken off first). Stored day numbers keep their
+meaning, give or take the one evening the switch happens on, when a learner
+west of UTC may be offered one more lesson or review than the pace allows.
+The test container runs on UTC, where the bug cannot show, so `sim.js` runs
+the build under five time zones in child processes, walks a fake clock
+across two days, and fails unless the plan's day and the calendar date turn
+over at the same instants. With the old line restored it fails in four of
+the five, every zone but UTC.
+
 **Nothing is stored.** A step is done when its own queue is empty, which is
 self-correcting — finish the work and the tick appears, come back tomorrow
 and it clears itself. A per-day completion flag would need its own state and

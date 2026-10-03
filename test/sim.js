@@ -2929,6 +2929,45 @@ step("kurs · a level is thirty lessons, counted as they are finished", () => {
   ev("wipe()");
 });
 
+/* Reported: "I finished all of today's lessons and after a few minutes it
+   says 0/6 done." dayNum() counted UTC days, so the plan turned over at UTC
+   midnight (8pm in New York, 3am in Istanbul) and every queue came due again.
+   This container runs on UTC, where the bug cannot show, so the check runs
+   the build in a child process per time zone, on a fake clock walked across
+   two days in half-hour steps, and holds dayNum() to the local date today()
+   already used: they must turn over at the same instants and nowhere else. */
+step("the plan's day turns over at the learner's midnight, in any time zone", () => {
+  const cp = require("child_process");
+  const child = `
+    let NOW = Date.UTC(2026, 9, 2, 0, 0);
+    const Real = Date;
+    class FakeDate extends Real {
+      constructor(...a) { if (a.length) super(...a); else super(NOW); }
+      static now() { return NOW; }
+    }
+    globalThis.Date = FakeDate;
+    const env = require(${JSON.stringify(require("path").join(__dirname, "dom.js"))})(process.argv[1]);
+    const out = [];
+    for (let i = 0; i < 96 + 1; i++) {
+      NOW = Date.UTC(2026, 9, 2, 0, 0) + i * 1800000;
+      out.push([env.ev("dayNum()"), env.ev("today()")]);
+    }
+    process.stdout.write(JSON.stringify(out));`;
+  ["America/New_York", "America/Los_Angeles", "Europe/Istanbul", "Asia/Kolkata", "UTC"].forEach(tz => {
+    let rows;
+    try { rows = JSON.parse(cp.execFileSync(process.execPath, ["-e", child, file], { env: Object.assign({}, process.env, { TZ: tz }) }).toString()); }
+    catch (e) { fails.push(tz + ": the day check could not run: " + e.message.slice(0, 200)); return; }
+    let turns = 0;
+    for (let i = 1; i < rows.length; i++) {
+      const dayMoved = rows[i][0] !== rows[i - 1][0], dateMoved = rows[i][1] !== rows[i - 1][1];
+      if (dayMoved !== dateMoved) { fails.push(tz + ": the plan's day and the calendar date turned over at different times, near step " + i + " (" + JSON.stringify(rows[i - 1]) + " → " + JSON.stringify(rows[i]) + ")"); return; }
+      if (dayMoved) { turns++; ok(rows[i][0] === rows[i - 1][0] + 1, tz + ": the plan's day jumped by more than one"); }
+    }
+    ok(turns === 2, tz + ": two days of clock did not turn the plan over exactly twice (" + turns + ")");
+    checks++;
+  });
+});
+
 step("nasıl çalışır · a link while it is useful, the text on its own page", () => {
   /* wipe() keeps settings, and S.tips is one, so it is set back here. */
   ev("wipe()"); ev("S.tips=true;save()"); ev("home()");
