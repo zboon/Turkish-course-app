@@ -25,8 +25,7 @@
   {t:"fill",q:"İzin al___ girilemez. (without taking permission — formal)",c:"maksızın",why:"-mAksIzIn is the formal counterpart of -mAdAn, without doing: izin almaksızın girilemez, entry is not allowed without permission."},
   {t:"mc",q:"“…incelenmek üzere gönderilmiştir” means",a:["it was sent after examination","it was sent in order to be examined","it is about to be examined","it cannot be examined"],c:1,why:"-mAk üzere after a passive infinitive states the purpose: incelenmek üzere gönderilmiştir, it was sent in order to be examined."},
   {t:"order",q:"Build: “A language becomes national by being used.”",w:["Dil","kullanılarak","millîleşir"],c:"Dil kullanılarak millîleşir",why:"-(y)ArAk on the passive stem gives “by being used”: kullanılarak. The subject dil comes first, and the aorist millîleşir states a general truth."},
-  {t:"mc",q:"The article's central claim is that",a:["Turkish should reject all foreign words","the written language must rejoin the spoken one","Istanbul Turkish is inferior","Persian grammar is more beautiful"],c:1,why:"The article argues that written Turkish had drifted into foreign grammar and must rejoin the spoken language; foreign rules, not foreign words, were the target."}],
- speak:"Take a paragraph of your own casual Turkish and say it again in formal register: -mAktAdIr, -mAksIzIn, passive throughout."},
+  {t:"mc",q:"The article's central claim is that",a:["Turkish should reject all foreign words","the written language must rejoin the spoken one","Istanbul Turkish is inferior","Persian grammar is more beautiful"],c:1,why:"The article argues that written Turkish had drifted into foreign grammar and must rejoin the spoken language; foreign rules, not foreign words, were the target."}]},
 
 {id:"c1u2",lv:"C1",n:2,tr:"Eski söz",en:"Ancient speech",focus:"-DIkçA · -Ar…-mAz · -CAsInA",
  vocab:[["oğuz","Oghuz (the western Turkic tribes)"],["boy","tribe, clan"],["yiğit","brave young man"],["ad koymak","to bestow a name"],["han","khan, ruler"],["boğa","bull"],["meydan","open square, arena"],["dua etmek","to pray for"],["kılıç","sword"],["destan","epic"]],
@@ -55,8 +54,7 @@
   {t:"fill",q:"Okudu___ daha çok anlıyorum. (the more I read)",c:"kça",why:"-DIkçA means the more … the more. The given okudu- already carries the stem and the d, so the ending finishes as -kça: okudukça daha çok anlıyorum."},
   {t:"mc",q:"“kaçarcasına dağıldılar” =",a:["they scattered in order to flee","they scattered as if fleeing","they fled after scattering","they could not scatter"],c:1,why:"-CAsInA means as if: kaçarcasına, as if fleeing. It describes the manner, not the purpose."},
   {t:"order",q:"Build: “A young man could not take a name until he had accomplished something.”",w:["Bir","yiğit","bir","iş","başarmadıkça","ad","alamazdı"],c:"Bir yiğit bir iş başarmadıkça ad alamazdı",why:"Negative -DIkçA means until or unless: başarmadıkça, unless he had accomplished something. The past habitual alamazdı says what could never happen."},
-  {t:"mc",q:"In Oghuz custom a name is",a:["given at birth","inherited from the father","earned by a deed","bought from the khan"],c:2,why:"Among the Oghuz a young man earned his name by a deed; the first Dede Korkut tale is built around that custom."}],
- speak:"Describe a turning point in your life using -Ar…-mAz, -DIkçA and -(y)AlI at least once each."},
+  {t:"mc",q:"In Oghuz custom a name is",a:["given at birth","inherited from the father","earned by a deed","bought from the khan"],c:2,why:"Among the Oghuz a young man earned his name by a deed; the first Dede Korkut tale is built around that custom."}]},
 
 {id:"c1u3",lv:"C1",n:3,tr:"Akademik Türkçe",en:"Academic Turkish",focus:"adlaştırma · -mAsI · uzun cümle",
  vocab:[["hars","culture (older term)"],["medeniyet","civilisation"],["kavram","concept"],["ayrım","distinction"],["toplum","society"],["aktarım","transmission"],["değer","value"],["yöntem","method"],["varsayım","hypothesis"],["sonuç","conclusion"]],
@@ -83,8 +81,7 @@
   {t:"fill",q:"Bu durumun incelen___ gerekmektedir. (needs to be examined)",c:"mesi",why:"Gerekmek takes a verbal noun with a possessive as its subject: incelen-me-si gerekmektedir, its being examined is necessary. After e the -mA is -me."},
   {t:"mc",q:"In a long academic sentence, the main verb is",a:["first","second","near the middle","at the very end"],c:3,why:"Turkish puts the main verb last, so in a long academic sentence everything before it is subordinate: find the final verb first and read back from it."},
   {t:"order",q:"Build: “It is seen that cultural transmission begins in the family.”",w:["Kültürel","aktarımın","ailede","başladığı","görülmektedir"],c:"Kültürel aktarımın ailede başladığı görülmektedir",why:"The clause's subject takes the genitive (aktarımın), its verb becomes başladığı (-DIK + possessive), and the formal passive görülmektedir, it is seen, comes last."},
-  {t:"mc",q:"Gökalp's medeniyet is",a:["a nation's own feeling","transferable technique and knowledge","religious practice","folk poetry"],c:1,why:"Gökalp divides culture into medeniyet, technique and knowledge that can pass between nations, and hars, a nation's own feeling, which cannot."}],
- speak:"Summarise an argument you have read recently in five nominalised academic sentences."},
+  {t:"mc",q:"Gökalp's medeniyet is",a:["a nation's own feeling","transferable technique and knowledge","religious practice","folk poetry"],c:1,why:"Gökalp divides culture into medeniyet, technique and knowledge that can pass between nations, and hars, a nation's own feeling, which cannot."}]},
 
 {id:"c1u4",lv:"C1",n:4,tr:"Sessiz adam",en:"The silent man",focus:"edebî anlatı · iç ses",
  vocab:[["silik","faded, unremarkable"],["dikkat çekmek","to draw attention"],["defter","notebook"],["sıradan","ordinary"],["merak","curiosity"],["gizlemek","to conceal"],["fark etmek","to notice"],["hayret","astonishment"],["yalnızlık","loneliness"],["ruh","soul"]],
@@ -111,8 +108,7 @@
   {t:"fill",q:"Sanki beni gör___ . (as if he had not seen me)",c:"memişti",why:"Sanki (as if) often takes the past perfect: gör-me-miş-ti, he had not seen. The negative -mA- comes first, then -mIş and -DI."},
   {t:"mc",q:"“Meğer tanımamışım.” conveys",a:["a plan","a late realisation about oneself","a command","a polite refusal"],c:1,why:"Meğer with -mIş on the first person is a late discovery about oneself: meğer tanımamışım, it turns out I hadn't known him."},
   {t:"order",q:"Build: “He was so quiet that his presence went unnoticed.”",w:["Öyle","sessizdi","ki","varlığı","fark","edilmezdi"],c:"Öyle sessizdi ki varlığı fark edilmezdi",why:"Öyle … ki means so … that. The result clause uses the passive aorist in the past for a repeated state: fark edilmezdi, would go unnoticed."},
-  {t:"mc",q:"The novel's premise is that Raif Efendi",a:["is secretly wealthy","hides a whole inner life behind dullness","is a criminal","cannot speak Turkish"],c:1,why:"Raif Efendi seems a dull clerk, but his notebook reveals a whole inner life of love and loss; the book turns on that contrast."}],
- speak:"Describe someone you underestimated, moving between -DI, -(A)rdI and -mIştI."},
+  {t:"mc",q:"The novel's premise is that Raif Efendi",a:["is secretly wealthy","hides a whole inner life behind dullness","is a criminal","cannot speak Turkish"],c:1,why:"Raif Efendi seems a dull clerk, but his notebook reveals a whole inner life of love and loss; the book turns on that contrast."}]},
 
 {id:"c1u5",lv:"C1",n:5,tr:"Seyahatname",en:"The book of travels",focus:"eski anlatı · tasvir",
  vocab:[["seyahat","travel"],["rüya","dream"],["şefaat","intercession"],["nakletmek","to relate, transmit"],["gezmek","to wander, tour"],["acayip","strange, wondrous"],["kale","fortress"],["ziyaretgâh","place of pilgrimage"],["methetmek","to praise"],["kalem almak","to take up the pen"]],
@@ -139,8 +135,7 @@
   {t:"fill",q:"O kadar büyüktü ___ ucu görünmezdi. (so big that…)",c:"ki",why:"O kadar … ki means so … that: o kadar büyüktü ki ucu görünmezdi, it was so big that its end could not be seen."},
   {t:"mc",q:"“nakletmek” is a higher-register",a:["anlatmak","gitmek","görmek","yazmak"],c:0,why:"Nakletmek, from Arabic, is the formal word for relating or passing on an account: a higher-register anlatmak."},
   {t:"order",q:"Build: “I wandered forty years and saw many a city.”",w:["Kırk","yıl","gezdim","ve","nice","şehirler","gördüm"],c:"Kırk yıl gezdim ve nice şehirler gördüm",why:"The duration kırk yıl needs no ending here. Nice (many a) is literary, and it may take the plural: nice şehirler, many cities."},
-  {t:"mc",q:"“mezkûr” means",a:["hidden","aforementioned","forbidden","blessed"],c:1,why:"Mezkûr, from Arabic, means aforementioned. It survives in legal and official Turkish: mezkûr madde, the aforementioned article."}],
- speak:"Describe a place you have visited in the manner of a seyahatname: three descriptive clauses per sentence, and one öyle … ki."},
+  {t:"mc",q:"“mezkûr” means",a:["hidden","aforementioned","forbidden","blessed"],c:1,why:"Mezkûr, from Arabic, means aforementioned. It survives in legal and official Turkish: mezkûr madde, the aforementioned article."}]},
 
 {id:"c1u6",lv:"C1",n:6,tr:"Şart ve hüküm",en:"Terms and provisions",focus:"-DIğI takdirde · -mAsI hâlinde · suretiyle",
  vocab:[["takdirde","in the event that"],["hâlinde","in the case of"],["suretiyle","by means of"],["hüküm","provision, judgement"],["yürürlük","force, effect"],["fesih","termination"],["taraf","party"],["yükümlülük","obligation"],["ihlal","violation"],["geçerli","valid"]],
@@ -166,8 +161,7 @@
   {t:"fill",q:"Yazılı bildirmek ___ sözleşme sona erdirilebilir. (by means of)",c:"suretiyle",why:"-mAk suretiyle means by means of doing: yazılı bildirmek suretiyle, by giving written notice."},
   {t:"mc",q:"“işbu” means",a:["therefore","this present","however","henceforth"],c:1,why:"İşbu means this present, as in işbu sözleşme, this contract. It appears only in legal texts."},
   {t:"order",q:"Build: “This contract enters into force on the date it is signed.”",w:["İşbu","sözleşme","imzalandığı","tarihte","yürürlüğe","girer"],c:"İşbu sözleşme imzalandığı tarihte yürürlüğe girer",why:"The subject (işbu sözleşme) comes first, imzalandığı tarihte means on the date it is signed (passive -DIK), and yürürlüğe girer (enters into force) comes last."},
-  {t:"mc",q:"In “gerek kiracı gerekse ev sahibi”, gerek means",a:["necessary","both … and","neither","in need"],c:1,why:"Gerek … gerekse … is a correlative pair meaning both … and: gerek kiracı gerekse ev sahibi, both the tenant and the owner."}],
- speak:"State five house rules as contract clauses, then say each again as you would to a flatmate."},
+  {t:"mc",q:"In “gerek kiracı gerekse ev sahibi”, gerek means",a:["necessary","both … and","neither","in need"],c:1,why:"Gerek … gerekse … is a correlative pair meaning both … and: gerek kiracı gerekse ev sahibi, both the tenant and the owner."}]},
 
 {id:"c1u7",lv:"C1",n:7,tr:"Mevlid geleneği",en:"The Mevlid tradition",focus:"edebî tasvir · teşbih · dinî üslup",
  vocab:[["mevlid","the nativity poem, and the gathering where it is read"],["kandil","holy night; oil lamp"],["cemaat","congregation"],["okuyucu","reciter"],["nur","light, radiance"],["müjde","glad tidings"],["salavat","the formula of blessing on the Prophet"],["huşu","reverent awe"],["makam","melodic mode"],["irticalen","extempore"]],
@@ -194,8 +188,7 @@
   {t:"fill",q:"Ses, bir dalga ___ yükseldi. (like a wave)",c:"gibi",why:"Gibi (like) follows the noun it compares with: bir dalga gibi, like a wave."},
   {t:"mc",q:"Süleyman Çelebi's Mevlid dates from",a:["1209","1409","1609","1809"],c:1,why:"Süleyman Çelebi composed the Mevlid in Bursa in 1409, in the plain Turkish of his day."},
   {t:"order",q:"Build: “The congregation listens in reverent awe.”",w:["Cemaat","huşu","içinde","dinler"],c:"Cemaat huşu içinde dinler",why:"Huşu içinde (in reverent awe) describes the manner, before the verb. The aorist dinler states what the congregation does each time."},
-  {t:"mc",q:"Why is the poem still understood today?",a:["It was rewritten","Its language was plain from the start","It is in Arabic","It is short"],c:1,why:"The Mevlid was written in plain Turkish rather than ornate Ottoman, so it has stayed understandable for six centuries."}],
- speak:"Describe a ceremony you have attended using the passive aorist and three similes."},
+  {t:"mc",q:"Why is the poem still understood today?",a:["It was rewritten","Its language was plain from the start","It is in Arabic","It is short"],c:1,why:"The Mevlid was written in plain Turkish rather than ornate Ottoman, so it has stayed understandable for six centuries."}]},
 
 {id:"c1u8",lv:"C1",n:8,tr:"Haber dili",en:"The language of news",focus:"başlık dili · aktarım · edilgen",
  vocab:[["haber","news item"],["manşet","headline"],["muhabir","correspondent"],["açıklama","statement"],["yetkili","official"],["iddia etmek","to allege"],["duyurmak","to announce"],["görüşme","talks, meeting"],["artış","increase"],["düşüş","decline"]],
@@ -221,8 +214,7 @@
   {t:"fill",q:"Görüşmelerin yarın başlayacağı ___ . (was reported)",c:"bildirildi",why:"News reports turn the content into a verbal noun (başlayacağı) and add a passive verb of saying: …başlayacağı bildirildi, it was reported that talks would begin."},
   {t:"mc",q:"“Kar kapıda” is a headline meaning",a:["Snow at the door — snow is imminent","The door is snowy","Close the door, it's snowing","Snow has ended"],c:0,why:"Headlines are often verbless noun phrases: kar kapıda, “snow at the door”, means snow is on its way, not that the door is snowy."},
   {t:"order",q:"Build: “It was learned that the manuscript was found in Konya.”",w:["El","yazmasının","Konya'da","bulunduğu","öğrenildi"],c:"El yazmasının Konya'da bulunduğu öğrenildi",why:"The clause's subject takes the genitive (el yazmasının), the verb becomes bulunduğu (-DIK + possessive), and öğrenildi (it was learned) comes last."},
-  {t:"mc",q:"“yüzde üçlük bir düşüş” =",a:["a three per cent decline","three declines","the third decline","a decline to three"],c:0,why:"Yüzde üç is three per cent, and -lük turns it into an adjective: yüzde üçlük bir düşüş, a three per cent decline."}],
- speak:"Report three things that happened this week as news items, changing the attribution frame each time."},
+  {t:"mc",q:"“yüzde üçlük bir düşüş” =",a:["a three per cent decline","three declines","the third decline","a decline to three"],c:0,why:"Yüzde üç is three per cent, and -lük turns it into an adjective: yüzde üçlük bir düşüş, a three per cent decline."}]},
 
 {id:"c1u9",lv:"C1",n:9,tr:"Karagöz ile Hacivat",en:"Shadow theatre",focus:"konuşma dili · söz oyunu · yanlış anlama",
  vocab:[["gölge oyunu","shadow play"],["perde","screen; curtain"],["tuzlu","salty; overpriced"],["kafiye","rhyme"],["nükte","witticism"],["şaka","joke"],["kasıt","intent"],["anlaşmazlık","misunderstanding"],["ukala","know-all"],["kabadayı","swaggering tough"]],
@@ -250,8 +242,7 @@
   {t:"fill",q:"“Ne yapıyorsun” in fast speech becomes ___ .",c:"napıyorsun",why:"In fast speech ne yapıyorsun drops the y and merges the vowels: napıyorsun. You will hear it constantly and rarely see it written."},
   {t:"mc",q:"“Gelmedi ki adam.” is",a:["ungrammatical","an inverted spoken sentence","a question","formal"],c:1,why:"Spoken Turkish can move the verb away from the end (devrik cümle) for emphasis: Gelmedi ki adam. It is not an error."},
   {t:"order",q:"Build: “Leave the sweet talk and tell me your trouble.”",w:["Muhabbeti","bırak","da","derdini","söyle"],c:"Muhabbeti bırak da derdini söyle",why:"Two imperatives are joined by da, meaning “and just”: bırak da söyle, drop it and tell me. Both objects take the accusative: muhabbeti, derdini."},
-  {t:"mc",q:"“bendeniz” is",a:["rude","an old humble word for “I”","plural","a place"],c:1,why:"Bendeniz, from Persian bende (servant) with -niz, is an old, humble way of saying “I”."}],
- speak:"Take any sentence of formal Turkish and mishear it deliberately, Karagöz-style, three different ways."},
+  {t:"mc",q:"“bendeniz” is",a:["rude","an old humble word for “I”","plural","a place"],c:1,why:"Bendeniz, from Persian bende (servant) with -niz, is an old, humble way of saying “I”."}]},
 
 {id:"c1u10",lv:"C1",n:10,tr:"Makale yapısı",en:"The shape of a paper",focus:"akademik metin · alıntı · sonuç",
  vocab:[["çalışma","study"],["yöntem","method"],["bulgu","finding"],["veri","data"],["örneklem","sample"],["sınırlılık","limitation"],["alıntı","citation, quotation"],["kaynakça","bibliography"],["öneri","recommendation"],["katkı","contribution"]],
@@ -277,5 +268,4 @@
   {t:"fill",q:"Bulgular önceki çalışmalarla ___ . (coincide)",c:"örtüşmektedir",why:"Örtüşmek (to coincide) in the formal present -mAktAdIr gives örtüşmektedir. The comparison takes -lA: önceki çalışmalarla, with earlier studies."},
   {t:"mc",q:"“a.g.e.” stands for",a:["a footnote number","the same work cited above","a publisher","anonymous"],c:1,why:"A.g.e. stands for adı geçen eser, the work already cited, like English ibid."},
   {t:"order",q:"Build: “One of the limitations of the study is the sample.”",w:["Çalışmanın","sınırlılıklarından","biri","örneklemdir"],c:"Çalışmanın sınırlılıklarından biri örneklemdir",why:"Biri (one of) follows the ablative plural: sınırlılıklarından biri, one of its limitations. The copula -DIr on örneklem completes the formal statement."},
-  {t:"mc",q:"Which section would “Elde edilen bulgulara göre” open?",a:["the aim","the method","the findings","the bibliography"],c:2,why:"Elde edilen bulgulara göre, according to the findings obtained, is the standard opening of a findings section."}],
- speak:"Summarise any article you have read as a six-sentence Turkish abstract, one sentence per section."},
+  {t:"mc",q:"Which section would “Elde edilen bulgulara göre” open?",a:["the aim","the method","the findings","the bibliography"],c:2,why:"Elde edilen bulgulara göre, according to the findings obtained, is the standard opening of a findings section."}]},

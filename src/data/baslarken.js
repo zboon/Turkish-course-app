@@ -25,7 +25,7 @@ const BASLA=[
   {h:"Yeni harfler", en:"the new consonants",
    letters:[
     ["Ç ç","çay","tea","ch as in church"],
-    ["Ş ş","şeker","sugar","sh as in ship"],
+    ["Ş ş","şeker","sugar","sh as in she: she-ker"],
     ["Ğ ğ","dağ","mountain","never starts a word. It lengthens the vowel before it, so dağ sounds like daa"]]},
   {h:"Tanıdık ama farklı", en:"familiar, but different",
    p:["These look like English letters and are the ones English speakers most often misread."],
@@ -37,7 +37,7 @@ const BASLA=[
     ["R r","renk","colour","a quick tap of the tongue, like the tt in American butter"],
     ["S s","su","water","always s, never the z sound of rose"],
     ["V v","var","there is","a light v. Between vowels it can come close to w, as in tavuk, chicken"],
-    ["Y y","yol","road","always the y of yes, never a vowel"]]},
+    ["Y y","yol","road, way","always the y of yes, never a vowel"]]},
   {h:"Aynı", en:"the same as in English",
    letters:[
     ["B b","balık","fish",""],
@@ -60,8 +60,8 @@ const BASLA=[
    why:"Ç is the ch of church, so tea is written çay. A plain c would be said like the j in jam, and ş is sh."},
   {t:"mc", q:"How is c said in cami, mosque?", a:["like the c in cat","like the j in jam","like the ch in church","like the s in sun"], c:1,
    why:"In Turkish c is always the j of jam, never k or s, so cami is said jah-mee. The ch sound has its own letter, ç."},
-  {t:"mc", q:"Which letter is the sh of ship?", a:["s","ş","ç","c"], c:1,
-   why:"Ş, an s with a tail, is the sh of ship: şeker, sugar, is said sheh-ker. A plain s is always s, and ç is ch."},
+  {t:"mc", q:"Which letter is the sh of she?", a:["s","ş","ç","c"], c:1,
+   why:"Ş, an s with a tail, is the sh of she: şeker, sugar, is said she-ker, with the short e of bed. A plain s is always s, and ç is ch."},
   {t:"mc", say:"kız", q:"Which word did you hear?", a:["kız","kiz","köz"], c:0,
    why:"The vowel was the dotless ı, a short relaxed sound like the a in about. Kız, girl, has it; a dotted i would be the ee of see."},
   {t:"mc", say:"dağ", q:"You hear something like daa. How is it written?", a:["dağ","da","dak"], c:0,
@@ -208,10 +208,10 @@ const BASLA=[
    rows:[["Merhaba.","hello",""],["Günaydın.","good morning",""],["İyi akşamlar.","good evening",""],["Teşekkür ederim.","thank you",""],["Sağ ol.","thanks — casual",""],["Lütfen.","please",""],["Evet.","yes",""],["Hayır.","no",""],["Tamam.","okay",""],["Pardon.","excuse me, sorry",""],["Anlamadım.","I didn't understand",""],["Bir daha söyler misiniz?","could you say that again?",""],["Biraz Türkçe konuşuyorum.","I speak a little Turkish",""]]},
   {h:"Vedalaşma", en:"saying goodbye",
    p:["Goodbye depends on who is leaving. The one who leaves says <i>Hoşça kal</i>, or <i>Hoşça kalın</i> to someone you call siz. The one who stays says <i>Güle güle</i>."],
-   rows:[["Hoşça kal.","goodbye — said by the one leaving",""],["Güle güle.","goodbye — said by the one staying",""]]},
+   rows:[["Hoşça kal.","goodbye — said by the one leaving; word for word, stay well",""],["Güle güle.","goodbye — said by the one staying; word for word, go smiling",""]]},
   {h:"Her gün duyacakların", en:"three you will hear every day",
    p:["Each has no English equivalent. They are said so often that leaving them out is noticed."],
-   rows:[["Kolay gelsin.","to someone working — may it come easy",""],["Afiyet olsun.","to someone eating — enjoy your meal",""],["Geçmiş olsun.","to someone ill, or after a mishap — may it pass",""]]}
+   rows:[["Kolay gelsin.","to someone working — may it come easy",""],["Afiyet olsun.","to someone eating — enjoy your meal; word for word, may it do you good",""],["Geçmiş olsun.","to someone ill, or after a mishap — may it pass",""]]}
  ],
  check:[
   {t:"mc", q:"You ask a shopkeeper you have never met how they are. Which do you say?", a:["Nasılsınız?","Nasılsın?"], c:0,

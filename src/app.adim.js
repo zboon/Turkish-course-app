@@ -20,7 +20,7 @@
         the unit's common words
      3  Tekrar ve konuşma — the words recalled a day later, an example of
         the grammar (from A2), three more lines said aloud, the second
-        half of the common words, the speaking task, then the exercises
+        half of the common words, then the exercises
 
    The checks grow with the learner, because what teaches at A1 is too
    easy to teach anything at B1: A1 hears and spells, A2 and up types the
@@ -30,9 +30,10 @@
 
    The common words are the unit's share of SIK (sikShare, app.sik.js),
    taken in exactly as Sık kelimeler takes them: starred, first review
-   tomorrow, or marked known. The speaking task told here counts as its
-   first telling, so the plan brings it back on day three and day seven.
-   Otherwise it adds no material: each part marks its tab seen as it is
+   tomorrow, or marked known. There is no free speaking task: it had
+   nothing to check it against, so it is the lines said aloud before the
+   model instead (see Konuşma görevi in CLAUDE.md). Otherwise it adds no
+   material: each part marks its tab seen as it is
    shown (markSeen), so the reviews open exactly as if the tabs had been
    read, and S.ders records only which lessons are finished, and when.
    The checks are practice, not marks — nothing is scheduled or put in
@@ -122,7 +123,7 @@ function adimSteps(u,k){
   }else{
     steps=tier===0?adimHear(W,3).concat(adimSpell(W,2)):shuffle(W).slice(0,4).map(adimType);
     if(tier>0)steps.push(adimGex(u));
-    steps=steps.concat(adimSayLines(u,1),adimSik(u,1),[{t:"speak"}]);
+    steps=steps.concat(adimSayLines(u,1),adimSik(u,1));
   }
   steps.push({t:"end"});
   steps.forEach(function(s,i){s.id=i;});
@@ -151,8 +152,8 @@ function adNext(){
 function adSaid(s){return s.t==="cloze"?s.full:s.t==="gex"?s.c:s.w?s.w.say:"";}
 /* A missed check goes further down the line, to just before the lesson
    moves on from the words: the grammar, the lines said aloud, the common
-   words, the speaking task, or the end. */
-const AD_STOP={gram:1,say:1,sik:1,speak:1,end:1};
+   words, or the end. */
+const AD_STOP={gram:1,say:1,sik:1,end:1};
 function adJudge(ok){
   const s=adCur(); if(!s)return;
   const n=(AD.tries[s.id]=(AD.tries[s.id]||0)+1);
@@ -207,14 +208,6 @@ function adSik(){
   const s=adCur(); if(!s||s.t!=="sik")return;
   s.words.forEach(function(e,j){if(!sikMet(e))sikTake(e,!!AD.known[j]);});
   save();adNext();
-}
-/* Told once here, it is the task's first telling; one already under way
-   keeps its own schedule. */
-function adSpeak(){
-  if(!AD)return;
-  const r=S.retell&&S.retell[AD.u];
-  if(!r||!r.n)retellCount(AD.u);
-  adNext();
 }
 function adText(){if(AD){AD.txt=true;render();}}
 
@@ -286,11 +279,6 @@ function renderAdim(){
         '<button class="sbtn'+(kn?' on':'')+'" onclick="adKnow('+j+')">biliyorum</button></div>';
     });
     h+='</div><button class="btn" onclick="adSik()">Tekrara ekle</button>';
-  }else if(s.t==="speak"){
-    h+='<p class="qn">Konuş</p><div class="card"><p class="q" style="margin:0">'+esc(u.speak)+'</p></div>'+
-      '<p class="sub" style="margin:0 .2rem .9rem">'+tx('Say it out loud, in Turkish, for a minute or so, with this unit’s words and pattern. Getting to the end matters more than getting it right. It comes back in your plan on day three and day seven.',
-        'Yüksek sesle, Türkçe, bir dakika kadar anlat; bu ünitenin kelimelerini ve kalıbını kullan. Doğru söylemekten çok sonuna kadar gitmek önemli. Üçüncü ve yedinci gün planında yeniden gelecek.')+'</p>'+
-      '<button class="btn" onclick="adSpeak()">Anlattım</button><button class="btn ghost" onclick="adNext()">Şimdi değil</button>';
   }else if(AD.k<LESSONS-1){
     /* Lessons one and two end on the rest of today's plan; the next
        lesson is tomorrow's, and offered here only while today has none. */

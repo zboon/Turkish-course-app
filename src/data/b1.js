@@ -26,8 +26,7 @@
   {t:"fill",q:"Bir zamanlar bir padişah var___ . (tale opening)",c:"mış",why:"Folk tales are told in the reported past -mIş from the first line, because the teller did not witness them. Var ends in a, so the ending is -mış: varmış."},
   {t:"mc",q:"“Ali gelmiş.” implies",a:["I saw Ali arrive","I heard that Ali arrived","Ali will arrive","Ali is arriving now"],c:1,why:"-mIş marks news you heard or evidence you found, not something you saw. Ali gelmiş: apparently, or so I hear, Ali has come."},
   {t:"order",q:"Build: “He set out and came upon an old man.”",w:["Yola","çıkmış","ve","bir","ihtiyara","rastlamış"],c:"Yola çıkmış ve bir ihtiyara rastlamış",why:"Tale narration keeps every verb in -mIş. Rastlamak (to come upon) takes the dative, so the old man is ihtiyara."},
-  {t:"mc",q:"“Meğer” introduces",a:["a condition","a revealed truth","a comparison","a polite request"],c:1,why:"Meğer announces a discovery, “it turns out that”, and is usually followed by -mIş: Meğer kapı açıkmış, it turned out the door was open."}],
- speak:"Tell a story you were told but did not see, entirely in -mIş. Ten sentences."},
+  {t:"mc",q:"“Meğer” introduces",a:["a condition","a revealed truth","a comparison","a polite request"],c:1,why:"Meğer announces a discovery, “it turns out that”, and is usually followed by -mIş: Meğer kapı açıkmış, it turned out the door was open."}]},
 
 {id:"b1u2",lv:"B1",n:2,tr:"Olsaydı",en:"If it were",focus:"şart kipi -sA · -sAydI",
  vocab:[["şart","condition"],["keşke","if only"],["saklamak","to store, hide"],["saman","straw"],["zaman","time"],["fırsat","opportunity"],["pişman olmak","to regret"],["vazgeçmek","to give up"],["denemek","to try"],["başarmak","to succeed"]],
@@ -51,8 +50,7 @@
   {t:"fill",q:"Keşke ona söyle___ . (if only I had told him)",c:"seydim",why:"Keşke (if only) takes the past conditional -sAydI to express regret. Söyle ends in e, so the ending is -seydi, plus -m for “I”: söyleseydim."},
   {t:"mc",q:"“Yarın yağmur yağarsa…” is",a:["a real condition","an unreal condition","a regret","a command"],c:0,why:"A real, open possibility uses -sA on the aorist: yağarsa, if it rains. An unreal one would be yağsaydı."},
   {t:"order",q:"Build: “If it rains we will stay at home.”",w:["Yağmur","yağarsa","evde","kalırız"],c:"Yağmur yağarsa evde kalırız",why:"The condition comes first (yağarsa, if it rains), then the place, and the result verb in the aorist last: kalırız, we will stay."},
-  {t:"mc",q:"“Sakla samanı, gelir zamanı” advises",a:["farming in autumn","keeping what seems useless","sleeping early","sharing with neighbours"],c:1,why:"“Keep the straw, its time will come”: keep things that seem useless now, because a day will come when they are needed."}],
- speak:"Say five things you would do if you lived in Turkey, and three you wish you had done differently."},
+  {t:"mc",q:"“Sakla samanı, gelir zamanı” advises",a:["farming in autumn","keeping what seems useless","sleeping early","sharing with neighbours"],c:1,why:"“Keep the straw, its time will come”: keep things that seem useless now, because a day will come when they are needed."}]},
 
 {id:"b1u3",lv:"B1",n:3,tr:"Gördüğüm şey",en:"The thing I saw",focus:"sıfat-fiiller -An · -DIK",
  vocab:[["kaşağı","curry comb (for grooming horses)"],["ahır","stable"],["demir","iron"],["alet","tool"],["kırmak","to break"],["suçlamak","to accuse"],["haksızlık","injustice"],["yalan","lie"],["utanç","shame"],["ömür boyu","for a lifetime"]],
@@ -80,8 +78,7 @@
   {t:"mc",q:"“the child who is crying” =",a:["ağladığım çocuk","ağlayan çocuk","ağlamış çocuğu","çocuk ağlıyor"],c:1,why:"When the noun does the action, the participle is -(y)An: ağla-yan çocuk, the child who is crying. -DIK with a possessive would mean the child someone is crying about."},
   {t:"fill",q:"Oturduğ___ ev çok eski. (the house WE live in)",c:"umuz",why:"-DIK takes the possessive of whoever does the action. For biz that is -(I)mIz, and after the u of oturduğ four-way harmony gives -umuz: oturduğumuz ev."},
   {t:"order",q:"Build: “the injustice I did that day”",w:["o","gün","yaptığım","haksızlık"],c:"o gün yaptığım haksızlık",why:"Everything that describes a noun comes before it: o gün (that day) + yaptığım (that I did, -DIK + -Im) + haksızlık (the injustice)."},
-  {t:"mc",q:"In the story, who is blamed for the broken comb?",a:["the narrator","the groom","Hasan","the father"],c:2,why:"Hasan the groom is blamed and punished for breaking the comb, while the narrator, who broke it, stays silent; that silence is the weight of the story."}],
- speak:"Describe three people and three objects in your life using -(y)An and -DIK clauses, e.g. “the friend who taught me Turkish”."},
+  {t:"mc",q:"In the story, who is blamed for the broken comb?",a:["the narrator","the groom","Hasan","the father"],c:2,why:"Hasan the groom is blamed and punished for breaking the comb, while the narrator, who broke it, stays silent; that silence is the weight of the story."}]},
 
 {id:"b1u4",lv:"B1",n:4,tr:"Gülerek",en:"Laughing",focus:"zarf-fiiller -ArAk · -IncA · -mAdAn · -Ip",
  vocab:[["pazar","market; Sunday"],["düdük","whistle"],["çalmak","to play; to steal; to knock"],["etraf","surroundings"],["sarmak","to surround, wrap"],["para","money"],["uzatmak","to hold out"],["kalabalık","crowd"],["dağıtmak","to hand out"],["ısrar etmek","to insist"]],
@@ -108,8 +105,7 @@
   {t:"fill",q:"Beni gör___ kaçtı. (when he saw me)",c:"ünce",why:"-(y)IncA means when or as soon as. After the ö of gör, four-way harmony gives -ünce: görünce, when he saw."},
   {t:"mc",q:"“Hiçbir şey söylemeden çıktı.” =",a:["He went out and said nothing","He went out without saying anything","He said nothing before going out, then spoke","He couldn't say anything"],c:1,why:"-mAdAn means without doing: söylemeden, without saying. The negative is inside the ending, so the main verb stays positive: çıktı."},
   {t:"order",q:"Build: “After coming back he gave the whistle.”",w:["Dönüp","geldikten","sonra","düdüğü","vermiş"],c:"Dönüp geldikten sonra düdüğü vermiş",why:"-Ip joins two actions done in sequence (dönüp gelmek, to come back), -DIktAn sonra means after, and the tale verb vermiş stays last."},
-  {t:"mc",q:"The proverb is used today about",a:["music lessons","who gets to decide — the one who pays","being generous with children","buying cheap goods"],c:1,why:"The proverb, “he who gives the money plays the pipe”, means the one who pays gets to decide, like “he who pays the piper calls the tune”."}],
- speak:"Describe your morning using five linked clauses: kalkınca…, kahvaltı yaparak…, çıkmadan önce…, işe varıp…, döndükten sonra…"},
+  {t:"mc",q:"The proverb is used today about",a:["music lessons","who gets to decide — the one who pays","being generous with children","buying cheap goods"],c:1,why:"The proverb, “he who gives the money plays the pipe”, means the one who pays gets to decide, like “he who pays the piper calls the tune”."}]},
 
 {id:"b1u5",lv:"B1",n:5,tr:"Ne olduğunu biliyorum",en:"I know what happened",focus:"isim-fiiller -DIğInI · -(y)AcAğInI",
  vocab:[["forsa","galley slave"],["esir","captive"],["kürek","oar"],["kıyı","shore"],["yıl","year"],["kurtulmak","to be saved, escape"],["yüzmek","to swim"],["tanımak","to recognise"],["yaşlı","old (person)"],["vatan","homeland"]],
@@ -136,8 +132,7 @@
   {t:"fill",q:"Ne iste___ söyle. (what you want)",c:"diğini",why:"İste + the verbal noun -DIK (-diğ) + the possessive for “you” (-in) + the accusative (-i), because the clause is the object of söyle: istediğini."},
   {t:"mc",q:"“Geleceğini duydum.” =",a:["I heard him come","I heard that he will come","I heard what he said","He heard that I came"],c:1,why:"Inside a that-clause the future is -(y)AcAK instead of -DIK: gel-eceğ-in-i duydum, I heard that he will come."},
   {t:"order",q:"Build: “He noticed that the ship was approaching.”",w:["Geminin","yaklaştığını","fark","etti"],c:"Geminin yaklaştığını fark etti",why:"The subject of the clause takes the genitive (geminin), the verb becomes yaklaştığını (-DIK + possessive + accusative), and the main verb fark etti comes last."},
-  {t:"mc",q:"The old sailor's tragedy is that",a:["he never escaped","he drowned near the shore","the homeland he returned to no longer existed","he forgot his language"],c:2,why:"After forty years away the sailor comes home to find that the homeland he waited for no longer exists; the return itself is the loss."}],
- speak:"Report five things you have learned about Turkey using “…-DIğInI öğrendim / duydum / okudum”."},
+  {t:"mc",q:"The old sailor's tragedy is that",a:["he never escaped","he drowned near the shore","the homeland he returned to no longer existed","he forgot his language"],c:2,why:"After forty years away the sailor comes home to find that the homeland he waited for no longer exists; the return itself is the loss."}]},
 
 {id:"b1u6",lv:"B1",n:6,tr:"Ne için?",en:"What for?",focus:"amaç · -mAk için · -mAsI için",
  vocab:[["amaç","aim"],["sebep","reason"],["niyet","intention"],["çaba","effort"],["hedef","target"],["ulaşmak","to reach"],["sağlamak","to provide, ensure"],["kaçınmak","to avoid"],["uğraşmak","to struggle with"],["yeterli","sufficient"]],
@@ -162,8 +157,7 @@
   {t:"fill",q:"Beni anla___ için yavaş konuştum. (so that he would understand)",c:"ması",why:"When someone else is meant to do the action, purpose uses the verbal noun -mA + possessive + için: anlaması için, so that he would understand."},
   {t:"mc",q:"“Geç kalmamak için” =",a:["because I was late","in order not to be late","although I was late","when I was late"],c:1,why:"The negative -mA- goes before the infinitive ending: kal-ma-mak için, in order not to be late."},
   {t:"order",q:"Build: “We whispered so the children wouldn't hear.”",w:["Çocuklar","duymasın","diye","fısıldadık"],c:"Çocuklar duymasın diye fısıldadık",why:"Diye (so that) follows a wish in the third-person optative: duymasın, may they not hear. The purpose clause comes first and fısıldadık last."},
-  {t:"mc",q:"“bitmek üzere” means",a:["in order to finish","about to finish","having finished","unable to finish"],c:1,why:"-mAk üzere can mean in order to or about to, and context decides. With bitmek (to end) it means about to finish."}],
- speak:"Give six reasons you are learning Turkish, alternating -mAk için and -mAsI için."},
+  {t:"mc",q:"“bitmek üzere” means",a:["in order to finish","about to finish","having finished","unable to finish"],c:1,why:"-mAk üzere can mean in order to or about to, and context decides. With bitmek (to end) it means about to finish."}]},
 
 {id:"b1u7",lv:"B1",n:7,tr:"Gidelim mi?",en:"Shall we go?",focus:"istek kipi -(y)A · teklif",
  vocab:[["teklif","proposal"],["karar","decision"],["fikir","idea"],["belki","maybe"],["haydi (hadi)","come on"],["vazgeçmek","to give up"],["denemek","to try"],["kabul etmek","to accept"],["reddetmek","to refuse"],["anlaşmak","to come to an agreement"]],
@@ -189,8 +183,7 @@
   {t:"fill",q:"Sana bir şey söyle___ . (let me tell you)",c:"yeyim",why:"The first-person optative is -(y)AyIm, “let me”. Söyle ends in a vowel, so a buffer y joins it: söyle-yeyim, let me tell."},
   {t:"mc",q:"“Kim isterse gelsin.” =",a:["Who wants to come?","Let whoever wants to come","Nobody may come","He wants to come"],c:1,why:"The third-person imperative -sIn passes on permission or an instruction: kim isterse gelsin, let whoever wants to come."},
   {t:"order",q:"Build: “Let me buy the tickets then.”",w:["Ben","bilet","alayım","o","zaman"],c:"Ben bilet alayım o zaman",why:"Ben stresses “I”, the object bilet comes before the verb, alayım (let me buy) is the optative, and o zaman (then) can close a spoken sentence."},
-  {t:"mc",q:"“Yardım edeyim mi?” is",a:["a command","an offer","a refusal","a complaint"],c:1,why:"The first-person optative asked as a question is an offer: yardım edeyim mi?, shall I help?"}],
- speak:"Plan a weekend with a friend out loud: make six proposals and accept or refuse each."},
+  {t:"mc",q:"“Yardım edeyim mi?” is",a:["a command","an offer","a refusal","a complaint"],c:1,why:"The first-person optative asked as a question is an offer: yardım edeyim mi?, shall I help?"}]},
 
 {id:"b1u8",lv:"B1",n:8,tr:"Olmalı",en:"It must be",focus:"olasılık · tahmin · -DIr",
  vocab:[["ihtimal","possibility"],["tahmin","guess"],["kesin","certain"],["galiba","probably"],["herhâlde","presumably"],["sanmak","to suppose"],["şüphe","doubt"],["emin","sure"],["imkânsız","impossible"],["mümkün","possible"]],
@@ -215,8 +208,7 @@
   {t:"fill",q:"Telefonu kapalı, uyuyor___ . (he's probably asleep)",c:"dur",why:"-DIr added to a verb in conversation is a guess, not a statement. After the o of -yor, four-way harmony gives u and the voiced r keeps the d: uyuyordur, he's probably asleep."},
   {t:"mc",q:"Which is the least certain?",a:["kesinlikle","eminim","belki","muhtemelen"],c:2,why:"Belki (maybe) is the weakest. The scale runs belki < galiba < herhalde < muhtemelen < eminim < kesinlikle."},
   {t:"order",q:"Build: “He must have got stuck in traffic.”",w:["Trafiğe","takılmış","olmalı"],c:"Trafiğe takılmış olmalı",why:"A guess about the past is -mIş olmalı. Takılmak (to get stuck) takes the dative, so trafik becomes trafiğe, with k softening to ğ before the vowel."},
-  {t:"mc",q:"“Gelmiştir.” in conversation means",a:["He definitely came","He'll have come by now, I assume","He must come","He had come"],c:1,why:"In conversation -mIştIr is an assumption: gelmiştir, he'll have come by now, I assume. In formal writing the same ending states a fact."}],
- speak:"Look at six situations around you and guess aloud what happened, using a different certainty word each time."},
+  {t:"mc",q:"“Gelmiştir.” in conversation means",a:["He definitely came","He'll have come by now, I assume","He must come","He had come"],c:1,why:"In conversation -mIştIr is an assumption: gelmiştir, he'll have come by now, I assume. In formal writing the same ending states a fact."}]},
 
 {id:"b1u9",lv:"B1",n:9,tr:"Geçmişin hikâyesi",en:"The story of the past",focus:"birleşik zamanlar · -(I)yordu · -mIştI",
  vocab:[["o sırada","at that moment"],["birden","suddenly"],["sonunda","in the end"],["nihayet","at last"],["önceden","beforehand"],["hatırlamak","to remember"],["unutmak","to forget"],["karşılaşmak","to run into"],["fark","difference"],["olay","event"]],
@@ -242,8 +234,7 @@
   {t:"fill",q:"Tam çıkacak___ ki telefon çaldı. (I was about to leave)",c:"tım",why:"-(y)AcAktI means was going to, an intention in the past: çık-acak-tı-m, I was about to leave. After a, the past vowel is ı."},
   {t:"mc",q:"“Her yaz denize giderdik.” =",a:["We went to the sea once","We used to go every summer","We had gone to the sea","We were going to the sea"],c:1,why:"-(A)rdI is the past habitual, like English used to: her yaz denize giderdik, we used to go to the sea every summer."},
   {t:"order",q:"Build: “When the train left he had already gone.”",w:["Tren","kalktığında","o","çoktan","gitmişti"],c:"Tren kalktığında o çoktan gitmişti",why:"The when-clause comes first (kalktığında, when it left), çoktan means already, and -mIştI puts his leaving before that moment: gitmişti."},
-  {t:"mc",q:"Which tense usually opens a Turkish narrative paragraph?",a:["-mIştI","-(I)yordu","-(A)cAk","-mIş"],c:1,why:"A Turkish narrative often opens in the past continuous -(I)yordu to set the scene, before the -DI or -mIş verbs of the events."}],
- speak:"Tell a story from your own past in eight sentences, using each of the five past forms at least once."},
+  {t:"mc",q:"Which tense usually opens a Turkish narrative paragraph?",a:["-mIştI","-(I)yordu","-(A)cAk","-mIş"],c:1,why:"A Turkish narrative often opens in the past continuous -(I)yordu to set the scene, before the -DI or -mIş verbs of the events."}]},
 
 {id:"b1u10",lv:"B1",n:10,tr:"Kelimenin içi",en:"Inside the word",focus:"yapım ekleri · sözcük türetme",
  vocab:[["kök","root"],["ek","suffix"],["türetmek","to derive"],["anlam","meaning"],["iş","work, job"],["göz","eye"],["yol","road, way"],["baş","head, chief"],["söz","word, speech"],["el","hand"]],
@@ -269,5 +260,4 @@
   {t:"fill",q:"göz + ___ = gözlük (spectacles)",c:"lük",why:"-lIk makes a thing for something, or an abstract noun. After the ö of göz, four-way harmony gives -lük: gözlük, glasses."},
   {t:"mc",q:"“anlamsız” means",a:["meaningful","meaningless","meaning","to mean"],c:1,why:"-sIz means without: anlam (meaning) + -sız gives anlamsız, meaningless. Its opposite is anlamlı, meaningful."},
   {t:"order",q:"Build: “In Turkish words are not memorised, they are built.”",w:["Türkçede","kelimeler","ezberlenmez","kurulur"],c:"Türkçede kelimeler ezberlenmez kurulur",why:"Place first (Türkçede), then the subject, then two passive aorist verbs side by side: ezberlenmez (are not memorised), kurulur (are built)."},
-  {t:"mc",q:"“yolsuzluk” literally breaks down as",a:["road + with + ness","road + without + ness","traveller + ness","to send + ness"],c:1,why:"Yol (road) + -suz (without) + -luk (-ness): literally “roadlessness”, doing things by no proper road, which is the everyday word for corruption."}],
- speak:"Take five roots you know and build three words from each out loud, explaining what they mean."},
+  {t:"mc",q:"“yolsuzluk” literally breaks down as",a:["road + with + ness","road + without + ness","traveller + ness","to send + ness"],c:1,why:"Yol (road) + -suz (without) + -luk (-ness): literally “roadlessness”, doing things by no proper road, which is the everyday word for corruption."}]},

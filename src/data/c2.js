@@ -24,8 +24,7 @@
   {t:"mc",q:"“hüsn-i niyet” is built on",a:["Turkish possessive order","Persian izafet, head first","an Arabic plural","a verbal noun"],c:1,why:"Persian izafet puts the head first and joins it to the modifier with -i: hüsn-i niyet, goodness of intention. Turkish does the reverse: iyi niyet."},
   {t:"fill",q:"Bu hâle tahammül ___ değildi. (was not to be endured)",c:"edilir gibi",why:"The fixed literary frame -Ir gibi değil means could not be: tahammül edilir gibi değildi, it was not to be endured."},
   {t:"order",q:"Build: “The law exists in order to protect liberty.”",w:["Kanun","hürriyeti","korumak","için","mevcuttur"],c:"Kanun hürriyeti korumak için mevcuttur",why:"The object hürriyet takes the accusative, purpose is the infinitive + için, and mevcut (existing) takes the formal -tur."},
-  {t:"mc",q:"“zira” belongs to which register?",a:["street slang","neutral spoken","formal / literary","children's books"],c:2,why:"Zira is the formal and literary word for because; in everyday speech people say çünkü."}],
- speak:"Argue a position twice in two minutes: once in plain modern Turkish, once in the graver Ottoman-leaning register."},
+  {t:"mc",q:"“zira” belongs to which register?",a:["street slang","neutral spoken","formal / literary","children's books"],c:2,why:"Zira is the formal and literary word for because; in everyday speech people say çünkü."}]},
 
 {id:"c2u2",lv:"C2",n:2,tr:"Atasözleriyle düşünmek",en:"Thinking in proverbs",focus:"atasözü · tartışma dili",
  vocab:[["atasözü","proverb"],["özlü söz","aphorism"],["kanıt","evidence"],["savunmak","to defend a position"],["çürütmek","to refute"],["varsaymak","to assume"],["çelişki","contradiction"],["genelleme","generalisation"],["tutarlı","consistent"],["ikna etmek","to persuade"]],
@@ -50,8 +49,7 @@
   {t:"fill",q:"Tam ___ , veriler bunu çürütüyor. (on the contrary)",c:"tersine",why:"Tam tersine means quite the opposite, on the contrary: tersi is the reverse, and tam intensifies it."},
   {t:"mc",q:"“Ateş olmayan yerden duman çıkmaz” is used to",a:["deny a rumour","suggest a rumour has some basis","warn about fire","praise honesty"],c:1,why:"“Smoke does not rise where there is no fire”: used to suggest that a rumour has some basis, like no smoke without fire."},
   {t:"order",q:"Build: “A proverb is not evidence but a frame.”",w:["Atasözü","bir","kanıt","değil","bir","çerçevedir"],c:"Atasözü bir kanıt değil bir çerçevedir",why:"X değil Y is the Turkish “not X but Y”: bir kanıt değil bir çerçeve. The copula -DIr closes the statement: çerçevedir."},
-  {t:"mc",q:"The essay's claim is that contradictory proverbs show",a:["folk wisdom is worthless","proverbs are context-bound frames, not proofs","Turkish is illogical","proverbs should be banned"],c:1,why:"The essay argues that proverbs which contradict each other show context-dependence, not incoherence: each one frames a situation rather than proving a case."}],
- speak:"Defend a position for two minutes without using a single proverb; then defend the opposite using three."},
+  {t:"mc",q:"The essay's claim is that contradictory proverbs show",a:["folk wisdom is worthless","proverbs are context-bound frames, not proofs","Turkish is illogical","proverbs should be banned"],c:1,why:"The essay argues that proverbs which contradict each other show context-dependence, not incoherence: each one frames a situation rather than proving a case."}]},
 
 {id:"c2u3",lv:"C2",n:3,tr:"Konuşma nüansı",en:"The grain of speech",focus:"ya · işte · hani · canım · ki",
  vocab:[["hani","you know, where is"],["işte","there you are; precisely"],["canım","my dear; come on"],["yahu","hey, come now"],["bakar mısınız","excuse me (calling)"],["valla","honestly"],["neyse","anyway"],["falan","and so on, sort of"],["demek ki","so it means"],["ya","hey; or; what about"]],
@@ -81,8 +79,7 @@
   {t:"mc",q:"“Hani gelecektin?” is",a:["a plan","a reproach about a broken promise","a location question","a greeting"],c:1,why:"Hani with a past future (gelecektin) recalls a broken promise: Hani gelecektin?, weren't you going to come?"},
   {t:"fill",q:"Satmadı ___ . Bıraktı. (but he didn't sell it)",c:"ki",why:"Clause-final ki contradicts what the listener assumes: satmadı ki, but he didn't sell it."},
   {t:"order",q:"Build: “Come on, it's not that bad.”",w:["Yok","canım","o","kadar","da","değil"],c:"Yok canım o kadar da değil",why:"Yok canım waves a worry away, and o kadar da değil means it isn't that much: come on, it's not that bad."},
-  {t:"mc",q:"“Gelmiştir.” in speech usually means",a:["he definitely came","he'll have arrived, I presume","he must come","he was coming"],c:1,why:"In speech, -mIştIr is an assumption rather than a statement: gelmiştir, he'll have arrived by now, I presume."}],
- speak:"Record two minutes of unscripted speech and count how many of these particles you used. Aim for at least six."},
+  {t:"mc",q:"“Gelmiştir.” in speech usually means",a:["he definitely came","he'll have arrived, I presume","he must come","he was coming"],c:1,why:"In speech, -mIştIr is an assumption rather than a statement: gelmiştir, he'll have arrived by now, I presume."}]},
 
 {id:"c2u4",lv:"C2",n:4,tr:"Tasavvufun dili",en:"The language of the mystics",focus:"mecaz · öğretici hikâye",
  vocab:[["gönül","the heart (as seat of feeling)"],["nefis","the lower self"],["hakikat","truth, reality"],["perde","veil, curtain"],["derviş","dervish"],["mürşit","guide, master"],["ayna","mirror"],["kibir","pride"],["tevazu","humility"],["menkıbe","edifying tale"]],
@@ -110,8 +107,7 @@
   {t:"fill",q:"Ellerinde bir mum ___ , ayrılık kalmazdı. (if there had been)",c:"olsaydı",why:"An unreal past condition uses -sAydI: bir mum olsaydı, if there had been a candle. The result uses -(A)rdI: kalmazdı."},
   {t:"mc",q:"The tale argues that",a:["darkness is evil","partial experience produces honest but incomplete accounts","elephants are dangerous","touch is better than sight"],c:1,why:"In the dark, each person touches one part of the elephant and describes it truly; none describes the whole, so honest reports still disagree."},
   {t:"order",q:"Build: “It is not possible to know a whole by touching its part.”",w:["Bir","bütünü","parçasına","dokunarak","bilmek","mümkün","değildir"],c:"Bir bütünü parçasına dokunarak bilmek mümkün değildir",why:"The infinitive bilmek, with its object bir bütünü and its manner dokunarak (dokunmak takes the dative: parçasına), is the subject of mümkün değildir."},
-  {t:"mc",q:"“nefis” in this vocabulary means",a:["delicious","the lower self","breath of life","a poem"],c:1,why:"In Sufi vocabulary nefis is the lower, selfish part of the soul; in everyday Turkish nefis also means delicious, and context decides."}],
- speak:"Retell a teaching story you know in Turkish, ending on the lesson without explaining it."},
+  {t:"mc",q:"“nefis” in this vocabulary means",a:["delicious","the lower self","breath of life","a poem"],c:1,why:"In Sufi vocabulary nefis is the lower, selfish part of the soul; in everyday Turkish nefis also means delicious, and context decides."}]},
 
 {id:"c2u5",lv:"C2",n:5,tr:"Kendi sesin",en:"Your own voice",focus:"üslup seçimi · serbest yazı",
  vocab:[["üslup","style"],["tercih","preference, choice"],["sezgi","intuition"],["yoğunluk","density, intensity"],["ölçü","measure"],["dolaylı","indirect"],["açıklık","clarity"],["tekrar","repetition"],["ritim","rhythm"],["kesinlik","certainty"]],
@@ -138,8 +134,7 @@
   {t:"mc",q:"In “Gidiyorum ben”, the inversion signals",a:["a grammatical error","spoken emphasis","the future","a question"],c:1,why:"Moving the subject after the verb (devrik cümle) adds spoken emphasis: gidiyorum ben, I'm off, me. It is normal in speech and verse."},
   {t:"fill",q:"The stressed slot in a Turkish sentence is the one ___ the verb.",c:"before",why:"In Turkish the focus of a sentence sits immediately before the verb: in Ali dün geldi the stress falls on dün."},
   {t:"order",q:"Build: “Now it is your turn. Write, speak, be wrong.”",w:["Şimdi","sıra","sizde","yazın","konuşun","yanılın"],c:"Şimdi sıra sizde yazın konuşun yanılın",why:"Sıra sizde means it is your turn. Then come three plural imperatives in a row: yazın, konuşun, yanılın."},
-  {t:"mc",q:"The essay says the hardest thing about Turkish is",a:["vowel harmony","holding a thought until the final verb","the alphabet","Arabic loanwords"],c:1,why:"Because the main verb comes last, a speaker has to hold the whole thought until the end; the essay calls that the hardest skill."}],
- speak:"Write 300 words on any subject, then rewrite them in the opposite register. Read both aloud and keep the one that sounds like you."},
+  {t:"mc",q:"The essay says the hardest thing about Turkish is",a:["vowel harmony","holding a thought until the final verb","the alphabet","Arabic loanwords"],c:1,why:"Because the main verb comes last, a speaker has to hold the whole thought until the end; the essay calls that the hardest skill."}]},
 
 {id:"c2u6",lv:"C2",n:6,tr:"Osmanlıca belgeler",en:"Ottoman documents",focus:"kalıp ifadeler · resmî hitap",
  vocab:[["arîza","a petition to a superior"],["ferman","imperial decree"],["berat","patent, warrant"],["divan","the imperial council"],["tuğra","the sultan's monogram"],["mühür","seal"],["rica","request"],["ol babda","in that matter"],["bâkî","the rest, remaining"],["duacınız","your well-wisher"]],
@@ -166,8 +161,7 @@
   {t:"fill",q:"Gereğinin ifası ___ . (with the request that)",c:"ricasıyla",why:"Rica (request) + the possessive -sI + ile (with) gives ricasıyla, with the request that."},
   {t:"mc",q:"“bendeniz” marks",a:["the addressee","humble self-reference","a place","a date"],c:1,why:"Bendeniz, “your servant”, is a humble way of referring to oneself."},
   {t:"order",q:"Build: “The matter is respectfully submitted once more.”",w:["Keyfiyet","bir","kere","daha","arz","olunur"],c:"Keyfiyet bir kere daha arz olunur",why:"Keyfiyet (the matter) is the subject, bir kere daha means once more, and the passive formula arz olunur closes the petition."},
-  {t:"mc",q:"The modern descendant of this genre is",a:["the novel","the dilekçe","the newspaper column","the letter to a friend"],c:1,why:"The Ottoman petition survives in the modern dilekçe, with the same shape and closing formulas in newer vocabulary."}],
- speak:"Write and read aloud a one-paragraph petition about something in your own life, in this form."},
+  {t:"mc",q:"The modern descendant of this genre is",a:["the novel","the dilekçe","the newspaper column","the letter to a friend"],c:1,why:"The Ottoman petition survives in the modern dilekçe, with the same shape and closing formulas in newer vocabulary."}]},
 
 {id:"c2u7",lv:"C2",n:7,tr:"Ağızlar",en:"Regional speech",focus:"şive · yöresel biçimler",
  vocab:[["ağız","regional dialect"],["şive","accent"],["yöre","region, locality"],["köken","origin"],["ölçünlü","standard (of a language)"],["kaba","rough, coarse"],["yumuşamak","to soften"],["ünsüz","consonant"],["düşmek","to drop"],["taklit","imitation"]],
@@ -195,8 +189,7 @@
   {t:"fill",q:"“ne yapacaksın” in fast speech becomes ___ .",c:"napcan",why:"In fast speech ne yapacaksın contracts to napcan: ne yap- becomes nap-, and -acaksın shrinks to -can."},
   {t:"mc",q:"Which is standard (ölçünlü) Turkish?",a:["Ege Turkish","Ankara Turkish","Istanbul Turkish","Konya Turkish"],c:2,why:"Istanbul Turkish was set as the standard (ölçünlü dil) in the early twentieth century, and it is the basis of written Turkish."},
   {t:"order",q:"Build: “Wherever a person lives, they pick up that place's speech.”",w:["İnsan","nerede","yaşarsa","oranın","dilini","tutturur"],c:"İnsan nerede yaşarsa oranın dilini tutturur",why:"Nerede … -sA means wherever: nerede yaşarsa, wherever they live. Oranın dilini (that place's speech) is a compound in the accusative."},
-  {t:"mc",q:"What stays the same across all dialects?",a:["the vowels","the case endings and word order","the vocabulary","the question particle"],c:1,why:"Dialects differ in sounds and words, but the case endings and word order stay the same, which keeps them mutually intelligible."}],
- speak:"Say the same three sentences in standard Turkish, then in a Black Sea and an Aegean accent."},
+  {t:"mc",q:"What stays the same across all dialects?",a:["the vowels","the case endings and word order","the vocabulary","the question particle"],c:1,why:"Dialects differ in sounds and words, but the case endings and word order stay the same, which keeps them mutually intelligible."}]},
 
 {id:"c2u8",lv:"C2",n:8,tr:"Çeviri tuzakları",en:"Traps in translation",focus:"yapısal farklar · deyim çevirisi",
  vocab:[["çeviri","translation"],["kaynak dil","source language"],["erek dil","target language"],["eşdeğer","equivalent"],["birebir","word for word"],["akıcı","fluent"],["sadık","faithful"],["kayıp","loss"],["ton","tone"],["vurgu","stress, emphasis"]],
@@ -222,8 +215,7 @@
   {t:"fill",q:"“I have been waiting for two hours.” → İki saat___ bekliyorum.",c:"tir",why:"A duration up to now takes -DIr with the present tense. Saat is a loanword that takes front vowels (saatler, saatte), so saat + -tir gives saattir."},
   {t:"mc",q:"What does English usually lose when translating -mIş?",a:["the tense","the evidential distance","the subject","the plural"],c:1,why:"English has no grammar slot for the evidential distance of -mIş, so a translation has to add words such as apparently or it seems."},
   {t:"order",q:"Build: “Fidelity is owed not to the word but to the sentence's work.”",w:["Sadakat","kelimeye","değil","cümlenin","işine","borçludur"],c:"Sadakat kelimeye değil cümlenin işine borçludur",why:"Not X but Y keeps both in the dative: kelimeye değil … işine. Cümlenin işi is a compound, and borçludur (is owed) closes the sentence."},
-  {t:"mc",q:"“Başımın üstünde yeri var” means",a:["He is standing on my head","He is most welcome","I have a headache","He outranks me"],c:1,why:"“He has a place above my head” is a warm formula of welcome: he is most welcome, held in the highest regard."}],
- speak:"Translate a paragraph of English into Turkish twice: once word by word, once properly. Read both aloud and name the differences."},
+  {t:"mc",q:"“Başımın üstünde yeri var” means",a:["He is standing on my head","He is most welcome","I have a headache","He outranks me"],c:1,why:"“He has a place above my head” is a warm formula of welcome: he is most welcome, held in the highest regard."}]},
 
 {id:"c2u9",lv:"C2",n:9,tr:"İroni",en:"Irony",focus:"mizah · taşlama · köşe yazısı",
  vocab:[["taşlama","satire"],["iğneleme","a barbed remark"],["alay","mockery"],["kinaye","insinuation"],["abartı","exaggeration"],["tersinden","the other way round"],["masumane","innocently"],["sözde","so-called"],["hicvetmek","to lampoon"],["gülümsetmek","to make one smile"]],
@@ -249,8 +241,7 @@
   {t:"fill",q:"___ , planlama diye buna derler. (well I never — sarcastic)",c:"Maşallah",why:"Maşallah is sincere praise in one context and biting sarcasm in another; before a complaint about planning, it is sarcastic."},
   {t:"mc",q:"The commonest device in Turkish irony is",a:["rhyme","register mismatch","long words","the passive"],c:1,why:"Turkish irony most often uses register mismatch: bureaucratic language about trivia, or street language about grave matters."},
   {t:"order",q:"Build: “I will not complain, because complaining also takes three years.”",w:["Şikâyet","etmeyeceğim","çünkü","şikâyet","de","üç","yıl","sürüyor"],c:"Şikâyet etmeyeceğim çünkü şikâyet de üç yıl sürüyor",why:"The negative future comes first (etmeyeceğim), çünkü (because) introduces the reason, and de means too: complaining, too, takes three years."},
-  {t:"mc",q:"“Helal olsun” can be",a:["only sincere praise","only sarcasm","either, depending on tone","a greeting"],c:2,why:"Helal olsun can be sincere praise or sarcasm, and only the tone tells which."}],
- speak:"Complain about something trivial for one minute in the most bureaucratic Turkish you can manage."},
+  {t:"mc",q:"“Helal olsun” can be",a:["only sincere praise","only sarcasm","either, depending on tone","a greeting"],c:2,why:"Helal olsun can be sincere praise or sarcasm, and only the tone tells which."}]},
 
 {id:"c2u10",lv:"C2",n:10,tr:"Okuma listesi",en:"What to read next",focus:"edebî kanon · okuma stratejisi",
  vocab:[["roman","novel"],["öykü","short story"],["deneme","essay"],["anı","memoir"],["yazın","literature"],["dönem","period"],["akım","movement"],["külliyat","collected works"],["basım","edition"],["not almak","to take notes"]],
@@ -276,5 +267,4 @@
   {t:"fill",q:"Cümlenin ana ___ sonda bulunur. (verb)",c:"fiili",why:"The main verb (fiil) comes at the end of a Turkish sentence; here it takes the possessive -i: cümlenin ana fiili, the sentence's main verb."},
   {t:"mc",q:"Why stay with one author for a month?",a:["It is cheaper","Style repeats, so each book gets easier","Authors write in levels","To finish faster"],c:1,why:"Each author repeats their vocabulary and style, so a second book by the same hand is much easier than the first."},
   {t:"order",q:"Build: “Read the first thirty pages without a dictionary.”",w:["İlk","otuz","sayfayı","sözlüksüz","okuyun"],c:"İlk otuz sayfayı sözlüksüz okuyun",why:"The definite object takes the accusative (sayfayı), sözlüksüz means without a dictionary, and okuyun is the polite imperative."},
-  {t:"mc",q:"Which single drill improves listening and speaking at once?",a:["copying out texts","reading aloud","memorising word lists","watching subtitles"],c:1,why:"Reading aloud trains the ear and the mouth together, so ten minutes a day improves listening and speaking at once."}],
- speak:"Choose one book, read its first page aloud, and say in Turkish why you chose it."},
+  {t:"mc",q:"Which single drill improves listening and speaking at once?",a:["copying out texts","reading aloud","memorising word lists","watching subtitles"],c:1,why:"Reading aloud trains the ear and the mouth together, so ten minutes a day improves listening and speaking at once."}]},

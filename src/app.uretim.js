@@ -1,6 +1,5 @@
 /* Üretim: production practice. Prompt, silence, model, self-grade —
-   plus the chunk bank, the generated drills' runner and the spaced
-   retell. */
+   plus the chunk bank and the generated drills' runner. */
 
 /* ===================== üretim · production ===================== */
 /* Pimsleur's one move: the sentence has to leave your mouth before the
@@ -11,7 +10,6 @@
    PR holds a run and, like VOICE and Q, must survive a re-render. */
 const GAPS=[3,4,5,6];
 const SESSION=12;
-const RETELL_NEXT=[0,2,4,0];        /* told on day 1, then 3, then 7 */
 let PR=null;
 
 function prodGap(){return S.gap||4;}
@@ -195,50 +193,16 @@ function prodNext(){
   prodStep();
 }
 
-/* --- say it three times ---------------------------------------------- */
-function retellDue(){
-  const n=dayNum();
-  return UNITS.filter(function(u){const r=S.retell&&S.retell[u.id];return r&&r.n<3&&r.d<=n;});
-}
-function retellOpen(){
-  return UNITS.filter(function(u){const r=S.retell&&S.retell[u.id];return r&&r.n<3;});
-}
-function startRetell(uid){
-  stopPlay();
-  if(!S.retell)S.retell={};
-  if(!S.retell[uid])S.retell[uid]={n:0,d:dayNum()};
-  save();V={view:"retell",u:uid};window.scrollTo(0,0);render();
-}
-/* One telling counted, and the next one scheduled. */
-function retellCount(uid){
-  if(!S.retell)S.retell={};
-  const r=S.retell[uid]||{n:0,d:dayNum()};
-  r.n=Math.min(r.n+1,3);
-  r.d=dayNum()+RETELL_NEXT[r.n];
-  S.retell[uid]=r;save();touchDay();
-}
-function retellDone(uid){
-  retellCount(uid);
-  /* Told: the short end, and the way on to the rest of Bugün. */
-  V={view:"retelldone",u:uid};window.scrollTo(0,0);render();
-}
-function renderRetellDone(){
-  const r=(S.retell&&S.retell[V.u])||{n:0};
-  endScreen({title:"Anlat",n:r.n,of:3,label:"anlatıldı · told",plan:true});
-}
-function retellReset(uid){S.retell[uid]={n:0,d:dayNum()};save();render();}
-
 /* --- screens ---------------------------------------------------------- */
 function renderProd(){
   const sb=sentenceBank(), sd=prodDue(sb).length, kd=prodDue(chunkBank()).length;
-  const rd=retellDue().length, open=retellOpen(), g=prodGap();
+  const g=prodGap();
   let h=bar("Üretim","production · speak first",true,"önce sen söyle")+'<div class="wrap">';
   h+='<p class="sub" style="margin:.2rem .2rem 1rem">'+tx('The prompt is English. You say the Turkish out loud in the silence, <b>before</b> the model plays — then mark yourself. Nothing is recorded and no microphone is used.',
     'İngilizcesi gelir. Örnek çalmadan <b>önce</b>, sessizlikte Türkçesini yüksek sesle söylersin; sonra kendini değerlendirirsin. Hiçbir şey kaydedilmez, mikrofon kullanılmaz.')+'</p>';
   h+=voiceNote();
   h+='<div class="stat"><div><b>'+sd+'</b><span>cümle</span></div>'+
-     '<div><b>'+Math.min(kd,SESSION)+'</b><span>kalıp</span></div>'+
-     '<div><b>'+rd+'</b><span>anlatım</span></div></div>';
+     '<div><b>'+Math.min(kd,SESSION)+'</b><span>kalıp</span></div></div>';
 
   h+='<h2 class="sec">Çalış</h2>';
   h+='<div class="card"><p class="lead">Cümleler</p><p class="sub">'+tx(sb.length+' sentence'+(sb.length===1?"":"s")+' in range · '+sd+' due today. Up to '+SESSION+' in a sitting.',
@@ -258,19 +222,6 @@ function renderProd(){
   h+='<div class="card"><p class="lead">Dönüştürme · change it</p><p class="sub">'+tx('A sentence arrives and one thing about it has to change: negative, past, future, question, person.',
      'Bir cümle gelir ve bir yönünü değiştirirsin: olumsuz, geçmiş, gelecek, soru, kişi.')+'</p>'+
    '<button class="btn" onclick="startProd(\'t\')">Başla</button></div>';
-
-  h+='<h2 class="sec">Üç kez anlat</h2><div class="card">';
-  h+='<p class="sub">'+tx('A unit\'s speaking task, told from memory three times: today, in two days, and in a week. Start one from any unit\'s Konuşma card.',
-    'Bir ünitenin konuşma görevi, aklından üç kez anlatılır: bugün, iki gün sonra ve bir hafta sonra. Herhangi bir ünitenin Konuşma kartından başlat.')+'</p>';
-  if(open.length){
-    open.forEach(function(u){
-      const r=S.retell[u.id], left=r.d-dayNum();
-      h+='<button class="unit" onclick="startRetell(\''+u.id+'\')"><span class="tick '+(left<=0?"here":"")+'">'+r.n+'</span>'+
-        '<span class="grow"><span class="unit-t">'+esc(u.tr)+'</span><span class="unit-s">'+esc(u.lv)+' · '+
-        (left<=0?"bugün":left+" gün sonra")+' · '+r.n+'/3</span></span><span class="chev">'+IC.chev+'</span></button>';
-    });
-  }else h+='<p class="tiny">'+tx('Nothing started yet.','Henüz başlanmadı.')+'</p>';
-  h+='</div>';
 
   h+='<h2 class="sec">Ayarlar</h2><div class="card">';
   h+='<p class="lead" style="font-size:.95rem">Sessizlik · the gap</p>'+
@@ -336,27 +287,4 @@ function renderProdRun(){
   paint(h);
 }
 
-function renderRetell(){
-  const u=unit(V.u), r=(S.retell&&S.retell[u.id])||{n:0,d:dayNum()};
-  const all=r.n>=3, now=r.d<=dayNum(), left=Math.max(0,r.d-dayNum());
-  let h=bar("Anlat",u.lv+" · "+u.tr,true)+'<div class="wrap">';
-  h+='<div class="card"><p class="tiny">Konuşma görevi · the speaking task</p>'+
-   '<p class="lead" style="margin-top:.2rem">'+esc(u.speak)+'</p></div>';
-  h+='<div class="stat"><div><b>'+r.n+'/3</b><span>anlatıldı</span></div>'+
-   '<div><b>'+(all?"✓":(now?"bugün":left+" gün"))+'</b><span>'+(all?"tamam":"sıradaki")+'</span></div></div>';
-  h+='<div class="card"><p class="sub">'+tx('Say the whole thing out loud, from memory, without reading the passage. These are the ten words the unit gave you.',
-    'Metne bakmadan, aklından, hepsini yüksek sesle anlat. Ünitenin sana verdiği on kelime şunlar.')+'</p>'+
-   '<div class="pillrow">';
-  u.vocab.forEach(function(w){h+='<span class="pill">'+esc(w[0])+'</span>';});
-  h+='</div></div>';
-  if(all)h+='<div class="card"><p class="lead">Üç kez anlatıldı ✓</p>'+
-   '<p class="sub">'+tx('Told on day one, day three and day seven. Start it again whenever you like.','Birinci, üçüncü ve yedinci gün anlatıldı. İstediğin zaman yeniden başlayabilirsin.')+'</p>'+
-   '<button class="btn ghost" onclick="retellReset(\''+u.id+'\')">Baştan</button></div>';
-  else if(now)h+='<button class="btn" onclick="retellDone(\''+u.id+'\')">Anlattım</button>';
-  else h+='<div class="card"><p class="sub">'+tx('Not due yet — it comes back on its own in '+left+' day'+(left===1?"":"s")+'. Telling it again today is not what makes it stick.',
-    'Henüz sırası gelmedi; '+left+' gün sonra kendiliğinden gelecek. Akılda kalmasını sağlayan bugün yeniden anlatmak değil.')+'</p>'+
-   '<button class="btn ghost" onclick="retellDone(\''+u.id+'\')">Yine de anlattım</button></div>';
-  h+='<button class="btn ghost" onclick="go(\'unit\',\''+u.id+'\',\'r\')">Üniteye dön</button></div>';
-  paint(h);
-}
 

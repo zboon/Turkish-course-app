@@ -123,7 +123,10 @@ UNITS.forEach(u => {
   if (seenId.has(u.id)) err(at, "duplicate unit id — ids are permanent and keyed to saved progress");
   seenId.add(u.id);
   if (!WANT.includes(u.lv)) err(at, "unknown level " + u.lv);
-  ["tr", "en", "focus", "speak"].forEach(k => { if (!str(u[k])) err(at, "empty " + k); });
+  ["tr", "en", "focus"].forEach(k => { if (!str(u[k])) err(at, "empty " + k); });
+  /* Retired in v3.88: a free speaking task had nothing to check it
+     against. Talking about yourself goes through Adacıklar, checked. */
+  if ("speak" in u) err(at, "carries a speak task, retired: nothing can check it");
 
   /* vocabulary */
   if (!pairs(u.vocab)) err(at, "vocab must be [tr, en] string pairs");

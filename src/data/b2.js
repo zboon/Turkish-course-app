@@ -22,8 +22,7 @@
   {t:"fill",q:"Bu cami 1557'de inşa ed___ . (was built — formal -mIştIr)",c:"ilmiştir",why:"Et- softens to ed- before a vowel, then comes the passive -il, then the formal -mIştIr for a completed fact: ed-il-miş-tir, was built."},
   {t:"mc",q:"“Mektubu yazdırdım” means",a:["I wrote the letter","I had the letter written","The letter was written","I will write the letter"],c:1,why:"-DIr added to a verb is the causative, making someone else do it: yazdırdım, I had it written. The passive would be yazıldı."},
   {t:"order",q:"Build: “It is visited by millions every year.”",w:["Her","yıl","milyonlarca","kişi","tarafından","ziyaret","edilmektedir"],c:"Her yıl milyonlarca kişi tarafından ziyaret edilmektedir",why:"Time first, then the agent with tarafından (by), then the passive verb in the formal present -mAktAdIr: ziyaret edilmektedir, is visited."},
-  {t:"mc",q:"Why does formal Turkish favour the passive?",a:["It is shorter","It avoids naming a subject and sounds impersonal","It is older","It avoids harmony"],c:1,why:"The passive lets formal writing say what was done without naming who did it, which sounds impersonal and objective; plaques, laws and reports rely on it."}],
- speak:"Describe a building in your town in the passive: when it was built, by whom, what has been done to it since."},
+  {t:"mc",q:"Why does formal Turkish favour the passive?",a:["It is shorter","It avoids naming a subject and sounds impersonal","It is older","It avoids harmony"],c:1,why:"The passive lets formal writing say what was done without naming who did it, which sounds impersonal and objective; plaques, laws and reports rely on it."}]},
 
 {id:"b2u2",lv:"B2",n:2,tr:"Yapmalıyım",en:"I must",focus:"gereklilik · zorunda · -sA da",
  vocab:[["gerekmek","to be necessary"],["zorunda","obliged to"],["ihtiyaç","need"],["alışkanlık","habit"],["sabır","patience"],["düzenli","regular"],["tekrar etmek","to repeat"],["ilerlemek","to progress"],["hata","mistake"],["cesaret","courage"]],
@@ -48,8 +47,7 @@
   {t:"fill",q:"Daha çok çalış___ . (you ought to work)",c:"malısın",why:"-mAlI (must, ought to) plus the person ending -sIn for “you”: çalış-malı-sın, you ought to work."},
   {t:"mc",q:"“Yorgun olmasına rağmen geldi.” =",a:["He came because he was tired","He came although he was tired","He was tired so he didn't come","If he is tired he will come"],c:1,why:"The verbal noun -mA + possessive + dative + rağmen means despite: yorgun olmasına rağmen, although he was tired."},
   {t:"order",q:"Build: “One should not be afraid of making mistakes.”",w:["Hata","yapmaktan","korkmamak","gerekir"],c:"Hata yapmaktan korkmamak gerekir",why:"Korkmak (to be afraid) takes the ablative, so yapmaktan; the negative infinitive korkmamak is the subject, and gerekir (it is necessary) comes last."},
-  {t:"mc",q:"“Gitmem gerek” literally means",a:["I must go","my going is necessary","let me go","I was going to go"],c:1,why:"Gerek (necessary) follows a verbal noun with a possessive: gitmem gerek, literally “my going is necessary”, that is, I need to go."}],
- speak:"Give five pieces of advice with -mAlI, then three things you are obliged to do with zorunda."},
+  {t:"mc",q:"“Gitmem gerek” literally means",a:["I must go","my going is necessary","let me go","I was going to go"],c:1,why:"Gerek (necessary) follows a verbal noun with a possessive: gitmem gerek, literally “my going is necessary”, that is, I need to go."}]},
 
 {id:"b2u3",lv:"B2",n:3,tr:"İstanbul'da bir akşam",en:"An evening in Istanbul",focus:"bağlaçlar · -DIktAn sonra · -DIğI için",
  vocab:[["vapur","ferry"],["iskele","landing stage"],["martı","seagull"],["kalabalık","crowd"],["sokak lambası","street lamp"],["susmak","to fall silent"],["karşı kıyı","the opposite shore"],["alacakaranlık","dusk"],["ıslak","wet"],["ömür","life, lifetime"]],
@@ -76,8 +74,7 @@
   {t:"fill",q:"Yemek ye___ sonra çıktık. (after eating)",c:"dikten",why:"“After” is -DIktAn sonra on the verb stem: ye-dikten sonra, after eating. After e, harmony gives -dikten."},
   {t:"mc",q:"“ne … ne …” means",a:["either … or","both … and","neither … nor","not only … but also"],c:2,why:"Ne … ne … means neither … nor, and because the negation lives in ne, the verb stays positive: ne çay ne kahve içer."},
   {t:"order",q:"Build: “Anyone who wants to understand Istanbul should board this ferry.”",w:["İstanbul'u","anlamak","isteyen","bu","vapura","binmelidir"],c:"İstanbul'u anlamak isteyen bu vapura binmelidir",why:"The participle isteyen (who wants) stands in for “anyone”. Binmek takes the dative (vapura), and -mAlIdIr is the formal should."},
-  {t:"mc",q:"“yaklaştıkça” means",a:["although we approached","as we approached, more and more","before we approached","if we approach"],c:1,why:"-DIkçA means the more … the more, or whenever: yaklaştıkça, the closer we got."}],
- speak:"Describe an evening journey of your own in eight linked sentences, using -DIktAn sonra, -DIğI için and one hem…hem."},
+  {t:"mc",q:"“yaklaştıkça” means",a:["although we approached","as we approached, more and more","before we approached","if we approach"],c:1,why:"-DIkçA means the more … the more, or whenever: yaklaştıkça, the closer we got."}]},
 
 {id:"b2u4",lv:"B2",n:4,tr:"Deyimler",en:"Idioms",focus:"deyimler ve mecaz",
  vocab:[["göz atmak","to glance at"],["kulak asmamak","to pay no heed"],["eli açık","generous"],["ağzı sıkı","discreet, tight-lipped"],["kafa yormak","to rack one's brains"],["burnu büyük","arrogant"],["etekleri zil çalmak","to be overjoyed"],["pabucu dama atılmak","to be cast aside"],["göze girmek","to win favour"],["ipe un sermek","to make excuses"]],
@@ -104,8 +101,7 @@
   {t:"mc",q:"Someone who is “eli açık” is",a:["clumsy","generous","unemployed","talkative"],c:1,why:"Eli açık, “his hand is open”, describes someone generous. Its opposite is eli sıkı, tight-fisted."},
   {t:"fill",q:"Raporuna bir göz ___ . (I glanced at it)",c:"attım",why:"The idiom is göz atmak, to glance. In the past for “I”, atmak becomes attım: bir göz attım."},
   {t:"order",q:"Build: “He won everyone's favour in a short time.”",w:["Kısa","sürede","herkesin","gözüne","girdi"],c:"Kısa sürede herkesin gözüne girdi",why:"Gözüne girmek, “to enter someone's eye”, is to win their favour. The owner takes the genitive (herkesin) and göz the possessive and dative: gözüne."},
-  {t:"mc",q:"“pabucu dama atıldı” describes someone who has",a:["lost their shoes","been replaced or dropped","climbed a roof","become rich"],c:1,why:"Pabucu dama atıldı, “his shoe was thrown on the roof”, means someone has been dropped or replaced by something newer."}],
- speak:"Tell a short story about a neighbour or colleague using at least six idioms from this unit."},
+  {t:"mc",q:"“pabucu dama atıldı” describes someone who has",a:["lost their shoes","been replaced or dropped","climbed a roof","become rich"],c:1,why:"Pabucu dama atıldı, “his shoe was thrown on the roof”, means someone has been dropped or replaced by something newer."}]},
 
 {id:"b2u5",lv:"B2",n:5,tr:"Dedi ki",en:"He said that",focus:"aktarım · nasihat metinleri",
  vocab:[["nasihat","counsel, advice"],["öğüt","advice"],["tüccar","merchant"],["yolcu","traveller"],["servet","fortune"],["akıl","reason, wisdom"],["denemek","to test"],["pişman","regretful"],["kıymet","value"],["uymak","to follow, comply"]],
@@ -133,8 +129,7 @@
   {t:"fill",q:"Bana bekle___ söyledi. (told me to wait)",c:"memi",why:"A reported command uses the verbal noun -mA: bekle-me (waiting) + -m (my) + -i (accusative, as the object of söyledi): beklememi."},
   {t:"mc",q:"Which frame keeps the original word order?",a:["-DIğInI söyledi","dedi ki","diye sordu","-mAsInI istedi"],c:1,why:"Dedi ki introduces the words in their original order, like a quotation; the -DIğInI frame rebuilds them into a verbal noun."},
   {t:"order",q:"Build: “He said that his father had been right.”",w:["Babasının","haklı","olduğunu","söyledi"],c:"Babasının haklı olduğunu söyledi",why:"The subject of the reported clause takes the genitive (babasının), olmak becomes olduğunu (-DIK + possessive + accusative), and söyledi comes last."},
-  {t:"mc",q:"The tale's closing point is that wisdom",a:["can be inherited","must be re-earned by each person","is useless","belongs to merchants"],c:1,why:"The tale ends by saying wisdom is won again and again: each person has to earn it; it cannot simply be handed down."}],
- speak:"Report a conversation you had this week twice: once in direct speech, once entirely indirect."},
+  {t:"mc",q:"The tale's closing point is that wisdom",a:["can be inherited","must be re-earned by each person","is useless","belongs to merchants"],c:1,why:"The tale ends by saying wisdom is won again and again: each person has to earn it; it cannot simply be handed down."}]},
 
 {id:"b2u6",lv:"B2",n:6,tr:"Söylenenlere göre",en:"By all accounts",focus:"rivayet birleşik zaman -mIş + imiş",
  vocab:[["söylenti","rumour"],["dedikodu","gossip"],["iddia","claim"],["güvenilir","reliable"],["kaynak","source"],["yaymak","to spread"],["duyulmak","to be heard of"],["abartmak","to exaggerate"],["doğrulamak","to confirm"],["yalanlamak","to deny"]],
@@ -160,8 +155,7 @@
   {t:"fill",q:"Toplantı ertelen___ . (has apparently been postponed)",c:"miş",why:"Ertelen- is already passive (to be postponed), and -mIş reports it as news: ertelenmiş, it has apparently been postponed."},
   {t:"mc",q:"“Güya” adds",a:["certainty","open scepticism","politeness","urgency"],c:1,why:"Güya means so-called or supposedly, and signals that the speaker doubts the claim."},
   {t:"order",q:"Build: “From what I hear they are moving.”",w:["Duyduğuma","göre","taşınıyorlarmış"],c:"Duyduğuma göre taşınıyorlarmış",why:"Duyduğuma göre (from what I hear) sets up the report, and the present tense takes the reporting -mIş: taşınıyorlarmış."},
-  {t:"mc",q:"The three suffixes that share one slot after a tense are",a:["-mAk, -mA, -Iş","-(y)mIş, -(y)DI, -(y)sA","-lAr, -lIk, -lI","-DIr, -CI, -CA"],c:1,why:"After a tense, one slot can hold -(y)mIş (reported), -(y)DI (past) or -(y)sA (conditional): geliyormuş, geliyordu, geliyorsa."}],
- speak:"Report five things you have heard second-hand, marking each with a different degree of scepticism."},
+  {t:"mc",q:"The three suffixes that share one slot after a tense are",a:["-mAk, -mA, -Iş","-(y)mIş, -(y)DI, -(y)sA","-lAr, -lIk, -lI","-DIr, -CI, -CA"],c:1,why:"After a tense, one slot can hold -(y)mIş (reported), -(y)DI (past) or -(y)sA (conditional): geliyormuş, geliyordu, geliyorsa."}]},
 
 {id:"b2u7",lv:"B2",n:7,tr:"Tam o sırada",en:"Just at that moment",focus:"-IncA · -DIğIndA · -ken · -DIkçA",
  vocab:[["sıra","turn; moment"],["anda","in the instant"],["ansızın","all of a sudden"],["gürültü","noise"],["avlu","courtyard"],["seslenmek","to call out"],["telaş","fluster, rush"],["şaşırmak","to be astonished"],["koşuşmak","to run about"],["yatışmak","to calm down"]],
@@ -190,8 +184,7 @@
   {t:"fill",q:"Kapıyı aç___ herkes sustu. (as soon as he opened)",c:"ınca",why:"-(y)IncA means as soon as. After the a of aç, four-way harmony gives -ınca: açınca, as soon as he opened."},
   {t:"mc",q:"“Onu gördükçe” =",a:["when I saw him","every time I see him","before I saw him","although I saw him"],c:1,why:"-DIkçA marks every time, or the more: gördükçe, every time I see him."},
   {t:"order",q:"Build: “The instant she heard her son's voice she dropped the plate.”",w:["Oğlunun","sesini","duyduğu","anda","tabağı","düşürdü"],c:"Oğlunun sesini duyduğu anda tabağı düşürdü",why:"Duyduğu anda (at the moment she heard) is -DIK + possessive + anda; the object sesini and the verb düşürdü follow in order."},
-  {t:"mc",q:"“O günden beri” means",a:["until that day","ever since that day","on that day","because of that day"],c:1,why:"-DAn beri marks a starting point up to now: o günden beri, ever since that day."}],
- speak:"Narrate an incident using all four “when” forms, and say aloud why each one fits where it does."},
+  {t:"mc",q:"“O günden beri” means",a:["until that day","ever since that day","on that day","because of that day"],c:1,why:"-DAn beri marks a starting point up to now: o günden beri, ever since that day."}]},
 
 {id:"b2u8",lv:"B2",n:8,tr:"Türk kahvesi",en:"Turkish coffee",focus:"isim tamlamaları · zincirleme",
  vocab:[["fincan","small cup"],["telve","coffee grounds"],["köpük","foam"],["kavurmak","to roast"],["öğütmek","to grind"],["demlemek","to brew"],["gelenek","tradition"],["ikram","offering, hospitality"],["yudum","sip"],["tat","taste"]],
@@ -217,8 +210,7 @@
   {t:"fill",q:"öğretmen___ kitabı (the teacher's book)",c:"in",why:"A definite owner takes the genitive -(n)In. Öğretmen ends in a consonant and its last vowel is e, so -in: öğretmenin kitabı."},
   {t:"mc",q:"“otobüs durağı” is",a:["the bus's stop","a bus stop (a kind of thing)","stopping the bus","at the bus stop"],c:1,why:"An unmarked first noun makes a type of thing, not a possession: otobüs durağı is a bus stop in general. Otobüsün durağı would be one bus's stop."},
   {t:"order",q:"Build: “The preparation of Turkish coffee begins with roasting.”",w:["Türk","kahvesinin","hazırlanışı","kavurmayla","başlar"],c:"Türk kahvesinin hazırlanışı kavurmayla başlar",why:"Türk kahvesi is a compound, so its genitive is kahvesinin; hazırlanış (preparation) takes the possessive, and kavurma takes -(y)lA, with."},
-  {t:"mc",q:"A long chain like “İstanbul Üniversitesi Edebiyat Fakültesi” is read",a:["left to right","from the end backwards","alphabetically","by the plural"],c:1,why:"In a chain of compounds each noun owns the next, so it reads from the end backwards: the Faculty of Letters of the University of Istanbul."}],
- speak:"Describe how a drink or dish is made in your own culture, using at least six noun compounds."},
+  {t:"mc",q:"A long chain like “İstanbul Üniversitesi Edebiyat Fakültesi” is read",a:["left to right","from the end backwards","alphabetically","by the plural"],c:1,why:"In a chain of compounds each noun owns the next, so it reads from the end backwards: the Faculty of Letters of the University of Istanbul."}]},
 
 {id:"b2u9",lv:"B2",n:9,tr:"Yavaş yavaş",en:"Little by little",focus:"ikilemeler · pekiştirme",
  vocab:[["ikileme","reduplication, word pair"],["derin","deep"],["ıssız","deserted"],["şırıl şırıl","babbling (of water)"],["mırıl mırıl","murmuring"],["paramparça","in pieces"],["apar topar","in a great rush"],["er geç","sooner or later"],["ara sıra","now and then"],["tıka basa","stuffed full"]],
@@ -245,8 +237,7 @@
   {t:"fill",q:"Ev ___ temizdi. (spotless — intensified)",c:"ter",why:"Intensified adjectives repeat the first syllable with an added consonant: temiz becomes tertemiz, spotless."},
   {t:"mc",q:"“kitap mitap” conveys",a:["many books","books and such, dismissively","a book title","two books"],c:1,why:"Repeating a noun with m in place of its first sound makes a casual, slightly dismissive “and so on”: kitap mitap, books and whatnot."},
   {t:"order",q:"Build: “The children came running.”",w:["Çocuklar","koşa","koşa","geldi"],c:"Çocuklar koşa koşa geldi",why:"Doubling the stem with -A makes a manner adverb: koşa koşa, running. The subject comes first and the verb last."},
-  {t:"mc",q:"“er geç” =",a:["early morning","sooner or later","never","at once"],c:1,why:"Er geç pairs early and late to mean sooner or later: something that will happen either way."}],
- speak:"Describe a place you know well in eight sentences, using at least six word pairs."},
+  {t:"mc",q:"“er geç” =",a:["early morning","sooner or later","never","at once"],c:1,why:"Er geç pairs early and late to mean sooner or later: something that will happen either way."}]},
 
 {id:"b2u10",lv:"B2",n:10,tr:"Resmî yazı",en:"Writing formally",focus:"dilekçe · e-posta · resmî üslup",
  vocab:[["dilekçe","petition, formal application"],["başvuru","application"],["ilgili","concerned, relevant"],["ekte","attached"],["arz etmek","to submit respectfully"],["talep","request"],["gereği","what is required"],["saygılarımla","yours sincerely"],["imza","signature"],["tarih","date"]],
@@ -273,5 +264,4 @@
   {t:"fill",q:"Belgeler ekte ___ . (are submitted)",c:"sunulmuştur",why:"Formal Turkish states completed facts in the passive with -mIştIr: sun-ul-muş-tur, have been submitted."},
   {t:"mc",q:"“Sayın Yılmaz Bey” is",a:["too informal","the standard formal address","only for relatives","a closing"],c:1,why:"Sayın + name + Bey or Hanım is the standard polite written address: Sayın Yılmaz Bey, Dear Mr Yılmaz."},
   {t:"order",q:"Build: “I would like to get information about the project.”",w:["Proje","hakkında","bilgi","almak","istiyorum"],c:"Proje hakkında bilgi almak istiyorum",why:"Hakkında (about) follows the topic, bilgi almak is to get information, and istiyorum closes the sentence."},
-  {t:"mc",q:"Using “arz ederim” to a friend sounds",a:["polite","comically bureaucratic","rude","old-fashioned but normal"],c:1,why:"Arz etmek belongs to petitions and official letters, so using it with a friend sounds comically bureaucratic, and Turkish speakers do it as a joke."}],
- speak:"Dictate a formal e-mail aloud, then say the same request as you would to a friend."},
+  {t:"mc",q:"Using “arz ederim” to a friend sounds",a:["polite","comically bureaucratic","rude","old-fashioned but normal"],c:1,why:"Arz etmek belongs to petitions and official letters, so using it with a friend sounds comically bureaucratic, and Turkish speakers do it as a joke."}]},
