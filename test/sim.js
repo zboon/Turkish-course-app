@@ -573,7 +573,6 @@ step("üretim home", () => {
   ev("go('prod')");
   ok(/Üretim/.test(lastPaint), "üretim screen is empty");
   ok(/Kalıplar/.test(lastPaint), "chunk bank missing from üretim");
-  ok(/Üç kez anlat/.test(lastPaint), "retell section missing from üretim");
   ev("setGap(3)");
   ok(ev("prodGap()") === 3 && ev("S.gap") === 3, "gap setting was not kept");
   ev("setScope('all')");
@@ -694,51 +693,48 @@ step("üretim · chunks", () => {
   ok(empty === 0, empty + " chunks have an empty side");
 });
 
-step("üretim · say it three times", () => {
+/* A speaking task with no model and no one to check it was retired in
+   v3.88: free talk about yourself goes through Adacıklar, where a person
+   checks it before it is drilled. What is left points there. */
+step("no unchecked speaking task, and the way to Adacıklar", () => {
   ev("wipe()");
-  const u = UNITS[0], day = ev("dayNum()");
-  ev("go('unit'," + q(u.id) + ",'r')");
-  ok(/Üç kez anlat/.test(lastPaint), "the reading screen offers no retell");
-  ev("startRetell(" + q(u.id) + ")");
-  ok(ev("V.view") === "retell", "retell did not open");
-  ok(lastPaint.includes(esc(u.speak)), "retell does not show the speaking task");
-
-  ev("retellDone(" + q(u.id) + ")");
-  ok(ev("S.retell[" + q(u.id) + "].n") === 1, "first telling not counted");
-  ok(ev("S.retell[" + q(u.id) + "].d") === day + 2, "second telling is not two days out (day 3)");
-  ok(ev("retellDue().length") === 0, "a told unit is still due today");
-
-  ev("S.retell[" + q(u.id) + "].d=dayNum()");   /* let day 3 arrive */
-  ev("retellDone(" + q(u.id) + ")");
-  ok(ev("S.retell[" + q(u.id) + "].d") === day + 4, "third telling is not four days on (day 7)");
-  ev("S.retell[" + q(u.id) + "].d=dayNum()");
-  ev("retellDone(" + q(u.id) + ")");
-  ok(ev("S.retell[" + q(u.id) + "].n") === 3, "third telling not counted");
-  /* Told: the short end screen, and the task's own page says it is done. */
-  ok(ev("V.view") === "retelldone" && lastPaint.includes("3/3"), "the third telling does not end on its 3/3");
-  ev("startRetell(" + q(u.id) + ")");
-  ok(/Üç kez anlatıldı/.test(lastPaint), "no completion state after three tellings");
-  ok(ev("retellOpen().length") === 0, "a finished retell is still open");
-  ev("retellReset(" + q(u.id) + ")");
-  ok(ev("S.retell[" + q(u.id) + "].n") === 0, "reset did not clear the retell");
+  ev("go('unit','a1u1','r')");
+  ok(!/Üç kez anlat|startRetell|Konuşma görevi/.test(lastPaint), "the reading tab still offers the free speaking task");
+  ok(ev("typeof startRetell") === "undefined" && ev("typeof adSpeak") === "undefined", "the free speaking task's code is still there");
+  ok(ev("UNITS.every(function(u){return !('speak' in u)})"), "a unit still carries a speaking task");
+  /* An old record left by an earlier version makes no plan step and no list. */
+  ev("S.retell={a1u1:{n:1,d:dayNum()-3}}; save(); home()");
+  ok(!ev("planToday().all.some(function(s){return s.k==='retell'})"), "an old telling still puts a step in the plan");
+  ev("go('prod')");
+  ok(!/Üç kez anlat|anlatım/.test(lastPaint), "Üretim still lists the tellings");
+  ev("go('ilerleme')");
+  ok(!/Üç kez anlatılan/.test(lastPaint), "İlerleme still counts the tellings");
+  /* The grammar tab names the questions this unit opens, and goes there. */
+  ev("go('unit','a1u1','g')");
+  ok(/Kendin hakkında/.test(lastPaint) && lastPaint.includes(esc("Adın ne?")) && lastPaint.includes(esc("Nerelisin?")),
+     "a1u1's grammar does not point to its two island questions");
+  ok(lastPaint.split("adaGo('adaisl','ben')").length === 3, "the questions do not open their island");
+  ev("adaGo('adaisl','ben')");
+  ok(ev("V.view") === "adaisl" && ev("V.u") === "ben", "the island did not open from the grammar tab");
+  const none = ev("UNITS.find(function(u){return !ADA.some(function(i){return i.q.some(function(x){return x.u===u.id})})}).id");
+  ev("go('unit'," + q(none) + ",'g')");
+  ok(!/Kendin hakkında/.test(lastPaint), "a unit that opens no question still shows the card");
 });
 
 step("üretim · survives backup and wipe", () => {
   ev("wipe()"); ev("setGap(5)"); ev("setScope('all')");
   ev("startProd('s')"); produce(true);
-  ev("startRetell('a1u2')"); ev("retellDone('a1u2')");
   const before = ev("JSON.stringify(S)");
   ev("go('about')"); ev("exportBox()");
   const saved = doc.getElementById("iobox").value;
   ok(saved === before, "the backup does not carry üretim state");
   ev("wipe()");
-  ok(ev("Object.keys(S.prod).length") === 0 && ev("Object.keys(S.retell).length") === 0, "wipe left üretim state behind");
+  ok(ev("Object.keys(S.prod).length") === 0, "wipe left üretim state behind");
   ok(ev("S.gap") === 5, "wipe threw away the gap setting, which is not progress");
   ev("go('about')");
   doc.getElementById("iobox").value = saved;
   ev("importBox()");
   ok(ev("Object.keys(S.prod).length") === 1, "restore lost the sentence schedule");
-  ok(ev("S.retell['a1u2'].n") === 1, "restore lost the retell");
 });
 
 step("kurma · generated drills", () => {
@@ -1092,7 +1088,6 @@ function walkAdim(onStep) {
     if (adimAnswer(s, true)) ev("adNext()");
     else if (s.t === "say") { ev("adSay()"); ev("adNext()"); }
     else if (s.t === "sik") ev("adSik()");
-    else if (s.t === "speak") ev("adSpeak()");
     else ev("adNext()");
   }
   return ev("adCur().t") === "end";
@@ -2737,11 +2732,6 @@ step("bugün · a sitting ends on its score and the plan's next step", () => {
   ev("endScreen({title:'Tekrar',n:3,of:4,label:'x',plan:true,again:" + q(same) + "})");
   ok(lastPaint.split('onclick="' + same + '"').length === 2, "the plan's next step is offered twice when it is this mode again");
 
-  /* The retell step opens the task itself, not the Üretim hub. */
-  const u = ev("UNITS[0].id");
-  ev("S.retell[" + q(u) + "]={n:1,d:dayNum()}; save()");
-  const rt = ev("planToday().all.find(function(s){return s.k==='retell'})");
-  ok(rt && rt.go === "startRetell(" + "'" + u + "')", "the retell step does not open the task: " + (rt && rt.go));
 });
 
 step("ilerleme · the state of every mode, in one place", () => {
@@ -3697,7 +3687,7 @@ step("reported · the other you counts where the sentence does not say which", (
 /* Derse başla: a unit in three lessons, one screen at a time, then its
    own exercises. Each lesson marks what it shows exactly as the tabs
    would; the only other things it writes are the lesson's own day, the
-   common words taken in, and the speaking task's first telling. */
+   common words taken in. */
 step("derse başla · a unit in three lessons, checks by level", () => {
   drain(60000); ev("stopPlay()");
   ev("confirm=function(){return true}; wipe(); home()");
@@ -3726,7 +3716,7 @@ step("derse başla · a unit in three lessons, checks by level", () => {
   ok(lastPaint.includes(ev("RESIM[" + q(u.vocab[0][0]) + "]")), "a pictured word shows no picture");
   ok(ev("!!(S.seen.a1u1&&S.seen.a1u1.v)") && !ev("!!S.seen.a1u1.g") && !ev("!!S.seen.a1u1.r"),
      "the words marked more than the word list as seen");
-  ok(!ev("AD.q").some(x => x.t === "line" || x.t === "say" || x.t === "sik" || x.t === "speak"), "lesson one reaches past the words and grammar");
+  ok(!ev("AD.q").some(x => x.t === "line" || x.t === "say" || x.t === "sik"), "lesson one reaches past the words and grammar");
   /* Miss the first check once, get everything else right. */
   let missed = false, guard = 0;
   const n0 = ev("AD.q.length");
@@ -3784,22 +3774,17 @@ step("derse başla · a unit in three lessons, checks by level", () => {
   ok(ev("S.ders.a1u1[1]") === T, "lesson two was not recorded as finished");
 
   /* Lesson three: the words recalled, the other lines, the second half,
-     the speaking task as its first telling, then the exercises. */
+     then the exercises. No free speaking task: nothing could check it. */
   ev("startAdim('a1u1')");
   ok(ev("AD.k") === 2, "the unit's next lesson is not lesson three");
   const Q3 = ev("AD.q"), share2 = ev("sikShare(unit('a1u1'),1)");
   ok(Q3.filter(x => x.t === "say").every(x => x.i >= Math.ceil(u.read.lines.length / 2)), "lesson three asks a line lesson two had");
-  ok(Q3.findIndex(x => x.t === "speak") === Q3.length - 2, "the speaking task is not the last thing before the end");
-  walkAdim(s => {
-    if (s.t === "speak") ok(lastPaint.includes(esc(u.speak)) && lastPaint.includes("adSpeak()"), "the speaking task is not shown");
-  });
-  ok(ev("S.retell.a1u1.n") === 1 && ev("S.retell.a1u1.d") === T + 2, "the speaking task was not counted as its first telling, due on day three");
+  ok(!Q3.some(x => x.t === "speak") && Q3[Q3.length - 2].t === "sik", "lesson three does not end on the common words");
+  walkAdim();
+  ok(ev("Object.keys(S.retell).length") === 0, "lesson three wrote a telling");
   ok(share2.every(e => ev("isStarred(" + q(e[0]) + "," + q(e[1]) + ")")), "lesson three did not take in the second half of the words");
   ok(lastPaint.includes("startUnitQuiz('a1u1')"), "lesson three does not lead to the unit's exercises");
   ok(ev("JSON.stringify([S.prod,S.rep,S.gram,S.err,S.dinle,S.done])") === JSON.stringify(JSON.parse(before).slice(2, 8)), "the lessons scheduled or marked something they should not");
-  /* Told again here, a telling under way keeps its own schedule. */
-  ev("startAdim('a1u1',2); AD.i=AD.q.findIndex(function(s){return s.t==='speak'}); render(); adSpeak()");
-  ok(ev("S.retell.a1u1.n") === 1, "going over lesson three counted a second telling");
   ev("startUnitQuiz('a1u1')"); for (let i = 0; i < 5; i++) answer(true);
   ok(ev("isDone('a1u1')"), "the exercises after the lessons did not tick the unit");
 
@@ -3838,7 +3823,7 @@ step("derse başla · a unit in three lessons, checks by level", () => {
         });
         if (Q.some(x => x.t === "cloze")) unitsWithCloze++;
       } else {
-        ok(!kinds.includes("line") && !kinds.includes("word") && kinds.includes("speak"), tag + " is not the review and the speaking");
+        ok(!kinds.includes("line") && !kinds.includes("word") && !kinds.includes("speak"), tag + " is not the review, or still has a free speaking task");
         if (tier === 0) ok(kinds.filter(t => t === "hear").length === 3, tag + " does not recall the words by ear");
         else ok(words === 4 && kinds.includes("gex"), tag + " does not recall four words and an example");
         ok(kinds.filter(t => t === "say").length === Math.min(3, v.read.lines.length - half), tag + " does not say the other lines");
@@ -3848,7 +3833,6 @@ step("derse başla · a unit in three lessons, checks by level", () => {
         const s = ev("adCur()");
         if (adimAnswer(s, true)) { ok(ev("AD.ok") === true, v.id + ": a right " + s.t + " answer was marked wrong: " + s.c); ev("adNext()"); }
         else if (s.t === "sik") ev("adSik()");
-        else if (s.t === "speak") ev("adSpeak()");
         else ev("adNext()");
       }
       ok(ev("adCur().t") === "end", tag + " did not walk to its end");

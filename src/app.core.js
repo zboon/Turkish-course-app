@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.87";
+const APP_VERSION="v3.88";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -422,7 +422,6 @@ function back(){
   else if(V.view==="uykurun"){uyStop();UY=null;go("uyku");}
   else if(V.view==="adim"){go("unit",AD?AD.u:V.u,"v");}
   else if(V.view==="yoldarun"){if(YL&&YL.phase!=="end")yolFinish();else{YL=null;go("yolda");}}
-  else if(V.view==="retell"||V.view==="retelldone"){go("unit",V.u,"r");}
   /* The back arrow retraces the menu you came through. Before the two
      doors existed every screen fell through to home(), which was right
      when home() WAS the menu; now it would skip the hub and make the
@@ -479,7 +478,7 @@ const EN_UI={
  "Tekrara başla":"start reviewing","Kartlarla çalış":"study with flashcards","Çevir":"turn the card",
  "Göster":"show","Şimdi göster":"show it now","Zor":"hard","İyi":"good","Kolay":"easy","Doğru":"right","Yanlış":"wrong",
  "İngilizceyi de seslendir":"read the English aloud too","Sondan başa kur":"build it from the end",
- "Anlattım":"I told it","Yine de anlattım":"I told it anyway","Anladım":"I understood","Anlamadım":"I didn’t understand",
+ "Anladım":"I understood","Anlamadım":"I didn’t understand",
  "Bir daha":"once more","Vazgeç":"cancel","Kaydet":"save","Kaydetmeden çık":"leave without saving",
  "Hepsini sil":"delete them all","Ekle ve tekrara al":"add it and review it","Yedeği al":"download a backup",
  "Geri yükle":"restore a backup","Tüm ilerlemeyi sil":"delete all progress","Yedekle":"back up","Sıfırla":"reset",
@@ -495,7 +494,7 @@ const EN_UI={
  "Kurma ve Dönüştürme":"build and change",
  /* section headings */
  "Bugün":"today","Çalış":"study","Ayarlar":"settings","Konular":"topics","Seviyeler":"levels","Başlarken":"getting started",
- "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","Metindeki kelimeler":"words in the text","İleri test":"test ahead","Üç kez anlat":"say it three times",
+ "Kurs":"the course","Konuşma":"speaking","Sözlük":"dictionary","Metindeki kelimeler":"words in the text","İleri test":"test ahead",
  "Karşılaşma sayısı":"times met","Nerede zayıfsın":"where you are weak","Son hatalar":"recent mistakes","Ekle":"add",
  "Listem":"my list","Düzenle":"edit","Soru kelimeleri":"question words","Şekiller":"shapes","Durumlar":"situations",
  "Tamir çantası":"repair kit","Anlamadıysan":"if you did not catch it","Ne konuşuldu":"what was said",
@@ -506,7 +505,7 @@ const EN_UI={
  "Biraz daha çalışmak gerek":"a little more work needed","Önerilen başlangıç seviyesi":"suggested starting level",
  "Tamamlandı":"completed","Yarıda kaldı":"left unfinished","Bugünlük bitti":"done for today","Bugünlük bu kadar":"that is all for today",
  "Defter boş":"the book is empty","Henüz dilbilgisi yok":"no grammar yet","Ses yok":"no sound",
- "Üç kez anlatıldı ✓":"told three times","Bu aramaya uygun kelime yok.":"no word matches this search",
+ "Bu aramaya uygun kelime yok.":"no word matches this search",
  "Henüz kendi kelimen yok.":"you have not added a word yet","5 dakika":"5 minutes","10 dakika":"10 minutes",
  "Sor · soru sözcükleri":"ask · question words","Sor · evet/hayır":"ask · yes or no",
  "kelime gözden geçirildi":"words gone over","Kalıp · günlük konuşma":"set phrase · everyday speech",
@@ -534,7 +533,7 @@ const EN_RULES=[
 ];
 /* English halves already written inline after a ·, moved underneath. */
 const EN_INLINE=[
- "say it three times","the rest","hide this","show the pattern","read the point again","mine was right too",
+ "the rest","hide this","show the pattern","read the point again","mine was right too",
  "stop and mark","drill these","review them","walk away","place me","hide on the home screen","mine is said too",
  "how to add one","ten more","where to","caught you twice or more","speaking","listening","bringing it back","words",
  "how it is said","listening and shadowing","the review queue","what the course teaches once","produce the pattern",
@@ -542,7 +541,7 @@ const EN_INLINE=[
  "your own words","the mistake book","hands-free","how many words","the texts","back up",
  "build it","change it","the gap","where sentences come from","write what you hear","audio first","listening speed",
  "replays allowed","the model’s speed","ask the question","write the digits","read it out","how high","the bar",
- "no Turkish voice","no speech","out loud now","say it out loud now","the speaking task","your own marking",
+ "no Turkish voice","no speech","out loud now","say it out loud now","your own marking",
  "marked by the app","recalled","covered","words reviewed","produced","produced exactly","listen","spoken form",
  "other ways to say it","why",
  "make it negative","change it to “he”","turn it into a question","change it to “we”","put it in the future",

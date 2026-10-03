@@ -804,7 +804,6 @@ function planToday(){
   const gr=Math.min(gramDue().length,GRAM_SESSION);
   const dic=Math.min(dinleDue("d:"),DSESSION);
   const pr=Math.min(prodDue(sentenceBank()).length,SESSION);
-  const rt=retellDue().length;
   /* "Yeni" absorbs the old resume card: mid-unit it carries you back to the
      exact section you were reading, and only falls back to the first
      unfinished unit when there is no bookmark. Two cards saying "open this
@@ -854,8 +853,6 @@ function planToday(){
      en:nx?dl.en:"every unit is done", tt:nx?dl.tt:"bütün üniteler bitti",
      n:nx?1:0, mins:nx?12:0, avail:!!nx, go:nx?dl.go:"home()"}
   ];
-  if(rt)steps.splice(steps.length-1,0,{k:"retell",tr:"Anlat",en:"tell it again from memory",tt:"aklından yeniden anlat",n:rt,
-                          avail:true,mins:rt*3,go:"startRetell('"+retellDue()[0].id+"')"});
   /* The commonest words the units never teach. The lessons carry them
      now; this step is only for the share of units passed without them
      (by a level test, say). New material, so after every review and

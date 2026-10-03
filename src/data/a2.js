@@ -23,8 +23,7 @@
   {t:"fill",q:"Dün onu gör___ . (I did not see)",c:"medim",why:"The negative -mA- comes straight after the stem, then the past -DI and the person ending: gör-me-di-m. After the vowel e the past keeps its d."},
   {t:"mc",q:"Why did nobody give the Hoca a seat at first?",a:["He came late","He wore old clothes","He had no gift","He was a stranger"],c:1,why:"In the tale the Hoca is ignored in his old clothes and honoured in his fur coat, so it was the coat, not the man, that was respected."},
   {t:"order",q:"Build: “Then he went to the wedding again.”",w:["Sonra","tekrar","düğüne","gitti"],c:"Sonra tekrar düğüne gitti",why:"Sonra (then) and tekrar (again) come first, the destination takes the dative (düğüne, to the wedding), and the verb gitti stays last."},
-  {t:"mc",q:"“Ye kürküm ye” is used today to mean",a:["Food is sacred","People judge by appearances","Never lend clothes","Eat before a party"],c:1,why:"Ye kürküm ye, “eat, my fur coat, eat”, is now said of people who respect appearances and wealth rather than the person."}],
- speak:"Retell the Hoca story from memory in the past tense, in your own words."},
+  {t:"mc",q:"“Ye kürküm ye” is used today to mean",a:["Food is sacred","People judge by appearances","Never lend clothes","Eat before a party"],c:1,why:"Ye kürküm ye, “eat, my fur coat, eat”, is now said of people who respect appearances and wealth rather than the person."}]},
 
 {id:"a2u2",lv:"A2",n:2,tr:"Gelecek ay",en:"Next month",focus:"gelecek zaman -(y)AcAk · -mAk istemek",
  vocab:[["gelecek","future; next"],["kalmak","to stay"],["buluşmak","to meet up"],["görmek","to see"],["istemek","to want"],["beklemek","to wait"],["otel","hotel"],["uçak","plane"],["hafta","week"],["belki","maybe"]],
@@ -48,8 +47,7 @@
   {t:"fill",q:"Biz yarın gel___ . (we will come)",c:"eceğiz",why:"Gel takes the future -ecek (e, by two-way harmony) and -iz for “we”; the k softens to ğ before the vowel: gel-eceğ-iz."},
   {t:"mc",q:"“I want to read this book.” =",a:["Bu kitabı okumak istiyorum.","Bu kitap okuyorum istiyorum.","Bu kitabı okuyacağım istiyorum.","Bu kitabı okumayı isterim mi."],c:0,why:"Wanting to do something is the infinitive plus istemek: okumak istiyorum. The object is definite (this book), so it takes the accusative: bu kitabı."},
   {t:"order",q:"Build: “Would you like to drink tea?”",w:["Çay","içmek","ister","misin"],c:"Çay içmek ister misin",why:"The object comes first, then the infinitive (içmek), then istemek in the aorist for a polite offer. The question particle takes the person: ister misin."},
-  {t:"mc",q:"In the letter, how long will Deniz stay?",a:["a week","three days","one month","two nights"],c:1,why:"The letter says üç gün kalacağım, “I will stay three days”: üç is three and gün is day."}],
- speak:"Describe your next trip: where you will go, how long you will stay, three things you will do."},
+  {t:"mc",q:"In the letter, how long will Deniz stay?",a:["a week","three days","one month","two nights"],c:1,why:"The letter says üç gün kalacağım, “I will stay three days”: üç is three and gün is day."}]},
 
 {id:"a2u3",lv:"A2",n:3,tr:"Yolculuk",en:"The journey",focus:"-(y)A · -(y)I · -DAn",
  vocab:[["yolculuk","journey"],["vadi","valley"],["balon","balloon"],["yükselmek","to rise"],["ayrılmak","to leave, depart"],["bırakmak","to leave behind"],["geçmek","to pass, cross"],["izlemek","to watch"],["erken","early"],["mağara","cave"]],
@@ -74,8 +72,7 @@
   {t:"fill",q:"Ankara'___ İzmir'e gittim. (from Ankara)",c:"dan",why:"Where you come from takes the ablative -DAn. Ankara ends in a vowel, so the d stays d, and a proper name takes an apostrophe: Ankara'dan."},
   {t:"mc",q:"Which sentence means “I read THE book”?",a:["Kitap okudum.","Kitabı okudum.","Kitaba okudum.","Kitapta okudum."],c:1,why:"A definite, specific object takes the accusative -(y)I: kitabı okudum, I read the book. Without it, kitap okudum means I did some book-reading."},
   {t:"order",q:"Build: “I watched the balloons in the morning.”",w:["Sabah","balonları","izledim"],c:"Sabah balonları izledim",why:"The time comes first, the definite object takes the accusative (balonları, the balloons), and the verb izledim ends the sentence."},
-  {t:"mc",q:"“Kalbimi orada bıraktım” is",a:["literal — he lost an organ","an idiom of attachment","a medical complaint","a question"],c:1,why:"Kalbimi orada bıraktım, “I left my heart there”, is the same image as in English: an attachment to a place, not a medical event."}],
- speak:"Describe a journey you have made, using at least one dative, one ablative and one accusative in every sentence you can."},
+  {t:"mc",q:"“Kalbimi orada bıraktım” is",a:["literal — he lost an organ","an idiom of attachment","a medical complaint","a question"],c:1,why:"Kalbimi orada bıraktım, “I left my heart there”, is the same image as in English: an attachment to a place, not a medical event."}]},
 
 {id:"a2u4",lv:"A2",n:4,tr:"Yapabilir misin?",en:"Can you?",focus:"-(y)Abilmek · emir kipi",
  vocab:[["ödünç almak","to borrow"],["komşu","neighbour"],["kazan","cauldron"],["tencere","pot"],["doğurmak","to give birth"],["inanmak","to believe"],["kızmak","to get angry"],["sevinmek","to be glad"],["ölmek","to die"],["gülmek","to laugh"]],
@@ -102,8 +99,7 @@
   {t:"fill",q:"Bana yardım ed___ misin? (can you help)",c:"ebilir",why:"Et- becomes ed- before a vowel (the t softens), then the ability ending -ebil- and the aorist -ir: ed-ebil-ir misin, can you help?"},
   {t:"mc",q:"Polite command “please wait” =",a:["Bekle!","Bekleyin.","Beklemek.","Bekliyorsun."],c:1,why:"The polite or plural imperative adds -(y)In to the stem: bekle-yin, please wait. Bekle alone is blunt, and beklemek is the dictionary form."},
   {t:"order",q:"Build: “Can a cauldron die?”",w:["Kazan","ölebilir","mi"],c:"Kazan ölebilir mi",why:"The subject comes first, the verb takes -ebil- (can) and the aorist -ir, and the question particle mi follows the verb as a separate word."},
-  {t:"mc",q:"The joke turns on",a:["a borrowed pot","the neighbour's greed","a broken cauldron","the Hoca's poverty"],c:1,why:"The neighbour gladly accepted the lie that a pot had given birth, because it profited him, so he has to accept the lie that it died."}],
- speak:"Ask five polite favours using -(y)Abilir misiniz, then refuse five using -AmAm."},
+  {t:"mc",q:"The joke turns on",a:["a borrowed pot","the neighbour's greed","a broken cauldron","the Hoca's poverty"],c:1,why:"The neighbour gladly accepted the lie that a pot had given birth, because it profited him, so he has to accept the lie that it died."}]},
 
 {id:"a2u5",lv:"A2",n:5,tr:"Daha güzel",en:"More beautiful",focus:"karşılaştırma · sıfatlar",
  vocab:[["daha","more"],["en","most"],["kadar","as much as, until"],["gibi","like"],["kalabalık","crowded"],["sakin","calm, quiet"],["pahalı","expensive"],["ucuz","cheap"],["yorgan","quilt"],["uzatmak","to stretch out"]],
@@ -127,8 +123,7 @@
   {t:"fill",q:"Bu, en ___ şehir. (beautiful)",c:"güzel",why:"The superlative is en before the adjective, which does not change: en güzel şehir, the most beautiful city."},
   {t:"mc",q:"“Ayağını yorganına göre uzat” advises",a:["Sleep more","Live within your means","Buy a longer quilt","Travel light"],c:1,why:"“Stretch your leg according to your quilt”: live within your means. Göre means according to."},
   {t:"order",q:"Build: “You talk like your father.”",w:["Baban","gibi","konuşuyorsun"],c:"Baban gibi konuşuyorsun",why:"Gibi (like) follows the noun it compares with: baban gibi, like your father. The verb konuşuyorsun stays last."},
-  {t:"mc",q:"“senin kadar” means",a:["more than you","as much as you","without you","after you"],c:1,why:"Kadar after a noun or pronoun means as much as, or as … as: senin kadar, as much as you. With pronouns it takes the genitive: senin."}],
- speak:"Compare two cities you know in eight sentences, using daha, en, kadar and gibi at least once each."},
+  {t:"mc",q:"“senin kadar” means",a:["more than you","as much as you","without you","after you"],c:1,why:"Kadar after a noun or pronoun means as much as, or as … as: senin kadar, as much as you. With pronouns it takes the genitive: senin."}]},
 
 {id:"a2u6",lv:"A2",n:6,tr:"Her zaman",en:"Always",focus:"geniş zaman -(A)r",
  vocab:[["genellikle","usually"],["bazen","sometimes"],["her zaman","always"],["asla","never"],["alışkanlık","habit"],["inanmak","to believe"],["sevmek","to like, love"],["bilmek","to know"],["anlamak","to understand"],["düşünmek","to think"]],
@@ -153,8 +148,7 @@
   {t:"fill",q:"Genellikle otobüsle git___ . (I go)",c:"erim",why:"Git- takes the aorist -er and softens to gid- before the vowel: gider. The person ending -im makes giderim, I go (usually)."},
   {t:"mc",q:"Which is the politer request?",a:["Yardım ediyor musun?","Yardım eder misiniz?","Yardım edeceksin.","Yardım ettin mi?"],c:1,why:"The aorist question (eder misiniz) is softer than the present (ediyor musun), and the plural siz is more polite than sen."},
   {t:"order",q:"Build: “Turks always offer tea to a guest.”",w:["Türkler","misafire","her","zaman","çay","ikram","eder"],c:"Türkler misafire her zaman çay ikram eder",why:"Subject, then the receiver in the dative (misafire, to a guest), the time word, the object, and the aorist ikram eder last, for a standing custom."},
-  {t:"mc",q:"“Sigara içerim” means",a:["I am smoking now","I smoke / I am a smoker","I will smoke","I used to smoke"],c:1,why:"The aorist describes habits and facts about someone, so sigara içerim means I smoke, I am a smoker. Smoking right now would be içiyorum."}],
- speak:"Describe your habits in ten aorist sentences, including three negatives."},
+  {t:"mc",q:"“Sigara içerim” means",a:["I am smoking now","I smoke / I am a smoker","I will smoke","I used to smoke"],c:1,why:"The aorist describes habits and facts about someone, so sigara içerim means I smoke, I am a smoker. Smoking right now would be içiyorum."}]},
 
 {id:"a2u7",lv:"A2",n:7,tr:"Ne zamandır?",en:"For how long?",focus:"-DAn beri · -DIr · süre",
  vocab:[["beri","since"],["önce","ago, before"],["sonra","after"],["hâlâ","still"],["artık","from now on, any more"],["henüz","yet"],["yıl","year"],["ay","month; moon"],["süre","period"],["boyunca","throughout"]],
@@ -179,8 +173,7 @@
   {t:"fill",q:"Sabah___ beri seni bekliyorum. (since morning)",c:"tan",why:"Beri follows the ablative -DAn. Sabah ends in h, a voiceless consonant, so d becomes t: sabahtan beri, since morning."},
   {t:"mc",q:"“Henüz gelmedi.” =",a:["He came just now","He hasn't come yet","He no longer comes","He still comes"],c:1,why:"Henüz with a negative verb means not yet: Henüz gelmedi, he hasn't come yet."},
   {t:"order",q:"Build: “I have been living here for four years.”",w:["Dört","yıldır","burada","yaşıyorum"],c:"Dört yıldır burada yaşıyorum",why:"The duration (dört yıldır, for four years) comes first, then the place, and the present tense yaşıyorum because it is still going on."},
-  {t:"mc",q:"Turkish expresses “I have been doing X” with",a:["the past tense","the present tense","the future","the aorist"],c:1,why:"Where English says “I have been living”, Turkish uses the present tense with a duration: iki yıldır burada yaşıyorum."}],
- speak:"Say how long you have been doing six things — job, home, Turkish, a hobby — using -DIr and -DAn beri."},
+  {t:"mc",q:"Turkish expresses “I have been doing X” with",a:["the past tense","the present tense","the future","the aorist"],c:1,why:"Where English says “I have been living”, Turkish uses the present tense with a duration: iki yıldır burada yaşıyorum."}]},
 
 {id:"a2u8",lv:"A2",n:8,tr:"Kiminle, neyle?",en:"With whom, with what?",focus:"ile · için · edatlar",
  vocab:[["ile (-le/-la)","with, by"],["için","for, in order to"],["göre","according to"],["hakkında","about"],["dolayı","because of"],["rağmen","despite"],["doğru","towards"],["karşı","against, towards"],["birlikte","together with"],["yerine","instead of"]],
@@ -205,8 +198,7 @@
   {t:"fill",q:"Bu hediye senin ___ . (for you)",c:"için",why:"İçin (for) follows the genitive with personal pronouns: senin için, for you. With nouns it follows the bare form: annem için."},
   {t:"mc",q:"“Yağmura rağmen” =",a:["because of the rain","despite the rain","during the rain","without rain"],c:1,why:"Rağmen means despite and takes the dative: yağmura rağmen, despite the rain."},
   {t:"order",q:"Build: “I want to speak with you.”",w:["Seninle","konuşmak","istiyorum"],c:"Seninle konuşmak istiyorum",why:"Sen with -(y)lA gives seninle, with you. Then the infinitive konuşmak and istiyorum: I want to speak."},
-  {t:"mc",q:"“Bana göre” means",a:["come to me","in my opinion","towards me","without me"],c:1,why:"Göre (according to) takes the dative: bana göre, according to me, that is, in my opinion."}],
- speak:"Say who you did six things with, and why, using -(y)lA and için in every sentence."},
+  {t:"mc",q:"“Bana göre” means",a:["come to me","in my opinion","towards me","without me"],c:1,why:"Göre (according to) takes the dative: bana göre, according to me, that is, in my opinion."}]},
 
 {id:"a2u9",lv:"A2",n:9,tr:"Bir şeyim var",en:"Something hurts",focus:"sağlık · ağrımak · -(y)Im",
  vocab:[["hasta","ill"],["ağrı","ache, pain"],["ağrımak","to hurt"],["baş","head"],["karın","stomach"],["boğaz","throat"],["ateş","fever; fire"],["ilaç","medicine"],["dinlenmek","to rest"],["geçmiş olsun","get well soon"]],
@@ -230,8 +222,7 @@
   {t:"fill",q:"Ateş___ var. (I have a fever)",c:"im",why:"Having an illness uses the possessive plus var, like any possession: ateşim var, I have a fever (literally “my fever exists”)."},
   {t:"mc",q:"You say “Geçmiş olsun” to someone who",a:["is travelling","has been ill or had trouble","is getting married","is eating"],c:1,why:"Geçmiş olsun, “may it be past”, is said to someone who is ill, recovering, or has had any kind of trouble."},
   {t:"order",q:"Build: “I have been ill for two days.”",w:["İki","gündür","hastayım"],c:"İki gündür hastayım",why:"The duration takes -DIr (iki gündür, for two days), and hasta takes the personal ending -(y)Im with a buffer y: hastayım, I am ill."},
-  {t:"mc",q:"“Bir şeyim yok.” =",a:["I have nothing","Nothing is wrong with me","I want something","I lost something"],c:1,why:"Bir şeyim yok, literally “I have nothing”, is the standard reply to Bir şeyin var mı?: nothing is wrong with me."}],
- speak:"Play both sides of a pharmacy visit: symptoms, how long, what you've tried, the reply."},
+  {t:"mc",q:"“Bir şeyim yok.” =",a:["I have nothing","Nothing is wrong with me","I want something","I lost something"],c:1,why:"Bir şeyim yok, literally “I have nothing”, is the standard reply to Bir şeyin var mı?: nothing is wrong with me."}]},
 
 {id:"a2u10",lv:"A2",n:10,tr:"Rica etsem",en:"If I might ask",focus:"nezaket · siz · -(y)ken",
  vocab:[["rica etmek","to request"],["lütfen","please"],["özür dilemek","to apologise"],["efendim","sir/madam; pardon?"],["müsaade","permission"],["acele","haste"],["beklemek","to wait"],["aramak","to call, to look for"],["müsait","available"],["kolay gelsin","may it go easily"]],
@@ -256,5 +247,4 @@
   {t:"fill",q:"Çalış___ müzik dinlerim. (while working)",c:"ırken",why:"-(y)ken means while and attaches to the aorist stem: çalışır + ken, written çalışırken, while working."},
   {t:"mc",q:"“Kolay gelsin” is said to",a:["someone leaving on a trip","someone at work","someone who is ill","a child"],c:1,why:"Kolay gelsin, “may it come easy”, is said to anyone in the middle of work, including strangers such as shopkeepers or builders."},
   {t:"order",q:"Build: “May I speak with Mrs Ayşe?”",w:["Ayşe","Hanım","ile","görüşebilir","miyim"],c:"Ayşe Hanım ile görüşebilir miyim",why:"Hanım follows the first name as a title. İle marks the person spoken with, the verb takes -ebil- (may), and the question particle takes the person: miyim."},
-  {t:"mc",q:"“Küçükken” means",a:["a little","when I was little","the smallest","smaller"],c:1,why:"-(y)ken also attaches to nouns and adjectives, meaning “when I was”: küçükken, when I was little."}],
- speak:"Make the same request five ways, from blunt to extremely polite. Then take a phone call in Turkish, both sides."},
+  {t:"mc",q:"“Küçükken” means",a:["a little","when I was little","the smallest","smaller"],c:1,why:"-(y)ken also attaches to nouns and adjectives, meaning “when I was”: küçükken, when I was little."}]},

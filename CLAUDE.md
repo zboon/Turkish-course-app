@@ -60,7 +60,7 @@ src/shared/nav.js        navInit, navSync — the phone's back button, shared wi
 src/app.core.js          state, helpers, voice, the SRS ladder, routing
 src/app.lang.js          morphology and the drill generator (pure)
 src/app.screens.js       home, level, unit, quiz, words, sözlük, about
-src/app.uretim.js        production mode, chunk bank, retell
+src/app.uretim.js        production mode, chunk bank
 src/app.dinle.js         dictation and audio-first listening
 src/app.tekrar.js        the repetition engine, grammar repetition, the daily plan
 src/app.yolda.js         hands-free audio sessions
@@ -110,8 +110,7 @@ file is the order the learner sees. Keep `n:` in step with that position —
        note:"optional — context shown in a dashed card",
        lines:[["Turkish sentence","English"], …],          // 6–10
        gloss:{"tımar etmek":"to groom"}},                  // 4–7 headwords
- drill:[ …5 items… ],
- speak:"one spoken task"}
+ drill:[ …5 items… ]}
 ```
 
 Drill types — exactly five per unit, `validate.js` enforces:
@@ -340,7 +339,7 @@ deliberate breakage.
 {done:{unitId:{score,of,at,byTest,first}}, seen:{unitId:{v,g,r,d,at}},
  place:{u,s}, star:["tr|en"], srs:{"tr|en":{b:box,d:dueDay}},
  tested:{A1:true}, days:["YYYY-MM-DD"], theme, rate,
- prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},
+ prod:{"s:b1u3#4":{b,d}, "k:12":{b,d}}, retell:{unitId:{n,d}},  // retired v3.88, kept
  dinle:{"d:b1u3#4":{b,d}, "a:b1u3#4":{b,d}},
  rep:{"kasagi":{b,d,n}}, gram:{"b1u3":{b,d,n}},
  err:{"q:a1u1#0":{m,q,c,a,w,to,at,n}}, mine:[{tr,en,note,at}],
@@ -881,8 +880,9 @@ because it forces a sentence out of the mouth *before* the model is heard.
    the course teaches are content words out of literary passages. Chunks
    buy fluency, which is what they are for; they do not raise the
    vocabulary floor, which is what Tekrar motoru is for.
-4. **Say it three times.** A unit's `speak:` task retold on day 1, 3 and 7
-   (`RETELL_NEXT`), started from the Konuşma card.
+4. **Say it three times** was a fourth part: a unit's free speaking task
+   (`speak:`) told on day 1, 3 and 7. Retired in v3.88; see Konuşma
+   görevi below.
 
 New sentences arrive in course order, not shuffled — the mode walks the
 material. Reviews come first, oldest due first, and a sitting is `SESSION`
@@ -1374,6 +1374,14 @@ kopyala*: sections finished, then each flag with its id, the Turkish and
 the note. The ids are what map an answer back to the source; a changed
 string changes its `tx:` hash, so rebuild and republish the page only
 between rounds, not while someone is part-way through it.
+
+The second round's first answers (v3.88) closed the tales section and
+repeated the six English notes v3.81 had already taken, so the tales
+needed nothing more. From Başlarken: *yol* is "road, way"; ş is given as
+the sh of *she*, with *şeker* said *she-ker* (the short e of bed kept,
+since an English reader says *she* long); and *Hoşça kal*, *Güle güle*
+and *Afiyet olsun* now carry their word-for-word sense (stay well, go
+smiling, may it do you good) beside what they are used for.
 
 ## Sayılar (numbers at speed)
 
@@ -2406,16 +2414,16 @@ the one before it met:
 |---|---|---|
 | 1 · Kelimeler ve dilbilgisi | the ten words, the grammar point | — |
 | 2 · Okuma | the passage; the first half of the unit's common words | the words, in the passage (B1+) |
-| 3 · Tekrar ve konuşma | the second half of the common words; the speaking task | the words recalled, an example of the grammar, the passage said aloud |
+| 3 · Tekrar ve konuşma | the second half of the common words | the words recalled, an example of the grammar, the passage said aloud |
 
 The checks grow with the learner, because what teaches at A1 is too easy
 to teach anything at B1:
 
 | level | lesson 1 | lesson 2 | lesson 3 |
 |---|---|---|---|
-| A1 | words pictured (`RESIM`) and heard · hear and pick ×4 · spell from tiles ×3 · grammar | lines shown · say ×3 | hear ×3 · spell ×2 · say ×3 · speak |
-| A2 | words · type the Turkish ×4 · grammar · type one example | lines shown · say ×3 | type ×4 · one example · say ×3 · speak |
-| B1+ | words · type the Turkish ×4 · grammar · type one example | lines heard first · the words typed into their sentences ×4 · say ×3 | type ×4 · one example · say ×3 · speak |
+| A1 | words pictured (`RESIM`) and heard · hear and pick ×4 · spell from tiles ×3 · grammar | lines shown · say ×3 | hear ×3 · spell ×2 · say ×3 |
+| A2 | words · type the Turkish ×4 · grammar · type one example | lines shown · say ×3 | type ×4 · one example · say ×3 |
+| B1+ | words · type the Turkish ×4 · grammar · type one example | lines heard first · the words typed into their sentences ×4 · say ×3 | type ×4 · one example · say ×3 |
 
 Phase 2, still to come, adds a second short passage or dialogue to
 lesson three using the same grammar. That is sixty new texts, so it
@@ -2436,12 +2444,8 @@ Three step types came with the lessons:
   screen uses: starred with its first review tomorrow, or recorded as
   known. So the list's 1,473 words now arrive with the course instead of
   beside it.
-- **`speak`: the speaking task.** `u.speak`, said aloud for a minute.
-  **Anlattım** counts it as the task's first telling through
-  `retellCount()`, factored out of `retellDone()`, so the plan's Anlat
-  step brings it back on day three and day seven. A telling already
-  under way keeps its own schedule. **Şimdi değil** goes on without it,
-  for someone who cannot talk out loud where they are.
+- **`speak`, the free speaking task**, closed lesson three until
+  v3.88 and is gone; see Konuşma görevi.
 
 From B1 the word checks come after the passage, because a word blanked
 in a sentence not yet read is a guess. `adimCloze()` is Tekrar's cloze
@@ -2463,13 +2467,13 @@ Five decisions:
   grain they would if the tabs had been read, and lesson one does not
   count as reading the passage (see "Nothing reviews what has not been
   met"). `S.ders` records the day each lesson was first finished; the
-  common words and the speaking task write to their own existing
-  records, and nothing else is written.
+  common words write to their own existing record, and nothing else is
+  written.
 - **The checks are practice, not marks.** Nothing is scheduled, starred
   or written to the mistake book. A missed check comes back once more
   (`ADIM_RETRY`, 2), after the other checks and before the lesson moves
   on from them (`AD_STOP`: the grammar, the lines to say, the common
-  words, the speaking task or the end).
+  words or the end).
 - **Typed answers use the course's own judges.** `wordOk()` and
   `sentOk()` were factored out of `tkCheck()` and `grCheck()` for this
   (a pure move that `snap.js` passed unchanged), so a spoken spelling,
@@ -2486,16 +2490,15 @@ how a spelling edit would strand one, and requires at least three
 spellable words in every A1 unit. `sim.js` walks all 180 lessons of the
 sixty units and checks each one's shape: which checks it asks and how
 many, the passage in lesson two only, the checks after the passage at
-B1+, the lines to say coming from different halves, the speaking task
-last, and every blank filling back to its line without the answer left
+B1+, the lines to say coming from different halves, no speaking task,
+and every blank filling back to its line without the answer left
 in it. It checks that the shares cover the list exactly, with no gap and
 no overlap, and that walking every lesson finishes 180 and takes in every
 common word. It walks a1u1's three lessons as a learner would: the
 autoplay happens once and a redraw does not repeat it; the seen-flag
 grain; a missed check coming back exactly once; a line to say stays
 silent and hidden until Göster; a word marked known is not starred and
-the rest are due tomorrow; the speaking task is counted once and due on
-day three; and `S` is untouched apart from those. It also checks the B1
+the rest are due tomorrow; no telling is written; and `S` is untouched apart from those. It also checks the B1
 line hidden until shown, a missed B1 check coming back before the lines
 to say, the English hidden until asked for, the judges (the other you, a
 spoken form without its pronoun, a wrong example marked word by word, an
@@ -2511,6 +2514,41 @@ A related fix that shipped with it: `button.card` set `display:block`
 and outranked `.row`, so every navigation row in the app had its
 chevron wrapped under the text instead of beside it. Fixed with
 `button.card.row{display:flex}`.
+
+## Konuşma görevi (retired: speaking with nothing to check it)
+
+Reported by the learner: apart from the Yolda-style speaking, the
+prompts that asked them to tell their own story were out of place,
+because nothing verified them. Every unit carried one (`speak:`,
+*Introduce yourself out loud in five sentences*, *Narrate your own
+day*), and it was in three places: the Konuşma card under the passage
+with **Üç kez anlat**, which brought it back on day one, three and seven
+(the plan's **Anlat** step, and a list on the Üretim hub); the last step
+of Derse başla's lesson three (**Anlattım** / **Şimdi değil**); and a
+row on İlerleme. A learner talking about their own life for a minute,
+alone, with no model and no listener, rehearses whatever comes out,
+mistakes included, which is the one way practice makes someone worse
+(the argument Adacıklar was built on). Üretim, Yolda and the lines said
+aloud in a lesson are different: each has a model heard right after,
+so the learner can tell.
+
+So in v3.88 all of it went: the field from the sixty units, the retell
+screens and their code, the plan step, the lesson step, the hub list
+and the İlerleme row. **Talking about yourself goes through Adacıklar**,
+where it is written, checked by a person and only then drilled. Each
+unit's grammar tab now ends on **Kendin hakkında** (`adaCard()`) when its
+grammar opens an island question: the questions, each a way into its
+island. Nineteen units open one; the rest show nothing.
+
+`S.retell` stays in the store, in `wipe()` and in the sync maps, so a
+backup or an older device carrying it is still read; nothing writes or
+reads it. `validate.js` fails if a unit carries `speak` again. `sim.js`
+checks that the reading tab, the Üretim hub and İlerleme offer no
+telling, that an old record due today makes no plan step, that no
+lesson has a speaking step, and that a1u1's grammar tab names *Adın
+ne?* and *Nerelisin?* and opens their island while a unit with no
+question shows no card. Six deliberate breakages each turned a test
+red.
 
 ## Kendi kelimelerim (your own words)
 
@@ -2568,8 +2606,7 @@ action before orientation.
 Order is everything perishable first, new material last: reviews decay on a
 schedule and a unit does not. Tekrar, Dilbilgisi, Dinle, Söyle, then Devam
 or Yeni — the next lesson of the unit under way, or its exercises once
-all three are done — with Anlat inserted before the last step when a
-retell is due, and Kelime after that only for the common words of units
+all three are done — with Kelime before the last step only for the common words of units
 passed without their lessons (see Sık kelimeler).
 Before any unit has been opened, the last step is **Giriş**, the next of
 the lessons before unit one (see Başlarken below); it is still the only
@@ -2718,13 +2755,12 @@ after the sitting's grades are saved, so it is the same step again only
 while that step still has work), and a line under it naming the step.
 With the plan done it says **Bugünlük bitti** and goes home. `plan:true`
 is for the modes Bugün sends a learner to: Tekrar (both runners),
-Dilbilgisi, Dikte, Söyle, Anlat. The Araçlar-only modes that share those
+Dilbilgisi, Dikte, Söyle. The Araçlar-only modes that share those
 runners (Ses önce, Kalıplar, Kurma, Dönüştürme, Sor) end on **Bir daha** and
 their hub instead. **Bir oturum daha** appears in a plan mode only when
 it has more due *and* is not already the plan's next step, or the screen
-would offer one thing twice. Sık kelimeler ends on the same `planNext()`,
-and the Anlat step opens the retelling itself rather than the Üretim hub
-(`retelldone` is its end view). Sayılar, Atasözleri, Diyalog, Yolda and
+would offer one thing twice. Sık kelimeler ends on the same `planNext()`.
+Sayılar, Atasözleri, Diyalog, Yolda and
 Uyumadan önce keep their own ends: they are not plan steps, and
 Diyalog's transcript is the reward for finishing.
 
@@ -2732,7 +2768,7 @@ The state that used to sit on those screens is on **İlerleme**
 (`app.ilerleme.js`, reached from under the two doors): units by level,
 words met and at eight encounters, the encounter chart that used to be on
 the Tekrar motoru hub, grammar points read and holding, sentences,
-prefabs, retellings, dialogues, sayings, dictation, numbers and the
+prefabs, dialogues, sayings, dictation, numbers and the
 mistake book, and under the level rows the words actually held (a
 review box a week or more out, in Tekrar motoru or the starred queue,
 counted once each) against a rough vocabulary for the level being worked

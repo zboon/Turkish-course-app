@@ -113,12 +113,10 @@ function renderIlerleme(){
     ilRow("Oturmuş konular","points holding, a week out or more",gb.filter(function(it){return gramBox(it.k)>=IL_FIRM;}).length,gb.length)+'</div>';
 
   const lines=UNITS.reduce(function(n,u){return n+u.read.lines.length;},0);
-  const told=UNITS.filter(function(u){const r=S.retell&&S.retell[u.id];return r&&r.n>=3;}).length;
   const talked=DIYALOG.filter(function(s){return S.dia&&S.dia[s.id]&&S.dia[s.id].n;}).length;
   h+='<h2 class="sec">Konuşma</h2><div class="card">'+
     ilRow("Söylenen cümleler","passage lines produced",ilCount(S.prod,"s:"),lines)+
     ilRow("Kalıplar","set phrases worked through",ilCount(S.prod,"k:"),CHUNKS.length)+
-    ilRow("Üç kez anlatılan","speaking tasks told three times",told)+
     ilRow("Diyaloglar","conversations finished",talked,DIYALOG.length)+
     ilRow("Atasözleri ve deyimler","sayings holding",ilCount(S.ata,"",IL_FIRM),ATASOZU.length+DEYIM.length)+
     ilRow("Kendi cümlelerin","your own sentences, checked",adaStore().s.filter(function(x){return x.chk;}).length,adaStore().s.length)+'</div>';
