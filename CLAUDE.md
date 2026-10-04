@@ -660,10 +660,11 @@ far — v2.00 → v2.31 → v2.40 → v2.50 → v2.51.
 
 - Interface language is Turkish with English underneath (`Kelimeler · words`).
   Learner-facing prose is plain English, no exclamation marks, no cheerleading.
-- **A translation is what an English speaker would say**, not the Turkish
-  word for word. Where the two are built differently and the difference
-  teaches something, the word-for-word reading is a note under it. See
-  Kelimesi kelimesine.
+- **A translation stays close to the Turkish.** This is a course for
+  learning Turkish, so the English keeps the Turkish sentence's words,
+  meanings and structure as visibly as natural English allows: faithful
+  first, then every meaningful word carried, then natural. Never change
+  the Turkish to suit the English. See Çeviri ilkesi.
 - Palette is İznik, at tile-glaze strength: cobalt `--cobalt` #173A6B,
   turquoise `--turk` #1C716E, bole red `--bole` #9E3327, gold `--gold`
   #AF7F32, ivory paper #EFEADC. Red is for wrong answers only. Gold is for
@@ -823,66 +824,59 @@ choice lapsing at a stage change and the legacy boolean. About 300
 instruction strings were translated. All the Turkish here is the
 author's, so it is on the native-speaker list with Başlarken.
 
-## Kelimesi kelimesine (what is said, and how it is built)
+## Çeviri ilkesi (how the English is written)
 
-By request, after the native reviewer's notes: the learner should get used
-to how Turkish is *said*, so the English of every pair is what an English
-speaker would say in that moment, and where the Turkish is built another
-way the word-for-word reading sits underneath as a note. *Hoşça kal* is
-"Goodbye", word for word "stay well"; *Memnun oldum* is "Pleased to meet
-you", word for word "I became pleased"; *Damlaya damlaya göl olur* is
-"Every little bit adds up", word for word "dripping, dripping, it becomes
-a lake". The literal is not the meaning, but it is how the sentence is
-put together, and seeing both is how a learner stops translating word by
-word.
+The learner's rule, given after the native reviewer read v3.89 and said
+the course had changed for the worse. The priority order is fixed:
+**faithfulness to the Turkish → every meaningful word and meaning carried
+→ natural English.** The English must be natural and grammatical, but
+where a very natural, loose rendering and a slightly closer one that is
+still natural English compete, the closer one wins, because a learner
+reading the two side by side should see which English carries which
+Turkish word.
 
-**The data.** Any `[tr, en]` pair may carry a third string, the literal:
-a unit's `vocab`, `gram.eg` and `read.lines`, the `CHUNKS`, a tale's
-lines and an island's `eg`. A Başlarken row is `[tr, en, hint]`, so its
-literal goes fourth. The literal is plain English, lower case, no quotes
-and no label: the app writes *word for word* / *kelimesi kelimesine*
-before it (`litNote()` in `app.core.js`). It is used where it teaches
-something (formulas, idioms, a different verb or structure, politeness),
-not on every line, and on a long line only the telling part is given
-(*with his own head*, *my tongue got tangled*).
+- The Turkish is never changed to suit the English.
+- Nothing in the Turkish is dropped, and nothing is added that is not in
+  it. No free translation, no paraphrase, no restructuring for elegance.
+- Repetitions, pronouns, time expressions, quantities, contrasts, and the
+  particles that carry meaning (*de/da*, *bile*, *henüz*, *yine*, *ayrı
+  ayrı*) are carried into the English wherever they mean something.
+- Where a word-for-word English is not natural, the closest natural
+  English that keeps the meaning is used.
+- English that is already correct, natural and faithful is left alone.
 
-**Where it shows.** With the English wherever the English is shown as a
-translation: the word list, the grammar examples, a passage line's tapped
-English, a Başlarken row, an island's model answer. **After the answer**
-wherever the English is the prompt, because before it would hand over the
-Turkish's shape: Üretim's model, Dinleme's reveal, Tekrar motoru's and
-Dilbilgisi tekrarı's answer card, and Derse başla's checks and lines to
-say (after Göster). Not in Yolda, which is sound only.
+The model example: *Dersler kısa; her dersin soruları ayrı ayrı da
+çözülebilir.* is "The lessons are short; each lesson's questions can
+also be answered separately", not "…each one's questions can be taken on
+its own": *her dersin* → each lesson's, *ayrı ayrı* → separately, *da* →
+also, *çözülebilir* → can be answered.
 
-**Vocabulary English never changes.** The star queue is keyed `tr|en`, so
-rewording a vocab gloss would orphan its review box. Vocab pairs gained
-literals only.
+**What came before, and why it went.** v3.89 tried the opposite rule:
+natural English first, with a "word for word" note under it (`litNote()`
+and an optional third string on a pair). It rewrote 341 translations and
+added 226 notes, and the reviewer judged the result worse. v3.90 restored
+v3.88's English exactly (no Turkish had been touched; the comparison was
+checked before restoring) and then checked it against the rule above.
+The note mechanism is still in the code and its checks still run, but no
+pair carries a note.
 
-**The pass (v3.89).** Every passage line, grammar example, prefab, tale
-line, island answer and Başlarken row was read against the rule: 341
-pairs changed, 226 literals added. Stiff English became natural (*I am
-well, thank you* → *I'm fine, thank you*; *Let me take a kilo of
-tomatoes* → *I'll take a kilo of tomatoes*; *Officials asked drivers not
-to set out* → *not to travel unless absolutely necessary*), a few wrong
-ones were mended (a2u8 said *I went* for *gittik*, "we went"; b2u5's
-counsels line was garbled; c1u8's experts "alleged"), and c2u5's grammar
-examples, whose English was only a register note and so could not be
-answered in Dilbilgisi tekrarı, got a translation with the note kept. The
-six tale lines the reviewer set kept their English. The period and
-register passages (the Tanzimat essay, Evliya Çelebi, Hacivat, the
-petition, the dialects) kept their register and gained literals instead.
-Five Turkish lines were flagged and **not** changed, for the native
-speaker: a2u3 *otobüsle geçtim*, b2u1's *Mimar Sinan tarafından
-yaptırıldı* (the causative says Sinan commissioned it, in the unit that
-teaches the causative), b2u4's mixed conditional, b2u5's opening, and
-b2u7's cat on the ceiling. The literals are the author's, and belong on
-the native-speaker list.
+**The pass (v3.90).** Every passage line, grammar example, prefab, tale
+line, Adacıklar question and model answer, and Başlarken row and letter
+was read against the rule; 150 English strings changed and the rest were
+left, as rule 12 asks. Most restored a word the English had dropped (*de*
+→ also/too, *henüz* → yet, *artık* → by then, *sözlükte* → in the
+dictionary, *Oğlum* → my son, *Allah* → God), took out one it had added
+("only", "at all", "that's settled"), or brought a form the unit teaches
+into the English: the evidential *-mIş* as "apparently", the presumptive
+*-DIr* as "must be", the causative passive *yaptırıldı* as "built at the
+order of", *-AcAktI* as "was going to". c2u5's grammar examples, whose
+English was only a register note, got a translation with the note kept.
+Every Turkish string was compared before and after and is identical.
+The five doubtful Turkish lines stay unchanged for the native speaker.
 
-`validate.js` checks every literal: not empty, not the English again, not
-the Turkish, no label, no quotes, exclamation mark or invisible character
-(226 notes). `sim.js` injects notes and checks each place draws them, and
-that Üretim and a line to say keep theirs until the answer. Ten deliberate
-breakages each turned a test red.
+**Vocabulary English is not reworded.** The star queue is keyed `tr|en`,
+so changing a vocab gloss orphans its review box; the pass covered
+passage lines, grammar examples, prefabs, tales, Adacıklar and Başlarken.
 
 ## Üretim (production mode)
 
@@ -1441,18 +1435,18 @@ the note. The ids are what map an answer back to the source; a changed
 string changes its `tx:` hash, so rebuild and republish the page only
 between rounds, not while someone is part-way through it.
 
-**The third round (v3.89)** is the same page and the same two addresses
-with a new storage key (`tr-review-v3`), so it starts with no answers;
-the learner chose a fresh start over carrying the second round's open
-flags. It opens with *Şüpheli beş cümle*, the five Turkish lines flagged
-while the English was rewritten, each with the question in both
-languages; then *Kalıp sözler* (the prefabs and Başlarken rows) and
-*Çeviriler* by level: every pair whose English or word-for-word note
-changed in v3.89, named in `tools/review-round3.json` (ids such as
-`ln:a1u1#3`, `ch:24`, `bs:nezaket#r2.0`) so the round keeps its size
-while it is open, and shown on the page as `c:<id>`. Then the second
-round's unfinished sections. The tales section, finished in round two,
-is gone; their changed lines are in the translations. When the round is
+**The fourth round (v3.90)** is the same page and the same two addresses
+with a new storage key (`tr-review-v4`), so it starts with no answers.
+The third round (v3.89) showed the natural-English rewrite with its
+word-for-word notes; the reviewer judged it worse, it was reverted, and
+its list went with it. Round four opens with *Şüpheli beş cümle*, the
+five doubtful Turkish lines, each with its question in both languages;
+then *Kalıp sözler* and *Çeviriler* by level: every pair whose English
+was corrected in v3.90 under Çeviri ilkesi, named in
+`tools/review-round4.json` (ids such as `ln:a1u1#1`, `ch:24`,
+`adq:aile.buyuk` for an island question, `ada:` for its model answer)
+so the round keeps its size while it is open, shown on the page as
+`c:<id>`. Then the second round's unfinished sections. When the round is
 over, a new round is a new key and a new list.
 
 The second round's first answers (v3.88) closed the tales section and
