@@ -9,16 +9,16 @@
 const ADA=[
  {id:"ben",tr:"Kendim",en:"About me",q:[
   {id:"ad",u:"a1u1",tr:"Adın ne?",en:"What is your name?",eg:["Benim adım Deniz.","My name is Deniz."]},
-  {id:"nereli",u:"a1u1",tr:"Nerelisin?",en:"Where are you from?",eg:["Londralıyım.","I am from London.","I am a Londoner"]},
-  {id:"yas",u:"a1u4",tr:"Kaç yaşındasın?",en:"How old are you?",eg:["Otuz iki yaşındayım.","I am thirty-two.","I am at the age of thirty-two"]},
+  {id:"nereli",u:"a1u1",tr:"Nerelisin?",en:"Where are you from?",eg:["Londralıyım.","I am from London."]},
+  {id:"yas",u:"a1u4",tr:"Kaç yaşındasın?",en:"How old are you?",eg:["Otuz iki yaşındayım.","I am thirty-two."]},
   {id:"dil",u:"a2u4",tr:"Hangi dilleri konuşabiliyorsun?",en:"Which languages can you speak?",eg:["İngilizce ve biraz Türkçe konuşabiliyorum.","I can speak English and a little Turkish."]},
   {id:"neden",u:"b1u6",tr:"Türkçeyi neden öğreniyorsun?",en:"Why are you learning Turkish?",eg:["Arkadaşlarımla Türkçe konuşmak için öğreniyorum.","I am learning it to speak Turkish with my friends."]}]},
  {id:"aile",tr:"Ailem",en:"My family",q:[
   {id:"adi",u:"a1u3",tr:"Annenin adı ne?",en:"What is your mother's name?",eg:["Annemin adı Ayşe.","My mother's name is Ayşe."]},
-  {id:"kimler",u:"a1u4",tr:"Ailende kimler var?",en:"Who is in your family?",eg:["Annem, babam ve bir kız kardeşim var.","There's my mother, my father and a sister.","my mother, my father and a girl sibling of mine exist"]},
+  {id:"kimler",u:"a1u4",tr:"Ailende kimler var?",en:"Who is in your family?",eg:["Annem, babam ve bir kız kardeşim var.","My mother, my father and a sister."]},
   {id:"simdi",u:"a1u5",tr:"Annen şu an ne yapıyor?",en:"What is your mother doing right now?",eg:["Annem şu an evde kitap okuyor.","My mother is reading a book at home right now."]},
-  {id:"buyuk",u:"a2u5",tr:"Kardeşin senden büyük mü?",en:"Is your brother or sister older than you?",eg:["Evet, ablam benden iki yaş büyük.","Yes, my sister is two years older than me.","yes, my older sister is two years bigger than me"]},
-  {id:"cocukken",u:"b1u9",tr:"Çocukken ailenle ne yapardın?",en:"What did you use to do with your family as a child?",eg:["Çocukken her yaz ailemle denize giderdik.","When I was little, my family and I used to go to the seaside every summer."]}]},
+  {id:"buyuk",u:"a2u5",tr:"Kardeşin senden büyük mü?",en:"Is your brother or sister older than you?",eg:["Evet, ablam benden iki yaş büyük.","Yes, my sister is two years older than me."]},
+  {id:"cocukken",u:"b1u9",tr:"Çocukken ailenle ne yapardın?",en:"What did you use to do with your family as a child?",eg:["Çocukken her yaz ailemle denize giderdik.","As a child I used to go to the sea with my family every summer."]}]},
  {id:"ev",tr:"Evim",en:"My home",q:[
   {id:"nerede",u:"a1u4",tr:"Evin nerede?",en:"Where is your home?",eg:["Evim şehir merkezinde, bir parkın yanında.","My home is in the city centre, next to a park."]},
   {id:"oda",u:"a1u4",tr:"Evinde kaç oda var?",en:"How many rooms are there in your home?",eg:["Evimde üç oda var.","There are three rooms in my home."]},
