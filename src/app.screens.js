@@ -271,7 +271,7 @@ function secVocab(u){
   u.vocab.forEach((w,i)=>{
     const on=isStarred(w[0],w[1]);
     h+='<div class="vrow">'+spkBtn(w[0],{aria:"Listen"})+
-      '<div class="grow"><div class="vtr">'+esc(w[0])+'</div><div class="ven">'+esc(w[1])+'</div></div>'+
+      '<div class="grow"><div class="vtr">'+esc(w[0])+'</div><div class="ven">'+esc(w[1])+litNote(w[2])+'</div></div>'+
       starBtn(on,"toggleStar("+i+")","Save word")+'</div>';
   });
   h+='</div><button class="btn ghost" onclick="starAll(\''+u.id+'\')">'+(allIn?"Tümü listede ✓":"Tüm kelimeleri tekrara ekle")+'</button>'+
@@ -292,7 +292,7 @@ function gramCard(u){
   g.body.forEach(p=>{h+='<p>'+p+'</p>';});
   if(g.tbl){h+='<table class="table">';g.tbl.forEach(r=>{h+='<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>';});h+='</table>';}
   h+='<div class="egs">';
-  g.eg.forEach(e=>{h+='<div class="eg"><b>'+esc(e[0])+'</b><span>'+esc(e[1])+'</span></div>';});
+  g.eg.forEach(e=>{h+='<div class="eg"><b>'+esc(e[0])+'</b><span>'+esc(e[1])+litNote(e[2])+'</span></div>';});
   return h+'</div></div>';
 }
 /* How the unit's Turkish is actually said, where that differs from how it
@@ -386,7 +386,7 @@ function readPassage(u){
   r.lines.forEach((ln,i)=>{
     h+='<p class="ln" id="ln'+i+'" onclick="lineTap(event,'+i+')">'+
       '<button class="sbtn ln-spk" onclick="event.stopPropagation();sayLine('+i+')" aria-label="Listen">'+IC.spk+'</button>'+
-      glossify(ln[0],r.gloss,okwOf(u))+'<em style="display:none">'+esc(ln[1])+'</em></p>';
+      glossify(ln[0],r.gloss,okwOf(u))+'<em style="display:none">'+esc(ln[1])+litNote(ln[2])+'</em></p>';
   });
   h+='</div>';
   if(r.gloss){

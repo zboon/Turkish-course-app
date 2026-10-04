@@ -3,7 +3,7 @@
    draws a screen. */
 
 /* ===================== app ===================== */
-const APP_VERSION="v3.88";
+const APP_VERSION="v3.89";
 
 /* ===================== storage ===================== */
 const KEY="turkce-course-v1";
@@ -199,6 +199,15 @@ const IC={
 
 /* Two controls appear beside a word wherever a word is listed — the
    speaker and the star. Built here so the five lists cannot drift. */
+/* The English is what is said; where the Turkish is built another way,
+   this is how it reads word for word, as a note under it. Hoşça kal is
+   "Goodbye", and word for word "stay well". A [tr, en] pair in the data
+   may carry it as a third string. Shown with the English, and after the
+   answer wherever the English is the prompt, since before it would hand
+   over the Turkish's shape. */
+function litNote(lit){
+  return lit?'<span class="lit">'+tx("word for word","kelimesi kelimesine")+': '+esc(lit)+'</span>':"";
+}
 function spkBtn(text,o){
   o=o||{};
   return '<button class="sbtn"'+(o.style?' style="'+o.style+'"':'')+

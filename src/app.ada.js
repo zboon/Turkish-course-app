@@ -220,7 +220,7 @@ function renderAdaIsl(){
     h+='<div class="card adaq"><div class="row" style="gap:.4rem"><p class="lead grow" style="margin:0">'+esc(q.tr)+'</p>'+
       '<button class="sbtn" onclick="adaHearQ(\''+i.id+'\',\''+q.id+'\')">'+IC.spk+'</button></div>'+
       '<p class="ven">'+esc(q.en)+'</p>'+
-      '<p class="tiny adaeg">'+tx('For example','Örneğin')+': <span class="adaegt">'+esc(q.eg[0])+'</span> · '+esc(q.eg[1])+'</p>';
+      '<p class="tiny adaeg">'+tx('For example','Örneğin')+': <span class="adaegt">'+esc(q.eg[0])+'</span> · '+esc(q.eg[1])+litNote(q.eg[2])+'</p>';
     mine.forEach(function(x){
       h+=(ADAF&&(ADAF.edit===x.id||ADAF.fix===x.id))?adaForm(x,q):adaRow(x);
     });

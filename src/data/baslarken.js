@@ -205,13 +205,13 @@ const BASLA=[
       "If in doubt, use siz. Being too polite is never a mistake; being too familiar can be."],
    rows:[["Nasılsın?","How are you? — to a friend",""],["Nasılsınız?","How are you? — politely, or to several people",""]]},
   {h:"İlk kelimeler", en:"first phrases",
-   rows:[["Merhaba.","hello",""],["Günaydın.","good morning",""],["İyi akşamlar.","good evening",""],["Teşekkür ederim.","thank you",""],["Sağ ol.","thanks — casual",""],["Lütfen.","please",""],["Evet.","yes",""],["Hayır.","no",""],["Tamam.","okay",""],["Pardon.","excuse me, sorry",""],["Anlamadım.","I didn't understand",""],["Bir daha söyler misiniz?","could you say that again?",""],["Biraz Türkçe konuşuyorum.","I speak a little Turkish",""]]},
+   rows:[["Merhaba.","hello",""],["Günaydın.","good morning","","the day is bright"],["İyi akşamlar.","good evening","","good evenings"],["Teşekkür ederim.","thank you","","I make thanks"],["Sağ ol.","thanks — casual","","be healthy"],["Lütfen.","please",""],["Evet.","yes",""],["Hayır.","no",""],["Tamam.","okay",""],["Pardon.","excuse me, sorry",""],["Anlamadım.","I didn't understand",""],["Bir daha söyler misiniz?","could you say that again?","","do you say it once more?"],["Biraz Türkçe konuşuyorum.","I speak a little Turkish",""]]},
   {h:"Vedalaşma", en:"saying goodbye",
    p:["Goodbye depends on who is leaving. The one who leaves says <i>Hoşça kal</i>, or <i>Hoşça kalın</i> to someone you call siz. The one who stays says <i>Güle güle</i>."],
-   rows:[["Hoşça kal.","goodbye — said by the one leaving; word for word, stay well",""],["Güle güle.","goodbye — said by the one staying; word for word, go smiling",""]]},
+   rows:[["Hoşça kal.","goodbye — said by the one leaving","","stay well"],["Güle güle.","goodbye — said by the one staying","","go smiling"]]},
   {h:"Her gün duyacakların", en:"three you will hear every day",
    p:["Each has no English equivalent. They are said so often that leaving them out is noticed."],
-   rows:[["Kolay gelsin.","to someone working — may it come easy",""],["Afiyet olsun.","to someone eating — enjoy your meal; word for word, may it do you good",""],["Geçmiş olsun.","to someone ill, or after a mishap — may it pass",""]]}
+   rows:[["Kolay gelsin.","to someone working — hope it goes well","","may it come easy"],["Afiyet olsun.","to someone eating — enjoy your meal","","may it do you good"],["Geçmiş olsun.","to someone ill, or after a mishap — get well soon, or sorry to hear that","","may it be past"]]}
  ],
  check:[
   {t:"mc", q:"You ask a shopkeeper you have never met how they are. Which do you say?", a:["Nasılsınız?","Nasılsın?"], c:0,

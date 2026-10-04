@@ -31,13 +31,13 @@ function sentenceBank(){
   if(!us.length&&sc!=="all")us=UNITS.filter(function(u){return metLines(u.id);});
   us.forEach(function(u){
     u.read.lines.forEach(function(ln,i){
-      out.push({k:"s:"+u.id+"#"+i,tr:sayable(ln[0]),en:ln[1],lv:u.lv,from:u.tr});
+      out.push({k:"s:"+u.id+"#"+i,tr:sayable(ln[0]),en:ln[1],lit:ln[2]||"",lv:u.lv,from:u.tr});
     });
   });
   return out;
 }
 function chunkBank(){
-  return CHUNKS.map(function(c,i){return {k:"k:"+i,tr:c[0],en:c[1],lv:"Kalıp",from:"günlük konuşma"};});
+  return CHUNKS.map(function(c,i){return {k:"k:"+i,tr:c[0],en:c[1],lit:c[2]||"",lv:"Kalıp",from:"günlük konuşma"};});
 }
 /* Reviews first, oldest due first; new sentences stay in course order,
    so the mode walks the material rather than sampling it at random, and
@@ -269,7 +269,7 @@ function renderProdRun(){
     h+='<p class="mark" id="pcount" style="font-size:3rem;margin:.8rem 0 .1rem;color:var(--turk)">'+PR.left+'</p>'+
      '<p class="tiny">Şimdi yüksek sesle söyle · say it out loud now</p>';
   }else if(PR.phase==="model"){
-    h+='<p style="font-family:\'Crimson Pro\',serif;font-size:1.6rem;line-height:1.35;margin:.8rem 0 0">'+esc(it.tr)+'</p>'+
+    h+='<p style="font-family:\'Crimson Pro\',serif;font-size:1.6rem;line-height:1.35;margin:.8rem 0 0">'+esc(it.tr)+'</p>'+litNote(it.lit)+
      '<button class="sbtn" style="margin-top:.6rem" onclick="prodSay()">'+IC.spk+' tekrar</button>';
   }else{
     h+='<p style="font-family:\'Crimson Pro\',serif;font-size:1.5rem;line-height:1.35;margin:.8rem 0 0">'+esc(PR.build[PR.bi])+'</p>'+

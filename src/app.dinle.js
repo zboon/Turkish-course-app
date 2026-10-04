@@ -39,7 +39,7 @@ function replayLeft(){return dreplay()===0?99:dreplay()-(DK?DK.plays:0);}
    material rather than disagreeing about what is in range. */
 function listenBank(pfx){
   return sentenceBank().map(function(it){
-    return {k:pfx+it.k.slice(2),tr:it.tr,en:it.en,lv:it.lv,from:it.from};
+    return {k:pfx+it.k.slice(2),tr:it.tr,en:it.en,lit:it.lit,lv:it.lv,from:it.from};
   });
 }
 function dinleDue(pfx){
@@ -223,7 +223,7 @@ function renderDinleRun(){
     h+='<div class="card"><p class="dline">'+r.ops.map(function(o){
       return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';
     }).join(" ")+'</p>'+
-     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+'</p>'+
+     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+litNote(it.lit)+'</p>'+
      spkBtn(it.tr,{text:" tekrar",style:"margin-top:.4rem"})+'</div>';
     h+='<div class="fb '+(pass?"ok":"no")+'"><b>'+r.hit+' / '+r.of+' kelime'+(pass?" · Doğru":"")+'</b>'+
      tx((r.extra?"Struck-through words were not said. ":"")+
@@ -236,7 +236,7 @@ function renderDinleRun(){
   }else{
     h+='<div class="card" style="text-align:center;padding:1.6rem 1rem">'+
      '<p style="font-family:\'Crimson Pro\',serif;font-size:1.5rem;line-height:1.35;margin:0">'+esc(it.tr)+'</p>'+
-     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+'</p>'+
+     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+litNote(it.lit)+'</p>'+
      '<button class="sbtn" style="margin-top:.5rem" onclick="dinleSay()">'+IC.spk+' tekrar</button></div>';
     h+='<div class="btn-row"><button class="btn ghost" onclick="hearMark(false)">Anlamadım</button>'+
      '<button class="btn" onclick="hearMark(true)">Anladım</button></div>';

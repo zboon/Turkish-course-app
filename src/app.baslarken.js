@@ -101,11 +101,11 @@ function renderBaslarken(){
    Turkish word, and the hint (a sound, a syllable split, the pieces) sits
    under the English. The hint is not an interface label, so it is not in
    a class the English pass reads. */
-function baslaRow(tr,en,hint,letter){
+function baslaRow(tr,en,hint,letter,lit){
   return '<div class="vrow">'+(letter?'<span class="bl">'+esc(letter)+'</span>':'')+spkBtn(tr,{aria:"Listen"})+
     '<div class="grow"><div class="vtr">'+esc(tr)+'</div>'+
     (en?'<div class="ven">'+esc(en)+'</div>':'')+
-    (hint?'<div class="hint">'+esc(hint)+'</div>':'')+'</div></div>';
+    (hint?'<div class="hint">'+esc(hint)+'</div>':'')+litNote(lit)+'</div></div>';
 }
 function renderBasla(){
   const i=baslaIdx(V.u);
@@ -124,7 +124,7 @@ function renderBasla(){
     h+='<h2 class="sec">'+esc(pt.h)+'<span class="gl">'+esc(pt.en)+'</span></h2><div class="card gram">';
     (pt.p||[]).forEach(function(x){h+='<p>'+x+'</p>';});
     (pt.letters||[]).forEach(function(r){h+=baslaRow(r[1],r[2],r[3],r[0]);});
-    (pt.rows||[]).forEach(function(r){h+=baslaRow(r[0],r[1],r[2]);});
+    (pt.rows||[]).forEach(function(r){h+=baslaRow(r[0],r[1],r[2],"",r[3]);});
     h+='</div>';
   });
   h+='<h2 class="sec">Alıştırma</h2>';

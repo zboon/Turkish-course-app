@@ -696,6 +696,57 @@ step("üretim · chunks", () => {
 /* A speaking task with no model and no one to check it was retired in
    v3.88: free talk about yourself goes through Adacıklar, where a person
    checks it before it is drilled. What is left points there. */
+/* The English is what is said; a third string in a pair is how the
+   Turkish reads word for word, drawn under it. Shown with the English on
+   the unit's tabs, and only after the answer where the English is the
+   prompt. The notes are injected here, so the check is of the drawing and
+   not of whichever lines happen to carry one. */
+step("word for word: the note under the natural English", () => {
+  ev("wipe(); stopPlay()");
+  const keep = ev("JSON.stringify([UNITS[0].vocab,UNITS[0].gram.eg,UNITS[0].read.lines,CHUNKS[0]])");
+  ev("UNITS[0].vocab[8][2]='LITVOC'; UNITS[0].gram.eg[0][2]='LITEG';" +
+     "UNITS[0].read.lines.forEach(function(l,i){l[2]='LITLN'+i}); CHUNKS[0][2]='LITCH'");
+  const LIT = /class="lit"[^>]*>[\s\S]*?word for word/;
+
+  ev("go('unit','a1u1','v')");
+  ok(lastPaint.includes("LITVOC") && LIT.test(lastPaint), "the word list does not show a word's note");
+  ev("go('unit','a1u1','g')");
+  ok(lastPaint.includes("LITEG"), "a grammar example does not show its note");
+  ev("go('unit','a1u1','r')");
+  ok(/<em style="display:none">[^<]*<span class="lit">[\s\S]*?LITLN2/.test(lastPaint), "a passage line's note is not inside its hidden English");
+
+  /* Üretim: the English is the prompt, so the note waits for the model. */
+  ok(ev("sentenceBank().find(function(x){return x.k==='s:a1u1#2'}).lit") === "LITLN2", "a sentence does not carry its note into Üretim");
+  ok(ev("chunkBank()[0].lit") === "LITCH", "a prefab does not carry its note");
+  ok(ev("listenBank('d:').find(function(x){return x.k==='d:a1u1#2'}).lit") === "LITLN2", "Dinleme does not carry the note");
+  ev("startProd('s'); PR.q=PR.q.filter(function(x){return x.k==='s:a1u1#2'}); PR.i=0; prodStep()");
+  ok(ev("PR.phase") === "gap" && !lastPaint.includes("LITLN2"), "Üretim shows the note before the Turkish is said");
+  ev("prodModel()");
+  ok(lastPaint.includes("LITLN2"), "Üretim does not show the note with the model");
+  ev("stopPlay()"); drain(60000);
+
+  /* Derse başla: a line to say shows its note only once it is shown. */
+  ev("startAdim('a1u1',1); AD.i=AD.q.findIndex(function(s){return s.t==='say'}); render()");
+  const si = ev("adCur().i");
+  ok(!lastPaint.includes("LITLN" + si), "a line to say shows its note before Göster");
+  ev("adSay()");
+  ok(lastPaint.includes("LITLN" + si), "a line to say does not show its note after Göster");
+  ev("stopPlay()"); drain(60000);
+
+  /* Dilbilgisi tekrarı carries the example's note. */
+  ok(ev("gramItem({k:'y:a1u1',u:unit('a1u1')}).lit") === "LITEG", "a grammar item does not carry its example's note");
+
+  /* Başlarken: a row's fourth string is its note. */
+  const L = ev("BASLA.findIndex(function(L){return L.id==='nezaket'})");
+  ev("var _row=BASLA[" + L + "].parts.find(function(p){return p.rows}).rows[0]; var _rowKeep=_row.slice(); _row[3]='LITROW'; go('basla','nezaket')");
+  ok(lastPaint.includes("LITROW"), "a Başlarken row does not show its note");
+  ev("_row.length=0; _rowKeep.forEach(function(x){_row.push(x)})");
+
+  /* Nothing written by drawing any of it. */
+  ev("var _k=" + keep + "; UNITS[0].vocab=_k[0]; UNITS[0].gram.eg=_k[1]; UNITS[0].read.lines=_k[2]; CHUNKS[0]=_k[3]; WIDX=null");
+  ok(ev("UNITS[0].read.lines.every(function(l){return l.length===2||l[2].indexOf('LIT')<0})"), "the injected notes were not taken back out");
+});
+
 step("no unchecked speaking task, and the way to Adacıklar", () => {
   ev("wipe()");
   ev("go('unit','a1u1','r')");
