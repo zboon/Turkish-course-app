@@ -1441,6 +1441,20 @@ the note. The ids are what map an answer back to the source; a changed
 string changes its `tx:` hash, so rebuild and republish the page only
 between rounds, not while someone is part-way through it.
 
+**The third round (v3.89)** is the same page and the same two addresses
+with a new storage key (`tr-review-v3`), so it starts with no answers;
+the learner chose a fresh start over carrying the second round's open
+flags. It opens with *Şüpheli beş cümle*, the five Turkish lines flagged
+while the English was rewritten, each with the question in both
+languages; then *Kalıp sözler* (the prefabs and Başlarken rows) and
+*Çeviriler* by level: every pair whose English or word-for-word note
+changed in v3.89, named in `tools/review-round3.json` (ids such as
+`ln:a1u1#3`, `ch:24`, `bs:nezaket#r2.0`) so the round keeps its size
+while it is open, and shown on the page as `c:<id>`. Then the second
+round's unfinished sections. The tales section, finished in round two,
+is gone; their changed lines are in the translations. When the round is
+over, a new round is a new key and a new list.
+
 The second round's first answers (v3.88) closed the tales section and
 repeated the six English notes v3.81 had already taken, so the tales
 needed nothing more. From Başlarken: *yol* is "road, way"; ş is given as

@@ -6,10 +6,14 @@
 
    Everything in the course is written by the author, and only the spoken
    material (Konuşma dili, v3.61) has been read by a native speaker. This
-   page gathers the next round, in the order a learner meets it: the
-   Nasreddin Hoca tales, the lessons before unit one, the interface
-   Turkish, the Adacıklar questions and the words to tap in every
-   passage. It is built from src/, so it can be rebuilt whenever the
+   is the third round (v3.89). It opens with what the second round's
+   answers led to: five Turkish lines found doubtful while the English was
+   rewritten, then every pair whose English or word-for-word note changed
+   in v3.89 (listed in review-round3.json, so the round stays the same
+   size while it is open), and then the second round's unfinished
+   sections: the lessons before unit one, the interface Turkish, the
+   Adacıklar questions and the words to tap. The tales, finished in round
+   two, are left out except where their English changed. It is built from src/, so it can be rebuilt whenever the
    Turkish changes, and every item carries a stable id (a tale line
    hk:nh01#3, a word ok:a1u5:kahvaltıda, an instruction tx:<hash>) so the
    answers that come back can be found in the source again.
@@ -23,12 +27,12 @@ const fs = require("fs"), path = require("path"), vm = require("vm");
 const ROOT = path.join(__dirname, "..");
 const { interfaceStrings } = require("./strings.js");
 
-const files = ["levels", "a1", "a2", "b1", "b2", "c1", "c2", "_close", "baslarken", "ada", "okuma", "hikaye"];
+const files = ["levels", "a1", "a2", "b1", "b2", "c1", "c2", "_close", "baslarken", "ada", "okuma", "hikaye", "chunks"];
 const sb = {};
 vm.createContext(sb);
 vm.runInContext(files.map(n => fs.readFileSync(path.join(ROOT, "src/data", n + ".js"), "utf8")).join("\n") +
-  "\nthis.OUT={UNITS:UNITS,BASLA:BASLA,ADA:ADA,OKW:OKW,HIKAYE:HIKAYE};", sb);
-const { UNITS, BASLA, ADA, OKW, HIKAYE } = sb.OUT;
+  "\nthis.OUT={UNITS:UNITS,BASLA:BASLA,ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,CHUNKS:CHUNKS};", sb);
+const { UNITS, BASLA, ADA, OKW, HIKAYE, CHUNKS } = sb.OUT;
 const unit = id => UNITS.find(u => u.id === id);
 
 /* A short stable id for a string, so an instruction keeps its id when
@@ -45,20 +49,71 @@ const WORD = /[A-Za-zÇĞİÖŞÜçğıöşüÂÎÛâîû]+(?:'[A-Za-zÇĞİÖŞ
    en (its English), x (extra lines: [label, text])}. */
 const SECS = [];
 
-/* 1 · the tales */
+/* 1 · five lines found doubtful in v3.89, left unchanged for this check */
 {
-  const it = [];
-  HIKAYE.forEach(h => {
-    const g = h.lv + " · " + h.n + " · " + h.read.t;
-    it.push({ id: "hk:" + h.id + "#t", g, gn: h.read.note || "", tr: h.read.t, en: "title", x: [] });
-    h.read.lines.forEach((l, i) => it.push({ id: "hk:" + h.id + "#" + i, g, tr: l[0], en: l[1], x: [] }));
+  const Q = [
+    ["ln:a2u3#1", "İki kasaba arasında otobüsle gitmek için “geçtim” doğal mı, yoksa “gittim” mi denir?",
+      "Is geçtim natural for a bus ride from one town to another, or would you say gittim?"],
+    ["eg:b2u1#0", "Bu ünite ettirgen çatıyı öğretiyor. “Yaptırıldı”, Sinan’ın camiyi başkasına yaptırdığını söylemiyor mu? Doğrusu “Mimar Sinan tarafından yapıldı” mı, yoksa padişahı mı anmak gerekir?",
+      "This unit teaches the causative. Does yaptırıldı not say that Sinan had someone else build it? Should it be yapıldı, or name the sultan who commissioned it?"],
+    ["ln:b2u4#6", "“söylese … çalmıyor” birlikte doğal mı? “söylerse … çalmıyor” ya da “söylese … çalmaz” mı olmalı?",
+      "Do söylese and çalmıyor go together, or should it be söylerse … çalmıyor, or söylese … çalmaz?"],
+    ["ln:b2u5#0", "Hikâyenin geri kalanı oğlu anlatıyor. Burada tüccarın kendisi mi konuşuyor gibi? “ölmeden önce oğluna üç nasihat vermiş” daha mı doğru?",
+      "The rest of the story follows the son. Does this make the merchant himself the speaker? Would “ölmeden önce oğluna üç nasihat vermiş” be right?"],
+    ["ln:b2u7#6", "“tavandaki kedi” tuhaf mı? “çatıdaki” ya da “dama çıkan kedi” mi denmeli?",
+      "Is “the cat on the ceiling” odd? Should it be çatıdaki, or dama çıkan kedi?"]
+  ];
+  const it = Q.map(([id, tq, eq]) => {
+    const [k, rest] = id.split(":"), [uid, i] = rest.split("#"), u = unit(uid);
+    const p = (k === "eg" ? u.gram.eg : u.read.lines)[+i];
+    return { id: "q:" + id.slice(3), g: u.lv + " · " + u.n + " · " + u.tr, tr: p[0], en: p[1], x: [["soru", tq], ["", eq]] };
   });
-  SECS.push({ k: "hikaye", tr: "Nasreddin Hoca fıkraları", en: "The Nasreddin Hoca tales", min: 20, it,
-    p: "Yeni yazılmış on iki kısa fıkra, uygulamanın en kolay okuma metinleri. A1’dekiler şimdiki zamanla, sesli anlatılır gibi; A2’dekiler geçmiş zamanla anlatılıyor. Dil bilerek basit tutuldu. Asıl soru: cümle doğal mı, bir Türk bu fıkrayı böyle anlatır mı? İngilizce çeviri yanlışsa onu da yaz.",
-    e: "Twelve new short tales, the easiest reading in the app: A1 in the present tense, as a fıkra is told aloud, A2 in the past. Simple on purpose. Is each sentence natural, and is this how a Turk would tell it? Flag a wrong English line too." });
+  SECS.push({ k: "supheli", tr: "Şüpheli beş cümle", en: "Five doubtful sentences", min: 5, it,
+    p: "Çeviriler yeniden yazılırken bu beş Türkçe cümle bana tuhaf geldi. Değiştirmedim; karar senin. Her birinin altında sorum var. Cümle doğruysa işaretleme.",
+    e: "While the English was being rewritten, these five Turkish sentences looked wrong. They are unchanged until you decide. My question is under each. If a sentence is fine, leave it unmarked." });
 }
 
-/* 2 · the lessons before unit one */
+/* 2 to 5 · every pair whose English or word-for-word note changed in v3.89 */
+{
+  const ROUND = JSON.parse(fs.readFileSync(path.join(__dirname, "review-round3.json"), "utf8"));
+  const title = u => u.lv + " · " + u.n + " · " + u.tr;
+  const item = id => {
+    const [k, rest] = [id.slice(0, id.indexOf(":")), id.slice(id.indexOf(":") + 1)];
+    let p, g, lv;
+    if (k === "vc" || k === "eg" || k === "ln") {
+      const [uid, i] = rest.split("#"), u = unit(uid);
+      p = (k === "vc" ? u.vocab : k === "eg" ? u.gram.eg : u.read.lines)[+i]; g = title(u); lv = u.lv;
+    } else if (k === "ch") { p = CHUNKS[+rest]; g = "Kalıplar"; lv = "K"; }
+    else if (k === "hk") {
+      const [tid, i] = rest.split("#"), h = HIKAYE.find(x => x.id === tid);
+      p = h.read.lines[+i]; g = "Nasreddin Hoca · " + h.n + " · " + h.read.t; lv = h.lv;
+    } else if (k === "ada") {
+      const [isl, qid] = rest.split("."), i = ADA.find(x => x.id === isl), q = i.q.find(x => x.id === qid);
+      p = q.eg; g = "Adacıklar · " + i.tr + " · " + q.tr; lv = "A2";
+    } else if (k === "bs") {
+      const [bid, rr] = rest.split("#r"), [pi, ri] = rr.split(".").map(Number), b = BASLA.find(x => x.id === bid);
+      const r = b.parts[pi].rows[ri]; p = [r[0], r[1], r[3]]; g = "Başlarken · " + b.tr; lv = "K";
+    }
+    if (!p) throw new Error("review: round 3 names " + id + ", which is gone");
+    return { lv, it: { id: "c:" + id, g, tr: p[0], en: p[1], x: p[2] ? [["kelimesi kelimesine", p[2]]] : [] } };
+  };
+  const all = ROUND.map(item);
+  const P = "İngilizce artık Türkçeyi kelimesi kelimesine değil, bir İngilizin o anda gerçekten söyleyeceği şekilde veriyor; Türkçe farklı kurulmuşsa altında “kelimesi kelimesine” notu var. Bak: İngilizce anlam doğru ve doğal mı? Not, Türkçenin kelime kelime ne dediğini doğru gösteriyor mu? Türkçede bir yanlış görürsen onu da yaz.";
+  const E = "The English now says what an English speaker would actually say, and where the Turkish is built differently a “word for word” note sits under it. Check: is the English right and natural, and does the note show what the Turkish says word by word? Flag any Turkish that is wrong too.";
+  SECS.push({ k: "kalip", tr: "Kalıp sözler", en: "Set phrases: greetings, wishes, the everyday", min: 20, it: all.filter(a => a.lv === "K").map(a => a.it),
+    p: "Selamlaşmalar, dilekler, günlük konuşmanın hazır kalıpları ve ilk derslerdeki nezaket sözleri. Kelimesi kelimesine notları en çok burada. " + P,
+    e: "Greetings, wishes, the ready-made pieces of everyday talk and the polite phrases of the first lessons, where most of the word-for-word notes are. " + E });
+  [["A1", "A2"], ["B1", "B2"], ["C1", "C2"]].forEach((lv, n) => {
+    SECS.push({ k: "ceviri" + lv.join(""), tr: "Çeviriler · " + lv.join("–"), en: "Translations · " + lv.join("–"), min: [20, 20, 20][n],
+      it: all.filter(a => lv.includes(a.lv)).map(a => a.it),
+      p: "Okuma metinlerinin, dilbilgisi örneklerinin" + (n === 0 ? ", fıkraların ve Adacıklar’daki örnek cevapların" : "") + " değişen çevirileri. Kelimeler (tek kelime ya da kalıp) yalnızca not aldı; İngilizceleri değişmedi. " + P +
+        (n === 2 ? " Bazı C1–C2 metinleri bilerek eski ya da resmî (Osmanlıca dilekçe, Hacivat); onların İngilizcesi de o havayı koruyor." : ""),
+      e: "The changed translations of reading passages, grammar examples" + (n === 0 ? ", the tales and the Adacıklar model answers" : "") + ". Vocabulary only gained notes; its English is unchanged. " + E +
+        (n === 2 ? " Some C1–C2 passages are old or formal Turkish on purpose (an Ottoman petition, Hacivat), and their English keeps that register." : "") });
+  });
+}
+
+/* 6 · the lessons before unit one */
 {
   const it = [];
   BASLA.forEach(b => {
@@ -68,7 +123,7 @@ const SECS = [];
       it.push({ id: "bs:" + b.id + "#h" + pi, g, tr: p.h, en: p.en, x: [] });
       (p.p || []).forEach((t, ti) => it.push({ id: "bs:" + b.id + "#p" + pi + "." + ti, g, prose: t, x: [] }));
       (p.letters || []).forEach((l, li) => it.push({ id: "bs:" + b.id + "#l" + pi + "." + li, g, tr: l[0] + " · " + l[1], en: l[2], x: l[3] ? [["söylenişi", l[3]]] : [] }));
-      (p.rows || []).forEach((r, ri) => it.push({ id: "bs:" + b.id + "#r" + pi + "." + ri, g, tr: r[0], en: r[1], x: r[2] ? [["not", r[2]]] : [] }));
+      (p.rows || []).forEach((r, ri) => it.push({ id: "bs:" + b.id + "#r" + pi + "." + ri, g, tr: r[0], en: r[1], x: (r[2] ? [["not", r[2]]] : []).concat(r[3] ? [["kelimesi kelimesine", r[3]]] : []) }));
     });
     b.check.forEach((c, ci) => {
       const x = [];
@@ -85,7 +140,7 @@ const SECS = [];
     e: "Six short lessons for someone who has never seen Turkish: the alphabet, spelling, stress, endings, word order and politeness. The explanations are in English, for a learner with no Turkish yet. The check is whether what they say about Turkish is true: a sound, a stress, an example, the right answer to a question." });
 }
 
-/* 3 and 4 · the interface */
+/* 7 and 8 · the interface */
 {
   const all = interfaceStrings(ROOT);
   const tx = all.filter(x => x.kind === "tx"), ui = all.filter(x => x.kind === "ui");
@@ -100,7 +155,7 @@ const SECS = [];
     e: "The short Turkish on buttons, tabs and headings. Is it what a Turkish app would put on a button?" });
 }
 
-/* 5 · Adacıklar */
+/* 9 · Adacıklar */
 {
   const it = [];
   ADA.forEach(i => {
@@ -113,7 +168,7 @@ const SECS = [];
     e: "Questions the learner answers about their own life, each with a model answer to adapt. Is each question what you would really ask someone, and is the model answer natural?" });
 }
 
-/* 6 to 8 · the words to tap */
+/* 10 to 12 · the words to tap */
 function wordItems(id, g, lines, w) {
   const it = [];
   Object.keys(w).forEach(k => {
