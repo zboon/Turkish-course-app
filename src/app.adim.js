@@ -51,7 +51,7 @@ function adimFor(u){return !!u;}
 function adimTier(u){return u.lv==="A1"?0:u.lv==="A2"?1:2;}
 function adimWords(u){
   return u.vocab.map(function(w,i){
-    return {i:i,tr:w[0],say:vocabPrimary(w[0]).replace(/[?.!]+$/,""),en:w[1],em:RESIM[w[0]]||""};
+    return {i:i,tr:w[0],say:vocabPrimary(w[0]).replace(/[?.!]+$/,""),en:w[1],lit:w[2]||"",em:RESIM[w[0]]||""};
   });
 }
 function adimSpellable(w){return /^[a-zçğıöşüâîû]+$/.test(w.say)&&w.say.length<=10;}
@@ -70,13 +70,13 @@ function adimCloze(u,w){
       if(!core)continue;
       const blanked=raw.slice();
       blanked.splice(span[0],span[1],(m?m[1]:"")+"___"+(m?m[3]:""));
-      return {t:"cloze",w:w,q:blanked.join(" "),c:core,alts:[fold(core)],hint:line[1],full:line[0]};
+      return {t:"cloze",w:w,q:blanked.join(" "),c:core,alts:[fold(core)],hint:line[1],full:line[0],lit:line[2]||""};
     }
   }
   return null;
 }
 function adimType(w){return {t:"type",w:w,c:w.say,alts:vocabForms(w.tr)};}
-function adimGex(u){const e=pick(u.gram.eg);return {t:"gex",c:e[0],en:e[1]};}
+function adimGex(u){const e=pick(u.gram.eg);return {t:"gex",c:e[0],en:e[1],lit:e[2]||""};}
 const DERS=[["Kelimeler ve dilbilgisi","words and grammar"],["Okuma","reading"],["Tekrar ve konuşma","review and speaking"]];
 /* What the plan says about a unit's next lesson, and where it goes. */
 function dersLabel(u,k){
@@ -228,7 +228,7 @@ function renderAdim(){
      '<span class="acnt">'+(AD.i+1)+' / '+AD.q.length+'</span></div>';
   if(s.t==="word"){
     h+='<p class="qn">Yeni kelime</p><div class="card adw">'+(s.w.em?'<div class="pic">'+s.w.em+'</div>':'')+
-      '<div class="vtr">'+esc(s.w.tr)+'</div><div class="ven">'+esc(s.w.en)+'</div>'+spkBtn(s.w.say,{aria:"Listen"})+'</div>'+
+      '<div class="vtr">'+esc(s.w.tr)+'</div><div class="ven">'+esc(s.w.en)+litNote(s.w.lit)+'</div>'+spkBtn(s.w.say,{aria:"Listen"})+'</div>'+
       '<button class="btn" onclick="adNext()">Devam</button>';
   }else if(s.t==="hear"){
     h+='<p class="qn">Ne duydun?</p><div class="adw">'+spkBtn(s.w.say,{aria:"Listen",style:"width:64px;height:64px"})+'</div><div class="adopts">';
@@ -256,14 +256,14 @@ function renderAdim(){
     const ln=u.read.lines[s.i], hid=AD.tier===2&&!AD.txt;
     h+='<p class="qn">Okuma</p><p class="src" style="margin:0 .2rem .6rem"><b>'+esc(u.read.t)+'</b> · '+(s.i+1)+' / '+u.read.lines.length+'</p>'+
       '<div class="card adl">'+(hid?'<p class="adtr adhid">🎧</p>':'<p class="adtr">'+glossify(ln[0],u.read.gloss)+'</p>')+spkBtn(ln[0],{aria:"Listen"})+
-      (AD.shown&&!hid?'<p class="aden">'+esc(ln[1])+'</p>':'')+'</div>'+
+      (AD.shown&&!hid?'<p class="aden">'+esc(ln[1])+litNote(ln[2])+'</p>':'')+'</div>'+
       (hid?'<button class="btn ghost" onclick="adText()">Metni göster</button>':AD.shown?'':'<button class="btn ghost" onclick="adShow()">İngilizcesi</button>')+
       '<button class="btn" onclick="adNext()">Devam</button>';
   }else if(s.t==="say"){
     const ln=u.read.lines[s.i];
     h+='<p class="qn">Önce sen söyle</p><p class="src" style="margin:0 .2rem .6rem"><b>'+esc(u.read.t)+'</b> · '+(s.i+1)+' / '+u.read.lines.length+'</p>'+
       '<div class="card adl"><p class="q" style="margin:0">'+esc(ln[1])+'</p>'+
-      (AD.shown?'<p class="adtr">'+esc(ln[0])+'</p>'+spkBtn(ln[0],{aria:"Listen"}):'')+'</div>'+
+      (AD.shown?'<p class="adtr">'+esc(ln[0])+'</p>'+litNote(ln[2])+spkBtn(ln[0],{aria:"Listen"}):'')+'</div>'+
       (AD.shown?'<button class="btn" onclick="adNext()">Devam</button>'
                :'<p class="tiny" style="margin:0 .2rem .7rem">'+tx('Say it in Turkish, out loud, then check it against the model.','Türkçesini yüksek sesle söyle, sonra örnekle karşılaştır.')+'</p>'+
                 '<button class="btn" onclick="adSay()">Göster</button>');
@@ -319,11 +319,11 @@ function adFeedback(s){
   if(s.t==="gex"){
     const r=AD.j.res;
     ans='<p class="dline">'+r.ops.map(function(o){return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';}).join(" ")+'</p>'+
-      (r.same?'':'<p>'+esc(s.c)+'</p>');
+      (r.same?'':'<p>'+esc(s.c)+'</p>')+litNote(s.lit);
   }else if(s.t==="cloze"){
-    ans=' '+esc(s.full);
+    ans=' '+esc(s.full)+litNote(s.lit);
   }else{
-    ans=(s.w.em?' '+s.w.em:'')+' '+esc(s.w.say)+' — '+esc(s.w.en);
+    ans=(s.w.em?' '+s.w.em:'')+' '+esc(s.w.say)+' — '+esc(s.w.en)+litNote(s.w.lit);
   }
   let notes="";
   if(AD.j){

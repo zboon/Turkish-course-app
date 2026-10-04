@@ -89,7 +89,10 @@ const M = sandbox.OUT;
 
 /* ---------- helpers ---------- */
 const str = v => typeof v === "string" && v.trim().length > 0;
-const pairs = v => Array.isArray(v) && v.every(p => Array.isArray(p) && p.length === 2 && str(p[0]) && str(p[1]));
+/* A pair may carry a third string: how the Turkish reads word for word,
+   where the natural English (the second) is built another way. */
+const pairs = v => Array.isArray(v) && v.every(p => Array.isArray(p) && (p.length === 2 || (p.length === 3 && str(p[2]))) && str(p[0]) && str(p[1]));
+
 /* Fields the app prints through esc(); raw tags there render as literal text. */
 const TAGS = /<\/?(b|i|u|code|em|span|br)\b/i;
 
@@ -1700,7 +1703,7 @@ else {
       plain(w + " h", pt.h); plain(w + " en", pt.en);
       (pt.p || []).forEach((x, k) => plain(w + " p[" + k + "]", x));
       (pt.rows || []).forEach((r, k) => {
-        if (!Array.isArray(r) || r.length !== 3 || !str(r[0]) || typeof r[1] !== "string" || typeof r[2] !== "string") err(w + " row " + k, "must be [turkish, english, hint]");
+        if (!Array.isArray(r) || r.length < 3 || r.length > 4 || !str(r[0]) || typeof r[1] !== "string" || typeof r[2] !== "string" || (r.length === 4 && !str(r[3]))) err(w + " row " + k, "must be [turkish, english, hint] or [turkish, english, hint, word for word]");
         else r.forEach(x => { if (TAGS.test(x)) err(w + " row " + k, "carries HTML, which is escaped on screen"); if (x && (/!/.test(x) || INVIS.test(x))) err(w + " row " + k, "has an exclamation mark or an invisible character"); });
         basChecked++;
       });
@@ -1767,6 +1770,29 @@ else {
   }
 }
 
+/* ---------- word for word (the note under the natural English) ---------- */
+/* The English of a pair is what an English speaker would say; a third
+   string, where there is one, is how the Turkish reads word for word.
+   The app writes "word for word:" before it, so the data must not. */
+let litChecked = 0;
+{
+  const lits = [];
+  const each = (at, list, li) => (list || []).forEach((p, k) => { if (Array.isArray(p) && p[li] !== undefined) lits.push([at + " " + k, p[1], p[li], p[0]]); });
+  UNITS.forEach(u => { each(u.id + " vocab", u.vocab, 2); each(u.id + " eg", u.gram.eg, 2); each(u.id + " line", u.read.lines, 2); });
+  each("CHUNKS", CHUNKS, 2);
+  (M.HIKAYE || []).forEach(t => each(t.id + " line", t.read.lines, 2));
+  (M.ADA || []).forEach(i => i.q.forEach(q => { if (q.eg && q.eg[2] !== undefined) lits.push([i.id + "." + q.id + " eg", q.eg[1], q.eg[2], q.eg[0]]); }));
+  (M.BASLA || []).forEach(L => (L.parts || []).forEach((pt, j) => each(L.id + " part " + j + " row", pt.rows, 3)));
+  lits.forEach(([at, en, lit, tr]) => {
+    litChecked++;
+    if (!str(lit)) return err(at, "word-for-word note is empty");
+    if (M.fold(lit) === M.fold(en)) err(at, "word-for-word note is the English again: " + lit);
+    if (/^\s*(word for word|literally|lit\.)/i.test(lit)) err(at, "word-for-word note repeats the label the app adds: " + lit);
+    if (/[!"“”]/.test(lit) || INVIS.test(lit) || TAGS.test(lit)) err(at, "word-for-word note has an exclamation mark, quotes, markup or an invisible character: " + lit);
+    if (M.fold(lit) === M.fold(tr)) err(at, "word-for-word note is the Turkish itself: " + lit);
+  });
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -1783,6 +1809,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + nearChecked + " near-miss checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + nearChecked + " near-miss checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " + litChecked + " word-for-word notes · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

@@ -148,7 +148,7 @@ function wordIndex(){
         const r=score(f);
         if(r.n>best.n){best=r;bestForm=f;}
       });
-      words.push({tr:w[0],en:w[1],unit:u.id,lv:u.lv,
+      words.push({tr:w[0],en:w[1],lit:w[2]||"",unit:u.id,lv:u.lv,
                   k:fold(w[0]),form:bestForm,nat:best.n,where:best.where});
     });
   });
@@ -269,14 +269,14 @@ function repItem(e){
     const blanked=raw.slice();
     blanked.splice(span[0],span[1],(m?m[1]:"")+"___"+(m?m[3]:""));
     return {k:e.k,u:e.unit,tr:e.tr,en:e.en,kind:"cloze",q:blanked.join(" "),
-            c:core,alts:[fold(core)],hint:line[1],from:u.lv+" · "+u.tr};
+            c:core,alts:[fold(core)],hint:line[1],lit:line[2]||e.lit,from:u.lv+" · "+u.tr};
   }
   /* No usable context: ask for the word itself. "ağabey (abi)" is two ways
      of saying one thing, so either is accepted and the shorter written form
      is what gets shown — asking the learner to type the whole entry,
      brackets and all, is not a question about Turkish. */
   const u=unit(e.unit);
-  return {k:e.k,u:e.unit,tr:e.tr,en:e.en,kind:"recall",q:e.en,c:vocabPrimary(e.tr),
+  return {k:e.k,u:e.unit,tr:e.tr,en:e.en,lit:e.lit,kind:"recall",q:e.en,c:vocabPrimary(e.tr),
           alts:vocabForms(e.tr),hint:"",from:(u?u.lv+" · "+u.tr:e.lv)};
 }
 
@@ -415,7 +415,7 @@ function renderTekrarRun(){
   }else{
     h+='<div class="card" style="text-align:center;padding:1.3rem 1rem">'+
      '<p style="font-family:\'Crimson Pro\',serif;font-size:1.5rem;margin:0">'+esc(it.c)+'</p>'+
-     '<p class="sub" style="margin-top:.3rem">'+esc(it.tr+" · "+it.en)+'</p>'+
+     '<p class="sub" style="margin-top:.3rem">'+esc(it.tr+" · "+it.en)+litNote(it.lit)+'</p>'+
      '<button class="sbtn" style="margin-top:.4rem" onclick="tkSay()">'+IC.spk+' dinle</button></div>';
     h+='<div class="fb '+(TK.res?"ok":"no")+'"><b>'+(TK.res?(TK.second?tx("Right, on the second try","İkinci denemede doğru"):"Doğru"):"Yanlış")+'</b>'+
      (TK.res?tx("It comes back later and later from here.","Bundan sonra gittikçe daha geç gelecek.")
@@ -497,7 +497,7 @@ function gramItem(it){
   const u=it.u, eg=u.gram.eg;
   const n=(S.gram&&S.gram[it.k]&&S.gram[it.k].n)||0;
   const e=eg[n%eg.length];
-  return {k:it.k,id:u.id,en:e[1],c:e[0],t:u.gram.t,pt:u.gram.en,
+  return {k:it.k,id:u.id,en:e[1],lit:e[2]||"",c:e[0],t:u.gram.t,pt:u.gram.en,
           focus:u.focus,tbl:u.gram.tbl,lv:u.lv,from:u.lv+" · "+u.tr};
 }
 /* Weakest first, and "never drilled" is not a weakness — it sorts after
@@ -696,7 +696,7 @@ function renderGramRun(){
     h+='<div class="card"><p class="dline">'+r.ops.map(function(o){
       return '<span class="dw '+(o.t==="ok"?"":o.t)+'">'+esc(o.w)+'</span>';
     }).join(" ")+'</p>'+
-     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+'</p>'+
+     '<p class="sub" style="margin-top:.6rem">'+esc(it.en)+litNote(it.lit)+'</p>'+
      '<button class="sbtn" style="margin-top:.4rem" onclick="grSay()">'+IC.spk+' dinle</button></div>';
     const won=r.same||GR.over;
     h+='<div class="fb '+(won?"ok":"no")+'"><b>'+
