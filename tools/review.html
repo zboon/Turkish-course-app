@@ -89,13 +89,13 @@ textarea:focus,button:focus-visible{outline:2px solid var(--cobalt);outline-offs
 <div class="bar"><div class="in"><span class="t" id="count">0 / 0 bölüm</span><div class="meter"><i id="fill"></i></div><span class="t" id="flags"></span></div></div>
 <div class="wrap">
 <h1>Kurs Türkçesi Kontrolü</h1>
-<p class="lede">Türkçe öğrenenler için bir uygulamanın metinleri · a native speaker's check, part three</p>
+<p class="lede">Türkçe öğrenenler için bir uygulamanın metinleri · a native speaker's check, part four</p>
 
 <div class="intro">
-<p>Merhaba, ve verdiğin cevaplar için çok teşekkürler. Notlarını uyguladım; bu yeni bir tur, önceki sayfadaki cevaplar burada yok, baştan başlıyoruz.</p>
-<p class="en">Thank you for your answers. Your notes are in the app now. This is a new round: the answers from the last page are not carried over, so it starts fresh.</p>
-<p>Senin notlarından çıkan bir kural artık bütün uygulamada geçerli: İngilizce çeviri Türkçeyi kelimesi kelimesine değil, bir İngilizin o durumda gerçekten söyleyeceği şekilde veriyor. Türkçe farklı kurulmuşsa altında küçük bir <b>kelimesi kelimesine</b> notu var. Örneğin <i>Hoşça kal</i> → “Goodbye”, kelimesi kelimesine “stay well”. Bu turun ilk bölümleri bu yeni çevirileri ve notları gösteriyor.</p>
-<p class="en">Your notes became a rule for the whole app: the English now says what an English speaker would actually say, not the Turkish word for word, and where the Turkish is built differently a small “word for word” note sits under it. Hoşça kal is “Goodbye”, word for word “stay well”. The first sections of this round are those new translations and notes.</p>
+<p>Merhaba, ve dürüst değerlendirmen için çok teşekkürler. Bir önceki turdaki serbest çevirileri tamamen geri aldım; Türkçeye o turda da hiç dokunulmamıştı. Bu yeni bir tur, önceki cevaplar burada yok.</p>
+<p class="en">Thank you for your honest verdict. The free translations of the last round are fully undone (the Turkish was never touched there either). This is a new round, so earlier answers are not carried over.</p>
+<p>Bu sefer İngilizce çeviriler senin verdiğin kurala göre kontrol edildi: önce Türkçeye sadakat, sonra her anlamlı kelimenin karşılığı (de/da, bile, henüz, yine, tekrarlar, zamirler, zaman ifadeleri), en son doğal İngilizce. Kelimesi kelimesine notları kaldırıldı. Doğru ve yeterince yakın olan çevirilere dokunulmadı; ilk bölümler yalnızca değişenleri gösteriyor.</p>
+<p class="en">This time the English was checked against your rule: faithful to the Turkish first, then every meaningful word carried (de/da, bile, henüz, yine, repetitions, pronouns, time words), then natural English. The word-for-word notes are gone. Translations that were already right and close were left alone; the first sections show only what changed.</p>
 <p>Her maddeye tek tek cevap vermen gerekmiyor. Yalnızca yanlış ya da tuhaf olanları işaretle: <b>Düzelt</b>’e bas ve doğrusunu yaz, ya da emin değilsen <b>?</b>’e bas ve kısa bir not yaz. Bir bölümü bitirince en alttaki <b>Bu bölüm bitti</b> düğmesine bas; bu, işaretlemediğin her şeyin doğru olduğu anlamına gelir.</p>
 <p class="en">You only need to mark what is wrong or odd: Düzelt and write the fix, or ? and a short note if you are not sure. When you finish a section, press “Bu bölüm bitti” at its end; that says everything you did not mark is fine.</p>
 <p>Bölümler önem sırasına göre dizildi; ilk bölüm yalnızca beş cümle. Hepsini yapmak gerekmez. Cevapların bu cihazda saklanır, ara verip sonra devam edebilirsin. İstediğin zaman en alttaki <b>Cevapları kopyala</b> ile metni al ve mesajla gönder.</p>
@@ -118,7 +118,7 @@ textarea:focus,button:focus-visible{outline:2px solid var(--cobalt);outline-offs
 
 <script>
 const DATA=/*DATA*/null;
-const KEY="tr-review-v3";
+const KEY="tr-review-v4";
 let A={it:{},done:{},note:{},at:null};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&s.it)A=Object.assign(A,s);}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(A));}catch(e){}}
@@ -199,7 +199,7 @@ document.addEventListener("input",function(e){
 });
 function line(i){return i.tr||i.q||i.prose.replace(/<[^>]+>/g,"");}
 function report(){
-  const L=["Kurs Türkçesi Kontrolü · 3 — cevaplar",""];
+  const L=["Kurs Türkçesi Kontrolü · 4 — cevaplar",""];
   const done=DATA.filter(s=>A.done[s.k]), open=DATA.filter(s=>!A.done[s.k]);
   L.push("Biten bölümler ("+done.length+"/"+DATA.length+"): "+(done.map(s=>s.k).join(", ")||"—"));
   if(open.length)L.push("Bitmeyen: "+open.map(s=>s.k).join(", "));

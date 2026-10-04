@@ -10,15 +10,15 @@ const ADA=[
  {id:"ben",tr:"Kendim",en:"About me",q:[
   {id:"ad",u:"a1u1",tr:"Adın ne?",en:"What is your name?",eg:["Benim adım Deniz.","My name is Deniz."]},
   {id:"nereli",u:"a1u1",tr:"Nerelisin?",en:"Where are you from?",eg:["Londralıyım.","I am from London."]},
-  {id:"yas",u:"a1u4",tr:"Kaç yaşındasın?",en:"How old are you?",eg:["Otuz iki yaşındayım.","I am thirty-two."]},
+  {id:"yas",u:"a1u4",tr:"Kaç yaşındasın?",en:"How old are you?",eg:["Otuz iki yaşındayım.","I am thirty-two years old."]},
   {id:"dil",u:"a2u4",tr:"Hangi dilleri konuşabiliyorsun?",en:"Which languages can you speak?",eg:["İngilizce ve biraz Türkçe konuşabiliyorum.","I can speak English and a little Turkish."]},
   {id:"neden",u:"b1u6",tr:"Türkçeyi neden öğreniyorsun?",en:"Why are you learning Turkish?",eg:["Arkadaşlarımla Türkçe konuşmak için öğreniyorum.","I am learning it to speak Turkish with my friends."]}]},
  {id:"aile",tr:"Ailem",en:"My family",q:[
   {id:"adi",u:"a1u3",tr:"Annenin adı ne?",en:"What is your mother's name?",eg:["Annemin adı Ayşe.","My mother's name is Ayşe."]},
-  {id:"kimler",u:"a1u4",tr:"Ailende kimler var?",en:"Who is in your family?",eg:["Annem, babam ve bir kız kardeşim var.","My mother, my father and a sister."]},
+  {id:"kimler",u:"a1u4",tr:"Ailende kimler var?",en:"Who is in your family?",eg:["Annem, babam ve bir kız kardeşim var.","I have my mother, my father and a sister."]},
   {id:"simdi",u:"a1u5",tr:"Annen şu an ne yapıyor?",en:"What is your mother doing right now?",eg:["Annem şu an evde kitap okuyor.","My mother is reading a book at home right now."]},
-  {id:"buyuk",u:"a2u5",tr:"Kardeşin senden büyük mü?",en:"Is your brother or sister older than you?",eg:["Evet, ablam benden iki yaş büyük.","Yes, my sister is two years older than me."]},
-  {id:"cocukken",u:"b1u9",tr:"Çocukken ailenle ne yapardın?",en:"What did you use to do with your family as a child?",eg:["Çocukken her yaz ailemle denize giderdik.","As a child I used to go to the sea with my family every summer."]}]},
+  {id:"buyuk",u:"a2u5",tr:"Kardeşin senden büyük mü?",en:"Is your sibling older than you?",eg:["Evet, ablam benden iki yaş büyük.","Yes, my sister is two years older than me."]},
+  {id:"cocukken",u:"b1u9",tr:"Çocukken ailenle ne yapardın?",en:"What did you use to do with your family as a child?",eg:["Çocukken her yaz ailemle denize giderdik.","When I was a child, my family and I used to go to the sea every summer."]}]},
  {id:"ev",tr:"Evim",en:"My home",q:[
   {id:"nerede",u:"a1u4",tr:"Evin nerede?",en:"Where is your home?",eg:["Evim şehir merkezinde, bir parkın yanında.","My home is in the city centre, next to a park."]},
   {id:"oda",u:"a1u4",tr:"Evinde kaç oda var?",en:"How many rooms are there in your home?",eg:["Evimde üç oda var.","There are three rooms in my home."]},
@@ -35,7 +35,7 @@ const ADA=[
   {id:"ne",u:"a1u5",tr:"Ne iş yapıyorsun?",en:"What do you do for a living?",eg:["Öğretmenim, bir okulda çalışıyorum.","I am a teacher; I work at a school."]},
   {id:"nerede",u:"a1u5",tr:"Nerede çalışıyorsun ya da okuyorsun?",en:"Where do you work or study?",eg:["Bir bankada çalışıyorum.","I work at a bank."]},
   {id:"sure",u:"a2u7",tr:"Ne zamandır orada çalışıyorsun?",en:"How long have you been working there?",eg:["Üç yıldır orada çalışıyorum.","I have been working there for three years."]},
-  {id:"sev",u:"b1u3",tr:"İşinde en sevdiğin şey ne?",en:"What do you like most about your work?",eg:["İşimde en sevdiğim şey insanlarla konuşmak.","What I like most about my work is talking to people."]},
+  {id:"sev",u:"b1u3",tr:"İşinde en sevdiğin şey ne?",en:"What is the thing you like most about your work?",eg:["İşimde en sevdiğim şey insanlarla konuşmak.","The thing I like most about my work is talking to people."]},
   {id:"zorunda",u:"b2u2",tr:"İşte her gün ne yapmak zorundasın?",en:"What do you have to do every day at work?",eg:["Her gün çok e-posta yazmak zorundayım.","I have to write a lot of emails every day."]}]},
  {id:"bos",tr:"Boş zamanım",en:"Free time",q:[
   {id:"hobi",u:"a1u5",tr:"Boş zamanında ne yapıyorsun?",en:"What do you do in your free time?",eg:["Boş zamanımda yürüyüş yapıyorum ve müzik dinliyorum.","In my free time I go walking and listen to music."]},
@@ -49,6 +49,6 @@ const ADA=[
  {id:"gecmis",tr:"Geçmişim",en:"My past",q:[
   {id:"yaz",u:"a2u1",tr:"Geçen yaz nereye gittin?",en:"Where did you go last summer?",eg:["Geçen yaz ailemle İzmir'e gittim.","Last summer I went to İzmir with my family."]},
   {id:"buyudun",u:"a2u1",tr:"Nerede büyüdün?",en:"Where did you grow up?",eg:["Küçük bir kasabada büyüdüm.","I grew up in a small town."]},
-  {id:"cocuk",u:"b1u9",tr:"Çocukken boş zamanlarında ne yapardın?",en:"What did you use to do in your free time as a child?",eg:["Çocukken her gün sokakta top oynardım.","As a child I used to play football in the street every day."]},
-  {id:"sehir",u:"b1u3",tr:"Gördüğün en güzel şehir hangisi?",en:"What is the most beautiful city you have seen?",eg:["Gördüğüm en güzel şehir Mardin.","The most beautiful city I have seen is Mardin."]}]}
+  {id:"cocuk",u:"b1u9",tr:"Çocukken boş zamanlarında ne yapardın?",en:"What did you use to do in your free time as a child?",eg:["Çocukken her gün sokakta top oynardım.","As a child I used to play ball in the street every day."]},
+  {id:"sehir",u:"b1u3",tr:"Gördüğün en güzel şehir hangisi?",en:"Which is the most beautiful city you have seen?",eg:["Gördüğüm en güzel şehir Mardin.","The most beautiful city I have seen is Mardin."]}]}
 ];

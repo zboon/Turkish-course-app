@@ -860,6 +860,20 @@ checked before restoring) and then checked it against the rule above.
 The note mechanism is still in the code and its checks still run, but no
 pair carries a note.
 
+**The pass (v3.90).** Every passage line, grammar example, prefab, tale
+line, Adacıklar question and model answer, and Başlarken row and letter
+was read against the rule; 150 English strings changed and the rest were
+left, as rule 12 asks. Most restored a word the English had dropped (*de*
+→ also/too, *henüz* → yet, *artık* → by then, *sözlükte* → in the
+dictionary, *Oğlum* → my son, *Allah* → God), took out one it had added
+("only", "at all", "that's settled"), or brought a form the unit teaches
+into the English: the evidential *-mIş* as "apparently", the presumptive
+*-DIr* as "must be", the causative passive *yaptırıldı* as "built at the
+order of", *-AcAktI* as "was going to". c2u5's grammar examples, whose
+English was only a register note, got a translation with the note kept.
+Every Turkish string was compared before and after and is identical.
+The five doubtful Turkish lines stay unchanged for the native speaker.
+
 **Vocabulary English is not reworded.** The star queue is keyed `tr|en`,
 so changing a vocab gloss orphans its review box; the pass covered
 passage lines, grammar examples, prefabs, tales, Adacıklar and Başlarken.
@@ -1421,18 +1435,18 @@ the note. The ids are what map an answer back to the source; a changed
 string changes its `tx:` hash, so rebuild and republish the page only
 between rounds, not while someone is part-way through it.
 
-**The third round (v3.89)** is the same page and the same two addresses
-with a new storage key (`tr-review-v3`), so it starts with no answers;
-the learner chose a fresh start over carrying the second round's open
-flags. It opens with *Şüpheli beş cümle*, the five Turkish lines flagged
-while the English was rewritten, each with the question in both
-languages; then *Kalıp sözler* (the prefabs and Başlarken rows) and
-*Çeviriler* by level: every pair whose English or word-for-word note
-changed in v3.89, named in `tools/review-round3.json` (ids such as
-`ln:a1u1#3`, `ch:24`, `bs:nezaket#r2.0`) so the round keeps its size
-while it is open, and shown on the page as `c:<id>`. Then the second
-round's unfinished sections. The tales section, finished in round two,
-is gone; their changed lines are in the translations. When the round is
+**The fourth round (v3.90)** is the same page and the same two addresses
+with a new storage key (`tr-review-v4`), so it starts with no answers.
+The third round (v3.89) showed the natural-English rewrite with its
+word-for-word notes; the reviewer judged it worse, it was reverted, and
+its list went with it. Round four opens with *Şüpheli beş cümle*, the
+five doubtful Turkish lines, each with its question in both languages;
+then *Kalıp sözler* and *Çeviriler* by level: every pair whose English
+was corrected in v3.90 under Çeviri ilkesi, named in
+`tools/review-round4.json` (ids such as `ln:a1u1#1`, `ch:24`,
+`adq:aile.buyuk` for an island question, `ada:` for its model answer)
+so the round keeps its size while it is open, shown on the page as
+`c:<id>`. Then the second round's unfinished sections. When the round is
 over, a new round is a new key and a new list.
 
 The second round's first answers (v3.88) closed the tales section and

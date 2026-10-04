@@ -6,14 +6,14 @@
 
    Everything in the course is written by the author, and only the spoken
    material (Konuşma dili, v3.61) has been read by a native speaker. This
-   is the third round (v3.89). It opens with what the second round's
-   answers led to: five Turkish lines found doubtful while the English was
-   rewritten, then every pair whose English or word-for-word note changed
-   in v3.89 (listed in review-round3.json, so the round stays the same
-   size while it is open), and then the second round's unfinished
-   sections: the lessons before unit one, the interface Turkish, the
-   Adacıklar questions and the words to tap. The tales, finished in round
-   two, are left out except where their English changed. It is built from src/, so it can be rebuilt whenever the
+   is the fourth round (v3.90). It opens with five Turkish lines found
+   doubtful while the English was checked, then every pair whose English
+   was corrected in v3.90 under the learner's rule, faithful to the Turkish
+   first (listed in review-round4.json, so the round keeps its size while
+   it is open), and then the second round's unfinished sections: the
+   lessons before unit one, the interface Turkish, the Adacıklar questions
+   and the words to tap. The tales, finished in round two, are left out
+   except where their English changed. It is built from src/, so it can be rebuilt whenever the
    Turkish changes, and every item carries a stable id (a tale line
    hk:nh01#3, a word ok:a1u5:kahvaltıda, an instruction tx:<hash>) so the
    answers that come back can be found in the source again.
@@ -73,9 +73,9 @@ const SECS = [];
     e: "While the English was being rewritten, these five Turkish sentences looked wrong. They are unchanged until you decide. My question is under each. If a sentence is fine, leave it unmarked." });
 }
 
-/* 2 to 5 · every pair whose English or word-for-word note changed in v3.89 */
+/* 2 to 5 · every pair whose English was corrected in v3.90 */
 {
-  const ROUND = JSON.parse(fs.readFileSync(path.join(__dirname, "review-round3.json"), "utf8"));
+  const ROUND = JSON.parse(fs.readFileSync(path.join(__dirname, "review-round4.json"), "utf8"));
   const title = u => u.lv + " · " + u.n + " · " + u.tr;
   const item = id => {
     const [k, rest] = [id.slice(0, id.indexOf(":")), id.slice(id.indexOf(":") + 1)];
@@ -87,6 +87,9 @@ const SECS = [];
     else if (k === "hk") {
       const [tid, i] = rest.split("#"), h = HIKAYE.find(x => x.id === tid);
       p = h.read.lines[+i]; g = "Nasreddin Hoca · " + h.n + " · " + h.read.t; lv = h.lv;
+    } else if (k === "adq") {
+      const [isl, qid] = rest.split("."), i = ADA.find(x => x.id === isl), q = i.q.find(x => x.id === qid);
+      p = [q.tr, q.en]; g = "Adacıklar · " + i.tr; lv = "A2";
     } else if (k === "ada") {
       const [isl, qid] = rest.split("."), i = ADA.find(x => x.id === isl), q = i.q.find(x => x.id === qid);
       p = q.eg; g = "Adacıklar · " + i.tr + " · " + q.tr; lv = "A2";
@@ -94,21 +97,21 @@ const SECS = [];
       const [bid, rr] = rest.split("#r"), [pi, ri] = rr.split(".").map(Number), b = BASLA.find(x => x.id === bid);
       const r = b.parts[pi].rows[ri]; p = [r[0], r[1], r[3]]; g = "Başlarken · " + b.tr; lv = "K";
     }
-    if (!p) throw new Error("review: round 3 names " + id + ", which is gone");
+    if (!p) throw new Error("review: round 4 names " + id + ", which is gone");
     return { lv, it: { id: "c:" + id, g, tr: p[0], en: p[1], x: p[2] ? [["kelimesi kelimesine", p[2]]] : [] } };
   };
   const all = ROUND.map(item);
-  const P = "İngilizce artık Türkçeyi kelimesi kelimesine değil, bir İngilizin o anda gerçekten söyleyeceği şekilde veriyor; Türkçe farklı kurulmuşsa altında “kelimesi kelimesine” notu var. Bak: İngilizce anlam doğru ve doğal mı? Not, Türkçenin kelime kelime ne dediğini doğru gösteriyor mu? Türkçede bir yanlış görürsen onu da yaz.";
-  const E = "The English now says what an English speaker would actually say, and where the Turkish is built differently a “word for word” note sits under it. Check: is the English right and natural, and does the note show what the Turkish says word by word? Flag any Turkish that is wrong too.";
+  const P = "Bu İngilizce çeviriler senin kuralına göre düzeltildi: önce Türkçeye sadakat, sonra her anlamlı kelimenin karşılığı, sonra doğal İngilizce. Türkçeye dokunulmadı. Bak: İngilizce, Türkçeyi doğru ve yeterince yakın veriyor mu? Atlanan ya da eklenen bir anlam var mı? İngilizce doğal mı? Türkçede bir yanlış görürsen onu da yaz.";
+  const E = "These English translations were corrected under your rule: faithful to the Turkish first, every meaningful word carried, then natural English. The Turkish was not touched. Check: does the English render the Turkish correctly and closely enough? Is any meaning dropped or added? Is the English natural? Flag any Turkish that is wrong too.";
   SECS.push({ k: "kalip", tr: "Kalıp sözler", en: "Set phrases: greetings, wishes, the everyday", min: 20, it: all.filter(a => a.lv === "K").map(a => a.it),
-    p: "Selamlaşmalar, dilekler, günlük konuşmanın hazır kalıpları ve ilk derslerdeki nezaket sözleri. Kelimesi kelimesine notları en çok burada. " + P,
-    e: "Greetings, wishes, the ready-made pieces of everyday talk and the polite phrases of the first lessons, where most of the word-for-word notes are. " + E });
+    p: "Selamlaşmalar, dilekler ve günlük konuşmanın hazır kalıpları. " + P,
+    e: "Greetings, wishes and the ready-made pieces of everyday talk. " + E });
   [["A1", "A2"], ["B1", "B2"], ["C1", "C2"]].forEach((lv, n) => {
     SECS.push({ k: "ceviri" + lv.join(""), tr: "Çeviriler · " + lv.join("–"), en: "Translations · " + lv.join("–"), min: [20, 20, 20][n],
       it: all.filter(a => lv.includes(a.lv)).map(a => a.it),
-      p: "Okuma metinlerinin, dilbilgisi örneklerinin" + (n === 0 ? ", fıkraların ve Adacıklar’daki örnek cevapların" : "") + " değişen çevirileri. Kelimeler (tek kelime ya da kalıp) yalnızca not aldı; İngilizceleri değişmedi. " + P +
+      p: "Okuma metinlerinin, dilbilgisi örneklerinin" + (n === 0 ? ", fıkraların ve Adacıklar’daki soru ve örnek cevapların" : "") + " düzeltilen çevirileri. Kelime listelerinin İngilizcesi değişmedi. " + P +
         (n === 2 ? " Bazı C1–C2 metinleri bilerek eski ya da resmî (Osmanlıca dilekçe, Hacivat); onların İngilizcesi de o havayı koruyor." : ""),
-      e: "The changed translations of reading passages, grammar examples" + (n === 0 ? ", the tales and the Adacıklar model answers" : "") + ". Vocabulary only gained notes; its English is unchanged. " + E +
+      e: "The changed translations of reading passages, grammar examples" + (n === 0 ? ", the tales and the Adacıklar questions and model answers" : "") + ". The English of the word lists is unchanged. " + E +
         (n === 2 ? " Some C1–C2 passages are old or formal Turkish on purpose (an Ottoman petition, Hacivat), and their English keeps that register." : "") });
   });
 }
