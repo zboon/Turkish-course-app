@@ -6,11 +6,11 @@
 
    Everything in the course is written by the author, and only the spoken
    material (Konuşma dili, v3.61) has been read by a native speaker. This
-   is the fourth round (v3.90). It opens with five Turkish lines found
+   is the fifth round (v3.91). It opens with five Turkish lines found
    doubtful while the English was checked, then every pair whose English
-   was corrected in v3.90 under the learner's rule, faithful to the Turkish
-   first (listed in review-round4.json, so the round keeps its size while
-   it is open), and then the second round's unfinished sections: the
+   was corrected in v3.91, when every pair was read again under the
+   reviewer's rule, faithful to the Turkish first (listed in
+   review-round5.json, so the round keeps its size while it is open), and then the second round's unfinished sections: the
    lessons before unit one, the interface Turkish, the Adacıklar questions
    and the words to tap. The tales, finished in round two, are left out
    except where their English changed. It is built from src/, so it can be rebuilt whenever the
@@ -27,12 +27,12 @@ const fs = require("fs"), path = require("path"), vm = require("vm");
 const ROOT = path.join(__dirname, "..");
 const { interfaceStrings } = require("./strings.js");
 
-const files = ["levels", "a1", "a2", "b1", "b2", "c1", "c2", "_close", "baslarken", "ada", "okuma", "hikaye", "chunks"];
+const files = ["levels", "a1", "a2", "b1", "b2", "c1", "c2", "_close", "baslarken", "ada", "okuma", "hikaye", "chunks", "diyalog", "atasozu"];
 const sb = {};
 vm.createContext(sb);
 vm.runInContext(files.map(n => fs.readFileSync(path.join(ROOT, "src/data", n + ".js"), "utf8")).join("\n") +
-  "\nthis.OUT={UNITS:UNITS,BASLA:BASLA,ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,CHUNKS:CHUNKS};", sb);
-const { UNITS, BASLA, ADA, OKW, HIKAYE, CHUNKS } = sb.OUT;
+  "\nthis.OUT={UNITS:UNITS,BASLA:BASLA,ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,CHUNKS:CHUNKS,DIYALOG:DIYALOG,ATASOZU:ATASOZU,DEYIM:DEYIM};", sb);
+const { UNITS, BASLA, ADA, OKW, HIKAYE, CHUNKS, DIYALOG, ATASOZU, DEYIM } = sb.OUT;
 const unit = id => UNITS.find(u => u.id === id);
 
 /* A short stable id for a string, so an instruction keeps its id when
@@ -73,16 +73,20 @@ const SECS = [];
     e: "While the English was being rewritten, these five Turkish sentences looked wrong. They are unchanged until you decide. My question is under each. If a sentence is fine, leave it unmarked." });
 }
 
-/* 2 to 5 · every pair whose English was corrected in v3.90 */
+/* 2 to 6 · every pair whose English was corrected in v3.91 */
 {
-  const ROUND = JSON.parse(fs.readFileSync(path.join(__dirname, "review-round4.json"), "utf8"));
+  const ROUND = JSON.parse(fs.readFileSync(path.join(__dirname, "review-round5.json"), "utf8"));
   const title = u => u.lv + " · " + u.n + " · " + u.tr;
   const item = id => {
     const [k, rest] = [id.slice(0, id.indexOf(":")), id.slice(id.indexOf(":") + 1)];
-    let p, g, lv;
-    if (k === "vc" || k === "eg" || k === "ln") {
+    let p, g, lv, x = [];
+    if (k === "vc" || k === "eg" || k === "ln" || k === "tb") {
       const [uid, i] = rest.split("#"), u = unit(uid);
-      p = (k === "vc" ? u.vocab : k === "eg" ? u.gram.eg : u.read.lines)[+i]; g = title(u); lv = u.lv;
+      p = (k === "vc" ? u.vocab : k === "eg" ? u.gram.eg : k === "tb" ? u.gram.tbl : u.read.lines)[+i]; lv = u.lv;
+      g = title(u) + (k === "vc" ? " · kelime" : k === "tb" ? " · dilbilgisi tablosu" : "");
+    } else if (k === "dr") {
+      const [uid, i] = rest.split("#"), u = unit(uid), d = u.drill[+i];
+      p = [typeof d.c === "number" ? d.a[d.c] : d.c, d.q]; g = title(u) + " · alıştırma"; lv = u.lv;
     } else if (k === "ch") { p = CHUNKS[+rest]; g = "Kalıplar"; lv = "K"; }
     else if (k === "hk") {
       const [tid, i] = rest.split("#"), h = HIKAYE.find(x => x.id === tid);
@@ -93,25 +97,38 @@ const SECS = [];
     } else if (k === "ada") {
       const [isl, qid] = rest.split("."), i = ADA.find(x => x.id === isl), q = i.q.find(x => x.id === qid);
       p = q.eg; g = "Adacıklar · " + i.tr + " · " + q.tr; lv = "A2";
+    } else if (k === "dia") {
+      const [did, bk, j] = rest.split("."), d = DIYALOG.find(x => x.id === did), b = d.beats[bk], o = b.opts[+j];
+      p = [o.tr, o.en]; g = "Diyalog · " + d.tr; lv = "D"; x = [["karşıdaki", b.say]];
+    } else if (k === "at") {
+      const a = ATASOZU.find(x => x.id === rest);
+      p = [a.t, a.en]; g = "Atasözleri"; lv = "D";
+    } else if (k === "dy") {
+      const d = DEYIM.find(x => x.id === rest);
+      p = d.ex; g = "Deyimler · " + d.t; lv = "D"; x = [["deyim", d.t + " · " + d.en]];
     } else if (k === "bs") {
       const [bid, rr] = rest.split("#r"), [pi, ri] = rr.split(".").map(Number), b = BASLA.find(x => x.id === bid);
       const r = b.parts[pi].rows[ri]; p = [r[0], r[1], r[3]]; g = "Başlarken · " + b.tr; lv = "K";
     }
-    if (!p) throw new Error("review: round 4 names " + id + ", which is gone");
-    return { lv, it: { id: "c:" + id, g, tr: p[0], en: p[1], x: p[2] ? [["kelimesi kelimesine", p[2]]] : [] } };
+    if (!p) throw new Error("review: round 5 names " + id + ", which is gone");
+    if (p[2]) x.push(["kelimesi kelimesine", p[2]]);
+    return { lv, it: { id: "c:" + id, g, tr: p[0], en: p[1], x } };
   };
   const all = ROUND.map(item);
-  const P = "Bu İngilizce çeviriler senin kuralına göre düzeltildi: önce Türkçeye sadakat, sonra her anlamlı kelimenin karşılığı, sonra doğal İngilizce. Türkçeye dokunulmadı. Bak: İngilizce, Türkçeyi doğru ve yeterince yakın veriyor mu? Atlanan ya da eklenen bir anlam var mı? İngilizce doğal mı? Türkçede bir yanlış görürsen onu da yaz.";
-  const E = "These English translations were corrected under your rule: faithful to the Turkish first, every meaningful word carried, then natural English. The Turkish was not touched. Check: does the English render the Turkish correctly and closely enough? Is any meaning dropped or added? Is the English natural? Flag any Turkish that is wrong too.";
-  SECS.push({ k: "kalip", tr: "Kalıp sözler", en: "Set phrases: greetings, wishes, the everyday", min: 20, it: all.filter(a => a.lv === "K").map(a => a.it),
+  const P = "Bu turda her cümle çifti senin kuralına göre yeniden okundu ve bir karar verildi: önce Türkçeye sadakat, sonra her anlamlı kelimenin karşılığı (de/da, bile, henüz, yine, tekrarlar, zamirler, zaman ifadeleri), sonra doğal İngilizce. Burada yalnızca İngilizcesi değişenler var. Türkçeye dokunulmadı. Bak: İngilizce Türkçeye yeterince yakın mı? Atlanan ya da eklenen bir anlam var mı? İngilizce doğal mı? Hâlâ fazla serbest bulduğun bir çeviri olursa yaz; Türkçede bir yanlış görürsen onu da.";
+  const E = "This round every pair was read again under your rule and a decision made on each: faithful to the Turkish first, then every meaningful word carried (de/da, bile, henüz, yine, repetitions, pronouns, time expressions), then natural English. Only the pairs whose English changed are here. The Turkish was not touched. Check: is the English close enough to the Turkish? Is any meaning dropped or added? Is the English natural? Flag any translation still too free, and any Turkish that is wrong.";
+  SECS.push({ k: "kalip", tr: "Kalıp sözler", en: "Set phrases: greetings, wishes, the everyday", min: 15, it: all.filter(a => a.lv === "K").map(a => a.it),
     p: "Selamlaşmalar, dilekler ve günlük konuşmanın hazır kalıpları. " + P,
     e: "Greetings, wishes and the ready-made pieces of everyday talk. " + E });
+  SECS.push({ k: "diyalog", tr: "Diyaloglar, atasözleri, deyimler", en: "Dialogues, proverbs, idioms", min: 20, it: all.filter(a => a.lv === "D").map(a => a.it),
+    p: "Diyaloglarda öğrencinin seçtiği cevaplar (karşıdakinin sözü altta), atasözlerinin İngilizcesi ve deyimlerin örnek cümleleri. " + P,
+    e: "In the dialogues, the replies the learner chooses from (what the other person said is underneath), the English of the proverbs, and the idioms' example sentences. " + E });
   [["A1", "A2"], ["B1", "B2"], ["C1", "C2"]].forEach((lv, n) => {
-    SECS.push({ k: "ceviri" + lv.join(""), tr: "Çeviriler · " + lv.join("–"), en: "Translations · " + lv.join("–"), min: [20, 20, 20][n],
+    SECS.push({ k: "ceviri" + lv.join(""), tr: "Çeviriler · " + lv.join("–"), en: "Translations · " + lv.join("–"), min: 20,
       it: all.filter(a => lv.includes(a.lv)).map(a => a.it),
-      p: "Okuma metinlerinin, dilbilgisi örneklerinin" + (n === 0 ? ", fıkraların ve Adacıklar’daki soru ve örnek cevapların" : "") + " düzeltilen çevirileri. Kelime listelerinin İngilizcesi değişmedi. " + P +
+      p: "Okuma metinleri, dilbilgisi örnekleri ve tabloları, alıştırmalar" + (n === 0 ? ", fıkralar ve Adacıklar’daki soru ve örnek cevaplar" : "") + (n > 0 ? " ve birkaç kelime anlamı" : "") + ". " + P +
         (n === 2 ? " Bazı C1–C2 metinleri bilerek eski ya da resmî (Osmanlıca dilekçe, Hacivat); onların İngilizcesi de o havayı koruyor." : ""),
-      e: "The changed translations of reading passages, grammar examples" + (n === 0 ? ", the tales and the Adacıklar questions and model answers" : "") + ". The English of the word lists is unchanged. " + E +
+      e: "Reading passages, grammar examples and tables, exercises" + (n === 0 ? ", the tales and the Adacıklar questions and model answers" : "") + (n > 0 ? ", and a few word glosses" : "") + ". " + E +
         (n === 2 ? " Some C1–C2 passages are old or formal Turkish on purpose (an Ottoman petition, Hacivat), and their English keeps that register." : "") });
   });
 }

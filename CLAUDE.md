@@ -52,6 +52,7 @@ src/data/resim.js        const RESIM={…};    // a picture for A1 words, for th
 src/data/ada.js          const ADA=[…];      // the questions a language island is built from
 src/data/okuma.js        const OKW={…};      // the words worth a tap in each passage
 src/data/hikaye.js       const HIKAYE=[…];   // Nasreddin Hoca tales for the reading shelf
+src/data/rename.js       const VOCAB_RENAME={…}; // a reworded gloss's old tr|en → new
 src/shared/text.js       esc(), fold()                 — shared with kids/
 src/shared/voice.js      VOICE, ttsOK, voiceState, say — shared with kids/
 src/shared/srs.js        STEPS, bump, dueItems …       — shared with kids/
@@ -874,9 +875,28 @@ English was only a register note, got a translation with the note kept.
 Every Turkish string was compared before and after and is identical.
 The five doubtful Turkish lines stay unchanged for the native speaker.
 
-**Vocabulary English is not reworded.** The star queue is keyed `tr|en`,
-so changing a vocab gloss orphans its review box; the pass covered
-passage lines, grammar examples, prefabs, tales, Adacıklar and Başlarken.
+**The second pass (v3.91).** The reviewer said after v3.90 that "nothing
+much changed", and he was right: that pass had been told to be selective
+and left most loose English standing on rule 12. So v3.91 read every pair
+again with a decision required on each, and widened the reach: passage
+lines, grammar examples **and tables**, the drills' English prompts,
+prefabs, tales, Adacıklar, **the dialogues' replies, the proverbs and the
+idioms' examples**, and five vocabulary glosses. 356 English strings
+changed; every Turkish string was compared before and after and is
+identical. Typical changes: a dropped *de*, *bile* or *artık* restored, a
+repetition kept (*yavaş yavaş* → little by little), a pronoun or time word
+put back, a free idiom brought closer (*Bir varmış, bir yokmuş* keeps "there
+was, there wasn't"). The list is `tools/review-round5.json`.
+
+**A vocabulary gloss can now change, through `VOCAB_RENAME`.** The star
+queue is keyed `tr|en`, so a reworded gloss would orphan its review box.
+`src/data/rename.js` maps an old key to the new one, and `vocabRename()`
+runs at the end of `load2()`, so every load, restore and sync merge moves
+`star` and `srs` across together; if both keys are present the new one's
+box wins. Entries are kept for ever (an old backup can arrive any time) and
+may chain. `validate.js` requires the Turkish unchanged, the old key gone
+from the course and the chain ending on a current gloss; `sim.js` walks a
+chain. Change a gloss only with an entry here.
 
 ## Üretim (production mode)
 
@@ -1136,7 +1156,7 @@ until they come out whole. The prepared patches are "language islands",
 and a conversation is stepping from one to the next.
 
 `adaGo('ada')` lists islands (`ADA` in `src/data/ada.js`: eight topics,
-37 questions). Each question is asked in Turkish, in the grammar of one
+36 questions). Each question is asked in Turkish, in the grammar of one
 unit `u`, with its English and a model answer `eg` to adapt. It opens
 when that unit's grammar has been read (`metGram`), and an island is
 listed once its first question opens; a1u1 opens *Adın ne?* and
@@ -1435,7 +1455,16 @@ the note. The ids are what map an answer back to the source; a changed
 string changes its `tx:` hash, so rebuild and republish the page only
 between rounds, not while someone is part-way through it.
 
-**The fourth round (v3.90)** is the same page and the same two addresses
+**The fifth round (v3.91)** is the same page with the key `tr-review-v5`
+and the list `tools/review-round5.json`: the five doubtful lines again,
+then every pair the second pass changed, by kind: *Kalıp sözler*;
+*Diyaloglar, atasözleri, deyimler* (ids `dia:<scenario>.<beat>.<option>`,
+shown with what the other person said, `at:<id>`, `dy:<id>`); and
+*Çeviriler* by level, which now also carry grammar tables (`tb:`), drill
+prompts (`dr:`) and the renamed glosses (`vc:`). Round four's list went
+with it.
+
+**The fourth round (v3.90)** was the same page and the same two addresses
 with a new storage key (`tr-review-v4`), so it starts with no answers.
 The third round (v3.89) showed the natural-English rewrite with its
 word-for-word notes; the reviewer judged it worse, it was reverted, and

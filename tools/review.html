@@ -89,13 +89,13 @@ textarea:focus,button:focus-visible{outline:2px solid var(--cobalt);outline-offs
 <div class="bar"><div class="in"><span class="t" id="count">0 / 0 bölüm</span><div class="meter"><i id="fill"></i></div><span class="t" id="flags"></span></div></div>
 <div class="wrap">
 <h1>Kurs Türkçesi Kontrolü</h1>
-<p class="lede">Türkçe öğrenenler için bir uygulamanın metinleri · a native speaker's check, part four</p>
+<p class="lede">Türkçe öğrenenler için bir uygulamanın metinleri · a native speaker's check, part five</p>
 
 <div class="intro">
-<p>Merhaba, ve dürüst değerlendirmen için çok teşekkürler. Bir önceki turdaki serbest çevirileri tamamen geri aldım; Türkçeye o turda da hiç dokunulmamıştı. Bu yeni bir tur, önceki cevaplar burada yok.</p>
-<p class="en">Thank you for your honest verdict. The free translations of the last round are fully undone (the Turkish was never touched there either). This is a new round, so earlier answers are not carried over.</p>
-<p>Bu sefer İngilizce çeviriler senin verdiğin kurala göre kontrol edildi: önce Türkçeye sadakat, sonra her anlamlı kelimenin karşılığı (de/da, bile, henüz, yine, tekrarlar, zamirler, zaman ifadeleri), en son doğal İngilizce. Kelimesi kelimesine notları kaldırıldı. Doğru ve yeterince yakın olan çevirilere dokunulmadı; ilk bölümler yalnızca değişenleri gösteriyor.</p>
-<p class="en">This time the English was checked against your rule: faithful to the Turkish first, then every meaningful word carried (de/da, bile, henüz, yine, repetitions, pronouns, time words), then natural English. The word-for-word notes are gone. Translations that were already right and close were left alone; the first sections show only what changed.</p>
+<p>Merhaba, ve geri bildirimin için tekrar teşekkürler. Son turda çok az şeyin değiştiğini söylemiştin; haklıydın, o tur yalnızca bariz sorunları düzeltmişti. Bu sefer kuralını baştan sona uyguladım: her okuma satırı, dilbilgisi örneği ve tablosu, alıştırma, kalıp söz, fıkra, diyalog cevabı, atasözü ve deyim örneği tek tek okundu ve her biri için bir karar verildi. 356 çevirinin İngilizcesi değişti. Türkçeye yine hiç dokunulmadı.</p>
+<p class="en">Thank you again. You said very little had changed last round, and you were right: that round fixed only the obvious problems. This time your rule was applied from start to finish: every reading line, grammar example and table, exercise, set phrase, tale, dialogue reply, proverb and idiom example was read and a decision made on each. The English of 356 pairs changed. The Turkish was again not touched.</p>
+<p>Kural senin verdiğin sırayla: önce Türkçeye sadakat, sonra her anlamlı kelimenin karşılığı (de/da, bile, henüz, yine, tekrarlar, zamirler, zaman ifadeleri), en son doğal İngilizce. Serbest ve güzel bir çeviri ile biraz daha yakın ama yine doğal bir çeviri arasında yakın olan seçildi. Burada yalnızca değişenler var. Hâlâ fazla serbest bulduğun bir çeviri olursa işaretle; birkaç örnek bile, neyi kaçırdığımı görmeme yeter.</p>
+<p class="en">The rule in your order: faithful to the Turkish first, then every meaningful word carried (de/da, bile, henüz, yine, repetitions, pronouns, time words), then natural English. Where a free, elegant rendering and a slightly closer but still natural one competed, the closer one was chosen. Only what changed is here. If a translation still looks too free, mark it; even a few examples will show me what I am missing.</p>
 <p>Her maddeye tek tek cevap vermen gerekmiyor. Yalnızca yanlış ya da tuhaf olanları işaretle: <b>Düzelt</b>’e bas ve doğrusunu yaz, ya da emin değilsen <b>?</b>’e bas ve kısa bir not yaz. Bir bölümü bitirince en alttaki <b>Bu bölüm bitti</b> düğmesine bas; bu, işaretlemediğin her şeyin doğru olduğu anlamına gelir.</p>
 <p class="en">You only need to mark what is wrong or odd: Düzelt and write the fix, or ? and a short note if you are not sure. When you finish a section, press “Bu bölüm bitti” at its end; that says everything you did not mark is fine.</p>
 <p>Bölümler önem sırasına göre dizildi; ilk bölüm yalnızca beş cümle. Hepsini yapmak gerekmez. Cevapların bu cihazda saklanır, ara verip sonra devam edebilirsin. İstediğin zaman en alttaki <b>Cevapları kopyala</b> ile metni al ve mesajla gönder.</p>
@@ -118,7 +118,7 @@ textarea:focus,button:focus-visible{outline:2px solid var(--cobalt);outline-offs
 
 <script>
 const DATA=/*DATA*/null;
-const KEY="tr-review-v4";
+const KEY="tr-review-v5";
 let A={it:{},done:{},note:{},at:null};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null"); if(s&&s.it)A=Object.assign(A,s);}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(A));}catch(e){}}
@@ -199,7 +199,7 @@ document.addEventListener("input",function(e){
 });
 function line(i){return i.tr||i.q||i.prose.replace(/<[^>]+>/g,"");}
 function report(){
-  const L=["Kurs Türkçesi Kontrolü · 4 — cevaplar",""];
+  const L=["Kurs Türkçesi Kontrolü · 5 — cevaplar",""];
   const done=DATA.filter(s=>A.done[s.k]), open=DATA.filter(s=>!A.done[s.k]);
   L.push("Biten bölümler ("+done.length+"/"+DATA.length+"): "+(done.map(s=>s.k).join(", ")||"—"));
   if(open.length)L.push("Bitmeyen: "+open.map(s=>s.k).join(", "));
