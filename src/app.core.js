@@ -47,6 +47,18 @@ function load2(){
   if(!S.ada||!S.ada.s)S.ada={n:0,s:[]};
   /* S.log is the outside-input record: entries and sources, keyed by a counter. */
   if(!S.log||!S.log.e)S.log={n:0,e:[],src:[]};
+  vocabRename();
+}
+/* A reworded vocabulary gloss keeps its review box. S.star and S.srs are
+   keyed "tr|en", so each old key in VOCAB_RENAME (src/data/rename.js) is
+   moved to its new one, here, after a load, a restore or a merge alike.
+   If both keys are somehow present, the new one's box is kept. */
+function vocabRename(){
+  Object.keys(VOCAB_RENAME).forEach(function(o){
+    const n=VOCAB_RENAME[o], i=S.star.indexOf(o);
+    if(i>-1){ if(S.star.indexOf(n)<0)S.star[i]=n; else S.star.splice(i,1); }
+    if(S.srs[o]){ if(!S.srs[n])S.srs[n]=S.srs[o]; delete S.srs[o]; }
+  });
 }
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));SAVEFAIL=false;}catch(e){SAVEFAIL=true;} syncTouch(); }
 /* Sync across devices (src/shared/sync.js): which keys of S merge entry

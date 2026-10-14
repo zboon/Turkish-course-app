@@ -701,6 +701,22 @@ step("üretim · chunks", () => {
    the unit's tabs, and only after the answer where the English is the
    prompt. The notes are injected here, so the check is of the drawing and
    not of whichever lines happen to carry one. */
+/* A reworded vocabulary gloss keeps its review box: the star queue is keyed
+   tr|en, so VOCAB_RENAME moves an old key to its new one on every load. */
+step("a reworded gloss keeps its review box", () => {
+  ev("wipe()");
+  const w = ev("UNITS[0].vocab[0]"), now = w[0] + "|" + w[1], old = w[0] + "|OLD GLOSS", older = w[0] + "|OLDER GLOSS";
+  ev("VOCAB_RENAME[" + q(older) + "]=" + q(old) + "; VOCAB_RENAME[" + q(old) + "]=" + q(now));
+  ev("S.star=[" + q(older) + "]; S.srs={}; S.srs[" + q(older) + "]={b:3,d:dayNum()+4,l:1}; save(); load()");
+  ok(ev("S.star.indexOf(" + q(now) + ")>-1 && S.star.indexOf(" + q(older) + ")<0 && S.star.indexOf(" + q(old) + ")<0"), "a twice-renamed word did not reach its current gloss in the queue");
+  ok(ev("S.srs[" + q(now) + "] && S.srs[" + q(now) + "].b") === 3 && !ev("S.srs[" + q(older) + "]"), "the review box did not move with the gloss");
+  ok(ev("isStarred(" + q(w[0]) + "," + q(w[1]) + ")"), "the word is not starred under its new gloss");
+  /* Both present: the new key's own box wins and the old one goes. */
+  ev("S.star=[" + q(now) + "," + q(old) + "]; S.srs={}; S.srs[" + q(now) + "]={b:5,d:1}; S.srs[" + q(old) + "]={b:1,d:1}; load2()");
+  ok(ev("S.star.filter(function(k){return k===" + q(now) + "}).length") === 1 && ev("S.star.length") === 1 && ev("S.srs[" + q(now) + "].b") === 5, "a word in the queue under both glosses was doubled or lost its box");
+  ev("delete VOCAB_RENAME[" + q(older) + "]; delete VOCAB_RENAME[" + q(old) + "]; wipe()");
+});
+
 step("word for word: the note under the natural English", () => {
   ev("wipe(); stopPlay()");
   const keep = ev("JSON.stringify([UNITS[0].vocab,UNITS[0].gram.eg,UNITS[0].read.lines,CHUNKS[0]])");

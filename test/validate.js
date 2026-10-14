@@ -79,7 +79,7 @@ try {
     "diagnose:diagnose,diagnoseLine:diagnoseLine,diagAny:diagAny,nearMiss:nearMiss," +
     "SPOKEN:SPOKEN,spokenForms:spokenForms,spokenToward:spokenToward,sizToward:sizToward,sizSwap:sizSwap," +
     "spokenOf:spokenOf,pronounSlack:pronounSlack,shortOf:shortOf," +
-    "ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
+    "ADA:ADA,OKW:OKW,HIKAYE:HIKAYE,VOCAB_RENAME:VOCAB_RENAME,czVerb:czVerb,czNoun:czNoun,czForm:czForm,czVerbEN:czVerbEN,czNounEN:czNounEN,CZ_NOUNS:CZ_NOUNS,drillable:drillable};", sandbox, { filename: file });
 } catch (e) {
   console.error("validate: the data does not evaluate — " + e.message);
   process.exit(1);
@@ -1793,6 +1793,26 @@ let litChecked = 0;
   });
 }
 
+/* ---------- reworded vocabulary keeps its review box ---------- */
+/* Every rename must land on a gloss the course has now, start from one it
+   no longer has, and keep the Turkish: a typo here would move a learner's
+   box onto nothing. */
+let renameChecked = 0;
+{
+  const now = new Set();
+  UNITS.forEach(u => u.vocab.forEach(p => now.add(p[0] + "|" + p[1])));
+  const R = M.VOCAB_RENAME || {};
+  Object.keys(R).forEach(o => {
+    renameChecked++;
+    const n = R[o];
+    if (o.split("|")[0] !== n.split("|")[0]) err("VOCAB_RENAME " + o, "changes the Turkish: " + n);
+    if (now.has(o) && !Object.prototype.hasOwnProperty.call(R, n)) err("VOCAB_RENAME " + o, "the old gloss is still in the course");
+    let end = n, hops = 0;
+    while (Object.prototype.hasOwnProperty.call(R, end) && hops++ < 20) end = R[end];
+    if (!now.has(end)) err("VOCAB_RENAME " + o, "lands on " + end + ", which is not a course gloss");
+  });
+}
+
 /* ---------- report ---------- */
 const words = UNITS.reduce((n, u) => n + (u.vocab ? u.vocab.length : 0), 0);
 const lines = UNITS.reduce((n, u) => n + (u.read && u.read.lines ? u.read.lines.length : 0), 0);
@@ -1809,6 +1829,6 @@ console.log("validate ok · " + UNITS.length + " units · " + words + " words ·
   CHUNKS.length + " chunks · " + (lines + CHUNKS.length) + " üretim prompts · " +
   LEX.length + " drill stems · " + mChecked + " hand-checked forms · " +
   dChecked + " dictation scores · " + nChecked + " number forms · " +
-  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + nearChecked + " near-miss checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " + litChecked + " word-for-word notes · " +
+  gChecked + " dialogue checks · " + aChecked + " saying checks · " + adaChecks + " island checks · " + okwChecks + " reading-word checks · " + hkChecks + " tale checks · " + basChecked + " intro checks · " + contrastPairs + " contrast pairs · " + diagChecked + " diagnosis checks · " + nearChecked + " near-miss checks · " + spokenChecked + " spoken-form checks · " + altChecked + " alternative checks · " + sizChecked + " sen/siz checks · " + litChecked + " word-for-word notes · " + renameChecked + " gloss renames · " +
   taught.size + " course words + " + (CORE ? CORE.length : 0) + " core words + " + (SIK ? SIK.length : 0) + " frequent words in " + Object.keys(classCount).length + " classes" +
   (warns.length ? " · " + warns.length + " warning" + (warns.length > 1 ? "s" : "") : ""));

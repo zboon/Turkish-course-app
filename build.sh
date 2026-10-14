@@ -28,6 +28,7 @@ cat \
   src/data/ada.js \
   src/data/okuma.js \
   src/data/hikaye.js \
+  src/data/rename.js \
   src/shared/text.js \
   src/shared/voice.js \
   src/shared/srs.js \
